@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datarelation.dao.heat.UseHeatDao">
+
+    <delete id="delSqlCount">
+        delete from ut_odpssqlcount where TABLENAME is not null
+    </delete>
+
+    <insert id="insertUseHeatList" parameterType="com.synway.datarelation.pojo.common.CountTableUse">
+        insert into ut_odpssqlcount(ID,TABLENAME,TABLE_USE_COUNT,PROJECT,SQLType,DT)
+        select  * from(
+        <foreach collection="rcList" item="item" separator="union all">
+            SELECT #{item.id,jdbcType=VARCHAR},#{item.tableName,jdbcType=VARCHAR},#{item.useCount,jdbcType=NUMERIC},
+            #{item.projectName,jdbcType=VARCHAR}, #{item.SQLType,jdbcType=NUMERIC} ,#{item.DT,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+
+</mapper>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="V3.6.0.20240813.01" author="nbj" >
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="DGN_PROPERTY_LARGE" />
+            </not>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DNG_TABLE.sql" />
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DNG_INIT_DATA.sql" />
+    </changeSet>
+
+</databaseChangeLog>

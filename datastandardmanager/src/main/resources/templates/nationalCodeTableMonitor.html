@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<!--my-theme-->
+	<link rel="stylesheet" href="myCss/my-base.css">
+
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="bootstrap-table/bootstrap-table.css">
+	<link rel="stylesheet" href="bootstrap/css/toastr.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-treeview.css">
+	<link rel="stylesheet" href="page-jumpto/bootstrap-table-jumpto.css">
+
+	<link rel="stylesheet" href="perfect-scrollbar/perfect-scrollbar.css">
+	<link rel="stylesheet" href="myCss/nationCodeTableMonitor.css">
+	<script type="text/javascript" src="bootstrap/jQuery/jquery-3.0.0.js"></script>
+	<script type="text/javascript" src="bootstrap/jQuery/jquery.min.js"></script>
+	<script type="text/javascript" src="bootstrap/jQuery/jquery.serializejson.js"></script>
+	<script type="text/javascript" src="bootstrap/js/bootstrap.js"></script>
+	<script type="text/javascript" src="bootstrap-table/bootstrap-table.js"></script>
+	<script type="text/javascript" src="bootstrap/js/bootstrap-table-zh-CN.js"></script>
+	<script type="text/javascript" src="bootstrap/js/toastr.min.js"></script>
+
+	<script type="text/javascript" src="myJs/clipboard.min.js"></script>
+	<script type="text/javascript" src="bootstrap/js/bootbox.js"></script>
+	<script type="text/javascript" src="bootstrap/js/bootstrap-treeview.js"></script>
+
+	<script type="text/javascript" src="perfect-scrollbar/perfect-scrollbar.js"></script>
+
+	<script type="text/javascript" src="page-jumpto/bootstrap-table-jumpto.js"></script>
+	<script type="text/javascript" src="myJs/nationalCodeTableMonitor.js"></script>
+
+	<!--王琛自己写的css和js-->
+	<link rel="stylesheet" href="myCss/my-style.css">
+	<link rel="stylesheet" href="myCss/my-build.css">
+
+	<style type="text/css">
+	   input.form-control {
+            width: 100%;
+       }   
+	</style>
+	
+</head>
+<body onselectstart="return false">
+
+<!--<div class="row" style="margin-top: 10px;">-->
+<!--	<div style="margin-left: 35px;">-->
+<!--		<img src="img/icon_seacher.png" />-->
+<!--		<font style="margin-left: 5px;font-size: 15px;">国标码表管理</font>-->
+<!--	</div>-->
+<!--</div>-->
+
+
+<div class="treeDiv" >
+	<div >
+		<div  style="display: inline-block">
+			<div class="input-group my-search-box my-dmzdzwm-box">
+				<img src="img/myImg/search.png" alt="" class="my-img">
+				<input id="codeText" type="text"
+					   placeholder="请输入代码中文名称" class="form-control no-padding my-input"
+					   style="height:30px;display: inline;width: 220px;padding-left: 20px;border-radius: 4px 0 0 4px!important;">
+				<button class="my-btn" id="resetTreeQuery" onclick="resetTreeQuery();"><span>搜索</span></button>
+				<div class="input-group-btn">
+					<button type="button" class="btn btn-default dropdown-toggle"
+							data-toggle="dropdown" style="display: none;">
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
+				</div>
+			</div>
+		</div>
+		<!--<div id="resetTreeQuery" type="button" class="resourceButton querybtn"  style="display: inline-block" onclick="resetTreeQuery();">搜索</div>-->
+	</div>
+	<div  id="treeId" ></div>
+</div>
+
+<div >
+	<div class="TableDiv" >
+		<div style="margin: 10px">
+			<div class="leftdiv" >
+				<img src="img/icon2.png"/><font style="margin-left: 8px;font-size: 15px;color:#333">元素代码集</font>
+			</div>
+			<div class="" style="padding: 10px 0px 0px;">
+				<table class="table table-striped  table-condensed" cellspacing="1" cellpadding="1" border="1" style="border:1px solid #ebeef5;">
+					<tr>
+						<td style="vertical-align:  middle;font-size: 14px;color: #333">代码ID</td>
+						<td style="vertical-align:  middle;font-size: 14px;color: #333">代码名</td>
+						<td style="vertical-align:  middle;font-size: 14px;color: #333">代码中文名</td>
+						<td style="vertical-align:  middle;font-size: 14px;color: #333">备注</td>
+					</tr>
+					<tr>
+						<td style="vertical-align:  middle;" id="td_codeId">&nbsp;</td>
+						<td style="vertical-align:  middle;" id="td_codeName">&nbsp;</td>
+						<td style="vertical-align:  middle;" id="td_codeText">&nbsp;</td>
+						<td style="vertical-align:  middle;" id="td_parcodeId">&nbsp;</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="TableDivBootom" id="contentPagin" style="margin-top: 130px">
+		<div style="margin: 0px 10px 10px;">
+			<div class="leftdiv">
+				<img src="img/icon2.png"/><font style="margin-left: 8px;font-size: 15px;color:#333">元素代码集值</font>
+			</div>
+
+			<div style="float:left;margin-top: 10px">
+				<div id="FieldCodeValBtnExport" type="button" class="resourceButton my-btn" style="vertical-align: top;display: inline-block" onclick="FieldCodeValBtnExport();">
+					<span>导出</span>
+				</div>
+			</div>
+
+			<div style="float:right;margin-top: 10px;">
+				<div class="input-group my-search-box" >
+					<img src="img/myImg/search.png" alt="" class="my-img">
+					<input id="valText" type="text"
+						   placeholder="请输入中文名称" class="form-control no-padding"
+						   style="width: 220px;height:30px;display: inline;padding-left: 30px;border-radius: 4px 0 0 4px!important;">
+					<button id="FieldCodeValBtnQuery" class="my-btn" onclick="FieldCodeValBtnQuery();">搜索</button>
+					<!--<div id="FieldCodeValBtnQuery" type="button" class="resourceButton my-btn" style="display: inline-block;margin-right: 5px;" onclick="FieldCodeValBtnQuery();">
+						<font style="padding-left: 15px;">搜素</font>
+					</div>-->
+					<div class="input-group-btn">
+						<button type="button" class="btn btn-default dropdown-toggle"
+								data-toggle="dropdown" style="display: none;">
+							<span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
+					</div>
+				</div>
+			</div>
+			<div class="clearfix"></div>
+
+			<div style="padding: 10px 0px 0 0px;">
+				<input id="codeIdHide" type="hidden" value="-1"/>
+				<table class="table table-striped table-hover" id="FieldCodeValTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

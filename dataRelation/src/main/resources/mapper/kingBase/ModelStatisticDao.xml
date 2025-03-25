@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datarelation.dao.model.ModelStatisticDao">
+
+    <select id="selectModelProject" resultType="com.synway.datarelation.pojo.modelmonitor.ModelProject">
+        select
+        PROJECT_NAME as name,
+        DESCRIPTION as description,
+        CREATE_TIME as createTime,
+        CREATE_USER as createUser,
+        OWNER as owner,
+        MODIFY_TIME as modifyTime,
+        MODIFY_USER as modifyUser,
+        IS_AUTO as isAuto
+        from M_PROJECT
+    </select>
+
+    <insert id="insertModelProject">
+        insert into M_project
+        (PROJECT_NAME,
+        DESCRIPTION,
+        CREATE_TIME,
+        CREATE_USER,
+        OWNER,
+        MODIFY_TIME,
+        MODIFY_USER,
+        IS_AUTO)
+        <foreach collection="list" item="obj" separator="union all">
+            (select
+            #{obj.name,jdbcType=VARCHAR},
+            #{obj.description,jdbcType=VARCHAR},
+            to_date(#{obj.createTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi:ss'),
+            #{obj.createUser,jdbcType=VARCHAR},
+            #{obj.owner,jdbcType=VARCHAR},
+            to_date(#{obj.modifyTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi:ss'),
+            #{obj.modifyUser,jdbcType=VARCHAR},
+            #{obj.isAuto,jdbcType=NUMERIC}
+            from dual)
+        </foreach>
+    </insert>
+
+    <delete id="deleteModelProject" parameterType="com.synway.datarelation.pojo.modelmonitor.ModelProject">
+        <if test="modelProject!=null">
+            delete from M_project
+            where
+            project_name = #{modelProject.name,jdbcType=VARCHAR}
+        </if>
+        <if test="modelProject==null">
+            delete from M_project
+            where 1=0
+        </if>
+    </delete>
+
+    <update id="updateProject" parameterType="com.synway.datarelation.pojo.modelmonitor.ModelProject">
+        update M_PROJECT
+        set
+        PROJECT_NAME = #{modelProject.name,jdbcType=VARCHAR},
+        DESCRIPTION = #{modelProject.description,jdbcType=VARCHAR},
+        CREATE_TIME = to_date(#{modelProject.createTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+        CREATE_USER = #{modelProject.createUser,jdbcType=VARCHAR},
+        OWNER = #{modelProject.owner,jdbcType=VARCHAR},
+        MODIFY_TIME = to_date(#{modelProject.modifyTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+        MODIFY_USER = #{modelProject.modifyUser,jdbcType=VARCHAR},
+        IS_AUTO = #{modelProject.isAuto,jdbcType=NUMERIC}
+        where PROJECT_NAME = #{modelProject.name,jdbcType=VARCHAR}
+    </update>
+
+
+
+    <select id="selectModelNodeInfo" resultType="com.synway.datarelation.pojo.modelmonitor.ModelNodeInfo">
+        select
+        NODE_NAME as nodeName,
+        NODE_DISPLAY_NAME as nodeDisplayName,
+        CREATE_USER as createUser,
+        CREATE_TIME as createTime,
+        NODE_TYPE as nodeType,
+        RUN_TYPE as runType,
+        FILE_ID as fileId,
+        FILE_VERSION as fileVersion,
+        FILE_PATH as filePath,
+        DESCRIPTION as description,
+        PARA_VALUE as paraValue,
+        START_EFFECT_DATE as startEffectDate,
+        END_EFFECT_DATE as endEffectDate,
+        CRON_EXPRESS as cronExpress,
+        OWNER as owner,
+        FLOW_NAME as flowName,
+        PROJECT_NAME as projectName,
+        DEPENDENT_TYPE as dependentType,
+        SOURCE as source,
+        CONNECTION as connection,
+        MODIFY_TIME as modifyTime,
+        MODIFY_USER as modifyUser,
+        PRIORITY as priority,
+        RESOURCE_GROUP_IDENTIFIER as resourceGroupIdentifier,
+        BASE_LINE_ID as baselineId,
+        CYCLE_TYPE as cycleType,
+        DQC_DESCRIPTION as dqcDescription,
+        DQC_TYPE as dqcType,
+        IS_FLOW_TYPE as isFlowType
+        from M_NODE
+    </select>
+
+    <insert id="insertModelNodeInfo">
+        insert into M_NODE
+        (NODE_NAME,
+        NODE_DISPLAY_NAME,
+        CREATE_USER,
+        CREATE_TIME,
+        NODE_TYPE,
+        RUN_TYPE,
+        FILE_ID,
+        FILE_VERSION,
+        FILE_PATH,
+        START_EFFECT_DATE,
+        END_EFFECT_DATE,
+        CRON_EXPRESS,
+        OWNER,
+        FLOW_NAME,
+        PROJECT_NAME,
+        DEPENDENT_TYPE,
+        SOURCE,
+        CONNECTION,
+        MODIFY_TIME,
+        MODIFY_USER,
+        PRIORITY,
+        RESOURCE_GROUP_IDENTIFIER,
+        BASE_LINE_ID,
+        CYCLE_TYPE,
+        DQC_TYPE,
+        IS_FLOW_TYPE
+        )
+        <foreach collection="list" item="obj" separator="union all">
+            (select
+            #{obj.nodeName,jdbcType=VARCHAR},
+            #{obj.nodeDisplayName,jdbcType=VARCHAR},
+            #{obj.createUser,jdbcType=VARCHAR},
+            to_date(#{obj.createTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi:ss'),
+            #{obj.nodeType,jdbcType=NUMERIC},
+            #{obj.runType,jdbcType=NUMERIC},
+            #{obj.fileId,jdbcType=NUMERIC},
+            #{obj.fileVersion,jdbcType=NUMERIC},
+            #{obj.filePath,jdbcType=VARCHAR},
+            to_date(#{obj.startEffectDate,jdbcType=DATE},'yyyy-MM-dd HH24:mi:ss'),
+            to_date(#{obj.endEffectDate,jdbcType=DATE},'yyyy-MM-dd HH24:mi:ss'),
+            #{obj.cronExpress,jdbcType=VARCHAR},
+            #{obj.owner,jdbcType=VARCHAR},
+            #{obj.flowName,jdbcType=VARCHAR},
+            #{obj.projectName,jdbcType=VARCHAR},
+            #{obj.dependentType,jdbcType=NUMERIC},
+            #{obj.source,jdbcType=VARCHAR},
+            #{obj.connection,jdbcType=VARCHAR},
+            to_date(#{obj.modifyTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi:ss'),
+            #{obj.modifyUser,jdbcType=VARCHAR},
+            #{obj.priority,jdbcType=NUMERIC},
+            #{obj.resourceGroupIdentifier,jdbcType=VARCHAR},
+            #{obj.baselineId,jdbcType=NUMERIC},
+            #{obj.cycleType,jdbcType=NUMERIC},
+            #{obj.dqcType,jdbcType=NUMERIC},
+            #{obj.isFlowType,jdbcType=VARCHAR}
+            from dual)
+        </foreach>
+    </insert>
+
+    <delete id="deleteModelNode" parameterType="com.synway.datarelation.pojo.modelmonitor.ModelNodeInfo">
+        <if test="modelNodeInfo!=null">
+            delete from M_NODE
+            where
+            project_name = #{modelNodeInfo.projectName,jdbcType=VARCHAR}
+            and FLOW_NAME = #{modelNodeInfo.flowName,jdbcType=VARCHAR}
+            and NODE_NAME = #{modelNodeInfo.nodeName,jdbcType=VARCHAR}
+        </if>
+        <if test="modelNodeInfo==null">
+            delete from M_NODE
+            where 1=0
+        </if>
+    </delete>
+
+
+
+    <select id="selectModelFlowNodeIns" resultType="com.synway.datarelation.pojo.modelmonitor.ModelNodeInsInfo">
+        select
+        INSTANCE_ID as instanceId,
+        PROJECT_NAME as projectName,
+        NODE_NAME as nodeName,
+        CREATE_TIME as createTime,
+        STATUS as status
+        from M_FLOW
+    </select>
+
+    <insert id="insertModelFlowNodeIns">
+        insert into M_FLOW
+        (HISTORY_ID,
+        INSTANCE_ID,
+        DAG_ID,
+        INSTANCE_TYPE,
+        DAG_TYPE,
+        STATUS,
+        OP_SEQ,
+        OP_CODE,
+        OWNER,
+        BIZ_DATE,
+        GMT_DATE,
+        NODE_TYPE,
+        PRIORITY,
+        PARA_VALUE,
+        PROJECT_NAME,
+        PROJECT_ID,
+        RELATED_DAG_ID,
+        FINISH_TIME,
+        BEGIN_WAITTIME_TIME,
+        BEGIN_WAITRES_TIME,
+        BEGIN_RUN_TIME,
+        CREATE_TIME,
+        CREATE_USER,
+        MODIFY_TIME,
+        MODIFY_USER,
+        CYCLE_TYPE,
+        CYCLE_TIME,
+        DEPENDENT_TYPE,
+        NODE_NAME,
+        FLOW_NAME,
+        IN_GROUP_ID,
+        RESOURCE_GROUP_IDENTIFIER,
+        BASE_LINE_ID
+        )
+        <foreach collection="list" item="obj" separator="union all">
+            (select
+            #{obj.historyId,jdbcType=NUMERIC},
+            #{obj.instanceId,jdbcType=NUMERIC},
+            #{obj.dagId,jdbcType=NUMERIC},
+            #{obj.instanceType,jdbcType=NUMERIC},
+            #{obj.dagType,jdbcType=NUMERIC},
+            #{obj.status,jdbcType=NUMERIC},
+            #{obj.opSeq,jdbcType=NUMERIC},
+            #{obj.opCode,jdbcType=NUMERIC},
+            #{obj.owner,jdbcType=NUMERIC},
+            to_date(#{obj.bizdate,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.gmtdate,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.nodeType,jdbcType=NUMERIC},
+            #{obj.priority,jdbcType=NUMERIC},
+            #{obj.paraValue,jdbcType=VARCHAR},
+            #{obj.projectName,jdbcType=VARCHAR},
+            #{obj.projectId,jdbcType=NUMERIC},
+            #{obj.relatedDagId,jdbcType=NUMERIC},
+            to_date(#{obj.finishTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.beginWaitTimeTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.beginWaitResTime,jdbcType=NUMERIC},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.beginRunningTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.createTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.createUser,jdbcType=VARCHAR},
+            to_date(#{obj.modifyTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.modifyUser,jdbcType=VARCHAR},
+            #{obj.cycleType,jdbcType=NUMERIC},
+            to_date(#{obj.cycleTime,jdbcType=NUMERIC},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.dependentType,jdbcType=NUMERIC},
+            #{obj.nodeName,jdbcType=VARCHAR},
+            #{obj.flowName,jdbcType=VARCHAR},
+            #{obj.inGroupId,jdbcType=NUMERIC},
+            #{obj.resourceGroupIdentifier,jdbcType=VARCHAR},
+            #{obj.baselineId,jdbcType=NUMERIC}
+            from dual)
+        </foreach>
+    </insert>
+
+    <delete id="deleteModelFlowIns">
+        delete from M_FLOW where node_name is not null and node_type =98
+    </delete>
+
+    <update id="updateFlowIns" parameterType="com.synway.datarelation.pojo.modelmonitor.ModelNodeInsInfo">
+        update M_FLOW
+        set
+        INSTANCE_ID = #{nodeInstance.instanceId,jdbcType=NUMERIC},
+        STATUS = #{nodeInstance.status,jdbcType=NUMERIC},
+        BEGIN_WAITTIME_TIME = to_date(#{nodeInstance.beginWaitTimeTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+        BEGIN_RUN_TIME = to_date(#{nodeInstance.beginRunningTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+        BEGIN_WAITRES_TIME = to_date(#{nodeInstance.beginWaitResTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+        FINISH_TIME = to_date(#{nodeInstance.finishTime,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss')
+        where PROJECT_NAME = #{nodeInstance.projectName,jdbcType=VARCHAR}
+        and FLOW_NAME = #{nodeInstance.flowName,jdbcType=VARCHAR}
+    </update>
+
+
+
+    <select id="getModelFlowTableCount" resultType="java.lang.Integer">
+        select count(1) from M_FLOW
+    </select>
+
+
+</mapper>

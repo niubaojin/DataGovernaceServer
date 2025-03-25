@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.dataoperations.dao.DataPiledMonitorDao">
+
+    <resultMap id="dataPiledSetting" type="com.synway.dataoperations.pojo.dataPiledMonitor.DataPiledSetting">
+        <result property="dataName" column="DATA_NAME"/>
+        <result property="dataWarehouseName" column="DATA_WAREHOUSENAME"/>
+        <result property="consumTopic" column="CONSUM_TOPIC"/>
+        <result property="consumGroup" column="CONSUM_GROUP"/>
+        <result property="offset" column="OFF_SET"/>
+        <result property="logSize" column="LOGSIZE"/>
+        <result property="lag" column="LAG"/>
+        <result property="piledRate" column="PILED_RATE"/>
+        <result property="pushHour" column="PUSH_HOUR"/>
+        <result property="insertTime" column="INSERTTIME"/>
+        <result property="dataType" column="DATA_TYPE"/>
+    </resultMap>
+
+    <insert id="insertDataPiledMonitor" parameterType="com.synway.dataoperations.pojo.dataPiledMonitor.DataPiledSetting">
+        merge into DO_DATA_PILED_MONITOR a
+        using (select #{dataPiledSetting.dataName,jdbcType=VARCHAR} as dataName,
+                      #{dataPiledSetting.dataWarehouseName,jdbcType=VARCHAR} as dataWare,
+                      #{dataPiledSetting.consumTopic,jdbcType=VARCHAR} as consumTopic,
+                      #{dataPiledSetting.consumGroup,jdbcType=VARCHAR} as consumGroup,
+                      #{dataPiledSetting.pushHour,jdbcType=VARCHAR} as pushHour
+               ) b
+        on (a.DATA_NAME = b.dataName
+            and a.DATA_WAREHOUSENAME = b.dataWare
+            and a.CONSUM_TOPIC = b.consumTopic
+            and a.CONSUM_GROUP = b.consumGroup
+            and a.PUSH_HOUR = b.pushHour
+            and a.INSERTTIME > DATE_TRUNC('day', CURRENT_DATE))
+        when matched then
+            update
+                set OFF_SET     = #{dataPiledSetting.offset,jdbcType=INTEGER},
+                    LOGSIZE    = #{dataPiledSetting.logSize,jdbcType=INTEGER},
+                    LAG        = #{dataPiledSetting.lag,jdbcType=INTEGER},
+                    PILED_RATE = #{dataPiledSetting.piledRate,jdbcType=VARCHAR}
+        when not matched then
+            insert
+                (DATA_NAME,DATA_WAREHOUSENAME,CONSUM_TOPIC,CONSUM_GROUP,OFF_SET,LOGSIZE,LAG,PILED_RATE,PUSH_HOUR,INSERTTIME,DATA_TYPE)
+            values
+                (#{dataPiledSetting.dataName,jdbcType=VARCHAR},
+                 #{dataPiledSetting.dataWarehouseName,jdbcType=VARCHAR},
+                 #{dataPiledSetting.consumTopic,jdbcType=VARCHAR},
+                 #{dataPiledSetting.consumGroup,jdbcType=VARCHAR},
+                 #{dataPiledSetting.offset,jdbcType=INTEGER},
+                 #{dataPiledSetting.logSize,jdbcType=INTEGER},
+                 #{dataPiledSetting.lag,jdbcType=INTEGER},
+                 #{dataPiledSetting.piledRate,jdbcType=VARCHAR},
+                 #{dataPiledSetting.pushHour,jdbcType=VARCHAR},
+                 CURRENT_DATE,
+                 #{dataPiledSetting.dataType,jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="delDataPiledMonitors">
+        delete from DO_DATA_PILED_MONITOR where INSERTTIME &lt; (CURRENT_DATE - INTERVAL '10 day')
+    </delete>
+
+    <select id="getDataPiledMonitors" resultMap="dataPiledSetting">
+        select DATA_NAME,
+               DATA_WAREHOUSENAME,
+               CONSUM_TOPIC,
+               CONSUM_GROUP,
+               OFF_SET,
+               LOGSIZE,
+               LAG,
+               PILED_RATE,
+               PUSH_HOUR,
+               to_char(INSERTTIME,'yyyyMMdd') as INSERTTIME,
+               DATA_TYPE
+          from DO_DATA_PILED_MONITOR where INSERTTIME > (CURRENT_DATE - INTERVAL '#{days,jdbcType=INTEGER} day')
+    </select>
+
+</mapper>

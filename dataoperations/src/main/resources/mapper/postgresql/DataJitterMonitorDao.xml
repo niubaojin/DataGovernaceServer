@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.dataoperations.dao.DataJitterMonitorDao">
+
+    <select id="getCardDataDJM" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               DATA_TYPE as dataType,
+               to_char(CREATE_TIME,'yyyyMMdd') as createTime
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where CREATE_TIME >= (CURRENT_DATE - INTERVAL '7 day')  and PUSH_HOUR &lt; #{nowHour, jdbcType=VARCHAR}
+         group by DATA_TYPE, to_char(CREATE_TIME,'yyyyMMdd')
+    </select>
+
+    <select id="getChartDataDJM" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               case
+                   when DATA_TYPE = '1' then '接入'
+                   when DATA_TYPE = '2' then '处理'
+                   when DATA_TYPE = '3' then '入库'
+                   when DATA_TYPE = '4' then '集成'
+               else DATA_TYPE end as dataType,
+               to_char(CREATE_TIME,'yyyyMMdd') as createTime,
+               PUSH_HOUR as pushHour
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where CREATE_TIME >= (CURRENT_DATE - INTERVAL '7 day')
+           and (DATA_TYPE = '1' or DATA_TYPE = '2')
+         <if test="tableId != null and tableId != ''">
+             and upper(out_protocol) = upper(#{tableId})
+         </if>
+         group by DATA_TYPE, to_char(CREATE_TIME,'yyyyMMdd'), PUSH_HOUR
+    </select>
+
+    <select id="getChartDataDJM3" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               STORE_TYPE || '>' || PROJECT_NAME as storageLocation,
+               to_char(CREATE_TIME, 'yyyyMMdd') as createTime,
+               PUSH_HOUR as pushHour
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where CREATE_TIME >= (CURRENT_DATE - INTERVAL '7 day')
+           and DATA_TYPE = '3'
+           and PROJECT_NAME is not null
+           <if test="tableId != null and tableId != ''">
+               and upper(out_protocol) = upper(#{tableId})
+           </if>
+         group by to_char(CREATE_TIME, 'yyyyMMdd'),
+                  PUSH_HOUR,
+                  STORE_TYPE || '>' || PROJECT_NAME
+    </select>
+    
+    <select id="getSjgcDataSummarysByHour" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select out_en_name as outTableNameEn,
+               out_cn_name as outTableNameCh,
+               out_protocol as outProtocol,
+               sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               DATA_TYPE as dataType,
+               to_char(CREATE_TIME, 'yyyyMMdd') as createTime
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where CREATE_TIME >= (CURRENT_DATE - INTERVAL '7 day')
+           and PUSH_HOUR &lt; #{nowHour, jdbcType=VARCHAR}
+           and out_en_name is not null
+         group by out_en_name,
+                  out_cn_name,
+                  out_protocol,
+                  DATA_TYPE,
+                  to_char(CREATE_TIME, 'yyyyMMdd')
+    </select>
+
+</mapper>

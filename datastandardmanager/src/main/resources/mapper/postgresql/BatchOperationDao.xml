@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.master.BatchOperationDao">
+
+    <update id="updatePublicDataInfoStatus">
+        update synlte.public_data_info set zyzt = #{status}, GXSJ = CURRENT_DATE
+         where upper(sjxjbm) in (
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        )
+    </update>
+
+    <update id="updateObjectStatus">
+        update synlte.object set objectstate = #{status} , updatetime = CURRENT_DATE
+        where upper(tableid) in (
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        )
+    </update>
+
+    <update id="updateObjectClassifyAndSourceIfy" parameterType="com.synway.datastandardmanager.pojo.batchoperation.ObjectClassifyEditPojo">
+        update synlte.object set updatetime = CURRENT_DATE,
+        <if test="sjzybq1 != '' and sjzybq1 != null">
+            SJZYBQ1=#{sjzybq1,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzybq2 != '' and sjzybq2 != null">
+            SJZYBQ2=#{sjzybq2,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzybq3 != '' and sjzybq3 != null">
+            SJZYBQ3=#{sjzybq3,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzybq4 != '' and sjzybq4 != null">
+            SJZYBQ4=#{sjzybq4,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzybq5 != '' and sjzybq5 != null">
+            SJZYBQ5=#{sjzybq5,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzybq6 != '' and sjzybq6 != null">
+            SJZYBQ6=#{sjzybq6,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzzyjfl != '' and sjzzyjfl != null">
+            SJZZYJFLVALLUE =#{sjzzyjfl,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzzejfl != '' and sjzzejfl != null">
+            SJZZEJFLVALUE =#{sjzzejfl,jdbcType=VARCHAR},
+        </if>
+        <if test="sjzylylx != '' and sjzylylx != null">
+            SJZYLYLXVALUE=#{sjzylylx},
+        </if>
+        updater =#{updater}
+        where upper(TABLEID) in (
+        <foreach collection="tableIdList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+
+    <update id="updateFieldResourceInfoClassify" parameterType="com.synway.datastandardmanager.pojo.batchoperation.ObjectFieldEditPojo">
+         update synlte.FIELD_RESOURCE_INFO set  SFCXTJ = #{query}, SFDYTJ=#{subscribe},
+            ZDFL =#{fieldClassId}, ZDMGDFLDM=#{sensitivityLevel}, GXSJ=CURRENT_DATE
+            where upper(tableid) = upper(#{tableId}) and  upper(sjxywmc)
+            in (
+                <foreach collection="columnList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            )
+    </update>
+
+    <update id="updateObjectClassify" parameterType="com.synway.datastandardmanager.pojo.batchoperation.ObjectFieldEditPojo">
+        update synlte.objectfield set ISQUERY = #{query}, COLUMNNAME_STATE=#{columnNameState}
+        where upper(objectId) = upper(#{objectId})
+        and  upper(COLUMNNAME)
+        in (
+        <foreach collection="columnList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+    <update id="updateSynlteField" parameterType="com.synway.datastandardmanager.pojo.batchoperation.ObjectFieldEditPojo">
+        update synlte.SYNLTEFIELD set field_class = #{fieldClassId} where upper(columnname) in (
+        <foreach collection="columnList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+</mapper>

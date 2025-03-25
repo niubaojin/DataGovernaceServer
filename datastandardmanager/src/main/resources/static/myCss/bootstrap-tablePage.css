@@ -1,0 +1,13 @@
+.pagination>li>a {
+    border-radius: 35px;
+    border: 0px;
+}
+ .pagination>li:last-child>a {
+    border-radius: 35px;
+}
+.pagination>li:first-child>a {
+    border-radius: 35px;
+}
+.pagination>li>a.active {
+    background-color: #002a80;
+}

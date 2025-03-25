@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.dataoperations.dao.HistoryDataMonitorDao">
+
+    <sql id="eventTypes">
+        select tablename,
+               a.tableid,
+               a.tablename_ch,
+               a.data_type,
+               a.operator_net,
+               a.data_source,
+               a.citycode,
+               a.calltype,
+               a.valtext,
+               a.records_all,
+               a.dt
+          from DO_EVENT_TYPE a
+--           left join (select valtext, valvalue
+--                        from synlte.fieldcodeval
+--                       where codeid = 'JZCODE0084OLD') b on a.calltype = b.valvalue
+    </sql>
+    <sql id="appTypes">
+        select tablename,
+               a.tableid,
+               a.tablename_ch,
+               a.data_type,
+               a.operator_net,
+               a.data_source,
+               a.citycode,
+               a.protocol,
+               a.valtext,
+               a.records_all,
+               a.dt
+          from DO_APP_TYPE a
+--           left join (select valtext, valvalue
+--                        from synlte.fieldcodeval) b on a.protocol = b.valvalue
+    </sql>
+
+    <select id="getLeftTree" resultType="com.synway.dataoperations.pojo.historyDataMonitor.EventType">
+        select distinct tablename_ch as tableNameCh, data_type as dataType
+           from (<include refid="eventTypes"></include>)
+    </select>
+
+    <select id="getDataNum" resultType="java.math.BigDecimal">
+        select case when sum(records_all) is null then 0 else sum(records_all) end as recordAll
+            from (<include refid="eventTypes"></include>)
+           where dt >= #{minDt,jdbcType=VARCHAR} and dt &lt; #{maxDt,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getYesterdayDataCategory" resultType="java.lang.Integer">
+        select count(distinct tablename_ch)
+            from (<include refid="eventTypes"></include>)
+           where dt = #{dt,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getMenu" resultType="java.lang.String">
+        select
+            <if test="menuType == 'citycode'">
+                distinct citycode
+            </if>
+            <if test="menuType == 'operator_net'">
+                distinct operator_net
+            </if>
+            <if test="menuType == 'data_source'">
+                distinct data_source
+            </if>
+            from (<include refid="eventTypes"></include>)
+           where dt >= #{minDt,jdbcType=VARCHAR}
+             and dt &lt; #{maxDt,jdbcType=VARCHAR}
+            <if test="searchName != '' and searchName != null">
+                and (upper(data_type) = upper(#{searchName,jdbcType=VARCHAR}) or upper(tablename_ch) = upper(#{searchName,jdbcType=VARCHAR}))
+            </if>
+            <if test="areaName != '' and areaName != null">
+                and upper(citycode) = upper(#{areaName,jdbcType=VARCHAR})
+            </if>
+            <if test="operatorName != '' and operatorName != null">
+                and upper(operator_net) = upper(#{operatorName,jdbcType=VARCHAR})
+            </if>
+            <if test="networkTypeName != '' and networkTypeName != null">
+                and upper(data_source) = upper(#{networkTypeName,jdbcType=VARCHAR})
+            </if>
+    </select>
+
+    <select id="getDataCountTrend" resultType="com.synway.dataoperations.pojo.historyDataMonitor.DataCountTrend">
+        select dt, sum(records_all) as allCount
+          from (<include refid="eventTypes"></include>)
+         where dt >= #{minDt,jdbcType=VARCHAR}
+           and dt &lt; #{maxDt,jdbcType=VARCHAR}
+           <if test="operatorNet != null and operatorNet != ''">
+               and operator_net = #{operatorNet,jdbcType=VARCHAR}
+           </if>
+           <if test="searchName != '' and searchName != null">
+               and (upper(data_type) = upper(#{searchName,jdbcType=VARCHAR}) or upper(tablename_ch) = upper(#{searchName,jdbcType=VARCHAR}))
+           </if>
+           <if test="areaName != '' and areaName != null">
+               and upper(citycode) = upper(#{areaName,jdbcType=VARCHAR})
+           </if>
+           <if test="operatorName != '' and operatorName != null">
+               and upper(operator_net) = upper(#{operatorName,jdbcType=VARCHAR})
+           </if>
+           <if test="networkTypeName != '' and networkTypeName != null">
+               and upper(data_source) = upper(#{networkTypeName,jdbcType=VARCHAR})
+           </if>
+         group by dt order by dt
+    </select>
+
+    <select id="getDataArea" resultType="com.synway.dataoperations.pojo.historyDataMonitor.DataCountTrend">
+        select citycode as city,operator_net as operatorNet, sum(records_all) as allCount
+          from (<include refid="eventTypes"></include>)
+         where dt >= #{minDt,jdbcType=VARCHAR}
+           and dt &lt; #{maxDt,jdbcType=VARCHAR}
+           and citycode != '-'
+           <if test="searchName != '' and searchName != null">
+               and (upper(data_type) = upper(#{searchName,jdbcType=VARCHAR}) or upper(tablename_ch) = upper(#{searchName,jdbcType=VARCHAR}))
+           </if>
+           <if test="areaName != '' and areaName != null">
+               and upper(citycode) = upper(#{areaName,jdbcType=VARCHAR})
+           </if>
+           <if test="operatorName != '' and operatorName != null">
+               and upper(operator_net) = upper(#{operatorName,jdbcType=VARCHAR})
+           </if>
+           <if test="networkTypeName != '' and networkTypeName != null">
+               and upper(data_source) = upper(#{networkTypeName,jdbcType=VARCHAR})
+           </if>
+         group by citycode,operator_net
+    </select>
+
+    <select id="getDataClass" resultType="com.synway.dataoperations.pojo.historyDataMonitor.DataClass">
+        select tablename_ch as dataClass, sum(records_all) as dataCount
+          from (<include refid="eventTypes"></include>)
+         where dt >= #{minDt,jdbcType=VARCHAR}
+           and dt &lt; #{maxDt,jdbcType=VARCHAR}
+           <if test="searchName != '' and searchName != null">
+               and (upper(data_type) = upper(#{searchName,jdbcType=VARCHAR}) or upper(tablename_ch) = upper(#{searchName,jdbcType=VARCHAR}))
+           </if>
+           <if test="areaName != '' and areaName != null">
+               and upper(citycode) = upper(#{areaName,jdbcType=VARCHAR})
+           </if>
+           <if test="operatorName != '' and operatorName != null">
+               and upper(operator_net) = upper(#{operatorName,jdbcType=VARCHAR})
+           </if>
+           <if test="networkTypeName != '' and networkTypeName != null">
+               and upper(data_source) = upper(#{networkTypeName,jdbcType=VARCHAR})
+           </if>
+         group by tablename_ch
+    </select>
+    <select id="getEventClass" resultType="com.synway.dataoperations.pojo.historyDataMonitor.DataClass">
+        select valtext as eventClass, sum(records_all) as dataCount
+          from (<include refid="eventTypes"></include>)
+         where dt >= #{minDt,jdbcType=VARCHAR}
+           and dt &lt; #{maxDt,jdbcType=VARCHAR}
+           <if test="searchName != '' and searchName != null">
+               and (upper(data_type) = upper(#{searchName,jdbcType=VARCHAR}) or upper(tablename_ch) = upper(#{searchName,jdbcType=VARCHAR}))
+           </if>
+           <if test="areaName != '' and areaName != null">
+               and upper(citycode) = upper(#{areaName,jdbcType=VARCHAR})
+           </if>
+           <if test="operatorName != '' and operatorName != null">
+               and upper(operator_net) = upper(#{operatorName,jdbcType=VARCHAR})
+           </if>
+           <if test="networkTypeName != '' and networkTypeName != null">
+               and upper(data_source) = upper(#{networkTypeName,jdbcType=VARCHAR})
+           </if>
+         group by valtext
+    </select>
+    <select id="getAppClass" resultType="com.synway.dataoperations.pojo.historyDataMonitor.DataClass">
+        select valtext as appClass, sum(records_all) as dataCount
+          from (<include refid="appTypes"></include>)
+         where dt >= #{minDt,jdbcType=VARCHAR}
+           and dt &lt; #{maxDt,jdbcType=VARCHAR}
+           <if test="searchName != '' and searchName != null">
+               and (upper(data_type) = upper(#{searchName,jdbcType=VARCHAR}) or upper(tablename_ch) = upper(#{searchName,jdbcType=VARCHAR}))
+           </if>
+           <if test="areaName != '' and areaName != null">
+               and upper(citycode) = upper(#{areaName,jdbcType=VARCHAR})
+           </if>
+           <if test="operatorName != '' and operatorName != null">
+               and upper(operator_net) = upper(#{operatorName,jdbcType=VARCHAR})
+           </if>
+           <if test="networkTypeName != '' and networkTypeName != null">
+               and upper(data_source) = upper(#{networkTypeName,jdbcType=VARCHAR})
+           </if>
+         group by valtext
+    </select>
+
+    <select id="getHDMMsg" resultType="com.synway.dataoperations.pojo.AlarmMessage">
+        select distinct tablename as tableNameEn,
+                        tablename_ch as tableNameCh,
+                        tableid as tableId,
+                        '消息：' || tablename_ch || '的' || operator_net || data_source ||
+                        '数据，应用类型' || protocol || '未翻译。' as alarmcontent
+        from do_app_type
+        where protocol = valtext
+          and dt >= #{minDt,jdbcType=VARCHAR}
+          and dt &lt; #{maxDt,jdbcType=VARCHAR}
+        union all
+        select distinct tablename as tableNameEn,
+                        tablename_ch as tableNameCh,
+                        tableid as tableId,
+                        '消息：' || tablename_ch || '的' || operator_net || data_source ||
+                        '数据，事件类型' || calltype || '未翻译。' as alarmcontent
+        from do_event_type
+        where calltype = valtext
+          and dt >= #{minDt,jdbcType=VARCHAR}
+          and dt &lt; #{maxDt,jdbcType=VARCHAR}
+    </select>
+
+</mapper>

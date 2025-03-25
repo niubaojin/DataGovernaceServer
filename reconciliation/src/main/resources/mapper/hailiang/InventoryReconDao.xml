@@ -1,0 +1,1116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.reconciliation.dao.InventoryReconDao">
+
+	<select id="getOrganizationTreeForBill" parameterType="com.synway.reconciliation.pojo.ReconInfoRequest" resultType="com.synway.reconciliation.pojo.OrganizationInfo">
+		SELECT A.BZSJXJBM resourceId,
+		nvl(C.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+		nvl(C.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+		nvl(C.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+		nvl(C.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+		nvl(C.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH
+		FROM (SELECT
+		DISTINCT BZSJXJBM
+		FROM
+		DAC_ACCEPTOR_BILL
+		<where>
+			1 =1
+			<if test="startTime !=null and startTime !=''">
+				and SCSJ_RQSJ >= #{startTime}
+			</if>
+			<if test="endTime !=null and endTime !=''">
+				and SCSJ_RQSJ  <![CDATA[<= ]]> #{endTime}
+			</if>
+			<if test="SJZYMC != null and SJZYMC != ''">
+				<bind name="SJZYMCLike" value="'%' + SJZYMC + '%'"/>
+				and lower(SJZYMC) like lower(#{SJZYMCLike})
+			</if>
+			<if test="BZSJXJBM != null and BZSJXJBM != ''">
+				<bind name="BZSJXJBMLike" value="'%' + BZSJXJBM + '%'"/>
+				and lower(BZSJXJBM) like lower(#{BZSJXJBMLike})
+			</if>
+			<if test="SJJRF_DZDBH != null and SJJRF_DZDBH != ''">
+				<bind name="SJJRF_DZDBHLike" value="'%' + SJJRF_DZDBH + '%'"/>
+				and lower(SJJRF_DZDBH) like lower(#{SJJRF_DZDBHLike})
+			</if>
+			<if test="DZDZTDM != null">
+				and DZDZTDM = #{DZDZTDM}
+			</if>
+			<if test="DZFFDM > 0">
+				and DZFFDM = #{DZFFDM}
+			</if>
+			<if test="DZZDHJ > 0">
+				and DZZDHJ = #{DZZDHJ}
+			</if>
+		</where>) A
+		LEFT JOIN CLASSIFY_SOURCE_TARGET C ON A.BZSJXJBM = C.SJXJBM
+	</select>
+
+	<select id="getReconciliationAnalysisList" parameterType="com.synway.reconciliation.pojo.ReconAnalysisRequest" resultType="com.synway.reconciliation.pojo.ReconciliationAnalysis">
+		SELECT * FROM (
+		SELECT D.*, rownum rn FROM (SELECT
+		RESOURCE_ID resourceId,
+		RESOURCE_NAME resourceName,
+		LINK_TYPE linkType,
+		CHECK_TIME checkTime,
+		SUM_COUNT sumCount,
+		SUCCESS_COUNT successCount,
+		SUCCESS_PERCENT successPercent,
+		FAILD_COUNT failCount,
+		CREATE_TIME createTime
+		FROM DAC_RECONCILIATION_ANALYSIS
+		<where>
+			1=1
+			<if test="linkType > 0">
+				and LINK_TYPE = #{linkType}
+			</if>
+			<if test="startCheckTime != null and startCheckTime != ''">
+				and CHECK_TIME >= to_date(#{startCheckTime},'yyyy-mm-dd HH24:mi:ss')
+			</if>
+			<if test="endCheckTime != null and endCheckTime != ''">
+				and CHECK_TIME <![CDATA[<= ]]> to_date(#{endCheckTime},'yyyy-mm-dd HH24:mi:ss')
+			</if>
+			<if test="resourceName != null and resourceName != ''">
+				<bind name="resourceNameLike" value="'%' + resourceName + '%'"/>
+				and lower(RESOURCE_NAME) like lower(#{resourceNameLike})
+			</if>
+		</where>
+		<if test="sortColumn != null and sortColumn !=''">
+			order by
+			<choose>
+				<when test="sortColumn == 'sumCount'">
+					SUM_COUNT ${sortType}
+				</when>
+				<when test="sortColumn == 'successCount'">
+					SUCCESS_COUNT ${sortType}
+				</when>
+				<when test="sortColumn == 'failCount'">
+					FAILD_COUNT ${sortType}
+				</when>
+				<when test="sortColumn == 'successPercent'">
+					SUCCESS_PERCENT ${sortType}
+				</when>
+				<when test="sortColumn == 'checkTime'">
+					CHECK_TIME ${sortType}
+				</when>
+			</choose>
+		</if>
+		) D WHERE rownum  <![CDATA[<= ]]> #{pageSize}
+		) WHERE rn > #{pageNum}
+
+	</select>
+
+	<select id="countReconciliationAnalysis" parameterType="com.synway.reconciliation.pojo.ReconAnalysisRequest" resultType="int">
+		SELECT
+		count (1)
+		FROM DAC_RECONCILIATION_ANALYSIS
+		<where>
+			1=1
+			<if test="linkType > 0">
+				and LINK_TYPE = #{linkType}
+			</if>
+			<if test="startCheckTime != null and startCheckTime != ''">
+				and CHECK_TIME >= to_date(#{startCheckTime},'yyyy-mm-dd HH24:mi:ss')
+			</if>
+			<if test="endCheckTime != null and endCheckTime != ''">
+				and CHECK_TIME <![CDATA[<= ]]> to_date(#{endCheckTime},'yyyy-mm-dd HH24:mi:ss')
+			</if>
+			<if test="resourceName != null and resourceName != ''">
+				<bind name="resourceNameLike" value="'%' + resourceName + '%'"/>
+				and lower(RESOURCE_NAME) like lower(#{resourceNameLike})
+			</if>
+		</where>
+	</select>
+
+	<select id="getReconciliationStatisticsList" parameterType="com.synway.reconciliation.pojo.LinkStatisticRequest" resultType="com.synway.reconciliation.pojo.BillLinkStatistics">
+		SELECT
+			RESOURCE_ID resourceId,
+			RESOURCE_NAME resourceName,
+			ACCESS_ACCEPTOR accAccessCount,
+			ACCESS_PROVIDER proAccessCount,
+			STANDARD_ACCEPTOR accStandardCount,
+			STANDARD_PROVIDER proStandardCount,
+			STORAGE_ACCEPTOR accStorageCount,
+			STORAGE_PROVIDER proStorageCount,
+			ACCESS_SAME_PERIOD accessSamePeriod,
+			STANDARD_CHAIN_RATIO standardChainRatio,
+			STORAGE_CHAIN_RATIO storageChainRatio,
+			DATA_TIME dataTime,
+			STATISTIC_TIME statisticTime,
+			ALARM_STATE alarmState,
+			IS_PUSH isPush,
+			ACCESS_ACCEPTOR_PRE accAccessCountPre,
+			ACCESS_PROVIDER_PRE proAccessCountPre
+		FROM
+			DAC_BILL_LINK_STATISTIC
+		<where>
+			1 = 1
+			<if test="dataTime !=null and dataTime !=''">
+				and DATA_TIME = to_date(#{dataTime},'yyyy-mm-dd hh24:mi:ss')
+			</if>
+			<if test="dataName !=null and dataName !=''">
+				and RESOURCE_NAME like concat(concat('%',#{dataName}),'%')
+			</if>
+			<if test="alarmState !=null and alarmState !=''">
+				and ALARM_STATE = #{alarmState}
+			</if>
+		</where>
+		<if test="sortColumn != null and sortColumn !=''">
+			order by
+			<choose>
+				<when test="sortColumn == 'dataName'">
+					RESOURCE_NAME ${sortType}
+				</when>
+				<when test="sortColumn == 'accAccessCount'">
+					ACCESS_ACCEPTOR ${sortType}
+				</when>
+				<when test="sortColumn == 'proAccessCount'">
+					ACCESS_PROVIDER ${sortType}
+				</when>
+				<when test="sortColumn == 'accStandardCount'">
+					STANDARD_ACCEPTOR ${sortType}
+				</when>
+				<when test="sortColumn == 'proStandardCount'">
+					STANDARD_PROVIDER ${sortType}
+				</when>
+				<when test="sortColumn == 'accStorageCount'">
+					STORAGE_ACCEPTOR ${sortType}
+				</when>
+				<when test="sortColumn == 'proStandardCount'">
+					STORAGE_PROVIDER ${sortType}
+				</when>
+				<when test="sortColumn == 'accessSamePeriod'">
+					ACCESS_SAME_PERIOD ${sortType}
+				</when>
+				<when test="sortColumn == 'standardChainRatio'">
+					STANDARD_CHAIN_RATIO ${sortType}
+				</when>
+				<when test="sortColumn == 'storageChainRatio'">
+					STORAGE_CHAIN_RATIO ${sortType}
+				</when>
+			</choose>
+		</if>
+	</select>
+
+	<select id="getRecentDailyStatisticsList" resultType="com.synway.reconciliation.pojo.BillLinkStatistics">
+		SELECT
+		days.dataTime dataTime,
+		S.ACCESS_PROVIDER proAccessCount,
+		S.STANDARD_PROVIDER proStandardCount,
+		S.STORAGE_PROVIDER proStorageCount
+		FROM
+		( SELECT to_char( to_date( #{dataTime}, 'yyyy-MM-dd' ) - LEVEL + 1, 'yyyy-MM-dd' ) dataTime
+		FROM dual CONNECT BY LEVEL <![CDATA[<=]]> 8 ) days
+		LEFT JOIN
+		( SELECT to_char( DATA_TIME, 'yyyy-MM-dd' ) dataTime,
+		ACCESS_PROVIDER,
+		STANDARD_PROVIDER,
+		STORAGE_PROVIDER
+		FROM DAC_BILL_LINK_STATISTIC
+		WHERE RESOURCE_ID = #{resourceId} ) S
+		ON days.dataTime = S.dataTime
+	</select>
+
+	<select id="getReconciliationStatisticsDataTimeList" resultType="java.lang.String">
+		select distinct DATA_TIME from DAC_BILL_LINK_STATISTIC
+	</select>
+
+	<select id="getReconciliationList" parameterType="com.synway.reconciliation.pojo.ReconInfoRequest" resultType="com.synway.reconciliation.pojo.ReconInfoResponse">
+		SELECT * FROM (
+		SELECT D.*, rownum rn from (
+		SELECT
+		SJZYMC,
+		BZSJXJBM,
+		SJJRF_DZDBH,
+		SJTS,
+		SCSJ_RQSJ,
+		DZDZTDM,
+		DZSJ_RQSJ,
+		XXRWBH
+		FROM
+		DAC_ACCEPTOR_BILL
+		<where>
+			1 =1
+			<if test="startTime !=null and startTime !=''">
+				and SCSJ_RQSJ >= #{startTime}
+			</if>
+			<if test="endTime !=null and endTime !=''">
+				and SCSJ_RQSJ  <![CDATA[<= ]]> #{endTime}
+			</if>
+			<if test="SJZYMC != null and SJZYMC != ''">
+				<bind name="SJZYMCLike" value="'%' + SJZYMC + '%'"/>
+				and lower(SJZYMC) like lower(#{SJZYMCLike})
+			</if>
+			<if test="BZSJXJBM != null and BZSJXJBM != ''">
+				<bind name="BZSJXJBMLike" value="'%' + BZSJXJBM + '%'"/>
+				and lower(BZSJXJBM) like lower(#{BZSJXJBMLike})
+			</if>
+			<if test="SJJRF_DZDBH != null and SJJRF_DZDBH != ''">
+				<bind name="SJJRF_DZDBHLike" value="'%' + SJJRF_DZDBH + '%'"/>
+				and lower(SJJRF_DZDBH) like lower(#{SJJRF_DZDBHLike})
+			</if>
+			<if test="DZDZTDM != null">
+				and DZDZTDM = #{DZDZTDM}
+			</if>
+			<if test="DZFFDM > 0">
+				and DZFFDM = #{DZFFDM}
+			</if>
+			<if test="DZZDHJ > 0">
+				and DZZDHJ = #{DZZDHJ}
+			</if>
+			<if test="values != null">
+				and BZSJXJBM in
+				<foreach collection="values" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+				</foreach>
+			</if>
+		</where>
+		) D WHERE rownum  <![CDATA[<= ]]> #{pageSize}
+		) WHERE rn > #{pageNum}
+
+	</select>
+
+	<select id="countReconciliationList" parameterType="com.synway.reconciliation.pojo.ReconInfoRequest" resultType="int">
+		SELECT
+		count(1)
+		FROM
+		DAC_ACCEPTOR_BILL
+		<where>
+			1 =1
+			<if test="startTime !=null and startTime !=''">
+				and SCSJ_RQSJ >= #{startTime}
+			</if>
+			<if test="endTime !=null and endTime !=''">
+				and SCSJ_RQSJ  <![CDATA[<= ]]> #{endTime}
+			</if>
+			<if test="SJZYMC != null and SJZYMC != ''">
+				<bind name="SJZYMCLike" value="'%' + SJZYMC + '%'"/>
+				and lower(SJZYMC) like lower(#{SJZYMCLike})
+			</if>
+			<if test="BZSJXJBM != null and BZSJXJBM != ''">
+				<bind name="BZSJXJBMLike" value="'%' + BZSJXJBM + '%'"/>
+				and lower(BZSJXJBM) like lower(#{BZSJXJBMLike})
+			</if>
+			<if test="SJJRF_DZDBH != null and SJJRF_DZDBH != ''">
+				<bind name="SJJRF_DZDBHLike" value="'%' + SJJRF_DZDBH + '%'"/>
+				and lower(SJJRF_DZDBH) like lower(#{SJJRF_DZDBHLike})
+			</if>
+			<if test="DZDZTDM != null">
+				and DZDZTDM = #{DZDZTDM}
+			</if>
+			<if test="DZFFDM > 0">
+				and DZFFDM = #{DZFFDM}
+			</if>
+			<if test="DZZDHJ > 0">
+				and DZZDHJ = #{DZZDHJ}
+			</if>
+			<if test="values != null">
+				and BZSJXJBM in
+				<foreach collection="values" item="item" index="index" separator="," open="(" close=")">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<select id="getDataPacketReconList" parameterType="com.synway.reconciliation.pojo.ReconParam" resultType="com.synway.reconciliation.pojo.ReconInfoResponse">
+		SELECT
+			SJZYMC,
+			BZSJXJBM,
+			SJJRF_DZDBH,
+			SJTS,
+			SCSJ_RQSJ,
+			DZDZTDM,
+			DZSJ_RQSJ,
+			XXRWBH,
+			SJ_DZWJMC
+		FROM
+			DAC_ACCEPTOR_BILL
+		WHERE
+			BZSJXJBM = #{BZSJXJBM} AND XXRWBH = #{XXRWBH} AND SJ_DZWJMC IS NOT NULL
+	</select>
+
+	<select id="getAcceptorByNo" resultType="com.synway.reconciliation.pojo.DacAcceptorBill">
+		select * from DAC_ACCEPTOR_BILL where SJJRF_DZDBH = #{SJJRF_DZDBH} and SJ_DZWJMC is null
+	</select>
+
+	<select id="getProviderByNo" resultType="com.synway.reconciliation.pojo.DacProviderBill">
+		select * from DAC_PROVIDER_BILL where SJTGF_DZDBH = #{SJTGF_DZDBH} and SJ_DZWJMC is null
+	</select>
+
+	<update id="summarizeAccessAcceptor">
+		MERGE INTO DAC_ACCEPTOR_BILL P USING (
+		SELECT
+			MAX( SJJRF_DZDBH ) SJJRF_DZDBH,
+			MAX( SJJSWZ_JYQK ) SJJSWZ_JYQK,
+			MAX( SJCCXSDM ) SJCCXSDM,
+			MAX( SJZYBSF ) SJZYBSF,
+			MAX( SJZYMC ) SJZYMC,
+			MAX( BZSJXJBM ) BZSJXJBM,
+			SUM( SJTS ) SJTS,
+			SUM (SJ_DZWJDX) SJ_DZWJDX,
+			MIN( SJQSBH ) SJQSBH,
+			MAX( SJJWBH ) SJJWBH,
+			MAX( SJJYZ ) SJJYZ,
+			MAX( SJJYSFMC ) SJJYSFMC,
+			MAX( DZFFDM ) DZFFDM,
+			MAX( DZDLXDM ) DZDLXDM,
+			MAX( DZDZTDM ) DZDZTDM,
+			MIN( SCSB_DZDBH ) SCSB_DZDBH,
+			MAX( SJJRFGLY_XM ) SJJRFGLY_XM,
+			MAX( SJJRFGLY_LXDH ) SJJRFGLY_LXDH,
+			MAX( XXRWBH ) XXRWBH
+		FROM
+			DAC_ACCESS_ACCEPTOR_BILL
+		WHERE
+			SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM,
+			XXRWBH
+		) A ON ( P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '1')
+		WHEN matched THEN
+			UPDATE
+				SET P.SJTS = P.SJTS + A.SJTS
+			WHERE
+				P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '1'
+			WHEN NOT matched THEN
+			INSERT (
+				SJJRF_DZDBH,
+				SJJSWZ_JYQK,
+				SJCCXSDM,
+				SJZYBSF,
+				SJZYMC,
+				BZSJXJBM,
+				SJTS,
+				SJ_DZWJDX,
+				SJQSBH,
+				SJJWBH,
+				SJJYZ,
+				SJJYSFMC,
+				SCSB_DZDBH,
+				SCSJ_RQSJ,
+				SJJRFGLY_XM,
+				SJJRFGLY_LXDH,
+				XXRWBH,
+				DZZDHJ,
+				DZDZTDM,
+				DZFFDM
+			)
+			VALUES
+			(
+				A.SJJRF_DZDBH,
+				A.SJJSWZ_JYQK,
+				A.SJCCXSDM,
+				A.SJZYBSF,
+				A.SJZYMC,
+				A.BZSJXJBM,
+				A.SJTS,
+				A.SJ_DZWJDX,
+				A.SJQSBH,
+				A.SJJWBH,
+				A.SJJYZ,
+				A.SJJYSFMC,
+				A.SCSB_DZDBH,
+				CEIL( (SYSDATE - TO_DATE( '1970-01-01 08:00:00', 'yyyy-mm-dd HH24:mi:ss' )) * 24 * 60 * 60 ) ,
+				A.SJJRFGLY_XM,
+				A.SJJRFGLY_LXDH,
+				A.XXRWBH,
+				'1',
+				'0',
+				3
+			)
+	</update>
+
+	<update id="summarizeAccessProvider">
+		MERGE INTO DAC_PROVIDER_BILL P USING (
+		SELECT
+			MAX( SJTGF_DZDBH ) SJTGF_DZDBH,
+			MAX( SJJSWZ_JYQK ) SJJSWZ_JYQK,
+			MAX( SJCCXSDM ) SJCCXSDM,
+			MAX( SJ_DZWJMC ) SJ_DZWJMC,
+			MAX( SJZYBSF ) SJZYBSF,
+			MAX( SJZYMC ) SJZYMC,
+			MAX( BZSJXJBM ) BZSJXJBM,
+			SUM( SJTS ) SJTS,
+			SUM( SJ_DZWJDX ) SJ_DZWJDX,
+			MIN( SJQSBH ) SJQSBH,
+			MAX( SJJWBH ) SJJWBH,
+			MAX( SJJYZ ) SJJYZ,
+			MIN( SJJYSFMC ) SJJYSFMC,
+			MIN( SCSB_DZDBH ) SCSB_DZDBH,
+			MAX( SJTGFGLY_XM ) SJTGFGLY_XM,
+			MAX( SJTGFGLY_LXDH ) SJTGFGLY_LXDH,
+			MAX( XXRWBH ) XXRWBH
+		FROM
+			DAC_ACCESS_PROVIDER_BILL
+		WHERE
+			SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM,
+			XXRWBH
+		) A ON ( P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '1')
+		WHEN matched THEN
+			UPDATE
+				SET P.SJTS = P.SJTS + A.SJTS
+			WHERE
+				P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '1'
+		WHEN NOT matched THEN
+		INSERT (
+			SJTGF_DZDBH,
+			SJJSWZ_JYQK,
+			SJCCXSDM,
+			SJZYBSF,
+			SJZYMC,
+			BZSJXJBM,
+			SJTS,
+			SJ_DZWJDX,
+			SJQSBH,
+			SJJWBH,
+			SJJYZ,
+			SJJYSFMC,
+			SCSB_DZDBH,
+			SCSJ_RQSJ,
+			SJTGFGLY_XM,
+			SJTGFGLY_LXDH,
+			XXRWBH,
+			DZZDHJ
+		)
+		VALUES
+		(
+			A.SJTGF_DZDBH,
+			A.SJJSWZ_JYQK,
+			A.SJCCXSDM,
+			A.SJZYBSF,
+			A.SJZYMC,
+			A.BZSJXJBM,
+			A.SJTS,
+			A.SJ_DZWJDX,
+			A.SJQSBH,
+			A.SJJWBH,
+			A.SJJYZ,
+			A.SJJYSFMC,
+			A.SCSB_DZDBH,
+			CEIL( (SYSDATE - TO_DATE( '1970-01-01 08:00:00', 'yyyy-mm-dd HH24:mi:ss' )) * 24 * 60 * 60 ) ,
+			A.SJTGFGLY_XM,
+			A.SJTGFGLY_LXDH,
+			A.XXRWBH,
+			'1'
+		)
+	</update>
+
+	<update id="summarizeStandardAcceptor">
+		MERGE INTO DAC_ACCEPTOR_BILL P USING (
+		SELECT
+			MAX( SJJRF_DZDBH ) SJJRF_DZDBH,
+			MAX( SJJSWZ_JYQK ) SJJSWZ_JYQK,
+			MAX( SJCCXSDM ) SJCCXSDM,
+			MAX( SJZYBSF ) SJZYBSF,
+			MAX( SJZYMC ) SJZYMC,
+			MAX( BZSJXJBM ) BZSJXJBM,
+			SUM( SJTS ) SJTS,
+			SUM (SJ_DZWJDX) SJ_DZWJDX,
+			MIN( SJQSBH ) SJQSBH,
+			MAX( SJJWBH ) SJJWBH,
+			MAX( SJJYZ ) SJJYZ,
+			MAX( SJJYSFMC ) SJJYSFMC,
+			MAX( DZFFDM ) DZFFDM,
+			MAX( DZDLXDM ) DZDLXDM,
+			MAX( DZDZTDM ) DZDZTDM,
+			MIN( SCSB_DZDBH ) SCSB_DZDBH,
+			MAX( SJJRFGLY_XM ) SJJRFGLY_XM,
+			MAX( SJJRFGLY_LXDH ) SJJRFGLY_LXDH,
+			MAX( XXRWBH ) XXRWBH
+		FROM
+			DAC_STANDARD_ACCEPTOR_BILL
+		WHERE
+			SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM,
+			XXRWBH
+		) A ON ( P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '2')
+		WHEN matched THEN
+			UPDATE
+				SET P.SJTS = P.SJTS + A.SJTS
+			WHERE
+				P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '2'
+		WHEN NOT matched THEN
+			INSERT (
+				SJJRF_DZDBH,
+				SJJSWZ_JYQK,
+				SJCCXSDM,
+				SJZYBSF,
+				SJZYMC,
+				BZSJXJBM,
+				SJTS,
+				SJ_DZWJDX,
+				SJQSBH,
+				SJJWBH,
+				SJJYZ,
+				SJJYSFMC,
+				SCSB_DZDBH,
+				SCSJ_RQSJ,
+				SJJRFGLY_XM,
+				SJJRFGLY_LXDH,
+				XXRWBH,
+				DZZDHJ,
+				DZDZTDM,
+				DZFFDM
+			)
+			VALUES
+			(
+				A.SJJRF_DZDBH,
+				A.SJJSWZ_JYQK,
+				A.SJCCXSDM,
+				A.SJZYBSF,
+				A.SJZYMC,
+				A.BZSJXJBM,
+				A.SJTS,
+				A.SJ_DZWJDX,
+				A.SJQSBH,
+				A.SJJWBH,
+				A.SJJYZ,
+				A.SJJYSFMC,
+				A.SCSB_DZDBH,
+				CEIL( (SYSDATE - TO_DATE( '1970-01-01 08:00:00', 'yyyy-mm-dd HH24:mi:ss' )) * 24 * 60 * 60 ) ,
+				A.SJJRFGLY_XM,
+				A.SJJRFGLY_LXDH,
+				A.XXRWBH,
+				'2',
+				0,
+				3
+			)
+	</update>
+
+	<update id="summarizeStandardProvider">
+		MERGE INTO DAC_PROVIDER_BILL P USING (
+		SELECT
+			MAX( SJTGF_DZDBH ) SJTGF_DZDBH,
+			MAX( SJJSWZ_JYQK ) SJJSWZ_JYQK,
+			MAX( SJCCXSDM ) SJCCXSDM,
+			MAX( SJ_DZWJMC ) SJ_DZWJMC,
+			MAX( SJZYBSF ) SJZYBSF,
+			MAX( SJZYMC ) SJZYMC,
+			MAX( BZSJXJBM ) BZSJXJBM,
+			SUM( SJTS ) SJTS,
+			SUM( SJ_DZWJDX ) SJ_DZWJDX,
+			MIN( SJQSBH ) SJQSBH,
+			MAX( SJJWBH ) SJJWBH,
+			MAX( SJJYZ ) SJJYZ,
+			MIN( SJJYSFMC ) SJJYSFMC,
+			MIN( SCSB_DZDBH ) SCSB_DZDBH,
+			MAX( SJTGFGLY_XM ) SJTGFGLY_XM,
+			MAX( SJTGFGLY_LXDH ) SJTGFGLY_LXDH,
+			MAX( XXRWBH ) XXRWBH
+		FROM
+			DAC_STANDARD_PROVIDER_BILL
+		WHERE
+			SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM,
+			XXRWBH
+		) A ON ( P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '2')
+		WHEN matched THEN
+			UPDATE
+				SET P.SJTS = P.SJTS + A.SJTS
+			WHERE
+				P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '2'
+		WHEN NOT matched THEN
+			INSERT (
+				SJTGF_DZDBH,
+				SJJSWZ_JYQK,
+				SJCCXSDM,
+				SJZYBSF,
+				SJZYMC,
+				BZSJXJBM,
+				SJTS,
+				SJ_DZWJDX,
+				SJQSBH,
+				SJJWBH,
+				SJJYZ,
+				SJJYSFMC,
+				SCSB_DZDBH,
+				SCSJ_RQSJ,
+				SJTGFGLY_XM,
+				SJTGFGLY_LXDH,
+				XXRWBH,
+				DZZDHJ
+			)
+			VALUES
+			(
+				A.SJTGF_DZDBH,
+				A.SJJSWZ_JYQK,
+				A.SJCCXSDM,
+				A.SJZYBSF,
+				A.SJZYMC,
+				A.BZSJXJBM,
+				A.SJTS,
+				A.SJ_DZWJDX,
+				A.SJQSBH,
+				A.SJJWBH,
+				A.SJJYZ,
+				A.SJJYSFMC,
+				A.SCSB_DZDBH,
+				CEIL( (SYSDATE - TO_DATE( '1970-01-01 08:00:00', 'yyyy-mm-dd HH24:mi:ss' )) * 24 * 60 * 60 ) ,
+				A.SJTGFGLY_XM,
+				A.SJTGFGLY_LXDH,
+				A.XXRWBH,
+				'2'
+			)
+	</update>
+
+	<update id="summarizeStorageAcceptor">
+		MERGE INTO DAC_ACCEPTOR_BILL P USING (
+		SELECT
+			MAX( SJJRF_DZDBH ) SJJRF_DZDBH,
+			MAX( SJJSWZ_JYQK ) SJJSWZ_JYQK,
+			MAX( SJCCXSDM ) SJCCXSDM,
+			MAX( SJZYBSF ) SJZYBSF,
+			MAX( SJZYMC ) SJZYMC,
+			MAX( BZSJXJBM ) BZSJXJBM,
+			SUM( SJTS ) SJTS,
+			SUM (SJ_DZWJDX) SJ_DZWJDX,
+			MIN( SJQSBH ) SJQSBH,
+			MAX( SJJWBH ) SJJWBH,
+			MAX( SJJYZ ) SJJYZ,
+			MAX( SJJYSFMC ) SJJYSFMC,
+			MAX( DZFFDM ) DZFFDM,
+			MAX( DZDLXDM ) DZDLXDM,
+			MAX( DZDZTDM ) DZDZTDM,
+			MIN( SCSB_DZDBH ) SCSB_DZDBH,
+			MAX( SJJRFGLY_XM ) SJJRFGLY_XM,
+			MAX( SJJRFGLY_LXDH ) SJJRFGLY_LXDH,
+			MAX( XXRWBH ) XXRWBH
+		FROM
+			DAC_STORAGE_ACCEPTOR_BILL
+		WHERE
+			SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM,
+			XXRWBH
+		) A ON ( P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '3')
+		WHEN matched THEN
+			UPDATE
+				SET P.SJTS = P.SJTS + A.SJTS
+			WHERE
+				P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '3'
+		WHEN NOT matched THEN
+		INSERT (
+			SJJRF_DZDBH,
+			SJJSWZ_JYQK,
+			SJCCXSDM,
+			SJZYBSF,
+			SJZYMC,
+			BZSJXJBM,
+			SJTS,
+			SJ_DZWJDX,
+			SJQSBH,
+			SJJWBH,
+			SJJYZ,
+			SJJYSFMC,
+			SCSB_DZDBH,
+			SCSJ_RQSJ,
+			SJJRFGLY_XM,
+			SJJRFGLY_LXDH,
+			XXRWBH,
+			DZZDHJ,
+			DZDZTDM,
+			DZFFDM
+		)
+		VALUES
+		(
+			A.SJJRF_DZDBH,
+			A.SJJSWZ_JYQK,
+			A.SJCCXSDM,
+			A.SJZYBSF,
+			A.SJZYMC,
+			A.BZSJXJBM,
+			A.SJTS,
+			A.SJ_DZWJDX,
+			A.SJQSBH,
+			A.SJJWBH,
+			A.SJJYZ,
+			A.SJJYSFMC,
+			A.SCSB_DZDBH,
+			CEIL( (SYSDATE - TO_DATE( '1970-01-01 08:00:00', 'yyyy-mm-dd HH24:mi:ss' )) * 24 * 60 * 60 ) ,
+			A.SJJRFGLY_XM,
+			A.SJJRFGLY_LXDH,
+			A.XXRWBH,
+			'3',
+			0,
+			3
+		)
+	</update>
+
+	<update id="summarizeStorageProvider">
+		MERGE INTO DAC_PROVIDER_BILL P USING (
+		SELECT
+			MAX( SJTGF_DZDBH ) SJTGF_DZDBH,
+			MAX( SJJSWZ_JYQK ) SJJSWZ_JYQK,
+			MAX( SJCCXSDM ) SJCCXSDM,
+			MAX( SJ_DZWJMC ) SJ_DZWJMC,
+			MAX( SJZYBSF ) SJZYBSF,
+			MAX( SJZYMC ) SJZYMC,
+			MAX( BZSJXJBM ) BZSJXJBM,
+			SUM( SJTS ) SJTS,
+			SUM( SJ_DZWJDX ) SJ_DZWJDX,
+			MIN( SJQSBH ) SJQSBH,
+			MAX( SJJWBH ) SJJWBH,
+			MAX( SJJYZ ) SJJYZ,
+			MIN( SJJYSFMC ) SJJYSFMC,
+			MIN( SCSB_DZDBH ) SCSB_DZDBH,
+			MAX( SJTGFGLY_XM ) SJTGFGLY_XM,
+			MAX( SJTGFGLY_LXDH ) SJTGFGLY_LXDH,
+			MAX( XXRWBH ) XXRWBH
+		FROM
+			DAC_STORAGE_PROVIDER_BILL
+		WHERE
+			SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM,
+			XXRWBH
+		) A ON ( P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '3')
+		WHEN matched THEN
+			UPDATE
+				SET P.SJTS = P.SJTS + A.SJTS
+			WHERE
+				P.BZSJXJBM = A.BZSJXJBM AND P.XXRWBH = A.XXRWBH AND DZZDHJ = '3'
+		WHEN NOT matched THEN
+			INSERT (
+				SJTGF_DZDBH,
+				SJJSWZ_JYQK,
+				SJCCXSDM,
+				SJZYBSF,
+				SJZYMC,
+				BZSJXJBM,
+				SJTS,
+				SJ_DZWJDX,
+				SJQSBH,
+				SJJWBH,
+				SJJYZ,
+				SJJYSFMC,
+				SCSB_DZDBH,
+				SCSJ_RQSJ,
+				SJTGFGLY_XM,
+				SJTGFGLY_LXDH,
+				XXRWBH,
+				DZZDHJ
+			)
+			VALUES
+			(
+				A.SJTGF_DZDBH,
+				A.SJJSWZ_JYQK,
+				A.SJCCXSDM,
+				A.SJZYBSF,
+				A.SJZYMC,
+				A.BZSJXJBM,
+				A.SJTS,
+				A.SJ_DZWJDX,
+				A.SJQSBH,
+				A.SJJWBH,
+				A.SJJYZ,
+				A.SJJYSFMC,
+				A.SCSB_DZDBH,
+				CEIL( (SYSDATE - TO_DATE( '1970-01-01 08:00:00', 'yyyy-mm-dd HH24:mi:ss' )) * 24 * 60 * 60 ) ,
+				A.SJTGFGLY_XM,
+				A.SJTGFGLY_LXDH,
+				A.XXRWBH,
+				'3'
+				)
+	</update>
+
+	<select id="getReconInfo" parameterType="com.synway.reconciliation.pojo.ReconParam" resultType="com.synway.reconciliation.pojo.ReconInfoResult">
+		SELECT
+			A.SJJRF_DZDBH acceptorBillNo,
+			A.SJTS accDataCount,
+			A.BZSJXJBM resourceId,
+			A.XXRWBH inceptDataTime,
+			A.DZZDHJ accBillLink,
+			P.SJTGF_DZDBH providerBillNo,
+			P.SJTS proDataCount
+		FROM
+			(
+				( SELECT SJJRF_DZDBH, SJTS, BZSJXJBM, XXRWBH, DZZDHJ FROM DAC_ACCEPTOR_BILL
+				<where>
+					<if test="startDate > 0">
+						SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+						AND DZZDHJ = #{acceptorLink} AND DZDZTDM != 1 AND SJ_DZWJMC IS NULL
+					</if>
+					<if test="BZSJXJBM != null and BZSJXJBM != ''">
+						BZSJXJBM = #{BZSJXJBM} AND XXRWBH = #{XXRWBH} AND DZZDHJ = #{DZZDHJ} AND SJ_DZWJMC IS NULL
+					</if>
+				</where>) A
+				LEFT JOIN
+				( SELECT SJTGF_DZDBH, SJTS, BZSJXJBM, XXRWBH FROM DAC_PROVIDER_BILL
+				<where>
+					<if test="startDate > 0 ">
+						SCSJ_RQSJ >= #{startDate} and SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+						AND DZZDHJ = #{providerLink} AND SJ_DZWJMC IS NULL
+					</if>
+					<if test="BZSJXJBM != null and BZSJXJBM != ''">
+						BZSJXJBM = #{BZSJXJBM} AND XXRWBH = #{XXRWBH} AND DZZDHJ = #{DZZDHJ} AND SJ_DZWJMC IS NULL
+					</if>
+				</where> ) P
+				ON A.BZSJXJBM = P.BZSJXJBM AND A.XXRWBH = P.XXRWBH
+			)
+	</select>
+
+	<select id="reconStandardToStorage" parameterType="com.synway.reconciliation.pojo.ReconParam" resultType="com.synway.reconciliation.pojo.ReconInfo">
+		SELECT
+		*
+		FROM
+		(
+		(
+		SELECT
+		MAX( SJJRF_DZDBH ) acceptorBillNo,
+		MAX( BZSJXJBM ) accResourceId,
+		SUM( SJTS ) accDataCount,
+		SUM( SJ_DZWJDX ) accDataSize,
+		MAX( SJJYZ ) accDataFingerprint,
+		MAX( SJJYSFMC ) accFingerprintType,
+		MIN( SJQSBH ) accStartNo,
+		MAX( SJJWBH ) accEndNo,
+		MAX( SJJSWZ_JYQK ) accSourceLocation,
+		MAX( DZFFDM ) accCheckMethod,
+		MAX( SCSB_DZDBH ) accLastFailBill,
+		MIN( SCSJ_RQSJ ) accDataArriveTime,
+		MAX( SJZYMC ) accDataSourceName,
+		MAX( SJJRFGLY_XM ) accDataAdministrator,
+		MAX( SJJRFGLY_LXDH ) accAdministratorTel,
+		MAX( SJCCXSDM ) accDataSourceType,
+		MAX( XXRWBH ) accInceptDataTime,
+		SJ_DZWJMC accInceptDataId
+		FROM
+		DAC_STORAGE_ACCEPTOR_BILL
+		WHERE BZSJXJBM = #{BZSJXJBM} and XXRWBH = #{XXRWBH}
+		GROUP BY
+		SJ_DZWJMC,
+		XXRWBH
+		) A
+		LEFT JOIN (
+		SELECT
+		MAX( SJTGF_DZDBH ) providerBillNo,
+		MAX( BZSJXJBM ) proResourceId,
+		SUM( SJTS ) proDataCount,
+		SUM( SJ_DZWJDX ) proDataSize,
+		MAX( SJJYZ ) proDataFingerprint,
+		MAX( SJJYSFMC ) proFingerPrintType,
+		MIN( SJQSBH ) proStartNo,
+		MAX( SJJWBH ) proEndNo,
+		MAX( SJJSWZ_JYQK ) proSourceLocation,
+		MIN( SCSB_DZDBH ) proLastFailBill,
+		MIN( SCSJ_RQSJ ) proDataSendTime,
+		MAX( SJZYMC ) proDataSourceName,
+		MAX( SJTGFGLY_XM ) proDataAdministrator,
+		MAX( SJTGFGLY_LXDH ) proAdministratorTel,
+		MAX( SJCCXSDM ) proDataSourceType,
+		MAX( XXRWBH ) proInceptDataTime,
+		SJ_DZWJMC proInceptDataId
+		FROM
+		DAC_STANDARD_PROVIDER_BILL
+		WHERE BZSJXJBM = #{BZSJXJBM} and XXRWBH = #{XXRWBH}
+		GROUP BY
+		SJ_DZWJMC,
+		XXRWBH
+		) P ON P.proInceptDataTime = A.accInceptDataTime AND P.proInceptDataId = A.accInceptDataId
+		)
+	</select>
+
+	<select id="reconAccessToStandard" parameterType="com.synway.reconciliation.pojo.ReconParam" resultType="com.synway.reconciliation.pojo.ReconInfo">
+		SELECT
+		*
+		FROM
+		(
+		(
+		SELECT
+		MAX( SJJRF_DZDBH ) acceptorBillNo,
+		MAX( BZSJXJBM ) accResourceId,
+		SUM( SJTS ) accDataCount,
+		SUM( SJ_DZWJDX ) accDataSize,
+		MAX( SJJYZ ) accDataFingerprint,
+		MAX( SJJYSFMC ) accFingerprintType,
+		MIN( SJQSBH ) accStartNo,
+		MAX( SJJWBH ) accEndNo,
+		MAX( SJJSWZ_JYQK ) accSourceLocation,
+		MAX( DZFFDM ) accCheckMethod,
+		MIN( SCSB_DZDBH ) accLastFailBill,
+		MIN( SCSJ_RQSJ ) accDataArriveTime,
+		MAX( SJZYMC ) accDataSourceName,
+		MAX( SJJRFGLY_XM ) accAdministrator,
+		MAX( SJJRFGLY_LXDH ) accAdministratorTel,
+		MAX( SJCCXSDM ) accDataSourceType,
+		MAX( XXRWBH ) accInceptDataTime,
+		SJ_DZWJMC accInceptDataId
+		FROM
+		DAC_STANDARD_ACCEPTOR_BILL
+		WHERE BZSJXJBM = #{BZSJXJBM} and XXRWBH = #{XXRWBH}
+		GROUP BY
+		SJ_DZWJMC,
+		XXRWBH
+		) A
+		LEFT JOIN (
+		SELECT
+		MAX( SJTGF_DZDBH ) providerBillNo,
+		MAX( BZSJXJBM ) proResourceId,
+		SUM( SJTS ) proDataCount,
+		SUM( SJ_DZWJDX ) proDataSize,
+		MAX( SJJYZ ) proDataFingerprint,
+		MAX( SJJYSFMC ) proFingerprintType,
+		MIN( SJQSBH ) proStartNo,
+		MAX( SJJWBH ) proEndNo,
+		MAX( SJJSWZ_JYQK ) proSourceLocation,
+		MIN( SCSB_DZDBH ) proLastFailBill,
+		MIN( SCSJ_RQSJ ) proDataSendTime,
+		MAX( SJZYMC ) proDataSourceName,
+		MAX( DATA_ADMINISTRATOR ) proAdministrator,
+		MIN( SJTGFGLY_XM ) proAdministratorTel,
+		MAX( SJTGFGLY_LXDH ) proDataSourceType,
+		MAX( XXRWBH ) proInceptDataTime,
+		SJ_DZWJDX proInceptDataId
+		FROM
+		DAC_ACCESS_PROVIDER_BILL
+		WHERE BZSJXJBM = #{BZSJXJBM} and XXRWBH = #{XXRWBH}
+		GROUP BY
+		SJ_DZWJMC,
+		XXRWBH
+		) P ON P.proInceptDataTime = A.accInceptDataTime AND P.proInceptDataId = A.accInceptDataId
+		)
+	</select>
+
+	<select id="statisticsAccessDataBill" resultType="com.synway.reconciliation.pojo.BillLinkStatistics">
+		SELECT A.*, P.proAccessCount FROM (
+		(SELECT
+			BZSJXJBM resourceId,
+			MAX(SJZYMC) resourceName,
+			MIN(DZYQSJFW_KSSJ) dataTime,
+			SUM( CASE WHEN DZZDHJ = 1 THEN SJTS ELSE 0 END ) accAccessCount,
+			SUM( CASE WHEN DZZDHJ = 2 THEN SJTS ELSE 0 END ) accStandardCount
+		FROM
+			DAC_ACCEPTOR_INVENTORY_BILL
+		WHERE
+			DZYQSJFW_KSSJ = #{dateTime}
+		GROUP BY
+			BZSJXJBM) A
+		LEFT JOIN
+		(SELECT
+			BZSJXJBM,
+			SUM( CASE WHEN DZZDHJ = 1 THEN SJTS ELSE 0 END ) proAccessCount
+		FROM
+			DAC_PROVIDER_INVENTORY_BILL
+		WHERE
+			DZYQSJFW_KSSJ = #{dateTime}
+		GROUP BY
+			BZSJXJBM) P
+		ON P.BZSJXJBM = A.resourceId
+		)
+	</select>
+
+	<select id="statisticsStandardDataBill" resultType="com.synway.reconciliation.pojo.BillLinkStatistics">
+		SELECT A.*, P.proStandardCount, P.proStorageCount FROM (
+		(SELECT
+			BZSJXJBM resourceId,
+			MAX(SJZYMC) resourceName,
+			MIN(DZYQSJFW_KSSJ) dataTime,
+			SUM( CASE WHEN DZZDHJ = 3 THEN SJTS ELSE 0 END ) accStorageCount
+		FROM
+			DAC_ACCEPTOR_INVENTORY_BILL
+		WHERE
+			DZYQSJFW_KSSJ = #{dateTime}
+		GROUP BY
+			BZSJXJBM) A
+		LEFT JOIN
+		(SELECT
+			BZSJXJBM,
+			SUM( CASE WHEN DZZDHJ = 2 THEN SJTS ELSE 0 END ) proStandardCount,
+			SUM( CASE WHEN DZZDHJ = 3 THEN SJTS ELSE 0 END ) proStorageCount
+		FROM
+			DAC_PROVIDER_INVENTORY_BILL
+		WHERE
+			DZYQSJFW_KSSJ = #{dateTime}
+		GROUP BY
+			BZSJXJBM) P
+		ON P.BZSJXJBM = A.resourceId
+		)
+	</select>
+
+	<select id="reconAnalysis" resultType="com.synway.reconciliation.pojo.ReconciliationAnalysis">
+		SELECT
+			BZSJXJBM resourceId,
+			MAX(SJZYMC) resourceName,
+			MAX(DZZDHJ) linkType,
+			COUNT( 1 ) sumCount,
+			SUM( CASE WHEN DZDZTDM = 1 THEN 1 ELSE 0 END ) successCount,
+			SUM( CASE WHEN DZDZTDM = 2 THEN 1 ELSE 0 END ) failCount
+		FROM
+			DAC_ACCEPTOR_BILL
+		WHERE
+			DZZDHJ = #{linkType} AND SCSJ_RQSJ >= #{startDate} AND SCSJ_RQSJ <![CDATA[<=]]> #{endDate}
+		GROUP BY
+			BZSJXJBM
+	</select>
+
+	<select id="getLinkStatistics" resultType="com.synway.reconciliation.pojo.BillLinkStatistics">
+		SELECT
+			RESOURCE_ID resourceId,
+			RESOURCE_NAME resourceName,
+			ACCESS_ACCEPTOR accAccessCount,
+			ACCESS_PROVIDER proAccessCount,
+			STANDARD_ACCEPTOR accStandardCount,
+			STANDARD_PROVIDER proStandardCount,
+			STORAGE_ACCEPTOR accStorageCount,
+			STORAGE_PROVIDER proStorageCount,
+			ACCESS_SAME_PERIOD accessSamePeriod,
+			STANDARD_CHAIN_RATIO standardChainRatio,
+			STORAGE_CHAIN_RATIO storageChainRatio,
+			DATA_TIME dataTime,
+			STATISTIC_TIME statisticTime,
+			ALARM_STATE alarmState,
+			IS_PUSH isPush,
+			ACCESS_ACCEPTOR_PRE accAccessCountPre,
+			ACCESS_PROVIDER_PRE proAccessCountPre
+		FROM
+			DAC_BILL_LINK_STATISTIC
+		WHERE
+			dataTime = to_date(#{dateTime}, 'yyyy-mm-dd HH24:mi:ss')
+	</select>
+
+	<select id="getSummarizeBill" resultType="com.synway.reconciliation.pojo.SummarizeBillResponse">
+		select P.*,A.proDataCount from ((SELECT
+			BZSJXJBM resourceId,
+			SUM(SJTS) accDataCount,
+			MIN(SJQSBH) ,
+			MAX(SJZYMC) resourceId
+		FROM
+			DAC_ACCEPTOR_INVENTORY_BILL
+		WHERE DZZDHJ = #{linkType} AND DZYQSJFW_KSSJ = to_date(#{dateTime}, 'yyyy-mm-dd HH24:mi:ss')
+		GROUP BY
+			BZSJXJBM) P
+			LEFT JOIN
+			(SELECT
+			BZSJXJBM,
+			SUM(SJTS) proDataCount
+		FROM
+			DAC_PROVIDER_INVENTORY_BILL
+		WHERE DZZDHJ = #{linkType} AND DZYQSJFW_KSSJ = to_date(#{dateTime}, 'yyyy-mm-dd HH24:mi:ss')
+		GROUP BY
+			BZSJXJBM) A ON P.BZSJXJBM = A.BZSJXJBM
+		 )
+	</select>
+
+	<select id="getAbnormalReconciliationList" resultType="int">
+        SELECT
+            count(1)
+        FROM
+            DAC_BILL_LINK_STATISTIC
+        WHERE
+            ALARM_STATE = 2
+            AND DATA_TIME = to_date(#{dataTime}, 'yyyy-MM-dd HH24:mi:ss')
+    </select>
+
+	<select id="getDataTimeList" resultType="java.lang.String">
+        select distinct SCSJ_RQSJ from DAC_ACCEPTOR_BILL WHERE DZZDHJ = #{DZZDHJ}
+    </select>
+
+</mapper>

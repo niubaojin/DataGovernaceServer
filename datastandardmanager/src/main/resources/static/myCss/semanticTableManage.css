@@ -1,0 +1,180 @@
+html {
+	height: 98%;
+}
+body{
+	height:100%;
+	width: 100%;
+	background-color: white;
+}
+table{
+    width: 100%;
+    font-size: 12px;
+    font-family: MicrosoftYaHei;
+    color:#333333;
+}
+th{
+	background-color: #e4edf8;
+	font-size: 14px;
+	text-align: center;
+	/* height:52px; */
+	border-right-color: #e0e0e0;
+	text-align: center; 
+	vertical-align: middle; 
+}
+td{
+   font-size: 12px;
+   text-align: center;
+   /* height:52px; */
+   border-right-color: #e0e0e0;
+   text-align: center; 
+   vertical-align: middle; 
+}
+ div.outerdiv{
+	 padding: 15px;
+	 height: 100%;
+}
+ div.leftdiv{
+	 float: left;
+	 margin-left: 10px;
+ }
+ div.rightdiv{
+	 text-align: left;
+	 margin-bottom: 10px;
+ }
+ hr{
+	 margin-bottom: 10px;
+	 margin-left: 0px;
+	 margin-right: 0px;
+ }
+ div.bottomdiv{
+   height: calc(100% - 38px);
+}
+.leftdiv img{
+   margin-right: 5px;
+   vertical-align: middle;
+}
+.leftdiv font{
+   font-size: 14px;
+   vertical-align: middle;
+}
+font.datetime {
+	font-family: MicrosoftYaHei;
+	font-size: 13px;
+	vertical-align: middle;
+}
+
+input.datetime {
+	width: 140px;
+	height: 30px;
+	vertical-align: middle;
+	display: inline;
+	margin-right: 2px;
+	background: url('../img/img/icon_time.png') no-repeat 0 0;
+	background-position: 110px 8px;
+}
+
+
+button.exportbtn {
+	vertical-align: middle;
+	border-color: #3582ef;
+	width: 70px;
+	height: 30px;
+	border-radius: 2px;
+	color: #3582ef;
+	line-height: 1;
+}
+
+.exportbtn font {
+	font-family: MicrosoftYaHei;
+	color: #3582ef;
+	font-size: 12px;
+	vertical-align: middle;
+}
+
+.exportbtn img {
+	margin-right: 3px;
+	vertical-align: middle;
+}
+
+.rightdiv select {
+	width: 140px;
+	height: 32px;
+	display: inline;
+	vertical-align: middle;
+}
+.rightdiv input {
+	width: 140px;
+	height: 36px;
+	display: inline;
+	vertical-align: middle;
+}
+
+#addSemanticModal .modal-title{
+    float: left;
+    font-size: 16px;
+}
+ .sourceLabel{
+     text-align: right;
+     height: 32px;
+     margin-top: 8px;
+     /*font-weight: bold;*/
+     margin-left: -10px;
+ }
+.handle-btn-div{
+	margin-left: 5px;
+	border: 1px solid var(--main-color);
+	/*margin-right: 2px;*/
+	/*width: 350px;*/
+}
+.handle-btn-div button{
+	width: 60px;
+	height: 34px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px;
+	border-width: 0px;
+	border-radius: 0px;
+}
+/*.handle-btn-div span{*/
+/*	width: 70px;*/
+/*	height: 34px;*/
+/*	margin: 0px 0px 0px 0px;*/
+/*	padding: 0px;*/
+/*	border-width: 0px;*/
+/*	border-radius: 0px;*/
+/*}*/
+.blue-btn:hover, .blue-btn:active:hover, .blue-btn.active:hover {
+	border-radius: 0px;
+}
+
+.blue-btn,
+.blue-btn:active,
+.blue-btn:focus,
+.blue-btn.active,
+.blue-btn.focus,
+.blue-btn:active.focus,
+.blue-btn.active.focus {
+	outline: 0;
+	background-color: #fff;
+	border-radius: 0px;
+	color: var(--main-color);
+}
+.blue-btn:hover,
+.blue-btn:active:hover,
+.blue-btn.active:hover {
+	outline: 0;
+	background-image: var(--main-gradient-color);
+	background-blend-mode: normal;
+	border: 0px solid var(--main-color);
+	border-radius: 0px;
+	color: #fff;
+}
+
+.my-box-right{
+	float: right;
+}
+.my-box-left{
+	float: left;
+}
+#relatedTable .fixed-table-container {
+	padding-bottom: 38px!important;
+}

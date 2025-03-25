@@ -1,0 +1,1642 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataStorageMonitorDao">
+<!--    <cache eviction="FIFO" flushInterval="60000" size="500000" readOnly="true"/>-->
+
+    <resultMap id="classifyMap" type="HashMap">
+        <result property="key" column="classify_code"/>
+        <result property="value" column="classify_value"/>
+    </resultMap>
+
+    <select id="getTodayAssetsCount" resultType="java.lang.Integer">
+        select count(*) from TABLE_ORGANIZATION_ASSETS t where statistics_time >= trunc(sysdate)
+    </select>
+
+    <select id="getDataBaseState" resultType="com.synway.property.pojo.homepage.DataBaseState">
+        select NAME,
+                case
+                when to_number(USED_CAPACITY) &gt; 0 and
+                to_number(USED_CAPACITY) &lt; 0.01 then
+                0.01
+                else
+                to_number(ROUND(USED_CAPACITY, 2))
+                end as usedCapacity,
+                to_number(ROUND(BARE_CAPACITY, 2)) as bareCapacity,
+                TABLE_COUNT as tableCount,
+                LIVE_TABLE_ROTE as liveTableRote,
+                TABLE_SUM as tableSum
+                from TABLE_ORGANIZATION_DB_STATE
+    </select>
+
+    <delete id="deleteDataBaseStates">
+        delete TABLE_ORGANIZATION_DB_STATE where NAME in (
+        <foreach collection="dataBaseStates" item="item" separator=",">
+            #{item.name,jdbcType=VARCHAR}
+        </foreach>
+        )
+    </delete>
+
+    <insert id="insertDataBaseStates">
+        insert all
+        <foreach collection="dataBaseStates" item="item"  >
+            into TABLE_ORGANIZATION_DB_STATE(
+            NAME,
+            USED_CAPACITY,
+            BARE_CAPACITY,
+            TABLE_COUNT,
+            LIVE_TABLE_ROTE,
+            MODIFY_TIME,
+            TABLE_SUM
+            ) values (
+            #{item.name,jdbcType=VARCHAR},
+            #{item.usedCapacity,jdbcType=VARCHAR},
+            #{item.bareCapacity,jdbcType=VARCHAR},
+            #{item.tableCount,jdbcType=VARCHAR},
+            #{item.liveTableRote,jdbcType=VARCHAR},
+            sysdate,
+            #{item.tableSum,jdbcType=VARCHAR}
+            )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <select id="getOdpsLiveRote" resultType="java.lang.String">
+         select t1.usedtablecount||'/'||t2.alltablecount  as oneCount  from (
+                select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as usedtablecount from table_organization_assets
+                where statistics_time &gt;= trunc(sysdate) and livetype = 'LIVING' and upper(TABLE_TYPE) ='ODPS') t1
+                left join(
+                select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as alltablecount from table_organization_assets
+                where statistics_time &gt;= trunc(sysdate) and upper(TABLE_TYPE) ='ODPS' ) t2 on 1=1
+    </select>
+    <select id="getAllDataBaseCount" resultType="java.util.Map">
+        select TABLETYPE,trunc(sum(DATABASE_COUNT)/100000000,2) as DATABASE_COUNT from
+            (select case
+                 when TABLETYPE = 1 then
+                  'ODPS'
+                 when TABLETYPE = 2 then
+                  'ADS'
+                 when TABLETYPE = 3 then
+                  'ADS'
+                 when TABLETYPE = 4 then
+                 'HBASE'
+                 when TABLETYPE = 5 then
+                  'HIVE'
+                 when TABLETYPE = 6 then
+                  'ES'
+                 when TABLETYPE = 7 then
+                  'CLICKHOUSE'
+                 when TABLETYPE = 10 then
+                  'ORACLE'
+                 when TABLETYPE = 12 then
+                  'CDH-HIVE'
+               end as TABLETYPE, SUM(TABLEALLCOUNT) AS DATABASE_COUNT from(
+                select TABLEPROJECT,tablename ,max(TABLEALLCOUNT) as TABLEALLCOUNT , TABLETYPE,max(PARTITIONDATE)  from SYNLTE.SYNDMG_TABLE_ALL
+                 where TABLETYPE is not null group by TABLEPROJECT,tablename , TABLETYPE) t group by TABLETYPE
+        ) where TABLETYPE is not null  group by TABLETYPE ORDER BY TABLETYPE desc
+    </select>
+
+    <select id="getOssFileCount" resultType="java.util.Map">
+        select NAME,
+            case
+            when file_count is null then
+            0
+            when ROUND(file_count / 100000000, 2) &gt; 0 and
+            ROUND(file_count / 100000000, 2) &lt; 0.01 then
+            0.01
+            else
+            ROUND(file_count / 100000000, 2)
+            end as FILECOUNT
+        from t_ads_odps
+    </select>
+
+    <select id="getWushiOdpsAdsUsedCapacity" resultType="java.util.Map">
+        select upper(SYS_NAME)as name, trunc(ceil(USE_SIZE)/1024,0) as USED_CAPACITY,
+        trunc(ceil(TOTAL_SIZE)/1024,0) as BARE_CAPACITY from
+        (select SYS_NAME,USE_SIZE,TOTAL_SIZE from SYNITIL.PANGU
+         where upper(SYS_NAME) = 'ODPS' order by time desc)
+        and rownum = 1
+        union all
+        select upper(SYS_NAME)as name, trunc(ceil(USE_SIZE)/1024,0) as USED_CAPACITY,
+        trunc(ceil(TOTAL_SIZE)/1024,0) as BARE_CAPACITY  from
+        (select SYS_NAME,USE_SIZE,TOTAL_SIZE from SYNITIL.PANGU
+         where upper(SYS_NAME) = 'ADS' order by time desc)
+        and rownum = 1
+    </select>
+
+    <select id="getOdpsAdsUsedCapacity" resultType="java.util.Map">
+        select t.name,
+           case
+             when t.USED_CAPACITY is null then
+              0
+             else
+              t.USED_CAPACITY
+           end as USED_CAPACITY,
+           case
+             when t.BARE_CAPACITY is null then
+              0
+             else
+              t.BARE_CAPACITY
+           end as BARE_CAPACITY
+        from (select name,
+                       trunc(ceil(USED_CAPACITY), 2) as USED_CAPACITY,
+                       trunc(ceil(BARE_CAPACITY), 2) as BARE_CAPACITY,
+                       row_number() over(PARTITION BY upper(name) ORDER BY UT DESC) as rnn
+                  from t_ads_odps
+                 where upper(name) in ('ADS', 'ODPS', 'OSS', 'DATAHUB')) t
+        where t.rnn = 1
+    </select>
+
+    <select id="getDataQualitySummary" resultType="com.synway.property.pojo.DataQualitySummary">
+        select max(decode(type, 'dataQualityAllTablesSum', oneCount, 0)) as dataQualityAllTablesSum,
+        max(decode(type, 'dataQualityAllColumnsSum', oneCount, 0)) as dataQualityAllColumnsSum,
+        to_char(max(decode(type, 'liveTableRote', oneCount, 0)),'fm9990.09') as liveTableRote,
+        max(decode(type, 'abnormalModelsSum', oneCount, 0)) as abnormalModelsSum,
+        max(decode(type, 'dataAbnormalTablesSum', oneCount, 0)) as dataAbnormalTablesSum,
+        max(decode(type, 'nationalStandardTablesSum', oneCount, 0)) as nationalStandardTablesSum,
+        max(decode(type, 'delayTablesSum', oneCount, 0)) as delayTablesSum,
+        max(decode(type, 'abnormalDataFlowsSum', oneCount, 0)) as abnormalDataFlowsSum,
+        max(decode(type, 'abnormalBillsSum', oneCount, 0)) as abnormalBillsSum,
+        max(decode(type, 'landMarkTablesSum', oneCount, 0)) as landMarkTablesSum
+        from (
+        select 'dataQualityAllTablesSum' as type, count(*) as oneCount from dqc_task_config
+        union all
+        select 'dataQualityAllColumnsSum' as type , count(*) as oneCount from dqc_rule_info
+        union ALL
+        select 'liveTableRote' as type,case when t2.alltablecount = 0 then 0 else
+        round(t1.usedtablecount/t2.alltablecount,4)*100 end as oneCount from (
+        select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as usedtablecount from table_organization_assets where
+        STATISTICS_TIME &gt;= to_char(sysdate - #{daysAgo}) and STATISTICS_TIME &lt; to_char(sysdate + 1 - #{daysAgo})
+        and livetype = 'LIVING') t1
+        left join(
+        select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as alltablecount from table_organization_assets where
+        statistics_time &gt;= trunc(sysdate)
+        and upper(TABLE_TYPE) ='ODPS') t2 on 1=1
+        union ALL
+        <if test="dataWorkVersion == 3 ">
+--             select 'abnormalModelsSum' as type, count(TASK_ID) as oneCount from (
+--             select * from (
+--             select row_number() over (partition by odps_PROJECT_NAME,node_Name order by CYC_TIME desc )rn,TASK_ID,status
+--             from m_flow_three where prg_TYPE = 98) where status = 5 and rn = 1)
+            -- 改为只判断 工作流监控页面 状态为运行失败的数量
+            select 'abnormalModelsSum' as type, count(status) as oneCount
+            from m_business_instance
+            where status = '运行失败'
+            <if test="odpsProjectList!=null and odpsProjectList.size>0">
+                and project_name in
+                <foreach collection="odpsProjectList" item="item" open="(" close=")" separator=",">
+                    lower(#{item})
+                </foreach>
+            </if>
+        </if>
+        <if test="dataWorkVersion == 2 ">
+--             select 'abnormalModelsSum' as type, count(INSTANCE_ID) as oneCount from (
+--             select * from(
+--             select row_number() over (partition by PROJECT_NAME,node_Name order by CYCLE_TIME desc
+--             )rn,INSTANCE_ID,status
+--             from M_FLOW where NODE_TYPE = 98 ) where rn =1 and status = 5)
+            -- 改为只判断 工作流监控页面 状态为运行失败的数量
+            select 'abnormalModelsSum' as type, count(status) as oneCount
+            from m_business_instance
+            where status = '运行失败'
+            <if test="odpsProjectList!=null and odpsProjectList.size>0">
+                and project_name in
+                <foreach collection="odpsProjectList" item="item" open="(" close=")" separator=",">
+                    lower(#{item})
+                </foreach>
+            </if>
+        </if>
+        union ALL
+        select 'nationalStandardTablesSum' as type , count(codeid) as oneCount from SYNLTE.FIELDCODE
+        where deleted = 0
+        union ALL
+        select 'landMarkTablesSum' as type , count(distinct t.dmzd) as oneCount from dd_bddm t
+        )
+    </select>
+
+    <select id="getPlatTableSum" resultType="com.synway.property.pojo.homepage.DataBaseState">
+        select "name",sum(tableSum) as tableSum from (
+          select upper(table_type) as "name", count(*) as tableSum
+            from table_organization_assets
+           where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) and table_type is not null
+           group by table_type
+          )
+        group by "name"
+    </select>
+
+    <insert id="insertOracleAddTable">
+        merge into DATA_STORAGE_ADD_TABLE a
+        using (select #{item.projectName,jdbcType=VARCHAR} as PROJECT_NAME,
+        #{item.tableNameEN,jdbcType=VARCHAR} as TABLENAME_EN,
+        #{item.dataSourceId,jdbcType=VARCHAR} as DATA_SOURCE_ID from dual) b
+        on(a.PROJECT_NAME = b.PROJECT_NAME and a.TABLENAME_EN = b.TABLENAME_EN
+        and a.DATA_SOURCE_ID = b.DATA_SOURCE_ID)
+        when matched then
+        update set a.TABLENAME_CH = #{item.tableNameCH,jdbcType=VARCHAR},
+        a.ISSTANDARD = #{item.isStandard,jdbcType=VARCHAR},
+        <if test="type!='' and type != null">
+            a.ISADDMONITOR = #{type,jdbcType=VARCHAR},
+        </if>
+        a.ISDELETE = #{item.isDelete,jdbcType=VARCHAR}
+        when not matched then
+        insert (DATABASE_TYPE,PROJECT_NAME,TABLENAME_EN,TABLENAME_CH,
+        TABLE_ID,PARTITIONED,DATA_SOURCE_NAME,DATA_SOURCE_ID,DATA_CENTER_NAME,
+        DATA_CENTER_ID,ISSTANDARD,ISADDMONITOR,ISDELETE,PARTITION_COLUMN)
+        values (
+        #{item.dataBaseType,jdbcType=VARCHAR},#{item.projectName,jdbcType=VARCHAR},
+        #{item.tableNameEN,jdbcType=VARCHAR},#{item.tableNameCH,jdbcType=VARCHAR},
+        #{item.tableUuid,jdbcType=VARCHAR},#{item.partitioned,jdbcType=VARCHAR},
+        #{item.dataSourceName,jdbcType=VARCHAR},#{item.dataSourceId,jdbcType=VARCHAR},
+        #{item.dataCenterName,jdbcType=VARCHAR},#{item.dataCenterId,jdbcType=VARCHAR},
+        #{item.isStandard,jdbcType=VARCHAR},
+        <if test="type!='' and type != null">
+            #{type,jdbcType=VARCHAR},
+        </if>
+        <if test="type=='' or type == null">
+            #{item.isAddMonitor,jdbcType=VARCHAR},
+        </if>
+        #{item.isDelete,jdbcType=VARCHAR},#{item.partitionColumn,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <select id="getAllRealTimeTable" resultType="com.synway.property.pojo.datastoragemonitor.NeedAddRealTimeTable">
+            select DATABASE_TYPE as dataBaseType , PROJECT_NAME as projectName , TABLENAME_EN as tableNameEN ,
+        TABLENAME_CH as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_NAME as dataSourceName,
+        DATA_SOURCE_ID as dataSourceId,DATA_CENTER_NAME as dataCenterName,DATA_CENTER_ID as dataCenterId,
+        ISSTANDARD as isStandard,ISADDMONITOR as isAddMonitor,ISDELETE as isDelete,
+        PARTITION_COLUMN as partitionColumn ,table_id as tableUuid from DATA_STORAGE_ADD_TABLE
+            where ISDELETE = '0' and ISADDMONITOR = '已控'
+    </select>
+
+    <select id="getAllUnMonitoredTable" resultType="com.synway.property.pojo.datastoragemonitor.NeedAddRealTimeTable">
+        select DATABASE_TYPE as dataBaseType , PROJECT_NAME as projectName , TABLENAME_EN as tableNameEN ,
+        TABLENAME_CH as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_NAME as dataSourceName,
+        DATA_SOURCE_ID as dataSourceId,DATA_CENTER_NAME as dataCenterName,DATA_CENTER_ID as dataCenterId,
+        ISSTANDARD as isStandard,ISADDMONITOR as isAddMonitor,ISDELETE as isDelete,
+        PARTITION_COLUMN as partitionColumn ,table_id as tableUuid  from DATA_STORAGE_ADD_TABLE
+        where ISADDMONITOR = '待控' and ISSTANDARD = '0'
+    </select>
+
+
+    <select id="getAllRealTimeTableFullMessage"
+            resultType="com.synway.property.pojo.datastoragemonitor.RealTimeTableFullMessage">
+        select distinct (project_name || '.' || tablename_en) as tableNameEn,tablename_ch as tableNameCh,
+        case
+        when table_today_sum is null then 0
+        else table_today_sum
+        end as tableTodaySum,
+        case
+        when table_all_sum is null then 0
+        else table_all_sum
+        end as tableAllSum
+        from DATA_STORAGE_ADD_TABLE t1
+        left join (select a.table_project,
+        a.TABLE_NAME_EN,
+        case
+        when a.table_today_sum - b.table_today_sum &lt; 0 then 0
+        else a.table_today_sum - b.table_today_sum
+        end as table_today_sum,
+        a.table_all_sum
+        from (select *
+        from DATA_STORAGE_TABLE_full
+        where substr(statistic_day, 0, 8) = #{dt}) a
+        left join (select table_project,TABLE_NAME_EN,table_today_sum,table_all_sum
+        from DATA_STORAGE_TABLE_full
+        where substr(statistic_day, 0, 8) = #{yesToday}) b
+        on a.TABLE_NAME_EN = b.TABLE_NAME_EN) t2
+        on upper(t1.project_name) = upper(t2.table_project)
+        and upper(t1.tablename_en) = upper(t2.TABLE_NAME_EN)
+        where t1.ISDELETE = '0'
+        and t1.ISADDMONITOR = '已控'
+    </select>
+
+    <select id="getPrimaryClassifyData" resultType="com.synway.property.pojo.PageSelectOneValue">
+        select
+        case when a.value is null then 'null' else a.value end as value,
+        case when b.label is null then a.label||'(0)' else b.label end
+        as label from (
+        <if test="mainClassify == 'dataOrganizationClassify' ">
+            select distinct CODEID as value ,CODETEXT as label from V_CLASSIFY_INFO where PARCODEID = 'JZCODEGASJZZFL'
+        </if>
+        <if test="mainClassify == 'dataSourceClassify' ">
+            select distinct CODEVALID as value, VALTEXT as label from SYNLTE.FIELDCODEVAL WHERE upper(CODEID)=upper('GACODE000404')
+        </if>
+        ) a
+        full join
+        (
+        SELECT
+        <if test="mainClassify == 'dataOrganizationClassify' ">
+            PRIMARY_ORGANIZATION_CH||'('||count(1)||')' as label,PRIMARY_ORGANIZATION_CH as value
+        </if>
+        <if test="mainClassify == 'dataSourceClassify' ">
+            PRIMARY_DATASOURCE_CH||'('||count(1)||')' as label,PRIMARY_DATASOURCE_CH as value
+        </if>
+        FROM
+        ( SELECT
+        <if test="mainClassify == 'dataOrganizationClassify' ">
+            j.PRIMARY_ORGANIZATION_CH
+        </if>
+        <if test="mainClassify == 'dataSourceClassify' ">
+            j.PRIMARY_DATASOURCE_CH
+        </if>
+        , row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) and j.table_type is not null) h
+        WHERE
+        h.rnn = 1 group by
+        <if test="mainClassify == 'dataOrganizationClassify' ">
+            PRIMARY_ORGANIZATION_CH
+        </if>
+        <if test="mainClassify == 'dataSourceClassify' ">
+            PRIMARY_DATASOURCE_CH
+        </if>
+        ) b
+        on a.label = b.value
+        order by value
+    </select>
+
+    <select id="getSecondaryClassifyData" resultType="com.synway.property.pojo.PageSelectOneValue">
+        <if test="primaryClassifyCode!='null'">
+            select
+            case when a.value is null then 'null' else a.value end as value,
+            case
+            when a.label is null then '未知(0)'
+            when b.label is null then a.label||'(0)'
+            else b.label end
+            as label from (
+            select distinct c.CODEID as value ,c.CODETEXT as label,d.primaryLabel from V_CLASSIFY_INFO c
+            right join
+            (select distinct CODEID, CODETEXT as primaryLabel from V_CLASSIFY_INFO
+            where CODEID = #{primaryClassifyCode}
+            and PARCODEID is not null
+            )d
+            on c.PARCODEID = d.CODEID order by value) a
+            left join
+            <if test="isThreeLevel == 'no'">
+                (SELECT
+                <if test="mainClassify == 'dataOrganizationClassify' ">
+                    SECONDARY_ORGANIZATION_CH||'('||count(1)||')' as label,SECONDARY_ORGANIZATION_CH as value,
+                    PRIMARY_ORGANIZATION_CH as primaryLabel
+                </if>
+                <if test="mainClassify == 'dataSourceClassify' ">
+                    SECONDARY_DATASOURCE_CH||'('||count(1)||')' as label,SECONDARY_DATASOURCE_CH as value,
+                    PRIMARY_DATASOURCE_CH as primaryLabel
+                </if>
+                FROM
+                ( SELECT
+                <if test="mainClassify == 'dataOrganizationClassify' ">
+                    j.SECONDARY_ORGANIZATION_CH,j.PRIMARY_ORGANIZATION_CH
+                </if>
+                <if test="mainClassify == 'dataSourceClassify' ">
+                    j.SECONDARY_DATASOURCE_CH,j.PRIMARY_DATASOURCE_CH
+                </if>
+                , row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+                STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+                WHERE
+                h.rnn = 1 group by
+                <if test="mainClassify == 'dataOrganizationClassify' ">
+                    SECONDARY_ORGANIZATION_CH,PRIMARY_ORGANIZATION_CH
+                </if>
+                <if test="mainClassify == 'dataSourceClassify' ">
+                    SECONDARY_DATASOURCE_CH,PRIMARY_DATASOURCE_CH
+                </if>
+                ) b
+            </if>
+            <if test="isThreeLevel == 'yes'">
+                (SELECT
+                <if test="mainClassify == 'dataOrganizationClassify' ">
+                    THREELEVEL_ORGANIZATION_CH||'('||count(1)||')' as label,THREELEVEL_ORGANIZATION_CH as value,
+                    SECONDARY_ORGANIZATION_CH as primaryLabel
+                </if>
+                <if test="mainClassify == 'dataSourceClassify' ">
+                    SECONDARY_DATASOURCE_CH||'('||count(1)||')' as label,SECONDARY_DATASOURCE_CH as value,
+                    PRIMARY_DATASOURCE_CH as primaryLabel
+                </if>
+                FROM
+                ( SELECT
+                <if test="mainClassify == 'dataOrganizationClassify' ">
+                    j.THREELEVEL_ORGANIZATION_CH,j.SECONDARY_ORGANIZATION_CH,j.PRIMARY_ORGANIZATION_CH
+                </if>
+                <if test="mainClassify == 'dataSourceClassify' ">
+                    j.SECONDARY_DATASOURCE_CH,j.PRIMARY_DATASOURCE_CH
+                </if>
+                , row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+                STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+                WHERE
+                h.rnn = 1 group by
+                <if test="mainClassify == 'dataOrganizationClassify' ">
+                    THREELEVEL_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,PRIMARY_ORGANIZATION_CH
+                </if>
+                <if test="mainClassify == 'dataSourceClassify' ">
+                    SECONDARY_DATASOURCE_CH,PRIMARY_DATASOURCE_CH
+                </if>
+                ) b
+            </if>
+            on a.label = b.value and a.primaryLabel = b.primaryLabel
+        </if>
+        <if test="primaryClassifyCode == 'null'">
+            <if test="mainClassify == 'dataSourceClassify' ">
+                SELECT '未知' || '(' || count(1) || ')' AS label, '' AS VALUE
+                FROM (SELECT j.PRIMARY_DATASOURCE_CH,
+                j.SECONDARY_DATASOURCE_CH,
+                row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
+                FROM table_organization_assets j
+                where STATISTICS_TIME >= trunc(sysdate)) h
+                WHERE h.rnn = 1
+                and PRIMARY_DATASOURCE_CH = '未知'
+                GROUP BY SECONDARY_DATASOURCE_CH, PRIMARY_DATASOURCE_CH
+            </if>
+            <if test="mainClassify == 'dataOrganizationClassify' ">
+                SELECT '未知' || '(' || count(1) || ')' AS label, '' AS VALUE
+                FROM (SELECT j.PRIMARY_ORGANIZATION_CH,
+                j.SECONDARY_ORGANIZATION_CH,
+                row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
+                FROM table_organization_assets j
+                where STATISTICS_TIME >= trunc(sysdate)) h
+                WHERE h.rnn = 1
+                and PRIMARY_ORGANIZATION_CH = '未知'
+                GROUP BY SECONDARY_ORGANIZATION_CH, PRIMARY_ORGANIZATION_CH
+            </if>
+        </if>
+    </select>
+
+    <!--    弃用-->
+    <!--    <select id="getSecondaryClassifyData"  resultType="com.synway.property.pojo.PageSelectOneValue">-->
+    <!--        select * from (-->
+    <!--        <if test="mainClassify == 'dataOrganizationClassify' ">-->
+    <!--            select distinct SECONDARY_ORGANIZATION_CODE as value , SECONDARY_ORGANIZATION_CH as label-->
+    <!--            from data_organization_class_code where PRIMARY_ORGANIZATION_CODE = #{primaryClassifyCode}-->
+    <!--        </if>-->
+    <!--        <if test="mainClassify == 'dataSourceClassify' ">-->
+    <!--            select distinct SECONDARY_DATASOURCE_CODE as value ,SECONDARY_DATASOURCE_CH as label-->
+    <!--            from DATARESOURCE_SOURCE_CODE where PRIMARY_DATASOURCE_CODE =#{primaryClassifyCode}-->
+    <!--        </if>-->
+    <!--        <if test="mainClassify == 'dataResourceClassify' ">-->
+    <!--            select distinct FACTOR_CODE as value , FACTOR_NAME as label-->
+    <!--            from DATA_FACTOR_CLASS_CODE where FACTOR_TYPE = 2-->
+    <!--        </if>-->
+    <!--        ) t1-->
+    <!--    </select>-->
+
+    <!--查询表组织资产的汇总信息-->
+    <select id="getAllSummaryTableByClassifyList" resultType="com.synway.property.pojo.SummaryTableByClassify">
+        <if test="mainClassify == 'dataOrganizationClassify' ">
+            select distinct primaryClassifyCh,
+            decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh)
+            secondaryClassifyCh,
+            sum(tableAllSum) tableAllSum,sum(tableAllSize) tableAllSize,
+            case when sum(yesterdayAllSum) = '0' then '0'
+            when to_char(sum(yesterdayAllSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(yesterdayAllSum)/10000,'fm9999999999999990.00') end as yesterdayAllSumW,
+            case when sum(averageAllDailyVolume) = '0' then '0'
+            when to_char(sum(averageAllDailyVolume)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(averageAllDailyVolume)/10000,'fm9999999999999990.00') end as averageAllDailyVolumeW,
+            sum(tableNumberSum) tableNumberSum,
+            case when sum(adsSum) = '0' then '0'
+            when to_char(sum(adsSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(adsSum)/10000,'fm9999999999999990.00') end as adsSumW,
+            case when sum(odpsSum) = '0' then '0'
+            when to_char(sum(odpsSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(odpsSum)/10000,'fm9999999999999990.00') end as odpsSumW,
+            case when sum(hbaseSum) = '0' then '0'
+            when to_char(sum(hbaseSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(hbaseSum)/10000,'fm9999999999999990.00') end as hbaseSumW,
+            case when sum(hiveSum) = '0' then '0'
+            when to_char(sum(hiveSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(hiveSum)/10000,'fm9999999999999990.00') end as hiveSumW,
+            case when sum(ckSum) = '0' then '0'
+            when to_char(sum(ckSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(ckSum)/10000,'fm9999999999999990.00') end as ckSumW,
+            sum(adsSize) adsSize,sum(odpsSize) odpsSize,
+            sum(hbaseSize) hbaseSize,sum(hiveSize) hiveSize,sum(ckSize) ckSize, sum(averageAllDailySize)
+            averageAllDailySize,max(Statistics_Day) statisticsDay from(
+            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知'),
+            secondaryClassifyCh,
+            tableAllSum ,tableAllSize ,yesterdayAllSum, averageAllDailyVolume ,tableNumberSum ,Statistics_Day ,todayStr
+            ,
+            adsSum, odpsSum,hbaseSum, hiveSum,ckSum, adsSize, odpsSize, hbaseSize, hiveSize,ckSize, averageAllDailySize
+            from(
+            select 'dataOrganizationClassify' as mainClassify , PRIMARY_ORGANIZATION_CH as primaryClassifyCh ,
+            SECONDARY_ORGANIZATION_CH as secondaryClassifyCh ,
+            sum(table_all_count) as tableAllSum , TRUNC(sum(table_size)/1073741824,2) as
+            tableAllSize,sum(AVERAGE_DAILY_VOLUME)/count(*) as averageAllDailyVolume,
+            sum(YESTERDAY_COUNT) as yesterdayAllSum,
+            count(*) as tableNumberSum , to_char(STATISTICS_TIME,'yyyyMMdd') as Statistics_Day ,
+            to_char(STATISTICS_TIME,'yyyyMMdd') as todayStr,
+            sum(case when upper(table_type)='ADS' then table_all_count else 0 end) adsSum,
+            sum(case when upper(table_type)='ODPS' then table_all_count else 0 end) odpsSum,
+            sum(case when upper(table_type)='HBASE' then table_all_count else 0 end) hbaseSum,
+            sum(case when upper(table_type)='HIVE' then table_all_count else 0 end) hiveSum,
+            sum(case when upper(table_type)='CLICKHOUSE' then table_all_count else 0 end) ckSum,
+            TRUNC(sum(case when upper(table_type)='ADS' then table_size else 0 end) / 1073741824, 2) adsSize,
+            TRUNC(sum(case when upper(table_type)='ODPS' then table_size else 0 end) / 1073741824, 2) odpsSize,
+            TRUNC(sum(case when upper(table_type)='HBASE' then table_size else 0 end) / 1073741824, 2) hbaseSize,
+            TRUNC(sum(case when upper(table_type)='HIVE' then table_size else 0 end) / 1073741824, 2) hiveSize,
+            TRUNC(sum(case when upper(table_type)='CLICKHOUSE' then table_size else 0 end) / 1073741824, 2) ckSize,
+            -- TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*))/1073741824,2) averageAllDailySize
+            -- 改为当日增量小于0.01时取0.01
+            case
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) is null then 0
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 > 0 and
+                (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 &lt; 0.01 then 0.01
+                else TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824, 2)
+            end as averageAllDailySize
+            from
+            (
+            SELECT
+            *
+            FROM
+            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            and PRIMARY_ORGANIZATION_CH != '未知' and SECONDARY_ORGANIZATION_CH!= '未知') h
+            <where>
+                <if test="daysAgo == 0 or daysAgo == 1">
+                    h.rnn = 1
+                </if>
+            </where>
+            )
+            <where>
+                <if test="primaryClassifyCh != '' and primaryClassifyCh != '未知'">
+                    PRIMARY_ORGANIZATION_CH =#{primaryClassifyCh}
+                </if>
+                <if test="secondaryClassifyCh != '' and secondaryClassifyCh != '未知' and secondaryClassifyCh != '汇总'">
+                    and SECONDARY_ORGANIZATION_CH = #{secondaryClassifyCh}
+                </if>
+                <if test="threeValue != '' and threeValue != '未知' and threeValue != '汇总'">
+                    and THREELEVEL_ORGANIZATION_CH = #{threeValue}
+                </if>
+                <if test="primaryClassifyCh == '未知'">
+                    and (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '未知')
+                </if>
+                <if test="secondaryClassifyCh == '未知'">
+                    and (SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '未知')
+                </if>
+            </where>
+            group by PRIMARY_ORGANIZATION_CH ,SECONDARY_ORGANIZATION_CH,to_char(STATISTICS_TIME,'yyyyMMdd')
+            ) )
+            group by rollup(primaryClassifyCh,secondaryClassifyCh,Statistics_Day)
+            having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
+            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            and primaryClassifyCh is not null and
+            decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
+            null
+            <if test="secondaryClassifyCh == '汇总'">
+                and grouping(secondaryClassifyCh)+grouping(primaryClassifyCh)=1
+            </if>
+        </if>
+        <if test="mainClassify == 'dataSourceClassify' ">
+            select distinct
+            primaryClassifyCh,decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh)
+            secondaryClassifyCh ,
+            sum(tableAllSum) tableAllSum,sum(tableAllSize) tableAllSize,
+            case when sum(yesterdayAllSum) = '0' then '0'
+            when to_char(sum(yesterdayAllSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(yesterdayAllSum)/10000,'fm9999999999999990.00') end as yesterdayAllSumW,
+            case when sum(averageAllDailyVolume) = '0' then '0'
+            when to_char(sum(averageAllDailyVolume)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(averageAllDailyVolume)/10000,'fm9999999999999990.00') end as averageAllDailyVolumeW,
+            sum(tableNumberSum) tableNumberSum,
+            case when sum(adsSum) = '0' then '0'
+            when to_char(sum(adsSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(adsSum)/10000,'fm9999999999999990.00') end as adsSumW,
+            case when sum(odpsSum) = '0' then '0'
+            when to_char(sum(odpsSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(odpsSum)/10000,'fm9999999999999990.00') end as odpsSumW,
+            case when sum(hbaseSum) = '0' then '0'
+            when to_char(sum(hbaseSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(hbaseSum)/10000,'fm9999999999999990.00') end as hbaseSumW,
+            case when sum(hiveSum) = '0' then '0'
+            when to_char(sum(hiveSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(hiveSum)/10000,'fm9999999999999990.00') end as hiveSumW,
+            case when sum(ckSum) = '0' then '0'
+            when to_char(sum(ckSum)/10000,'fm9999999999999990.00') = '0.00' then '0'
+            else
+            to_char(sum(ckSum)/10000,'fm9999999999999990.00') end as ckSumW,
+            sum(adsSize) adsSize,sum(odpsSize) odpsSize,
+            sum(hbaseSize) hbaseSize,sum(hiveSize) hiveSize,sum(ckSize) ckSize, sum(averageAllDailySize)
+            averageAllDailySize,max(Statistics_Day) statisticsDay from(
+            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知')
+            secondaryClassifyCh,
+            tableAllSum ,tableAllSize ,yesterdayAllSum, averageAllDailyVolume ,tableNumberSum ,Statistics_Day,todayStr
+            ,
+            adsSum, odpsSum,hbaseSum, hiveSum,ckSum, adsSize, odpsSize, hbaseSize, hiveSize,ckSize, averageAllDailySize from(
+            select 'dataSourceClassify' as mainClassify , PRIMARY_DATASOURCE_CH as primaryClassifyCh ,
+            SECONDARY_DATASOURCE_CH as secondaryClassifyCh ,
+            sum(table_all_count) as tableAllSum , TRUNC(sum(table_size)/1073741824,2) as tableAllSize,
+            sum(AVERAGE_DAILY_VOLUME)/count(*) as averageAllDailyVolume,sum(YESTERDAY_COUNT) as yesterdayAllSum,
+            count(*) as tableNumberSum ,to_char(STATISTICS_TIME,'yyyyMMdd') as Statistics_Day ,
+            to_char(STATISTICS_TIME,'yyyyMMdd') as todayStr,
+            sum(case when upper(table_type)='ADS' then table_all_count else 0 end) adsSum,
+            sum(case when upper(table_type)='ODPS' then table_all_count else 0 end) odpsSum,
+            sum(case when upper(table_type)='HBASE' then table_all_count else 0 end) hbaseSum,
+            sum(case when upper(table_type)='HIVE' then table_all_count else 0 end) hiveSum,
+            sum(case when upper(table_type)='CLICKHOUSE' then table_all_count else 0 end) ckSum,
+            TRUNC(sum(case when upper(table_type)='ADS' then table_size else 0 end) / 1073741824, 2) adsSize,
+            TRUNC(sum(case when upper(table_type)='ODPS' then table_size else 0 end) / 1073741824, 2) odpsSize,
+            TRUNC(sum(case when upper(table_type)='HBASE' then table_size else 0 end) / 1073741824, 2) hbaseSize,
+            TRUNC(sum(case when upper(table_type)='HIVE' then table_size else 0 end) / 1073741824, 2) hiveSize,
+            TRUNC(sum(case when upper(table_type)='CLICKHOUSE' then table_size else 0 end) / 1073741824, 2) ckSize,
+            -- TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*))/1073741824,2) averageAllDailySize
+            -- 改为当日增量小于0.01时取0.01
+            case
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) is null then 0
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 > 0 and
+                (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 &lt; 0.01 then 0.01
+                else TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824, 2)
+            end as averageAllDailySize
+            from
+            (
+            SELECT
+            *
+            FROM
+            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            and PRIMARY_DATASOURCE_CH != '未知' and SECONDARY_DATASOURCE_CH!= '未知') h
+            <where>
+                <if test="daysAgo == 0 or daysAgo == 1">
+                    h.rnn = 1
+                </if>
+            </where>
+            )
+            <where>
+                <if test="primaryClassifyCh!= '' and primaryClassifyCh != '未知'">
+                    PRIMARY_DATASOURCE_CH =#{primaryClassifyCh}
+                </if>
+                <if test="secondaryClassifyCh!= '' and secondaryClassifyCh != '未知' and secondaryClassifyCh != '汇总'">
+                    and SECONDARY_DATASOURCE_CH = #{secondaryClassifyCh}
+                </if>
+                <if test="primaryClassifyCh == '未知'">
+                    and (PRIMARY_DATASOURCE_CH is null or PRIMARY_DATASOURCE_CH = '未知')
+                </if>
+                <if test="secondaryClassifyCh == '未知'">
+                    and (SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH = '未知')
+                </if>
+            </where>
+            group by PRIMARY_DATASOURCE_CH ,SECONDARY_DATASOURCE_CH ,to_char(STATISTICS_TIME,'yyyyMMdd') ))
+            group by rollup(primaryClassifyCh,secondaryClassifyCh, Statistics_Day)
+            having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
+            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            and primaryClassifyCh is not null and
+            decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
+            null
+            <if test="secondaryClassifyCh == '汇总'">
+                and grouping(secondaryClassifyCh)+grouping(primaryClassifyCh)=1
+            </if>
+        </if>
+        <if test="mainClassify == 'dataResourceClassify' ">
+            select
+            primaryClassifyCh,decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh)
+            secondaryClassifyCh ,
+            sum(tableAllSum) tableAllSum,sum(tableAllSize) tableAllSize, sum(averageAllDailyVolume)
+            averageAllDailyVolume,sum(tableNumberSum) tableNumberSum,
+            sum(yesterdayAllSum) yesterdayAllSum, sum(adsSum) adsSum, sum(odpsSum) odpsSum, sum(adsSize) adsSize,
+            sum(odpsSize) odpsSize, sum(averageAllDailySize) averageAllDailySize from(
+            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知')
+            secondaryClassifyCh ,
+            tableAllSum ,tableAllSize , averageAllDailyVolume ,tableNumberSum ,yesterdayAllSum,Statistics_Day ,todayStr
+            ,
+            adsSum, odpsSum, adsSize, odpsSize, averageAllDailySize from(
+            select 'dataResourceClassify' as mainClassify , FACTOR_ONE_NAME as primaryClassifyCh , FACTOR_TWO_NAME as
+            secondaryClassifyCh ,
+            sum(table_all_count) as tableAllSum , TRUNC(sum(table_size)/1073741824,4) as
+            tableAllSize,sum(YESTERDAY_COUNT) as yesterdayAllSum,
+            sum(AVERAGE_DAILY_VOLUME)/count(*) as averageAllDailyVolume,
+            count(*) as tableNumberSum ,to_char(STATISTICS_TIME,'yyyyMMdd') as Statistics_Day ,
+            to_char(sysdate,'yyyyMMdd') as todayStr,
+            sum(case when upper(table_type)='ADS' then table_all_count else 0 end) adsSum,
+            sum(case when upper(table_type)='ODPS' then table_all_count else 0 end) odpsSum,
+            TRUNC(sum(case when upper(table_type)='ADS' then table_size else 0 end) / 1073741824, 4) adsSize,
+            TRUNC(sum(case when upper(table_type)='ODPS' then table_size else 0 end) / 1073741824, 4) odpsSize,
+            -- TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*))/1073741824,4) averageAllDailySize
+            -- 改为当日增量小于0.01时取0.01
+            case
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) is null then 0
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 > 0 and
+                (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 &lt; 0.01 then 0.01
+                else TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824, 2)
+            end as averageAllDailySize
+            from
+            (
+            SELECT
+            *
+            FROM
+            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)) h
+            WHERE
+            h.rnn = 1
+            )
+            <where>
+                <if test="primaryClassifyCh!= '' and primaryClassifyCh != '未知' ">
+                    FACTOR_ONE_NAME= #{primaryClassifyCh}
+                </if>
+                <if test="secondaryClassifyCh!= '' and secondaryClassifyCh != '未知' and secondaryClassifyCh != '汇总'">
+                    and FACTOR_TWO_NAME = #{secondaryClassifyCh}
+                </if>
+                <if test="primaryClassifyCh == '未知'  ">
+                    and FACTOR_ONE_NAME is null
+                </if>
+                <if test="secondaryClassifyCh == '未知'">
+                    and FACTOR_TWO_NAME is null
+                </if>
+            </where>
+            group by FACTOR_ONE_NAME ,FACTOR_TWO_NAME ,to_char(STATISTICS_TIME,'yyyyMMdd') ))
+            group by rollup(primaryClassifyCh,secondaryClassifyCh)
+            having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
+            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            and primaryClassifyCh is not null and
+            decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
+            null
+            <if test="secondaryClassifyCh == '汇总'">
+                and grouping(secondaryClassifyCh)+grouping(primaryClassifyCh)=1
+            </if>
+        </if>
+        <if test="mainClassify == 'null' ">
+            select
+            primaryClassifyCh,decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh)
+            secondaryClassifyCh ,
+            sum(tableAllSum) tableAllSum,sum(tableAllSize) tableAllSize, sum(averageAllDailyVolume)
+            averageAllDailyVolume,sum(tableNumberSum) tableNumberSum,sum(yesterdayAllSum) yesterdayAllSum,
+            sum(adsSum) adsSum, sum(odpsSum) odpsSum, sum(adsSize) adsSize, sum(odpsSize) odpsSize,
+            sum(averageAllDailySize) averageAllDailySize from(
+            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知')
+            secondaryClassifyCh ,
+            tableAllSum ,tableAllSize , averageAllDailyVolume ,tableNumberSum ,Statistics_Day,yesterdayAllSum ,todayStr
+            ,
+            adsSum, odpsSum, adsSize, odpsSize, averageAllDailySize from(
+            select 'null' as mainClassify , FACTOR_ONE_NAME as primaryClassifyCh , FACTOR_TWO_NAME as
+            secondaryClassifyCh ,
+            sum(table_all_count) as tableAllSum , TRUNC(sum(table_size)/1073741824,4) as
+            tableAllSize,sum(AVERAGE_DAILY_VOLUME)/count(*) as averageAllDailyVolume,
+            count(*) as tableNumberSum ,to_char(STATISTICS_TIME,'yyyyMMdd') as Statistics_Day ,
+            to_char(sysdate,'yyyyMMdd') as todayStr,sum(YESTERDAY_COUNT) as yesterdayAllSum,
+            sum(case when upper(table_type)='ADS' then table_all_count else 0 end) adsSum,
+            sum(case when upper(table_type)='ODPS' then table_all_count else 0 end) odpsSum,
+            TRUNC(sum(case when upper(table_type)='ADS' then table_size else 0 end) / 1073741824, 4) adsSize,
+            TRUNC(sum(case when upper(table_type)='ODPS' then table_size else 0 end) / 1073741824, 4) odpsSize,
+            -- sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*) averageAllDailySize
+            -- 改为当日增量小于0.01时取0.01
+            case
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) is null then 0
+                when (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 > 0 and
+                (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 &lt; 0.01 then 0.01
+                else TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824, 2)
+            end as averageAllDailySize
+            from table_organization_assets
+            <where>
+                STATISTICS_TIME >= trunc(sysdate) and
+                (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '未知' )and (SECONDARY_ORGANIZATION_CH is
+                null or SECONDARY_ORGANIZATION_CH = '未知')
+                and (PRIMARY_DATASOURCE_CH is null or PRIMARY_DATASOURCE_CH = '未知' ) and (SECONDARY_DATASOURCE_CH is
+                null or SECONDARY_DATASOURCE_CH = '未知')
+                and FACTOR_ONE_NAME is null and FACTOR_TWO_NAME is null
+            </where>
+            group by FACTOR_ONE_NAME ,FACTOR_TWO_NAME ,to_char(STATISTICS_TIME,'yyyyMMdd') ) )
+            group by rollup(primaryClassifyCh,secondaryClassifyCh)
+            having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
+            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            and primaryClassifyCh is not null and
+            decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
+            null
+        </if>
+    </select>
+
+    <select id="getAllDataContentByTags" resultType="com.synway.property.pojo.DetailedTableByClassify">
+        select primaryDataSourceCh,secondaryDataSourceCh ,primaryOrganizationCh,secondaryOrganizationCh, tableType,
+        tableProject ,name , tableNameEn ,tableAllCount , averageDailyVolume , yesterdayCount ,lifeCycle , valueRate ,
+        nullRate ,tableState,statisticsTimeStr,updateType
+        ,frequency,liveType,tableid,registerState,objectId,tableSize,objectState,
+        -- labels,
+        updateDate,updatePeriod,productStage,organizationClassifyCh,dataSourceClassifyCh,exceptionMessage,lifeCycleStatus,resourceId,isStandard
+        from(
+        select rownum rn, PRIMARY_DATASOURCE_CH as primaryDataSourceCh , SECONDARY_DATASOURCE_CH as secondaryDataSourceCh ,
+        PRIMARY_ORGANIZATION_CH as primaryOrganizationCh , SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh
+        ,
+        case when (SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '') and (THREELEVEL_ORGANIZATION_CH is null or THREELEVEL_ORGANIZATION_CH = '') then PRIMARY_ORGANIZATION_CH
+        when THREELEVEL_ORGANIZATION_CH is not null or THREELEVEL_ORGANIZATION_CH !='' then PRIMARY_ORGANIZATION_CH || '->' || THREELEVEL_ORGANIZATION_CH
+        else PRIMARY_ORGANIZATION_CH||'->'||SECONDARY_ORGANIZATION_CH
+        end as organizationClassifyCh,
+        case when SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH ='' then PRIMARY_DATASOURCE_CH
+        else PRIMARY_DATASOURCE_CH ||'->'|| SECONDARY_DATASOURCE_CH
+        end as dataSourceClassifyCh,
+        case when RES_NAME is null or RES_NAME = '' then TABLE_TYPE||'->'||TABLE_PROJECT
+        else TABLE_TYPE || '->' || RES_NAME || '->' || TABLE_PROJECT end as tableProject, NAME as name , TABLE_NAME_EN as tableNameEn ,
+        case when TABLE_ALL_COUNT = '0' then '0'
+        when to_char(TABLE_ALL_COUNT/ 10000, 'fm9999999999990.00')='0.00' then '0'
+        else
+        to_char(TABLE_ALL_COUNT/ 10000, 'fm9999999999990.00') End
+        as tableAllCount, AVERAGE_DAILY_VOLUME as averageDailyVolume,
+        case when YESTERDAY_COUNT = '0' then '0'
+        when to_char(YESTERDAY_COUNT/10000,'fm999999999990.00') = '0.00' then '0'
+        else
+        to_char(YESTERDAY_COUNT/10000,'fm999999999990.00') end as yesterdayCount ,TABLE_TYPE as tableType, LIFE_CYCLE as
+        lifeCycle , VALUE_RATE as valueRate ,
+        NULL_RATE as nullRate, TABLE_STATE as tableState,OBJECT_STATE as objectState,
+        case when PARTITION_MESSAGE = 0 then '增量' when PARTITION_MESSAGE = 1 then '全量' else '其它' END as updateType
+        ,to_char(STATISTICS_TIME,'yyyy-MM-dd HH24:mi:ss') as statisticsTimeStr ,
+        FREQUENCY as frequency , LIVETYPE as liveType ,SJXJBM as tableid,
+        REGISTER_STATE as registerState,
+        -- CASE WHEN pdi.TABLENAME is not null THEN 2 ELSE 1 END registerState,
+        OBJECT_ID as objectId,
+        case when TABLE_SIZE = '0' then '0'
+        when to_char(TABLE_SIZE/1073741824,'fm999999999990.00000')='0.00000' then '0'
+        else
+        to_char(TABLE_SIZE/1073741824,'fm999999999990.00000') end as tableSize,
+        update_date as updateDate,update_period as updatePeriod,product_stage as productStage,
+        EXCEPTION_MESSAGE as exceptionMessage,LIFE_CYCLE_STATUS as lifeCycleStatus,resourceid,ISSTANDARD as isStandard
+        from
+        (
+        SELECT
+        *
+        FROM
+        ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_TYPE), lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+        )a
+        left join
+        (select TABLE_NAME,PROJECT_NAME,CLUSTER_NAME,PRODUCT_STAGE from SYNLTE.table_register_info) b
+        on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME)
+        and upper(a.TABLE_PROJECT) = upper(b.PROJECT_NAME)
+        and upper(a.TABLE_TYPE) = upper(b.CLUSTER_NAME)
+        ) h
+        WHERE
+        h.rnn = 1
+        <if test="registerState=='已注册'">
+            and REGISTER_STATE ='2'
+        </if>
+        <if test="registerState=='未注册'">
+            and (REGISTER_STATE !='2' or REGISTER_STATE is null)
+        </if>
+        <if test="usingTagsState=='启用'">
+            and (OBJECT_STATE = '1' or OBJECT_STATE = '0')
+        </if>
+        <if test="usingTagsState=='停用'">
+            and (OBJECT_STATE = '-1' or OBJECT_STATE is null)
+        </if>
+        <if test="projectList.size >0">
+            and
+            <foreach collection="projectList" item="p" index="index" separator="or" open="(" close=")">
+                (lower(TABLE_PROJECT) =
+                lower(#{p.secondaryClassifyCh,jdbcType=VARCHAR}) and upper(TABLE_TYPE) =
+                upper(#{p.primaryClassifyCh,jdbcType=VARCHAR}))
+            </foreach>
+        </if>
+        <if test="sourceClassify.size >0 or organizationClassify.size >0">
+            and(
+            <if test="sourceClassify.size >0">
+                (
+                <foreach collection="sourceClassify" item="sc" index="index" separator=" or " open="(" close=")">
+                    1=1
+                    <if test="sc.primaryClassifyCh!='' and sc.primaryClassifyCh!=null">
+                        and PRIMARY_DATASOURCE_CH =
+                        #{sc.primaryClassifyCh,jdbcType=VARCHAR}
+                    </if>
+                    <if test="sc.primaryClassifyCh!='' and sc.primaryClassifyCh!=null and sc.secondaryClassifyCh!='' and sc.secondaryClassifyCh!=null">
+                        and
+                    </if>
+                    <if test="sc.secondaryClassifyCh!='' and sc.secondaryClassifyCh!=null">
+                        SECONDARY_DATASOURCE_CH =
+                        #{sc.secondaryClassifyCh,jdbcType=VARCHAR}
+                    </if>
+                </foreach>
+                )
+            </if>
+            <if test="sourceClassify.size >0 and organizationClassify.size >0">
+                or
+            </if>
+            <if test="organizationClassify.size >0 ">
+                (
+                <foreach collection="organizationClassify" item="oc" index="index" separator=" or " open="("
+                         close=")">
+                    1=1
+                    <if test="oc !=null">
+                        <if test="oc.primaryClassifyCh!='' and oc.primaryClassifyCh!=null">
+                            and PRIMARY_ORGANIZATION_CH =
+                            #{oc.primaryClassifyCh,jdbcType=VARCHAR}
+                        </if>
+                        <if test="oc.primaryClassifyCh!='' and oc.primaryClassifyCh!=null and oc.secondaryClassifyCh!='' and oc.secondaryClassifyCh!=null">
+                            and
+                        </if>
+                        <if test="oc.secondaryClassifyCh!='' and oc.secondaryClassifyCh!=null">
+                            SECONDARY_ORGANIZATION_CH =
+                            #{oc.secondaryClassifyCh,jdbcType=VARCHAR}
+                        </if>
+                        <if test="oc.threeLevelClassfyCh!='' and oc.threeLevelClassfyCh!=null">
+                            and THREELEVEL_ORGANIZATION_CH =
+                            #{oc.threeLevelClassfyCh,jdbcType=VARCHAR}
+                        </if>
+                    </if>
+                </foreach>
+                )
+            </if>
+            )
+        </if>
+        <if test="input != ''">
+            and (upper(TABLE_NAME_EN) like upper('%${input}%')
+            or upper(NAME) like upper('%${input}%')
+            or upper(SJXJBM) like upper('%${input}%'))
+        </if>
+        <if test="termSetting.size >0">
+            and
+            <foreach collection="termSetting" item="i" open="(" close=")" separator="or">
+                upper(TABLE_NAME_EN) = upper(#{i,jdbcType=VARCHAR})
+            </foreach>
+        </if>
+        <if test="startLastModifiedTime != ''">
+            and to_date(regexp_replace(LASTDATAMODIFIEDTIME, '\..*', ''),'yyyy-MM-dd hh24:mi:ss') >=
+            to_date(#{startLastModifiedTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+        </if>
+        <if test="endLastModifiedTime != ''">
+            and to_date(regexp_replace(LASTDATAMODIFIEDTIME, '\..*', ''),'yyyy-MM-dd hh24:mi:ss')-1  <![CDATA[<= ]]>
+            to_date(#{endLastModifiedTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+        </if>
+        <if test="startRecordNum != 0 and startRecordNum!= null">
+            and TABLE_ALL_COUNT >= #{startRecordNum}
+        </if>
+        <if test="endRecordNum != 0 and endRecordNum!= null">
+            and TABLE_ALL_COUNT <![CDATA[<= ]]> #{endRecordNum}
+        </if>
+        <if test="startStorageSize != 0 and startStorageSize!= null">
+            and TABLE_SIZE >= #{startStorageSize}
+        </if>
+        <if test="endStorageSize != 0 and endStorageSize!= null">
+            and TABLE_SIZE <![CDATA[<= ]]> #{endStorageSize}
+        </if>
+        <if test="queryTable != null">
+            and upper(TABLE_TYPE)=upper(#{queryTable.tableType,jdbcType=VARCHAR})
+            and upper(TABLE_PROJECT)=upper(#{queryTable.projectName,jdbcType=VARCHAR})
+            and upper(TABLE_NAME_EN)=upper(#{queryTable.tableName,jdbcType=VARCHAR})
+        </if>
+        )
+        <where>
+            1=1
+            <if test="objectStateStatus!=null ">
+                and objectState in
+                <foreach collection="objectStateStatus" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="productStageStatusList!=null">
+                and productStage in
+                <foreach collection="productStageStatusList" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="registerStateStatus!=null">
+                and registerState in
+                <foreach collection="registerStateStatus" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="tableProjectStatus!=null">
+                and tableProject in
+                <foreach collection="tableProjectStatus" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="isStandardStatus!=null">
+                and isStandard in
+                <foreach collection="isStandardStatus" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="tableStateStatus!=null">
+                and tableState in
+                <foreach collection="tableStateStatus" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="tableidStatus!=null">
+                and
+                <foreach collection="tableidStatus"  separator="or" item="item" >
+                    <if test="item == 'false'">
+                        tableid is null
+                    </if>
+                    <if test="item == 'true'">
+                        tableid is not null
+                    </if>
+                </foreach>
+            </if>
+            <if test="updatePeriodStatus!=null">
+                and updatePeriod in
+                <foreach collection="updatePeriodStatus" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by
+        case
+        when registerState = 2 then 1
+        when registerState = -1 then 2
+        when registerState = 1 then 3
+        when registerState is null then 4
+        end,lifeCycleStatus,rn desc
+    </select>
+
+    <select id="getAllDataContentFilter" resultType="com.synway.property.pojo.DetailedTableByClassify">
+        select distinct
+         TABLE_TYPE || '->' || RES_NAME || '->' || TABLE_PROJECT as tableProject,
+         update_period as updatePeriod,
+         product_stage as productStage
+          from (SELECT *
+                  FROM (SELECT j.*,
+                               row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) as rnn
+                          from table_organization_assets j
+                         where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) a
+                  left join (select TABLE_NAME,
+                                   PROJECT_NAME,
+                                   CLUSTER_NAME,
+                                   PRODUCT_STAGE
+                              from SYNLTE.table_register_info) b
+                    on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME)
+                   and upper(a.TABLE_PROJECT) = upper(b.PROJECT_NAME)
+                   and upper(a.TABLE_TYPE) = upper(b.CLUSTER_NAME)) h
+         WHERE h.rnn = 1
+    </select>
+
+    <select id="getRecordsStorageByPrimaryClassifyMap" resultType="java.util.HashMap">
+        <if test="categoryName== 'dataOrganizationClassify'">
+            select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME, records , tableSize
+            from(
+            select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
+            select PRIMARY_ORGANIZATION_CH AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
+            TRUNC(sum(table_size)/1073741824,4) as tableSize,to_char(STATISTICS_TIME,'yyyyMMdd') as STATISTICS_day
+            from table_organization_assets where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by PRIMARY_ORGANIZATION_CH ,
+            to_char(STATISTICS_TIME,'yyyyMMdd') ) t
+            where t.PRIMARY_NAME is not null) where rn =1
+        </if>
+        <if test="categoryName== 'dataSourceClassify'">
+            select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME , records , tableSize
+            from(
+            select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
+            select PRIMARY_DATASOURCE_CH AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
+            TRUNC(sum(table_size)/1073741824,4) as tableSize,to_char(STATISTICS_TIME,'yyyyMMdd') as STATISTICS_day
+            from table_organization_assets where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by PRIMARY_DATASOURCE_CH ,
+            to_char(STATISTICS_TIME,'yyyyMMdd') ) t
+            where t.PRIMARY_NAME is not null) where rn =1
+        </if>
+        <if test="categoryName== 'dataResourceClassify'">
+            select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME , records , tableSize
+            from(
+            select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
+            select FACTOR_ONE_NAME AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
+            TRUNC(sum(table_size)/1073741824,4) as tableSize,to_char(STATISTICS_TIME,'yyyyMMdd') as STATISTICS_day
+            from table_organization_assets where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by FACTOR_ONE_NAME ,
+            to_char(STATISTICS_TIME,'yyyyMMdd') ) t
+            where t.PRIMARY_NAME is not null) where rn =1
+        </if>
+        <!--        <if test="categoryName== 'dataLabelClassify'">-->
+        <!--            select LABELNAME as PRIMARY_NAME,TRUNC(sum(records)/100000000,6) as-->
+        <!--            records,TRUNC(sum(tableSize)/1073741824,4) as tableSize from(-->
+        <!--            select distinct TABLE_NAME_EN,LABELNAME,records,tableSize from (select-->
+        <!--            records,tablesize,TABLE_NAME_EN,regexp_substr(LABELS,'[^,]+',1,level) as LABELS from-->
+        <!--            (SELECT-->
+        <!--            LABELS,TABLE_NAME_EN,sum(TABLE_ALL_COUNT) as records,sum(table_size) as tableSize-->
+        <!--            FROM-->
+        <!--            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY-->
+        <!--            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)) h-->
+        <!--            WHERE-->
+        <!--            h.rnn = 1 and h.LABELS like '%A%' group by LABELS,TABLE_NAME_EN)-->
+        <!--            connect by level <![CDATA[<= ]]> regexp_count(LABELS,',')+1 and TABLE_NAME_EN = prior TABLE_NAME_EN and-->
+        <!--            prior dbms_random.value is not null) a-->
+        <!--            left join SYNLTE.LABELS b-->
+        <!--            on a.LABELS = b.LABELCODE-->
+        <!--            where b.LABELCODE like '%A%'-->
+        <!--            )-->
+        <!--            group by LABELNAME-->
+        <!--        </if>-->
+    </select>
+
+    <select id="getAdsProjectAdd" resultType="java.lang.String">
+        select distinct lower(project_name) from DATA_STORAGE_ADD_TABLE
+    </select>
+
+    <select id="getNeedAddRealTimeTableList"
+            resultType="com.synway.property.pojo.datastoragemonitor.NeedAddRealTimeTable">
+        select DATABASE_TYPE as dataBaseType , PROJECT_NAME as projectName , TABLENAME_EN as tableNameEN ,
+        TABLENAME_CH as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_NAME as dataSourceName,
+        DATA_SOURCE_ID as dataSourceId,DATA_CENTER_NAME as dataCenterName,DATA_CENTER_ID as dataCenterId,
+        ISSTANDARD as isStandard,ISADDMONITOR as isAddMonitor,ISDELETE as isDelete,
+        PARTITION_COLUMN as partitionColumn ,TABLE_ID AS  tableUuid from DATA_STORAGE_ADD_TABLE
+        <where>
+            ISDELETE = '0' and ISADDMONITOR = '已控'
+            <if test="dataBaseType!= ''">
+                and UPPER(DATABASE_TYPE) = upper(#{dataBaseType})
+            </if>
+            <if test="tableName!= ''">
+                and (upper(TABLENAME_EN) LIKE upper('%'||#{tableName}||'%')
+                or
+                upper(TABLENAME_CH) LIKE upper('%'||#{tableName}||'%')
+                or
+                upper(PROJECT_NAME) LIKE upper('%'||#{tableName}||'%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="getStandardTableName" resultType="java.util.Map">
+        SELECT DISTINCT TABLENAME,OBJECTNAME FROM synlte.OBJECT
+    </select>
+
+    <update id="delRealTableMonitorDao">
+        update DATA_STORAGE_ADD_TABLE set ISADDMONITOR = '待控' where
+        <foreach collection="list" item="item" separator="or" index="index">
+            (UPPER(DATA_SOURCE_ID) = UPPER(#{item.dataSourceId}) and UPPER(PROJECT_NAME) = UPPER(#{item.projectName})
+            and
+            UPPER(TABLENAME_EN) = UPPER(#{item.tableNameEN}))
+        </foreach>
+    </update>
+
+    <update id="updateRegisterInterfaceSuccessData">
+        BEGIN
+        <foreach collection="list" item="item" index="index">
+            update TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.registerState}
+            where UPPER(table_name_en) = UPPER(#{item.tableNameEn,jdbcType=VARCHAR})
+            <if test="item.tableid!= null">
+                and UPPER(sjxjbm) = UPPER(#{item.tableid,jdbcType=VARCHAR})
+            </if>
+            ;
+            update DATA_REGISTER
+            set APPROVAL_STATUS = '1',
+            APPROVAL_UPDATE_TIME = to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss')
+            where TABLE_NAME_EN = #{item.tableNameEn,jdbcType=VARCHAR};
+        </foreach>
+        END;
+    </update>
+
+    <update id="updateRegisterInterfaceFailedData">
+        BEGIN
+        <foreach collection="list" item="item" index="index">
+            update TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.registerState}
+            where UPPER(table_name_en) = UPPER(#{item.tableNameEn,jdbcType=VARCHAR})
+            <if test="item.tableid!= null">
+                and UPPER(sjxjbm) = UPPER(#{item.tableid,jdbcType=VARCHAR})
+            </if>
+            ;
+            update DATA_REGISTER
+            set APPROVAL_STATUS = '4',
+            APPROVAL_UPDATE_TIME = to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss')
+            where TABLE_NAME_EN = #{item.tableNameEn,jdbcType=VARCHAR};
+        </foreach>
+        END;
+    </update>
+
+    <update id="updateRegisterState">
+        BEGIN
+        <foreach collection="list" item="item" index="index">
+            update TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.TYPE,jdbcType=VARCHAR}
+            where UPPER(SJXJBM) = UPPER(#{item.TABLEID,jdbcType=VARCHAR});
+        </foreach>
+        END;
+    </update>
+
+    <update id="updateObjectState">
+        BEGIN
+        <foreach collection="list" item="item" index="index" separator=";" close=";">
+            update TABLE_ORGANIZATION_ASSETS set OBJECT_STATE = #{state,jdbcType=VARCHAR}
+            where UPPER(SJXJBM) = UPPER(#{item,jdbcType=VARCHAR})
+        </foreach>
+        <foreach collection="list" item="item" index="index" separator=";" close=";">
+            update SYNLTE.OBJECT set OBJECTSTATE = #{state,jdbcType=VARCHAR}
+            where UPPER(TABLEID) = UPPER(#{item,jdbcType=VARCHAR})
+        </foreach>
+        END;
+    </update>
+
+    <select id="getProjectNameByType" resultType="com.synway.property.pojo.PageSelectOneValue">
+        select lower(TABLE_PROJECT) as value,lower(TABLE_PROJECT)||'('||count(1)||')' as label from
+        (SELECT
+        TABLE_TYPE,TABLE_PROJECT
+        FROM
+        ( SELECT
+        j.TABLE_TYPE,j.TABLE_PROJECT,
+        row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j   where STATISTICS_TIME >= trunc(sysdate)) h
+        WHERE
+        h.rnn = 1)
+        where upper(TABLE_TYPE) = upper(#{stroageLocation})  group by upper(TABLE_TYPE),lower(TABLE_PROJECT)
+        order by lower(TABLE_PROJECT)
+    </select>
+
+    <!--    <select id="getLabelsByType" resultType="com.synway.property.pojo.PageSelectOneValue">-->
+    <!--        select a.label||'('||-->
+    <!--				sum(case when b.table_name_en is not null then 1  else 0 end)-->
+    <!--				||')'  as label ,a.value as value from-->
+    <!--				(select labelname as label,labelcode as value from SYNLTE.LABELS  where labelcode like #{label}||'%' group by labelname,labelcode) a-->
+    <!--				left join-->
+    <!--				(select labels,table_name_en from (SELECT j.labels,j.TABLE_PROJECT,j.TABLE_NAME_EN, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY-->
+    <!--        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate) ) h WHERE-->
+    <!--        h.rnn = 1) b-->
+    <!--				on b.labels like '%'||a.value||'%' GROUP BY a.value,a.label ORDER BY value-->
+    <!--    </select>-->
+
+    <select id="getStorageNum" resultType="com.synway.property.pojo.PageSelectOneValue">
+        SELECT
+        TABLE_TYPE||'('||count(1)||')' as label,TABLE_TYPE as value
+        FROM
+        ( SELECT upper(j.TABLE_TYPE) as TABLE_TYPE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate) and j.table_type is not null) h
+        WHERE
+        h.rnn = 1 group by TABLE_TYPE
+    </select>
+
+    <select id="getLabelNum" resultType="com.synway.property.pojo.PageSelectOneValue">
+        select a.label||'('||
+                sum(case when b.table_name_en is not null then 1  else 0 end)
+                ||')'   as label ,a.value as value from
+                (select labelname as label,substr(labelcode,0,1) as value from SYNLTE.LABELS group by labelname,substr(labelcode,0,1)) a
+                left join
+                (select labels,TABLE_NAME_EN from (SELECT j.labels,j.TABLE_NAME_EN,  row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate) ) h WHERE
+        h.rnn = 1) b
+                on b.labels like '%'||a.value||'%' GROUP BY a.value,a.label ORDER BY value
+    </select>
+
+    <select id="getSourceStateNum" resultType="java.util.HashMap">
+        select '启用' as value, '启用('||count(1)||')' as label FROM
+                ( SELECT j.OBJECT_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+                STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) ) h
+                WHERE
+                h.rnn = 1 and OBJECT_STATE in('0','1')
+        union
+        select '停用' as value, '停用('||count(1)||')' as label FROM
+                ( SELECT j.OBJECT_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+                STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) ) h
+                WHERE
+                h.rnn = 1 and (OBJECT_STATE = '-1' or OBJECT_STATE is null )
+        union
+        select '已注册' as value, '已注册('||count(1)||')' as label FROM
+                ( SELECT j.REGISTER_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+                STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+                WHERE
+                h.rnn = 1 and REGISTER_STATE = '1'
+        union
+        select '未注册' as value, '未注册('||count(1)||')' as label FROM
+                ( SELECT j.REGISTER_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+                STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+                WHERE
+                h.rnn = 1 and (REGISTER_STATE != '1' or REGISTER_STATE is null )
+    </select>
+
+
+    <select id="getTableType" resultType="java.lang.String">
+        select upper(TABLE_TYPE) from TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by upper(TABLE_TYPE)
+    </select>
+
+    <update id="updateApprovalStatus" parameterType="com.synway.property.pojo.approvalinfo.DataApproval">
+        BEGIN
+            merge into DATA_REGISTER a
+            using (select #{item.approvalType,jdbcType=VARCHAR} as approvalType,
+            <if test="item.approvalType=='updateLifeCycle'">
+                #{item.tableNameEn,jdbcType=VARCHAR} as tableNameEn,
+                #{item.tableProject,jdbcType=VARCHAR} as tableProject
+                from dual) b
+                on (a.TABLE_NAME_EN = b.tableNameEn and
+                a.TABLE_PROJECT = b.tableProject
+            </if>
+            <if test="item.approvalType=='register'">
+                #{item.tableId,jdbcType=VARCHAR} as SJXJBM from dual) b
+                on (a.SJXJBM = b.SJXJBM
+            </if>
+            and a.APPROVAL_TYPE = b.approvalType)
+            when matched then
+            update
+            set
+            APPROVAL_ID = #{item.approvalId,jdbcType=VARCHAR},
+            APPROVAL_STATUS = #{item.approvalStatus,jdbcType=VARCHAR},
+            APPROVAL_UPDATE_TIME = to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss')
+            when not matched then
+            insert (SJXJBM,TABLE_NAME_EN,OBJECT_ID,APPROVAL_ID,APPROVAL_STATUS,APPROVAL_CREATE_TIME,
+            APPROVAL_UPDATE_TIME,APPROVAL_TYPE,TABLE_PROJECT)
+            values(#{item.tableId,jdbcType=VARCHAR},#{item.tableNameEn,jdbcType=VARCHAR},#{item.objectId,jdbcType=VARCHAR},
+            #{item.approvalId,jdbcType=VARCHAR},#{item.approvalStatus,jdbcType=VARCHAR},to_char(sysdate ,
+            'yyyy-MM-dd
+            hh24:mi:ss'),
+            to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss'),#{item.approvalType,jdbcType=VARCHAR},
+            #{item.tableProject,jdbcType=VARCHAR});
+            update TABLE_ORGANIZATION_ASSETS set
+            <if test="item.approvalType=='register'">
+                REGISTER_STATE = #{item.approvalStatus,jdbcType=VARCHAR}
+                where UPPER(SJXJBM) = UPPER(#{item.tableId,jdbcType=VARCHAR})
+            </if>
+            <if test="item.approvalType=='updateLifeCycle'">
+                LIFE_CYCLE_STATUS = #{item.approvalStatus,jdbcType=VARCHAR}
+                where
+                UPPER(TABLE_NAME_EN) = UPPER(#{item.tableNameEn,jdbcType=VARCHAR})
+                <foreach collection="item.tableProject.split('->')" index="i" item="itm">
+                    <if test="i==0">
+                        and TABLE_TYPE = #{itm,jdbcType=VARCHAR}
+                    </if>
+                    <if test="i==1">
+                        and TABLE_PROJECT = #{itm,jdbcType=VARCHAR}
+                    </if>
+                </foreach>
+            </if>;
+        END;
+    </update>
+
+    <select id="getApprovalNum" parameterType="com.synway.property.pojo.approvalinfo.DataApproval"
+            resultType="com.synway.property.pojo.approvalinfo.DataApproval">
+        select SJXJBM as tableId,TABLE_NAME_EN as tableNameEn,OBJECT_ID as objectId,APPROVAL_ID as approvalId,
+        APPROVAL_STATUS as approvalStatus,APPROVAL_CREATE_TIME as approvalCreateTime,APPROVAL_UPDATE_TIME as
+        approvalUpdateTime,TABLE_PROJECT as tableProject,APPROVAL_TYPE as approvalType
+        from DATA_REGISTER where APPROVAL_STATUS = '2'
+        <foreach collection="dataApprovals" item="item">
+            <if test="item.approvalType == 'register'">
+                and SJXJBM = #{item.tableId,jdbcType=VARCHAR}
+            </if>
+            <if test="item.approvalType == 'updateLifeCycle'">
+                and TABLE_PROJECT = #{item.tableProject,jdbcType=VARCHAR}
+                and TABLE_NAME_EN = #{item.tableNameEn,jdbcType=VARCHAR}
+            </if>
+        </foreach>
+    </select>
+
+    <select id="getApprovals" resultType="com.synway.property.pojo.approvalinfo.DataApproval">
+        select SJXJBM as tableId,TABLE_NAME_EN as tableNameEn,OBJECT_ID as objectId,APPROVAL_ID as approvalId,
+        APPROVAL_STATUS as approvalStatus,APPROVAL_CREATE_TIME as approvalCreateTime,APPROVAL_UPDATE_TIME as approvalUpdateTime
+        from DATA_REGISTER where APPROVAL_STATUS = '2'
+    </select>
+
+    <select id="getApprovalStatus" resultType="com.synway.property.pojo.approvalinfo.DataApproval"
+            parameterType="com.synway.property.pojo.approvalinfo.DataApproval">
+        select APPROVAL_ID as approvalId,
+        case
+        when STATUS = '3' then '3'
+        when STATUS = '4' then '-1'
+        ELSE '2'
+        end as approvalStatus
+        from DGN_APPROVAL
+        where
+        STATUS in ('1','2','3','4') and
+        <foreach collection="approvals" item="item" separator="or" open="(" close=")">
+            APPROVAL_ID = #{item.approvalId,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <!--    <select id="getAllLabels" resultType="com.synway.property.pojo.formorganizationindex.Label">-->
+    <!--        select ID,LABELNAME,LABELCODE,LABELLEVEL,CLASSID,PARENTID,LABELLEVELNAME-->
+    <!--        from SYNLTE.LABELS-->
+    <!--    </select>-->
+
+    <!--    <select id="getLabelsByName" parameterType="com.synway.property.pojo.formorganizationindex.ReceiveTag"-->
+    <!--            resultType="java.lang.String">-->
+    <!--        select LABELCODE from SYNLTE.LABELS where 1=1 and-->
+    <!--        <foreach collection="list" item="item" separator="or">-->
+    <!--            LABELNAME = #{item.secondaryClassifyCh,jdbcType=VARCHAR}-->
+    <!--        </foreach>-->
+    <!--    </select>-->
+
+    <select id="getRegisterInfoBytableIdList" resultType="com.synway.property.pojo.register.RegisterInfo">
+        select distinct SJXJBM as tableid,
+        case when DATARESOURCE_CODE is null then #{resourceCode,jdbcType=VARCHAR}
+        else DATARESOURCE_CODE
+        end as symbol
+        from (
+        SELECT
+        j.*,
+        row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME
+        DESC ) AS rnn
+        FROM
+        table_organization_assets j
+        where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+        ) h
+        WHERE
+        h.rnn = 1 and (
+        <foreach collection="tablelist" item="tableId" separator="or">
+            h.SJXJBM = #{tableId,jdbcType=VARCHAR}
+        </foreach>)
+    </select>
+
+    <select id="getApprovalStatusBytableId" resultType="java.lang.Integer">
+        select
+        case
+        when STATUS = '3' then 3
+        when STATUS = '4' then -1
+        ELSE 2
+        end as approvalStatus
+        from DGN_APPROVAL
+        where
+        APPROVAL_ID in(
+        select APPROVAL_ID from data_register where SJXJBM = #{tableId,jdbcType=VARCHAR}
+        )
+    </select>
+
+    <select id="getObjectNameChByEn" resultType="java.lang.String">
+        select OBJECTNAME from SYNLTE.OBJECT where RELATE_TABLENAME = 'OBJECTFIELD'
+        and upper(TABLENAME) = upper(#{tableName,jdbcType=VARCHAR})
+        and rownum=1
+    </select>
+    <select id="getAllObjectChName" resultType="com.synway.property.pojo.datastoragemonitor.ObjectTable">
+        select upper(TABLENAME) as TABLENAME,OBJECTNAME from SYNLTE.OBJECT
+    </select>
+
+    <select id="getOrganizationZTreeNodesAll" resultType="com.synway.property.pojo.StandardTableRelation">
+        <if test="dataType == 1">
+            select * from(
+            select
+            '' as primaryClassifyId,
+            t1.PRIMARY_ORGANIZATION_CH as primaryClassifyCh,
+            '' AS secondaryClassifyId,
+            t1.SECONDARY_ORGANIZATION_CH as secondaryClassifyCh, -- 二级分类中文名
+            '' as threeClassifyId,
+            t1.THREELEVEL_ORGANIZATION_CH as threeClassifyCh,
+            t1.SJXJBM || '_' || TABLE_TYPE || '_'  || RES_NAME || '_'  || TABLE_PROJECT as tableId, -- 表id
+            t1.TABLE_NAME_EN as tableNameEn, -- 表英文名
+            t1.NAME aS tableNameCh, -- 表中文名
+            t1.STATISTICS_TIME AS INSERT_DATE
+            from(
+            select * FROM
+            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            and PRIMARY_ORGANIZATION_CH!='未知' and SECONDARY_ORGANIZATION_CH!='未知'
+            ) h
+            WHERE
+            h.rnn = 1
+            ) t1)
+            <if test="name != null and name != ''">
+                where
+                (primaryClassifyCh like '%'||#{name}||'%' or secondaryClassifyCh like '%'||#{name}||'%'or
+                upper(tableNameCh) like upper('%'||#{name}||'%') or upper(tableNameEn) like upper('%'||#{name}||'%') or
+                upper(tableId) like upper('%'||#{name}||'%'))
+
+            </if>
+        </if>
+        <if test="dataType == 2">
+            select * from(
+            select
+            '' as primaryClassifyId,
+            t1.PRIMARY_DATASOURCE_CH as primaryClassifyCh,
+            '' AS secondaryClassifyId,
+            t1.SECONDARY_DATASOURCE_CH as secondaryClassifyCh, -- 二级分类中文名
+            t1.SJXJBM || '_' || TABLE_TYPE || '_'  || RES_NAME || '_'  || TABLE_PROJECT as tableId, -- 表id
+            t1.TABLE_NAME_EN as tableNameEn, -- 表英文名
+            t1.NAME aS tableNameCh, -- 表中文名
+            t1.STATISTICS_TIME AS INSERT_DATE
+            from(
+            select * FROM
+            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            and PRIMARY_DATASOURCE_CH!='未知' and SECONDARY_DATASOURCE_CH!='未知') h
+            WHERE
+            h.rnn = 1
+            ) t1)
+            <if test="name != null and name != ''">
+                where
+                (primaryClassifyCh like '%'||#{name}||'%' or secondaryClassifyCh like '%'||#{name}||'%'or
+                upper(tableNameCh) like upper('%'||#{name}||'%') or upper(tableNameEn) like upper('%'||#{name}||'%') or
+                upper(tableId) like upper('%'||#{name}||'%'))
+            </if>
+        </if>
+    </select>
+
+    <select id="getOrganizationZTreeNodes" resultType="com.synway.property.pojo.StandardTableRelation">
+        <if test="dataType == 1">
+            select SJYJFL as primaryClassifyId, --- 一级分类代码
+            PRIMARYORGANIZATIONCH as primaryClassifyCh, --- 一级分类中文
+            SJEJFL as secondaryClassifyId, -- 二级分类代码
+            case when SECONDARYORGANIZATIONCH is null then '未知' else SECONDARYORGANIZATIONCH end as secondaryClassifyCh,
+            -- 二级分类中文名
+            SJXJBM as tableId, -- 表id
+            TABLENAME as tableNameEn, -- 表英文名
+            NAME as tableNameCh, -- 表中文名
+            INSERT_DATE
+            from classify_interface_all_date
+            where
+            PRIMARYORGANIZATIONCH is not null
+            and SJXJBM is not null
+            <if test="name != null and name != ''">
+                and (PRIMARYORGANIZATIONCH like '%'||#{name}||'%' or SECONDARYORGANIZATIONCH like '%'||#{name}||'%'or
+                upper(NAME) like upper('%'||#{name}||'%') or upper(TABLENAME) like upper('%'||#{name}||'%') or
+                upper(SJXJBM) like upper('%'||#{name}||'%'))
+            </if>
+            GROUP BY
+            SJYJFL,PRIMARYORGANIZATIONCH,SJEJFL,SECONDARYORGANIZATIONCH,SJXJBM,TABLENAME,NAME,INSERT_DATE
+            order by INSERT_DATE desc
+        </if>
+        <if test="dataType == 2">
+            select SJLYYJ as primaryClassifyId, --- 一级分类代码
+            PRIMARYDATASOURCECH as primaryClassifyCh, --- 一级分类中文
+            SJLYEJ as secondaryClassifyId, -- 二级分类代码
+            case when SECONDARYDATASOURCECH is null then '未知' else SECONDARYDATASOURCECH end as secondaryClassifyCh, --
+            二级分类中文名
+            SJXJBM as tableId, -- 表id
+            TABLENAME as tableNameEn, -- 表英文名
+            NAME as tableNameCh, -- 表中文名
+            INSERT_DATE
+            from classify_interface_all_date
+            where
+            PRIMARYDATASOURCECH is not null
+            and SJXJBM is not null
+            <if test="name != null and name != ''">
+                and (PRIMARYDATASOURCECH like '%'||#{name}||'%' or SECONDARYDATASOURCECH like '%'||#{name}||'%'or
+                upper(NAME) like upper('%'||#{name}||'%') or upper(TABLENAME) like upper('%'||#{name}||'%') or
+                upper(SJXJBM) like upper('%'||#{name}||'%'))
+            </if>
+            GROUP BY
+            SJLYYJ,PRIMARYDATASOURCECH,SJLYEJ,SECONDARYDATASOURCECH,SJXJBM,TABLENAME,NAME,INSERT_DATE
+            order by INSERT_DATE desc
+        </if>
+
+    </select>
+
+    <update id="updateLifeCycleApprovalStatus">
+        BEGIN
+        update DATA_REGISTER
+        set APPROVAL_STATUS = '1'
+        where TABLE_PROJECT = #{requestParam.tableProject,jdbcType=VARCHAR}
+        and TABLE_NAME_EN = #{requestParam.tableNameEn,jdbcType=VARCHAR}
+        and APPROVAL_TYPE = 'updateLifeCycle';
+        update TABLE_ORGANIZATION_ASSETS
+        set LIFE_CYCLE_STATUS = '1',
+        LIFE_CYCLE = #{requestParam.value,jdbcType=VARCHAR}
+        where
+        STATISTICS_TIME >= trunc(sysdate) and
+        UPPER(TABLE_NAME_EN) = UPPER(#{requestParam.tableNameEn,jdbcType=VARCHAR})
+        <foreach collection="requestParam.tableProject.split('->')" index="i" item="itm">
+            <if test="i==0">
+                and TABLE_TYPE = #{itm,jdbcType=VARCHAR}
+            </if>
+            <if test="i==1">
+                and TABLE_PROJECT = #{itm,jdbcType=VARCHAR}
+            </if>
+        </foreach>
+        ;
+        end;
+    </update>
+
+    <update id="updateFailLifeCycleApprovalStatus">
+        BEGIN
+        update DATA_REGISTER
+        set APPROVAL_STATUS = '4'
+        where TABLE_PROJECT = #{requestParam.tableProject,jdbcType=VARCHAR}
+        and TABLE_NAME_EN = #{requestParam.tableNameEn,jdbcType=VARCHAR}
+        and APPROVAL_TYPE = 'updateLifeCycle';
+        update TABLE_ORGANIZATION_ASSETS set LIFE_CYCLE_STATUS = '4'
+        where
+        STATISTICS_TIME >= trunc(sysdate) and
+        UPPER(TABLE_NAME_EN) = UPPER(#{requestParam.tableNameEn,jdbcType=VARCHAR})
+        <foreach collection="requestParam.tableProject.split('->')" index="i" item="itm">
+            <if test="i==0">
+                and TABLE_TYPE = #{itm,jdbcType=VARCHAR}
+            </if>
+            <if test="i==1">
+                and TABLE_PROJECT = #{itm,jdbcType=VARCHAR}
+            </if>
+        </foreach>
+        ;
+        end;
+    </update>
+
+    <select id="getLifeCycle" resultType="java.lang.String">
+        select LIFE_CYCLE from
+        ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)) h
+        WHERE
+        h.rnn = 1 and
+        UPPER(TABLE_NAME_EN) = UPPER(#{requestParam.tableNameEn,jdbcType=VARCHAR})
+        <foreach collection="requestParam.tableProject.split('->')" index="i" item="itm">
+            <if test="i==0">
+                and TABLE_TYPE = #{itm,jdbcType=VARCHAR}
+            </if>
+            <if test="i==1">
+                and TABLE_PROJECT = #{itm,jdbcType=VARCHAR}
+            </if>
+        </foreach>
+    </select>
+
+    <update id="updateTableOrganizationShowField">
+        merge into ZC_CONFIG_FIELD_CONTROL a
+            using (select 'TABLE_ORGANIZATION' as NAME, #{userName,jdbcType=VARCHAR} as USERNAME FROM dual) b
+            on (a.name = b.name and a.USERNAME = b.USERNAME)
+            when matched then
+            update
+            set
+            SHOW_FIELD_LIST = #{tableOrganizationShowFields,jdbcType=VARCHAR} where NAME = 'TABLE_ORGANIZATION' and USERNAME = #{userName,jdbcType=VARCHAR}
+            when not matched then
+            insert values('TABLE_ORGANIZATION',90,#{tableOrganizationShowFields,jdbcType=VARCHAR},#{userName,jdbcType=VARCHAR})
+    </update>
+
+    <select id="getTableOrganizationShowField" resultType="java.lang.String">
+        select SHOW_FIELD_LIST from ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_ORGANIZATION' and USERNAME = #{userName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getDetectId" resultType="java.lang.String">
+        select detect_id from ds_detected_table
+         where res_id = #{detailedTableByClassify.resourceId,jdbcType=VARCHAR}
+           and project_name = #{detailedTableByClassify.tableProject,jdbcType=VARCHAR}
+           and table_name_en =#{detailedTableByClassify.tableNameEn,jdbcType=VARCHAR}
+    </select>
+
+</mapper>

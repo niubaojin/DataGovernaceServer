@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.governace.dao.GeneralManagementDao">
+
+    <update id="saveOrUpdateGeneralSetting">
+        merge into DGN_COMMON_SETTING a
+        using (select #{config.parentId,jdbcType=VARCHAR} as parentId,
+                      #{config.treeType,jdbcType=VARCHAR} as treeType
+                 from dual) b
+        on (a.parent_id = b.parentId and a.tree_type = b.treeType)
+        when matched then
+          update
+             set THRESHOLD_VALUE = #{config.thresholdValue,jdbcType=VARCHAR},
+                 ID              = #{config.id,jdbcType=VARCHAR},
+                 NAME            = #{config.name,jdbcType=VARCHAR},
+                 IS_ACTIVE       = #{config.isActive,jdbcType=VARCHAR}
+        when not matched then
+          insert
+            (ID, PARENT_ID, NAME, THRESHOLD_VALUE, TREE_TYPE, IS_ACTIVE)
+          values
+            (#{config.id,jdbcType = VARCHAR},
+             #{config.parentId,jdbcType = VARCHAR},
+             #{config.name,jdbcType = VARCHAR},
+             #{config.thresholdValue,jdbcType = VARCHAR},
+             #{config.treeType,jdbcType = VARCHAR},
+             #{config.isActive,jdbcType = VARCHAR})
+    </update>
+
+    <update id="saveOrUpdateGeneralSettingDataVolume">
+        merge into DGN_COMMON_SETTING a
+        using (select #{config.parentId,jdbcType=VARCHAR} as parentId,
+                      #{config.name,jdbcType=VARCHAR} as name1
+                 from dual) b
+        on (a.parent_id = b.parentId and a.name = b.name1)
+        when matched then
+          update
+             set THRESHOLD_VALUE = #{config.thresholdValue,jdbcType=VARCHAR},
+                 ID              = #{config.id,jdbcType=VARCHAR},
+                 IS_ACTIVE       = #{config.isActive,jdbcType=VARCHAR}
+        when not matched then
+          insert
+            (ID, PARENT_ID, NAME, THRESHOLD_VALUE, TREE_TYPE, IS_ACTIVE)
+          values
+            (#{config.id,jdbcType = VARCHAR},
+             #{config.parentId,jdbcType = VARCHAR},
+             #{config.name,jdbcType = VARCHAR},
+             #{config.thresholdValue,jdbcType = VARCHAR},
+             #{config.treeType,jdbcType = VARCHAR},
+             #{config.isActive,jdbcType = VARCHAR})
+    </update>
+
+    <insert id="addPushSetting">
+        merge into DGN_COMMON_SETTING a
+        using (select #{config.parentId,jdbcType=VARCHAR} as parentId,
+                      #{config.id,jdbcType=VARCHAR} as id
+                 from dual) b
+        on (a.parent_id = b.parentId and a.id = b.id)
+        when matched then
+          update
+             set THRESHOLD_VALUE = #{config.thresholdValue,jdbcType=VARCHAR},
+                 NAME            = #{config.name,jdbcType=VARCHAR},
+                 IS_ACTIVE       = #{config.isActive,jdbcType=VARCHAR}
+        when not matched then
+          insert
+            (ID, PARENT_ID, NAME, THRESHOLD_VALUE, TREE_TYPE, IS_ACTIVE)
+          values
+            (#{config.id,jdbcType = VARCHAR},
+             #{config.parentId,jdbcType = VARCHAR},
+             #{config.name,jdbcType = VARCHAR},
+             #{config.thresholdValue,jdbcType = VARCHAR},
+             #{config.treeType,jdbcType = VARCHAR},
+             #{config.isActive,jdbcType = VARCHAR})
+
+    </insert>
+
+    <update id="editPushSetting">
+        update DGN_COMMON_SETTING
+           set THRESHOLD_VALUE = #{thresholdConfigSetting.thresholdValue,jdbcType=VARCHAR}
+         where upper(PARENT_ID) = upper('alarmPush')
+           and upper(ID) = upper(#{thresholdConfigSetting.id,jdbcType=VARCHAR})
+    </update>
+
+    <delete id="delPushSetting">
+        delete DGN_COMMON_SETTING
+        <if test="ids != null and ids != ''">
+            where upper(PARENT_ID) = upper(#{parentId,jdbcType = VARCHAR})
+            and upper(ID) in
+            <foreach collection="ids" open="(" close=")" separator="," item="item" >
+                upper(#{item})
+            </foreach>
+        </if>
+    </delete>
+
+    <select id="getGeneralSetting" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+         select ID as id, name, THRESHOLD_VALUE as thresholdValue from DGN_COMMON_SETTING where PARENT_ID=#{parentId} and TREE_TYPE = '3'
+    </select>
+
+    <select id="getGeneralSettingDataVolume" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+         select ID as id, name, THRESHOLD_VALUE as thresholdValue from DGN_COMMON_SETTING where PARENT_ID=#{parentId} and upper(NAME) = upper(#{name})
+    </select>
+
+    <delete id="deleteReconciliationAlarmSetting" parameterType="java.lang.String">
+        DELETE FROM DGN_COMMON_SETTING WHERE PARENT_ID = #{parentId}
+    </delete>
+
+    <insert id="insertReconciliationAlarmSetting" parameterType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+        insert into DGN_COMMON_SETTING
+          (ID,
+           PARENT_ID,
+           NAME,
+           LOGICAL_JUDGMENT,
+           THRESHOLD_VALUE,
+           TREE_TYPE,
+           IS_ACTIVE)
+        VALUES
+          (#{id,jdbcType = VARCHAR},
+           #{parentId,jdbcType = VARCHAR},
+           #{name,jdbcType = VARCHAR},
+           #{logicalJudgment,jdbcType = VARCHAR},
+           #{thresholdValue,jdbcType = VARCHAR},
+           #{treeType},
+           #{isActive,jdbcType = VARCHAR})
+    </insert>
+
+    <select id="getReconciliationAlarmSettingByParentId" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+        FROM DGN_COMMON_SETTING where 1=1
+        <if test="parentId !=null and parentId !=''">
+            and PARENT_ID = #{parentId}
+        </if>
+    </select>
+
+    <select id="getReconciliationAlarmSettingByName" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+        FROM DGN_COMMON_SETTING
+        <where>
+            <foreach collection="array" item="name" open="name in(" close=")" separator=",">
+                #{name}
+            </foreach>
+            and parent_id in(select id from DGN_COMMON_SETTING where tree_type='2')
+        </where>
+    </select>
+
+</mapper>

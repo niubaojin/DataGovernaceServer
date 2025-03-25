@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.dataoperations.dao.AlarmMessageDao">
+    <insert id="insertAlarmMessage">
+        insert into DO_ALARM_MSG(ALARM_ID,ALARM_SYSTEM,ALARM_MODULE,ALARM_TIME,ALARM_FLAG,ALARM_LEVEL,ALARM_CONTENT,TABLE_NAME_EN,TABLE_NAME_CH,TABLEID)
+        <foreach collection="alarmMessages" item="record" index="index" separator="union all">
+            select
+            #{record.ID,jdbcType=VARCHAR},
+            #{record.alarmsystem,jdbcType=VARCHAR},
+            #{record.alarmmodule,jdbcType=INTEGER},
+            to_date(substr(#{record.alarmtime,jdbcType=VARCHAR},0,19),'yyyy-MM-dd hh24:mi:ss'),
+            #{record.alarmflagName,jdbcType=VARCHAR},
+            #{record.levelName,jdbcType=VARCHAR},
+            #{record.alarmcontent,jdbcType=VARCHAR},
+            #{record.tableNameEn,jdbcType=VARCHAR},
+            #{record.tableNameCh,jdbcType=VARCHAR},
+            #{record.tableId,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+    </insert>
+
+    <insert id="insertOperatorLog" >
+        insert into DO_OPERATOR_LOG(NUM_ID ,OPERATE_TIME,TERMINAL_ID ,OPERATE_TYPE ,OPERATE_RESULT ,
+                                    ERROR_CODE,OPERATE_NAME,OPERATE_CONDITION,DISPLAY,DATA_LEVEL,CREATE_TIME,UPDATE_TIME,IF_OUT_SEND,
+                                    USER_NAME,USER_ID,USER_NUM,ORGANIZATION,ORGANIZATION_ID)
+        values (
+           #{ol.numId,jdbcType=NUMERIC},
+           #{ol.operateTime,jdbcType=VARCHAR},
+           #{ol.terminalId,jdbcType=VARCHAR},
+           #{ol.operateType,jdbcType=NUMERIC},
+           #{ol.operateResult,jdbcType=VARCHAR},
+           #{ol.errorCode,jdbcType=VARCHAR},
+           #{ol.operateName,jdbcType=VARCHAR},
+           #{ol.operateCondition,jdbcType=VARCHAR},
+           #{ol.display,jdbcType=VARCHAR},
+           #{ol.dataLevel,jdbcType=NUMERIC},
+           #{ol.createTime,jdbcType=TIMESTAMP},
+           #{ol.updateTime,jdbcType=TIMESTAMP},
+           #{ol.ifOutSend,jdbcType=NUMERIC},
+           #{ol.userName,jdbcType=VARCHAR},
+           #{ol.userId,jdbcType=VARCHAR},
+           #{ol.userNum,jdbcType=VARCHAR},
+           #{ol.organization,jdbcType=VARCHAR},
+           #{ol.organizationId,jdbcType=VARCHAR}
+       )
+    </insert>
+
+    <select id="getOperatorLogList" resultType="com.synway.dataoperations.pojo.OperatorLog">
+        select NUM_ID as numId,OPERATE_TIME as operateTime,TERMINAL_ID as terminalId ,OPERATE_TYPE as operateType,
+               OPERATE_RESULT as operateResult, ERROR_CODE as errorCode ,OPERATE_NAME as operateName,
+               OPERATE_CONDITION as operateCondition,DISPLAY,DATA_LEVEL as dataLevel,CREATE_TIME as createTime,
+               UPDATE_TIME as updateTime,IF_OUT_SEND as ifOutSend,USER_NAME as userName,USER_ID as userId,USER_NUM as userNum
+        from DO_OPERATOR_LOG
+        <where>
+            <if test="om!=null and om!=''">
+                and OPERATE_NAME = #{om,jdbcType=VARCHAR}
+            </if>
+            <if test="ot!=null and ot!=''">
+                and OPERATE_TYPE = #{ot,jdbcType=VARCHAR}
+            </if>
+            <if test="op!=null and op!=''">
+                and USER_NAME = #{op,jdbcType=VARCHAR}
+            </if>
+            <if test="obt!=null">
+                and CREATE_TIME <![CDATA[ >= ]]> #{obt,jdbcType=TIMESTAMP}
+            </if>
+            <if test="oet!=null">
+                and CREATE_TIME <![CDATA[ <= ]]> #{oet,jdbcType=TIMESTAMP}
+            </if>
+            <if test="iso!=null">
+                and IF_OUT_SEND = #{iso,jdbcType=NUMERIC}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateOperatorLogs" >
+        <foreach collection="otls" index="index" open="begin" close=";end;" separator=";" item="item">
+            update DO_OPERATOR_LOG set if_out_send = 1 where num_id=#{item.numId}
+        </foreach>
+    </update>
+
+    <select id="getUnSendOperatorLogList">
+        select NUM_ID as numId,OPERATE_TIME as operateTime,TERMINAL_ID as terminalId ,OPERATE_TYPE as operateType,
+               OPERATE_RESULT as operateResult, ERROR_CODE as errorCode ,OPERATE_NAME as operateName,
+               OPERATE_CONDITION as operateCondition,DISPLAY,DATA_LEVEL as dataLevel,CREATE_TIME as createTime,
+               UPDATE_TIME as updateTime,IF_OUT_SEND as ifOutSend,USER_NAME as userName,USER_ID as userId,USER_CARD_ID as userCardId
+        from DO_OPERATOR_LOG where IF_OUT_SEND = 0;
+    </select>
+
+    <select id="getAlarmData" resultType="com.synway.dataoperations.pojo.AlarmMessage">
+        select ALARM_ID      as ID,
+               ALARM_SYSTEM  as alarmsystem,
+               ALARM_MODULE  as alarmmodule,
+               ALARM_TIME    as alarmtime,
+               ALARM_FLAG    as alarmflagName,
+               ALARM_LEVEL   as levelName,
+               ALARM_CONTENT as alarmcontent,
+               TABLE_NAME_CH as tableNameCh,
+               TABLE_NAME_EN as tableNameEn,
+               TABLEID       as tableId
+          from do_alarm_msg
+          <where>
+              <if test="searchTime != null and searchTime != ''">
+                  and ALARM_TIME > to_date(#{searchTime},'yyyy-MM-dd hh24:mi:ss')
+              </if>
+              <if test="searchName != null and searchName != ''">
+                  and (
+                  ALARM_MODULE like concat('%',concat(#{searchName},'%')) or
+                  ALARM_LEVEL like concat('%',concat(#{searchName},'%')) or
+                  TABLE_NAME_CH like concat('%',concat(#{searchName},'%')) or
+                  ALARM_CONTENT like concat('%',concat(#{searchName},'%'))
+                  )
+              </if>
+              <if test="alarmModule != null and alarmModule != ''">
+                  and ALARM_MODULE = #{alarmModule}
+              </if>
+              <if test="alarmStatus != null and alarmStatus != ''">
+                  and ALARM_LEVEL = #{alarmStatus}
+              </if>
+              <if test="alarmStatusFilter!=null">
+                  and ALARM_LEVEL in
+                  <foreach collection="alarmStatusFilter" open="(" close=")" separator="," item="item" >
+                      #{item}
+                  </foreach>
+              </if>
+              <if test="alarmModuleFilter!=null">
+                  and ALARM_MODULE in
+                  <foreach collection="alarmModuleFilter" open="(" close=")" separator="," item="item" >
+                      #{item}
+                  </foreach>
+              </if>
+          </where>
+    </select>
+
+    <select id="getAlarmStatisticsInfo" resultType="com.synway.dataoperations.pojo.AlarmMessage">
+        select ALARM_ID      as ID,
+               ALARM_SYSTEM  as alarmsystem,
+               ALARM_MODULE  as alarmmodule,
+               ALARM_TIME    as alarmtime,
+               ALARM_FLAG    as alarmflagName,
+               ALARM_LEVEL   as levelName,
+               ALARM_CONTENT as alarmcontent,
+               TABLE_NAME_CH as tableNameCh,
+               TABLEID       as tableId
+          from do_alarm_msg
+          <where>
+              <if test="searchTime != null and searchTime != ''">
+                  and ALARM_TIME > to_date(#{searchTime},'yyyy-MM-dd hh24:mi:ss')
+              </if>
+          </where>
+    </select>
+
+    <select id="getDGFData" parameterType="com.synway.dataoperations.pojo.RequestParameter" resultType="com.synway.dataoperations.pojo.DataGFMsg">
+        select DG_ID            as id,
+               DG_LINK          as link,
+               DG_DATANAME      as dataName,
+               DG_TABLENAME     as tableName,
+               DG_TABLEID       as tableId,
+               DG_MSG           as message,
+               to_char(DG_UPDATETIME,'yyyy-MM-dd hh24:mi:ss')    as updateTime,
+               DG_SPONSOR       as sponsor,
+               to_char(DG_SPONSOR_TIME,'yyyy-MM-dd hh24:mi:ss')  as sponsorTime,
+               DG_MANAGER       as manager,
+               to_char(DG_MANAGER_TIME,'yyyy-MM-dd hh24:mi:ss')  as managerTime,
+               to_char(DG_REVIEWER_TIME,'yyyy-MM-dd hh24:mi:ss') as reviewerTime,
+               DG_CONCLUSION    as conclusion,
+               DG_STATUS        as status
+          from DO_DATAGOVERNANCE_FOLLOW
+        <where>
+            <if test="searchName != null and searchName != ''">
+                and (
+                DG_DATANAME like concat('%',concat(#{searchName},'%')) or
+                DG_MSG like concat('%',concat(#{searchName},'%'))
+                )
+            </if>
+            <if test="linkFilter!=null">
+                and DG_LINK in
+                <foreach collection="linkFilter" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="sponsorFilter!=null">
+                and DG_SPONSOR in
+                <foreach collection="sponsorFilter" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="managerFilter!=null">
+                and DG_MANAGER in
+                <foreach collection="managerFilter" open="(" close=")" separator="," item="item" >
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertDFGData" parameterType="com.synway.dataoperations.pojo.DataGFMsg">
+        insert into DO_DATAGOVERNANCE_FOLLOW (DG_ID,DG_LINK,DG_DATANAME,DG_TABLENAME,DG_TABLEID,DG_MSG,DG_UPDATETIME,
+        DG_SPONSOR,DG_SPONSOR_TIME,DG_MANAGER,DG_STATUS)
+        VALUES (#{dataGFMsg.id,jdbcType=VARCHAR},
+                #{dataGFMsg.link,jdbcType=VARCHAR},
+                #{dataGFMsg.dataName,jdbcType=VARCHAR},
+                #{dataGFMsg.tableName,jdbcType=VARCHAR},
+                #{dataGFMsg.tableId,jdbcType=VARCHAR},
+                #{dataGFMsg.message,jdbcType=VARCHAR},
+                SYSDATE,
+                #{dataGFMsg.sponsor,jdbcType=VARCHAR},
+                SYSDATE,
+                #{dataGFMsg.manager,jdbcType=VARCHAR},
+                #{dataGFMsg.status,jdbcType=VARCHAR}
+                )
+    </insert>
+
+    <update id="updateDFGData" parameterType="com.synway.dataoperations.pojo.DataGFMsg">
+        update DO_DATAGOVERNANCE_FOLLOW
+           set DG_LINK = #{dataGFMsg.link,jdbcType=VARCHAR},
+               DG_DATANAME = #{dataGFMsg.dataName,jdbcType=VARCHAR},
+               DG_TABLENAME = #{dataGFMsg.tableName,jdbcType=VARCHAR},
+               DG_TABLEID = #{dataGFMsg.tableId,jdbcType=VARCHAR},
+               DG_MSG = #{dataGFMsg.message,jdbcType=VARCHAR},
+               DG_UPDATETIME = SYSDATE,
+               DG_MANAGER = #{dataGFMsg.manager,jdbcType=VARCHAR}
+         where upper(DG_ID) = upper(#{dataGFMsg.id,jdbcType=VARCHAR})
+    </update>
+
+    <select id="getConclusion" resultType="java.lang.String">
+        select DG_CONCLUSION from DO_DATAGOVERNANCE_FOLLOW where DG_ID = #{id,jdbcType=VARCHAR}
+    </select>
+
+    <update id="updateConclusion">
+        update DO_DATAGOVERNANCE_FOLLOW
+           set DG_UPDATETIME = SYSDATE,
+               DG_CONCLUSION = #{conclusion,jdbcType=VARCHAR},
+               DG_STATUS = #{status,jdbcType=VARCHAR},
+            <if test="type == '治理操作'">
+                DG_MANAGER_TIME = to_date(#{nowTime,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+            </if>
+            <if test="type == '审核操作'">
+                DG_REVIEWER_TIME = to_date(#{nowTime,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+            </if>
+         where upper(DG_ID) = upper(#{id,jdbcType=VARCHAR})
+    </update>
+
+    <delete id="deleteDFGData">
+        delete DO_DATAGOVERNANCE_FOLLOW
+        <if test="idList != null and idList != ''">
+            where DG_ID in
+            <foreach collection="idList" open="(" close=")" separator="," item="item" >
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <select id="getExportData" parameterType="com.synway.dataoperations.pojo.RequestParameter" resultType="com.synway.dataoperations.pojo.DataGFMsg">
+        select DG_ID            as id,
+               DG_LINK          as link,
+               DG_DATANAME      as dataName,
+               DG_MSG           as message,
+               to_char(DG_UPDATETIME,'yyyy-MM-dd hh24:mi:ss')    as updateTime,
+               DG_SPONSOR       as sponsor,
+               DG_MANAGER       as manager,
+               DG_STATUS        as status
+            from DO_DATAGOVERNANCE_FOLLOW
+        <if test="idList != null and idList != ''">
+            where DG_ID in
+            <foreach collection="idList" open="(" close=")" separator="," item="item" >
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <delete id="deleteOverTimeAlarmData">
+        delete do_alarm_msg where alarm_time &lt; sysdate - #{days}
+    </delete>
+
+    <delete id="deleteOverTimeDGFData">
+        delete DO_DATAGOVERNANCE_FOLLOW where DG_UPDATETIME &lt; sysdate - #{days}
+    </delete>
+
+    <select id="getAlarmPushSetting" resultType="java.lang.String">
+         select THRESHOLD_VALUE from DGN_COMMON_SETTING where upper(PARENT_ID) = upper('alarmPush') and IS_ACTIVE = '1' and TREE_TYPE = '3'
+    </select>
+
+</mapper>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.dao.master.ElementCodeSetManageDao">
+
+<resultMap id="fieldcodeResult" type="com.synway.datastandardmanager.pojo.Fieldcode">
+<result property="codeId" column="CODEID"/>
+<result property="codeName" column="CODENAME"/>
+<result property="codeText" column="CODETEXT"/>
+<result property="memo" column="MEMO"/>
+<result property="parcodeId" column="PARCODEID"/>
+<result property="deleted" column="DELETED"/>
+<result property="transrule" column="TRANSRULE"/>
+<result property="brotherCodeId" column="BROTHERCODEID"/>
+</resultMap>
+
+<resultMap id="fieldCodeValResult" type="com.synway.datastandardmanager.pojo.FieldCodeVal">
+<result property="codeValId" column="CODEVALID"/>
+<result property="codeId" column="CODEID"/>
+<result property="valText" column="VALTEXT"/>
+<result property="memo" column="MEMO"/>
+<result property="valValue" column="VALVALUE"/>
+<result property="sortIndex" column="SORTINDEX"/>
+<result property="valTextTitle" column="VALTEXTTITLE"/>
+<result property="id" column="ID"/>
+</resultMap>
+    <select id="selectCodeTable" resultType="List" resultMap="fieldcodeResult" >
+        select distinct * from synlte.Fieldcode
+        <where>
+            DELETED=0
+            <if test="codeName != null and codeName != ''">
+                and ( upper(codeName) like upper('%${codeName}%')
+                <if test="codeText != null and codeText != ''">
+                    or upper(codeText) like upper('%${codeText}%')
+                </if>
+                )
+            </if>
+            <if test="codeName == null or codeName == ''">
+                <if test="codeText != null and codeText != ''">
+                    and upper(codeText) like upper('%${codeText}%')
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectCodeValTable" resultType="List" resultMap="fieldCodeValResult" >
+        select CODEVALID, CODEID, VALTEXT, MEMO, VALVALUE, SORTINDEX, VALTEXTTITLE ,ID from synlte.FIELDCODEVAL
+      <where>
+        <if test="valValue != null and valValue != ''">
+            AND upper(valValue) like upper('%${valValue}%')
+        </if>
+        <if test="valText != null and valText != ''">
+            AND upper(valText) like upper('%${valText}%')
+        </if>
+      </where>
+    </select>
+
+    <select id="selectCodeValTableByCodeId" resultType="List" resultMap="fieldCodeValResult" >
+        select CODEVALID, CODEID, VALTEXT, MEMO, VALVALUE, SORTINDEX, VALTEXTTITLE ,ID from synlte.FIELDCODEVAL
+      <where>
+        <if test="codeId != null and codeId != ''">
+            AND upper(codeId)=upper(#{codeId})
+        </if>
+        <if test="valValue != null and valValue != ''">
+            AND upper(valValue) like upper('%${valValue}%')
+        </if>
+        <if test="valText != null and valText != ''">
+            AND upper(valText) like upper('%${valText}%')
+        </if>
+      </where>
+    </select>
+
+    <select id="selectCodeTableByCodeIdInVal" resultType="List" resultMap="fieldcodeResult" >
+        select distinct * from synlte.fieldcode
+        <where>
+            DELETED=0
+            <if test="codeId != null and codeId != ''">
+                AND (codeId in (select parcodeid from synlte.fieldcode where upper(codeId)=upper(#{codeId})) or upper(codeId)=upper(#{codeId}))
+            </if>
+            <if test="codeName != null and codeName != ''">
+                and ( upper(codeName) like upper('%${codeName}%')
+                <if test="codeText != null and codeText != ''">
+                    or upper(codeText) like upper('%${codeText}%')
+                </if>
+                )
+            </if>
+            <if test="codeName == null or codeName == ''">
+                <if test="codeText != null and codeText != ''">
+                    and upper(codeText) like upper('%${codeText}%')
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <delete id="delCodeValTableDao" parameterType="com.synway.datastandardmanager.pojo.FieldCodeVal">
+       delete from synlte.FIELDCODEVAL  where upper(CODEVALID) = upper(#{codeValId}) and  upper(valValue) = upper(#{valValue})
+    </delete>
+
+    <insert id="addCodeValTable" parameterType="com.synway.datastandardmanager.pojo.FieldCodeVal">
+        insert into synlte.FIELDCODEVAL (CODEVALID,CODEID,VALTEXT,MEMO,VALVALUE,SORTINDEX,VALTEXTTITLE)
+        values (#{codeValId},#{codeId},#{valText},#{memo},#{valValue},#{sortIndex},#{valTextTitle})
+    </insert>
+
+    <update id="updateCodeValTable" parameterType="com.synway.datastandardmanager.pojo.FieldCodeVal">
+        UPDATE synlte.FIELDCODEVAL set valText = #{valText} , VALVALUE =#{valValue}
+        ,VALTEXTTITLE = #{valTextTitle},SORTINDEX =#{sortIndex},MEMO=#{memo},CODEVALID=#{oldCodeValId}
+        where CODEVALID=#{codeValId}
+    </update>
+
+    <select id="getCodeIdCount" resultType="java.lang.Integer">
+        select count(0) from synlte.fieldcode WHERE upper(CODEID) = upper(#{codeId})
+    </select>
+    <select id="getCodeValIdListDao" resultType="com.synway.datastandardmanager.pojo.OneSuggestValue">
+      select distinct codeId as id , codeid as value , codetext as name from synlte.fieldcode
+        <where>
+            <if test="condition != null and condition != '' ">
+                upper(codeId) like upper('%'||#{condition}||'%')
+                or upper(codetext) like upper('%'||#{condition}||'%')
+            </if>
+            and codename != 'JZCODE_0024'
+        </where>
+    </select>
+
+    <insert id="insertCodeSetManage" parameterType="com.synway.datastandardmanager.pojo.Fieldcode">
+      insert into synlte.fieldcode(CODEID,CODENAME,CODETEXT,PARCODEID,BROTHERCODEID,deleted)
+        values(#{codeId},#{codeName},#{codeText},#{parcodeId},#{brotherCodeId},0)
+    </insert>
+
+    <update id="updateCodeSetManage">
+      UPDATE synlte.fieldcode set CODENAME = #{codeName},CODETEXT=#{codeText},DELETED = 0,
+          PARCODEID=#{parcodeId} , BROTHERCODEID=#{brotherCodeId} where upper(CODEID) = upper(#{codeId})
+    </update>
+    <update id="delCodeTableByIdDao">
+        UPDATE synlte.FIELDCODE set DELETED = 1 where upper(CODEID) = upper(#{codeId})
+    </update>
+
+    <insert id="uploadCodeValXlsFileDao">
+      insert into synlte.FIELDCODEVAL (CODEVALID,CODEID,VALTEXT,MEMO,VALVALUE,SORTINDEX,VALTEXTTITLE)
+      select  * from(
+        <foreach collection="rcList" item="item" separator="union all">
+            SELECT #{item.codeValId,jdbcType=VARCHAR},#{item.codeId,jdbcType=VARCHAR},#{item.valText,jdbcType=VARCHAR},
+            #{item.memo,jdbcType=VARCHAR},#{item.valValue,jdbcType=VARCHAR},#{item.sortIndex,jdbcType=INTEGER},
+            #{item.valTextTitle,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+      )
+    </insert>
+
+    <select id="getCountCodeVal" resultType="java.lang.Integer">
+         SELECT COUNT(*) FROM synlte.FIELDCODEVAL WHERE upper(CODEID) = upper(#{codeId}) AND VALVALUE = #{valValue}
+    </select>
+
+    <select id="searchDictionaryList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue" parameterType="java.lang.String">
+        select DISTINCT codeid as value ,codetext as label from synlte.fieldcode
+--         select   t.codeid as value , t.codetext as label from
+--         (select a.*, row_number() over(partition by a.codetext order by a.codeid desc) rn from  synlte.fieldcode a) t where t.rn=1
+        <where>
+            codename != 'JZCODE_0024'
+            <if test="searchText != null">
+                (upper(codetext) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+        </where>
+    </select>
+
+    <select id="searchFieldCodeByCodeId" parameterType="java.lang.String" resultType="java.lang.String">
+        select codetext from synlte.fieldcode where codeid = #{codeId,jdbcType=VARCHAR}
+
+        <if test="codeId =='JZCODE0024'">
+                and codename='JZCODE0024'
+        </if>
+
+    </select>
+</mapper>

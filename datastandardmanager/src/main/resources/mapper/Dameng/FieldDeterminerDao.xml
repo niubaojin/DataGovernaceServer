@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.master.FieldDeterminerDao">
+
+    <select id="searchTable" resultType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer"
+            parameterType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminerParameter">
+        select determinerID,dChinseName,dName,memo,author,modDate,determinerState as determinerStateNum,
+        determinerType as determinerTypeNum,s."VERSIONS" as "versions",releaseDate, facturer,
+        REG_ORG as  regOrg,on_Date as onDate  from synlte.FieldDeterminer s
+        <where>
+            <if test="searchName !=null">
+                (upper(DChinseNAME)) like upper(concat('%',concat(#{searchName},'%')))
+                or upper(DNAME) like upper(concat('%',concat(#{searchName},'%')))
+            </if>
+            <if test="determinerTypeList != null">
+                and determinerType in (
+                <foreach collection="determinerTypeList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="determinerStateList != null">
+                and determinerState in (
+                <foreach collection="determinerStateList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="versionList != null">
+                and "VERSIONS" in (
+                <foreach collection="versionList" item="item" separator=",">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+                )
+            </if>
+            <if test="regOrgList != null">
+                and reg_org in (
+                <foreach collection="regOrgList" item="item" separator=",">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+                )
+            </if>
+        </where>
+        <if test="sort !=null and sort != ''">
+            order by ${sort} ${sortOrder}
+        </if>
+    </select>
+
+
+    <select id="searchAllTable" resultType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer">
+        select determinerID,dChinseName,dName,memo,author,modDate,determinerState as determinerStateNum,
+          determinerType as determinerTypeNum,s."VERSIONS" as "versions",releaseDate, facturer,
+          REG_ORG as  regOrg,on_Date as onDate  from synlte.FieldDeterminer s
+    </select>
+
+    <select id="findCountByDeterminerId" resultType="java.lang.Integer">
+        select count(0) from synlte.FieldDeterminer where upper(determinerID) = upper(#{id})
+    </select>
+
+    <select id="findAllDBNameList" resultType="java.lang.String">
+        select distinct dname  from synlte.FieldDeterminer  where upper(dname) like upper(concat(#{name},'%'))
+    </select>
+
+    <insert id="addOneData" parameterType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer">
+        insert into synlte.FieldDeterminer(DETERMINERID,DCHINSENAME,DNAME,MEMO,AUTHOR,MODDATE,DETERMINERSTATE,DETERMINERTYPE,
+               "VERSIONS",RELEASEDATE,FACTURER,REG_ORG,ON_DATE)
+        values(#{determinerId},#{dChinseName},#{dName},#{memo},#{author},sysdate,#{determinerStateNum},#{determinerTypeNum},
+             #{versions},#{releaseDate},#{facturer},#{regOrg},#{onDate})
+    </insert>
+
+    <select id="getCountByIdAndChinesName" resultType="java.lang.Integer">
+        select count(0) from synlte.FieldDeterminer
+        where upper(DETERMINERID) = upper(#{id}) and upper(DCHINSENAME) = upper(#{chinesName})
+    </select>
+
+    <select id="getCountById" resultType="java.lang.Integer">
+         select count(0) from synlte.FieldDeterminer
+         where upper(DETERMINERID) = upper(#{id})
+    </select>
+
+    <update id="upOneData" parameterType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer">
+        update synlte.FieldDeterminer set DCHINSENAME = #{dChinseName}, DNAME = #{dName}, MEMO = #{memo},
+         AUTHOR = #{author}, MODDATE = sysdate,  DETERMINERTYPE = #{determinerTypeNum}, "VERSIONS" = #{versions},
+         RELEASEDATE = #{releaseDate},FACTURER = #{facturer},REG_ORG = #{regOrg},ON_DATE = #{onDate}
+        where upper(DETERMINERID) = upper(#{determinerId}) and MODDATE = #{modDate}
+    </update>
+
+    <update id="updateDeterminerState">
+        update synlte.FieldDeterminer set DETERMINERSTATE = #{state},MODDATE = sysdate,RELEASEDATE = #{releaseDate}
+        where upper(DETERMINERID) = upper(#{id}) and MODDATE = to_date(#{modDate},'yyyy-mm-dd HH24:mi:ss')
+    </update>
+
+    <select id="getCountByIdModDate" resultType="java.lang.Integer">
+        select count(0) from synlte.FieldDeterminer
+         where upper(DETERMINERID) = upper(#{id}) and MODDATE = to_date(#{modDate},'yyyy-mm-dd HH24:mi:ss')
+    </select>
+
+    <select id="checkIsDeactivate" resultType="java.lang.Integer">
+        select count(0) from synlte.OBJECTFIELD
+        where upper(DETERMINERID) = upper(#{id})
+    </select>
+
+
+    <select id="getDeterminerIdList" resultType="java.lang.String">
+        select distinct determinerid from synlte.FieldDeterminer
+    </select>
+
+    <select id="getFieldDeterminerById" resultType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer">
+        select determinerID,dChinseName,dName,memo,author,modDate,determinerState as determinerStateNum,
+          determinerType as determinerTypeNum,"VERSIONS" as "versions",releaseDate, facturer,
+          REG_ORG as  regOrg,on_Date as onDate  from synlte.FieldDeterminer
+        where upper(DETERMINERID) = upper(#{id})
+    </select>
+
+    <insert id="saveOneOldData" parameterType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer">
+        insert into synlte.FieldDeterminer_HISTORY(FIELDDETERMINER_VERSION,DETERMINERID,DCHINSENAME,DNAME,MEMO,AUTHOR,MODDATE,
+        DETERMINERSTATE,DETERMINERTYPE,"VERSIONS",RELEASEDATE,FACTURER,REG_ORG,ON_DATE)
+        values(#{fieldDeterminerVersion,jdbcType=VARCHAR},#{determinerId},#{dChinseName},#{dName},#{memo},#{author},#{modDate},#{determinerStateNum},
+        #{determinerTypeNum},#{versions},#{releaseDate},#{facturer},#{regOrg},#{onDate})
+    </insert>
+
+    <insert id="saveFieldDeterminerVersion" parameterType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminerVersion">
+        insert  into synlte.FIeldDeterminer_VERSION(FIELDDETERMINER_VERSION,DCHINSENAME,DNAME,MEMO,VERSION,"VERSIONS",
+                        UPDATETIME,AUTHOR)
+        values(#{fieldDeterminerVersion},#{dChineseName},#{dName},#{memo},#{version},#{versions},#{updateTime},#{author})
+    </insert>
+
+    <select id="searchFieldDeterminerNameList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select DISTINCT DCHINSENAME as label,determinerId as value  from synlte.fielddeterminer where determinerstate = '05'
+        <if test="searchName != null and searchName != ''">
+            and upper(DCHINSENAME) like upper(concat('%',concat(#{searchName},'%')))
+        </if>
+    </select>
+
+    <!--    <select id="getDeterminerNameById" resultType="java.lang.String">-->
+    <!--        SELECT dchinsename FROM SYNLTE.FIELDDETERMINER where determinerid = #{determinerId}-->
+    <!--    </select>-->
+
+</mapper>

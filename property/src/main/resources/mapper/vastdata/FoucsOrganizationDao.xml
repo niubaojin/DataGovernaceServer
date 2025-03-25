@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.FoucsOrganizationDao">
+
+    <select id="getAllFoucsOrganizationDao" resultType="com.synway.property.pojo.FoucsOrganizationFull">
+        SELECT
+            mainClassifyCH,primaryName,secondaryName,tableCount,yesterdayRecordsSum,allRecordsSum,primarycodeid,secondarycodeid as secondaryClassifyCode
+        FROM (
+            SELECT mainClassifyCH,primaryName,secondaryName,count(TABLE_PROJECT || TABLE_NAME_EN) AS tableCount,
+            CASE WHEN sum(YESTERDAY_COUNT) IS NULL THEN 0 ELSE sum(YESTERDAY_COUNT) END AS yesterdayRecordsSum,
+            CASE WHEN sum(TABLE_ALL_COUNT) IS NULL THEN 0 ELSE sum(TABLE_ALL_COUNT) END AS allRecordsSum,
+            primarycodeid,secondarycodeid FROM (
+                (SELECT DISTINCT SECONDARY_NAME AS secondaryName,PRIMARY_NAME AS primaryName,
+                MAJOR_CLASS AS mainClassifyCH,primarycodeid,secondarycodeid FROM (
+                    SELECT a3.PRIMARY_NAME,a3.primarycodeid,a3.DEL_FLAG,a3.MAJOR_CLASS,a3.SECONDARY_NAME,a3.last_level_classifycode as secondarycodeid FROM (
+                        SELECT a1.PRIMARY_NAME,a1.SECONDARY_NAME,a1.DEL_FLAG,a1.MAJOR_CLASS,a2.CODEID AS primarycodeid,a1.last_level_classifycode FROM Focus_Organization_add_monitor a1
+                        LEFT JOIN V_CLASSIFY_INFO a2
+                        ON a1.PRIMARY_NAME=a2.CODETEXT) a3) k
+                    WHERE (k.major_class='数据组织分类' or k.major_class='原始库') AND k.del_flag=0) f1
+                LEFT JOIN (SELECT
+                PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,TABLE_ALL_COUNT,YESTERDAY_COUNT,TABLE_NAME_EN,TABLE_PROJECT
+                FROM (
+                    SELECT case when t.PRIMARY_ORGANIZATION_CH='原始库' then t.SECONDARY_ORGANIZATION_CH else t.PRIMARY_ORGANIZATION_CH end as PRIMARY_ORGANIZATION_CH,
+                           case when t.SECONDARY_ORGANIZATION_CH like '%汇聚库%' or t.SECONDARY_ORGANIZATION_CH like '%汇集库%' or t.SECONDARY_ORGANIZATION_CH like '%标准库%' then t.THREELEVEL_ORGANIZATION_CH else t.SECONDARY_ORGANIZATION_CH end as SECONDARY_ORGANIZATION_CH,
+                           t.TABLE_ALL_COUNT,t.YESTERDAY_COUNT,t.TABLE_NAME_EN,t.TABLE_PROJECT,row_number () over (PARTITION BY TABLE_PROJECT,TABLE_NAME_EN ORDER BY STATISTICS_TIME DESC) rn
+                    FROM table_organization_assets t  where STATISTICS_TIME >= trunc(sysdate)) WHERE rn=1) t1
+                ON t1.PRIMARY_ORGANIZATION_CH=f1.primaryName AND
+                (t1.SECONDARY_ORGANIZATION_CH=f1.secondaryname or (t1.SECONDARY_ORGANIZATION_CH is null and f1.secondaryname is null)))
+            GROUP BY mainClassifyCH,primaryName,secondaryName,primarycodeid,secondarycodeid
+            ORDER BY primarycodeid,secondarycodeid)
+        UNION ALL
+        SELECT
+        mainClassifyCH,primaryName,secondaryName,tableCount,yesterdayRecordsSum,allRecordsSum,primarycodeid,secondarycodeid
+        FROM (
+            SELECT mainClassifyCH,primaryName,secondaryName,count(TABLE_PROJECT || TABLE_NAME_EN) AS tableCount,
+            CASE WHEN sum(YESTERDAY_COUNT) IS NULL THEN 0 ELSE sum(YESTERDAY_COUNT) END AS yesterdayRecordsSum,
+            CASE WHEN sum(TABLE_ALL_COUNT) IS NULL THEN 0 ELSE sum(TABLE_ALL_COUNT) END AS allRecordsSum,
+            primarycodeid,secondarycodeid FROM (
+                (SELECT DISTINCT SECONDARY_NAME AS secondaryName,PRIMARY_NAME AS primaryName,
+                MAJOR_CLASS AS mainClassifyCH,primarycodeid,secondarycodeid FROM (
+                    SELECT b3.PRIMARY_NAME,b3.primarycodeid,b3.DEL_FLAG,b3.MAJOR_CLASS,b3.SECONDARY_NAME,b3.last_level_classifycode as secondarycodeid FROM (
+                        SELECT b1.PRIMARY_NAME,b1.SECONDARY_NAME,b1.DEL_FLAG,b1.MAJOR_CLASS,b2.CODEID AS primarycodeid,b1.last_level_classifycode FROM Focus_Organization_add_monitor b1
+                        LEFT JOIN V_CLASSIFY_INFO b2
+                        ON b1.PRIMARY_NAME=b2.CODETEXT) b3) j
+                WHERE major_class='数据来源分类' AND del_flag=0) f2
+            LEFT JOIN (SELECT
+            PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,TABLE_ALL_COUNT,YESTERDAY_COUNT,TABLE_NAME_EN,TABLE_PROJECT
+            FROM (
+                SELECT t.PRIMARY_DATASOURCE_CH,t.SECONDARY_DATASOURCE_CH,t.TABLE_ALL_COUNT,t.YESTERDAY_COUNT,t.TABLE_NAME_EN,t.TABLE_PROJECT,row_number () over (PARTITION BY TABLE_PROJECT,TABLE_NAME_EN ORDER BY STATISTICS_TIME DESC) rn
+                FROM table_organization_assets t  where STATISTICS_TIME >= trunc(sysdate)) WHERE rn=1) t2
+            ON t2.PRIMARY_DATASOURCE_CH=f2.primaryName AND
+                (t2.SECONDARY_DATASOURCE_CH=f2.secondaryname or (t2.SECONDARY_DATASOURCE_CH is null and f2.secondaryname is null)))
+        GROUP BY mainClassifyCH,primaryName,secondaryName,primarycodeid,secondarycodeid
+        ORDER BY primarycodeid,secondarycodeid)
+    </select>
+
+    <select id="getClassifyInformationTableDao" resultType="com.synway.property.pojo.ClassifyInformation">
+        select mainClassifyCH,primaryClassifyCode,primaryClassifyCH,SECONDARYCLASSIFYCODE,SECONDARYCLASSIFYCH from (
+        select * from (
+        select #{mainClassifyCh} as mainClassifyCH ,CODEID as primaryClassifyCode,CODETEXT as primaryClassifyCH from
+        V_CLASSIFY_INFO
+        <where>
+            <if test="primaryClassifyCh != '' ">
+                CODETEXT like #{primaryClassifyCh}||'%'
+            </if>
+        </where>
+        )a
+        INNER join (select CODEID as SECONDARYCLASSIFYCODE,CODETEXT as SECONDARYCLASSIFYCH,PARCODEID from
+        V_CLASSIFY_INFO )b
+        on a.PRIMARYCLASSIFYCODE = b.PARCODEID or a.PRIMARYCLASSIFYCODE = b.SECONDARYCLASSIFYCODE
+        )
+    </select>
+
+    <select id="getAllClassifyInformationTableDao" resultType="com.synway.property.pojo.ClassifyInformation">
+        select distinct d.major_class as mainClassifyCH,
+                primaryClassifyCode,
+                d.primary_name as primaryClassifyCH,
+                case when SECONDARYCLASSIFYCODE is null then d.last_level_classifycode else SECONDARYCLASSIFYCODE end as SECONDARYCLASSIFYCODE,
+                d.secondary_name as SECONDARYCLASSIFYCH,
+                1 as alreadyInserted
+            from Focus_Organization_add_monitor d
+            left join (select * from (select '数据组织分类' as mainClassifyCH,
+                            CODEID as primaryClassifyCode,
+                            CODETEXT as primaryClassifyCH
+                       from V_CLASSIFY_INFO
+                      where PARCODEID = 'JZCODEGASJZZFL'
+                     union all
+                     select '数据来源分类' as mainClassifyCH,
+                            CODEID as primaryClassifyCode,
+                            CODETEXT as primaryClassifyCH
+                       from V_CLASSIFY_INFO
+                      where PARCODEID = 'GACODE000404') a
+              INNER join (select CODEID as SECONDARYCLASSIFYCODE,
+                                CODETEXT as SECONDARYCLASSIFYCH,
+                                PARCODEID
+                           from V_CLASSIFY_INFO) b on a.PRIMARYCLASSIFYCODE = b.PARCODEID) c
+                                                                    on  d.major_class = c.mainClassifyCH
+                                                                    and d.primary_name= c.primaryClassifyCH
+                                                                    and d.secondary_name = c.SECONDARYCLASSIFYCH
+    </select>
+
+    <!--    启用-->
+    <!--    <select id="getClassifyInformationTableDao" resultType="com.synway.property.pojo.ClassifyInformation">-->
+    <!--    select * from (-->
+    <!--        <if test="mainClassifyCh == '数据组织分类' ">-->
+    <!--        select  '数据组织分类' as mainClassifyCH , PRIMARY_ORGANIZATION_CODE as primaryClassifyCode , PRIMARY_ORGANIZATION_CH as primaryClassifyCH ,-->
+    <!--            SECONDARY_ORGANIZATION_CODE as secondaryClassifyCode , SECONDARY_ORGANIZATION_CH as secondaryClassifyCH-->
+    <!--            from data_organization_class_code-->
+    <!--            <where>-->
+    <!--                <if test="primaryClassifyCh != '' ">-->
+    <!--                    PRIMARY_ORGANIZATION_CH =#{primaryClassifyCh}-->
+    <!--                </if>-->
+    <!--            </where>-->
+    <!--        </if>-->
+    <!--        <if test="mainClassifyCh == '数据来源分类' ">-->
+    <!--        select  '数据来源分类' as mainClassifyCH , PRIMARY_DATASOURCE_CODE as primaryClassifyCode , PRIMARY_DATASOURCE_CH as primaryClassifyCH ,-->
+    <!--            SECONDARY_DATASOURCE_CODE as secondaryClassifyCode , SECONDARY_DATASOURCE_CH as secondaryClassifyCH-->
+    <!--            from DATARESOURCE_SOURCE_CODE-->
+    <!--            <where>-->
+    <!--                <if test="primaryClassifyCh != '' ">-->
+    <!--                    PRIMARY_DATASOURCE_CH =#{primaryClassifyCh}-->
+    <!--                </if>-->
+    <!--            </where>-->
+    <!--        </if>-->
+    <!--        <if test="mainClassifyCh == '数据资源分类' ">-->
+    <!--        select * from (-->
+    <!--            select distinct FACTOR_CODE as primaryClassifyCode , '数据资源分类' as mainClassifyCH , FACTOR_NAME as primaryClassifyCH-->
+    <!--            from DATA_FACTOR_CLASS_CODE-->
+    <!--            <where>-->
+    <!--                <if test="primaryClassifyCh != '' ">-->
+    <!--                    FACTOR_NAME =#{primaryClassifyCh} and-->
+    <!--                </if>-->
+    <!--                FACTOR_TYPE = 1-->
+    <!--            </where>-->
+    <!--            )-->
+    <!--            left join (select distinct FACTOR_CODE as secondaryClassifyCode , FACTOR_NAME as secondaryClassifyCH-->
+    <!--            from DATA_FACTOR_CLASS_CODE where FACTOR_TYPE = 2)  on 1=1-->
+    <!--        </if>-->
+    <!--        )-->
+    <!--    </select>-->
+
+    <select id="getAddClassifyNameList" resultType="java.lang.String">
+        select  primary_name||'_'||SECONDARY_NAME  as secondaryClassifyCH
+        from Focus_Organization_add_monitor
+    </select>
+
+    <insert id="insertClassifyInformationTableDao" parameterType="com.synway.property.pojo.ClassifyInformation" useGeneratedKeys="false">
+        INSERT INTO Focus_Organization_add_monitor (PRIMARY_NAME , SECONDARY_NAME , INSERT_TIME , DEL_FLAG,MAJOR_CLASS,USER_ID,USER_AUTHORITY_ID,USER_NAME,IS_ADMIN,LAST_LEVEL_CLASSIFYCODE)
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.primaryClassifyCH,jdbcType=VARCHAR}, #{item.secondaryClassifyCH,jdbcType=VARCHAR},
+            to_date(to_char(sysdate,'yyyy-MM-dd HH24:mi:ss'),'yyyy-MM-dd HH24:mi:ss'),0,#{item.mainClassifyCH,jdbcType=VARCHAR},
+            #{item.userId,jdbcType=VARCHAR},#{item.userAuthorityId,jdbcType=VARCHAR},
+            #{item.userName,jdbcType=VARCHAR},#{item.isAdmin,jdbcType=VARCHAR},#{item.secondaryClassifyCode,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+    </insert>
+
+    <insert id="insertUserAuthorityDataListDao" parameterType="com.synway.property.pojo.datastoragemonitor.UserAuthorityData"
+            useGeneratedKeys="false">
+        INSERT INTO USER_AUTHORITY
+            (id,cmn_memo,modulecode,modulename,iscreater,username,cmn_name,userid,create_time)
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.id,jdbcType=VARCHAR},
+            #{item.cmnMemo,jdbcType=VARCHAR},
+            #{item.moduleCode,jdbcType=VARCHAR},
+            #{item.moduleName,jdbcType=VARCHAR},
+            #{item.isCreate,jdbcType=VARCHAR},
+            #{item.userName,jdbcType=VARCHAR},
+            #{item.cnmName,jdbcType=VARCHAR},
+            #{item.userId,jdbcType=VARCHAR},
+            #{item.createTime,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+    </insert>
+
+    <delete id="delAllClassifyInformationTableDao">
+        DELETE from Focus_Organization_add_monitor
+    </delete>
+
+    <delete id="delUserAuthorityDataListDao">
+        DELETE from USER_AUTHORITY where MODULECODE='ZCGL_ZDZZ' and USERID=#{userId}
+    </delete>
+
+    <select id="getDayUseHeatDao" resultType="map">
+      select
+--         case  when TABLENAMEZH is null then tablenameen else TABLENAMEZH end  as TABLENAMEZH ,
+        TABLENAMEZH,
+        TOTAL,
+        case
+        when TABLETYPE = 1 THEN 'ODPS'
+        when TABLETYPE = 2 THEN 'ADS'
+        when TABLETYPE = 3 THEN 'ADS'
+        else '' end as TABLETYPE
+        from(
+        select  NAME  as TABLENAMEZH  ,tableen as tablenameen , sum(TABLEUSECOUNTOFDAY) as TOTAL, TABLETYPE  from
+        (select a.tableen,a.TABLETYPE,a.TABLEUSECOUNTOFDAY,b.NAME,b.TABLE_PROJECT from
+        (select b.TABLETYPE,b.TABLEUSECOUNTOFDAY,substr(b.TABLENAMEEN,0,INSTR(b.TABLENAMEEN,'.')-1) as tableproject,
+        substr(b.TABLENAMEEN,INSTR(b.TABLENAMEEN,'.')+1) as tableen
+        from (select x.* from StoreCycleAndUseHeat x inner join synlte.object y
+            on upper(substr(x.TABLENAMEEN,INSTR(x.TABLENAMEEN, '.') + 1)) =
+               upper(y.tablename)
+            where x.tablenamezh is not null
+            --根据东威控制objectstate是否为1决定数据是否展示
+            and y.objectstate=1 and y.relate_tablename='OBJECTFIELD') b) a
+        inner join
+        table_organization_assets b
+        on upper(a.tableen) = upper(b.TABLE_NAME_EN) and upper(a.tableproject) = upper(b.TABLE_PROJECT)
+        where b.STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+		)  group by NAME,tableen,TABLETYPE,TABLE_PROJECT order by TOTAL desc
+        ) where rownum &lt;9
+    </select>
+
+    <select id="getFullDataRankingDao" resultType="map">
+        select case
+            when NAME is null then TABLENAME
+            else NAME end as TABLENAMEZH,
+            TRUNC(TABLE_ALL_COUNT / 100000000, 4) as total,
+            tableType
+            from (select DISTINCT TABLE_PROJECT || '.' || TABLE_NAME_EN AS TABLENAME,NAME,TABLE_ALL_COUNT,TABLE_TYPE as tableType
+                from table_organization_assets a
+                left join synlte.object b on a.sjxjbm = b.tableid
+                where STATISTICS_TIME &gt;= to_char(sysdate - #{daysAgo}) and STATISTICS_TIME &lt; to_char(sysdate + 1 - #{daysAgo})
+                --根据姚秀梅要求改为统计全部数据量排行
+                --and PARTITION_MESSAGE = 1
+                and a.SJXJBM is not null
+                and b.objectstate = 1
+                ORDER BY TABLE_ALL_COUNT desc nulls last)
+                where rownum &lt; 6
+    </select>
+<!--    <select id="getFullDataRankingDao" resultType="map">-->
+<!--        select case when NAME is null then TABLENAME else NAME end  as TABLENAMEZH , TRUNC(TABLE_ALL_COUNT/100000000,4) as total,tableType from(-->
+<!--        select DISTINCT   TABLE_PROJECT||'.'||TABLE_NAME_EN AS TABLENAME ,NAME, TABLE_ALL_COUNT,TABLE_TYPE as tableType from table_organization_assets-->
+<!--        where to_char(STATISTICS_TIME,'yyyy-MM-dd') = to_char(sysdate - #{daysAgo},'yyyy-MM-dd')-->
+<!--        &#45;&#45;根据姚秀梅要求改为统计全部数据量排行-->
+<!--        &#45;&#45;and PARTITION_MESSAGE = 1-->
+<!--        and SJXJBM is not null-->
+<!--        ORDER BY TABLE_ALL_COUNT desc ) where rownum &lt;6-->
+<!--    </select>-->
+
+    <select id="getIncrementalDataRankingDao" resultType="map">
+        select case
+            when NAME is null then TABLENAME else NAME
+            end as TABLENAMEZH,
+            TRUNC(YESTERDAY_COUNT / 100000000, 4) as total,
+            tableType
+            from (select DISTINCT TABLE_PROJECT || '.' || TABLE_NAME_EN AS TABLENAME,
+                NAME,
+                YESTERDAY_COUNT,
+                TABLE_TYPE as tableType
+                from table_organization_assets a
+                left join synlte.object b on a.sjxjbm = b.tableid
+                where a.STATISTICS_TIME &gt;= trunc(sysdate - #{daysAgo}) and a.STATISTICS_TIME &lt; trunc(sysdate + 1 - #{daysAgo})
+                and a.PARTITION_MESSAGE = 0
+                and upper(a.table_type) = 'ODPS'
+                and a.SJXJBM is not null
+                and b.objectstate = 1
+                ORDER BY YESTERDAY_COUNT desc nulls last)
+                where rownum &lt; 6
+    </select>
+<!--    <select id="getIncrementalDataRankingDao" resultType="map">-->
+<!--        select case when NAME is null then TABLENAME else NAME end  as TABLENAMEZH , TRUNC(YESTERDAY_COUNT/100000000,4) as total,tableType from(-->
+<!--        select DISTINCT   TABLE_PROJECT||'.'||TABLE_NAME_EN AS TABLENAME ,NAME, YESTERDAY_COUNT,TABLE_TYPE as tableType from table_organization_assets where to_char(STATISTICS_TIME,'yyyy-MM-dd') = to_char(sysdate - #{daysAgo},'yyyy-MM-dd') and PARTITION_MESSAGE = 0-->
+<!--        and table_type = 'ODPS' and SJXJBM is not null-->
+<!--        ORDER BY YESTERDAY_COUNT desc ) where rownum &lt;6-->
+<!--    </select>-->
+
+    <select id="getClassTreeListDao" resultType="map">
+        select CODETEXT as PRIMARY_CH,'数据组织分类' as MAINCLASS_CH from V_CLASSIFY_INFO where PARCODEID = 'JZCODEGASJZZFL'
+        UNION  ALL
+        select CODETEXT as PRIMARY_CH,'数据来源分类' as MAINCLASS_CH from V_CLASSIFY_INFO where PARCODEID = 'GACODE000404'
+    </select>
+</mapper>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.reconciliation.dao.CacheManageDao">
+
+    <select id="getSourceTable" resultType="com.synway.reconciliation.pojo.SourceTableCache">
+        SELECT
+        distinct o.TABLENAME as tableName,
+        o.OBJECTNAME as objectName,
+        f.PARTITION_RECNO partitionRecno
+        FROM
+        synlte.object o
+        LEFT JOIN synlte.OBJECTFIELD f ON o.OBJECTID = f.OBJECTID
+    </select>
+
+    <select id="getAllDetectedTableInfo" resultType="com.synway.reconciliation.pojo.DsDetectedTable">
+        SELECT
+        DETECT_ID detectId,RES_ID resId,PROJECT_NAME projectName,TABLE_NAME_EN tableNameEn,TABLE_TYPE tableType,DETECTED_TYPE detectedType,IS_DELETED isDeleted,TABLE_NAME_CN tableNameCn,DATA_FORMAT dataFormat,PROVIDE_TYPE provideType,
+        PROVIDER provider,PROVIDE_UNIT provideUnit,PROVIDE_TEL provideTel,PROVIDE_TIME provideTime,INCEPTOR inceptor,INCEPT_UNIT inceptUnit,INCEPT_TEL inceptTel,INCEPT_TIME inceptTime,INCEPT_DESC inceptDesc,INCEPT_TYPE inceptType,
+        DATA_LEVEL dataLevel,TRADE_CLASSIFY tradeClassify,BUSINESS_MARK businessMark,ROUTINE_UNIT routineUnit,ROUTINE_CODE routineCode,ROUTINE_LINKMAN routineLinkman,ROUTINE_TEL routineTel,MANAGE_UNIT manageUnit,MANAGE_UNIT_CODE manageUnitCode,
+        RES_POSTION resPostion,POSTION_DESC postionDesc,APP_NAME appName,APP_CODE appCode,APP_MANAGE_UNIT appManageUnit,
+        APP_BUILD_UNIT appBuildUnit, SOURCE_CLASSIFY sourceClassify, SOURCE_CODE sourceCode, RES_DESC resDesc
+        FROM
+        DS_DETECTED_TABLE
+        WHERE
+        IS_DELETED = 0
+    </select>
+
+    <select id="getAllCodes" resultType="com.synway.reconciliation.pojo.issue.AdministrativeDivisionCode">
+        SELECT code, name
+        FROM DAC_CITY_DIVISION_CODE
+    </select>
+</mapper>

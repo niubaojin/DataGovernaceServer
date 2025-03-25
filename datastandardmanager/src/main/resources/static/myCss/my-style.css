@@ -1,0 +1,440 @@
+html,
+body {
+    height: 100%;
+    width: 100%;
+    color: var(--font-color);
+    margin: 0;
+    padding: 0;
+}
+
+
+/** 普通按钮  */
+
+.my-btn {
+    height: 30px;
+    padding: 5px 5px;
+    width: 70px;
+    border: 1px solid var(--main-color);
+    color: var(--main-color);
+    border-radius: 2px;
+    display: inline-block;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    background: var(--white);
+    outline: none;
+    font-size: 14px;
+}
+
+.my-btn:hover {
+    background-image: var(--main-gradient-color);
+    background-blend-mode: normal, normal;
+    color: var(--white);
+}
+
+
+/** 按钮组合  */
+
+.my-btn-group {
+    border-radius: 2px;
+    color: var(--main-color);
+    border: 1px solid var(--main-color);
+    height: 30px;
+    box-sizing: border-box;
+    display: inline-block;
+}
+
+.my-btn-group .my-group-btn {
+    display: inline-block;
+    width: 70px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    font-size: 14px;
+    cursor: pointer;
+    border-left: 0;
+    vertical-align: middle;
+}
+
+.my-btn-group .my-group-btn:hover {
+    background-image: var(--main-gradient-color);
+    background-blend-mode: normal, normal;
+    color: var(--white);
+}
+
+
+/** 导入按钮  */
+
+.my-upload-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.my-upload-btn .my-upload-input {
+    position: absolute;
+    font-size: 100px;
+    right: 0;
+    top: 0;
+    opacity: 0;
+    filter: alpha(opacity=0);
+    cursor: pointer;
+}
+
+
+/** 搜索栏  */
+
+.my-search-box {
+    position: relative;
+    display: flex;
+}
+
+.my-search-box .my-input {
+    height: 30px;
+    line-height: 30px;
+    background-color: var(--white);
+    background-image: none;
+    border: 1px solid var(--input-border);
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    color: var(--font-color);
+    display: inline-block;
+    font-size: 13px;
+    outline: none;
+    padding: 0 15px;
+    border-radius: 4px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-left: 22px;
+    width: 180px;
+}
+
+.my-search-box .my-input:focus {
+    border-color: var(--main-color);
+}
+
+.my-search-box .my-input::placeholder {
+    color: var(--from-font-color);
+}
+
+.my-search-box .my-img {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    z-index: 9;
+}
+
+.my-search-box .my-btn {
+    height: 30px;
+    border-radius: 2px;
+    border: 1px solid var(--main-color);
+    color: var(--main-color);
+    font-size: 13px;
+    padding: 6px 18px;
+    display: inline-block;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    background: var(--white);
+    outline: none;
+}
+
+.my-search-box .my-btn:hover {
+    background-image: var(--main-gradient-color);
+    background-blend-mode: normal, normal;
+    color: var(--white);
+}
+
+
+/** 弹窗中按钮样式 */
+
+.my-btn-confirm {
+    color: var(--white);
+    background-color: var(--main-color);
+    border-color: var(--main-color);
+    padding: 4px 20px;
+    font-size: 14px;
+    border-radius: 2px
+}
+
+.my-btn-confirm:hover,
+.my-btn-confirm:focus,
+.my-btn-confirm:active,
+.my-btn-confirm:active:focus {
+    color: var(--white);
+    background-color: var( --btn-hover-color);
+    border-color: var( --btn-hover-color);
+    outline: none;
+    box-shadow: none;
+}
+
+.my-btn-cancle {
+    color: var(--font-color);
+    background-color: var(--white);
+    border: 1px solid #dedfe6;
+    padding: 4px 20px;
+    font-size: 14px;
+    border-radius: 2px
+}
+
+.my-btn-cancle:hover,
+.my-btn-cancle:focus,
+.my-btn-cancle:active,
+.my-btn-cancle:active:focus {
+    color: var(--main-color);
+    border-color: var(--dialog-cancel-btn-focus);
+    background-color: var(--dialog-cancel-btn-background-focus);
+    outline: none;
+    box-shadow: none;
+}
+
+.my-dialog .modal-header {
+    background-image: var(--main-gradient-color);
+    color: var(--white);
+}
+
+.my-dialog .modal-header .close {
+    color: var(--white);
+}
+
+.my-dialog .modal-content {
+    border-radius: 0;
+    border: 0;
+}
+
+
+/** table */
+
+.my-table-div {
+    padding: 15px;
+    height: 100%;
+    width: 100%;
+}
+
+
+/** 分页 */
+
+.page-list ul li {
+    position: relative;
+    font-size: 14px;
+    font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+}
+
+.page-list ul li span {
+    position: absolute;
+    top: 10px;
+    left: 38px;
+    color: var(--font-color);
+    cursor: pointer;
+}
+
+.page-list ul.dropdown-menu {
+    min-width: 110px;
+}
+
+.page-list ul li a {
+    line-height: 34px;
+    max-width: 110px;
+    position: relative;
+    z-index: 1;
+}
+
+.page-list .dropdown-menu>li:hover,
+.dropdown-menu>li:focus {
+    text-decoration: none;
+    background-color: #f5f7fa;
+}
+
+.page-list .dropdown-menu>li>a:hover,
+.page-list .dropdown-menu>li>a:focus {
+    text-decoration: none;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.page-list .dropdown-menu>.active>span,
+.page-list .dropdown-menu>.active>span:hover,
+.page-list .dropdown-menu>.active>span:focus {
+    z-index: 4;
+}
+
+.page-list .dropdown-menu>.active>a,
+.page-list .dropdown-menu>.active>a:hover,
+.page-list .dropdown-menu>.active>a:focus,
+.page-list .dropdown-menu>.active>span,
+.page-list .dropdown-menu>.active>span:hover,
+.page-list .dropdown-menu>.active>span:focus {
+    color: var(--main-color);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.page-list .btn.btn-default.dropdown-toggle {
+    width: 110px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0;
+    color: var(--font-color);
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.btn.btn-default .caret {
+    -webkit-transition: -webkit-transform .3s;
+    transition: -webkit-transform .3s;
+    transition: transform .3s;
+    transition: transform .3s, -webkit-transform .3s;
+    position: relative;
+    right: -15px;
+    -webkit-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+.btn-group.open .btn.btn-default .caret {
+    -webkit-transition: -webkit-transform .3s;
+    transition: -webkit-transform .3s;
+    transition: transform .3s;
+    transition: transform .3s, -webkit-transform .3s;
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+}
+
+.page-list .btn-default:active:hover,
+.page-list .btn-default.active:hover,
+.page-list .open>.dropdown-toggle.btn-default:hover,
+.page-list .btn-default:active:focus,
+.page-list .btn-default.active:focus,
+.page-list .open>.dropdown-toggle.btn-default:focus,
+.page-list .btn-default:active.focus,
+.page-list .btn-default.active.focus,
+.page-list .open>.dropdown-toggle.btn-default.focus {
+    border: 1px solid var(--main-color);
+    background-color: var(--white);
+    color: var(--font-color);
+}
+
+.page-list .btn-default:active,
+.page-list .btn-default.active,
+.page-list .open>.dropdown-toggle.btn-default {
+    background-color: var(--white);
+    box-shadow: none;
+}
+
+.page-list .btn-default:hover {
+    border: 1px solid var(--main-color);
+    background-color: var(--white);
+}
+
+.page-list .btn-group.open .dropdown-toggle {
+    box-shadow: none;
+}
+
+.pagination>li {
+    color: var(--page-list-font-color);
+}
+
+.pagination>li>a,
+.pagination>li>span {
+    border: 0;
+    color: var(--page-list-font-color);
+    font-weight: 700;
+}
+
+.pagination>li.page-pre a,
+.pagination>li.page-next>a {
+    font-weight: normal;
+}
+
+.pagination>.active>a,
+.pagination>.active>span,
+.pagination>.active>a:hover,
+.pagination>.active>span:hover,
+.pagination>.active>a:focus,
+.pagination>.active>span:focus {
+    z-index: 3;
+    color: var(--main-color);
+    cursor: default;
+    background-color: var(--white);
+    border: 0;
+}
+
+.pagination>li>a:hover,
+.pagination>li>span:hover,
+.pagination>li>a:focus,
+.pagination>li>span:focus {
+    color: var(--main-color);
+    cursor: default;
+    background-color: var(--white);
+    border: 0;
+}
+
+.fixed-table-pagination .pagination a {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+
+.fixed-table-pagination .pagination a:hover {
+    cursor: pointer;
+}
+
+.fixed-table-pagination {
+    text-align: right;
+}
+
+.pagination-detail {
+    display: inline-block;
+    float: none !important;
+    text-align: right;
+    vertical-align: top;
+    margin-right: 10px;
+}
+
+.pagination {
+    display: inline-block;
+    float: none !important;
+    text-align: right;
+}
+
+.fixed-table-pagination li.disabled a {
+    cursor: not-allowed;
+    pointer-events: auto;
+}
+
+.fixed-table-pagination li.disabled a:hover {
+    cursor: not-allowed;
+    pointer-events: auto;
+}
+
+
+/* select */
+
+.btn-default:hover,
+.btn-default:focus,
+.btn-default.focus {
+    background: none;
+    outline: none;
+}
+
+.btn-default {
+    border: 1px solid var(--input-border);
+    color: var(--font-color);
+}
+
+
+/**/
+
+.endTimeInput,
+.startTimeInput,
+.timeText {
+    height: 30px;
+    line-height: 30px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    color: var(--page-list-font-color);
+    padding-left: 10px;
+}
+
+
+/* 输入框建议*/
+
+.typeahead.dropdown-menu>li>a {
+    padding: 6px 12px;
+}

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.dataoperations.dao.DataSumMonitorDao">
+
+    <select id="getDSMDataType" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select distinct OUT_EN_NAME  as outTableNameEn
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where CREATE_TIME >= DATE_TRUNC('day', CURRENT_DATE)
+           and out_en_name is not null
+    </select>
+    <select id="getDSMLeftTree" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select distinct sds.out_en_name as outTableNameEn,
+               sds.out_cn_name as outTableNameCh,
+               sds.out_protocol as outProtocol,
+               case when ciad.sjzzsjfl is null or ciad.sjzzsjfl = '' then '其他' else ciad.sjzzsjfl end as sjzzsjfl
+          from (select *
+                  from shptstatistics.sjgc_data_summary
+                 where CREATE_TIME >= (CURRENT_DATE - INTERVAL '30 day')
+                    and out_en_name is not null
+                    <if test="searchName != '' and searchName != null">
+                        and (upper(out_en_name) like upper(concat('%',concat(#{searchName,jdbcType=VARCHAR},'%'))) or
+                             upper(out_cn_name) like upper(concat('%',concat(#{searchName,jdbcType=VARCHAR},'%'))) or
+                             upper(out_protocol) like upper(concat('%',concat(#{searchName,jdbcType=VARCHAR},'%'))))
+                    </if>
+                 ) sds
+          left join (select SECONDARYORGANIZATIONCH as sjzzsjfl, sjxjbm
+                       from CLASSIFY_INTERFACE_ALL_DATE
+                      where objectstate = 1
+                        and PRIMARYORGANIZATIONCH = '原始库') ciad on sds.out_protocol =
+                                                                   ciad.sjxjbm
+    </select>
+
+    <select id="getCardData" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               DATA_TYPE as dataType
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where CREATE_TIME >= DATE_TRUNC('day', CURRENT_DATE)
+         group by DATA_TYPE
+    </select>
+
+    <select id="getChartData" parameterType="com.synway.dataoperations.pojo.dataSizeMonitor.RequestParameterDSM"
+            resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select out_en_name as outTableNameEn,
+               out_cn_name as outTableNameCh,
+               out_protocol as outProtocol,
+               sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               case
+                when DATA_TYPE = '1' then '接入'
+                when DATA_TYPE = '2' then '处理'
+                when DATA_TYPE = '3' then '入库'
+                when DATA_TYPE = '4' then '集成'
+                else DATA_TYPE end as dataType,
+               PUSH_HOUR as pushHour,
+               to_char(CREATE_TIME,'yyyyMMdd') as createTime
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where
+            CREATE_TIME >= (CURRENT_DATE - INTERVAL '1 day')
+            and DATA_TYPE = '2'
+            <if test="tableId != null and tableId != ''">
+                and upper(out_protocol) = upper(#{tableId})
+            </if>
+            and PUSH_HOUR is not null
+         group by DATA_TYPE,PUSH_HOUR,out_en_name,out_cn_name,out_protocol,to_char(CREATE_TIME,'yyyyMMdd')
+--          order by PUSH_HOUR
+         union all
+        select out_en_name as outTableNameEn,
+               out_cn_name as outTableNameCh,
+               out_protocol as outProtocol,
+               sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               case
+                when DATA_TYPE = '1' then '接入'
+                when DATA_TYPE = '2' then '处理'
+                when DATA_TYPE = '3' then '入库'
+                when DATA_TYPE = '4' then '集成'
+                else DATA_TYPE end as dataType,
+               PUSH_HOUR as pushHour,
+               to_char(CREATE_TIME,'yyyyMMdd') as createTime
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where
+            CREATE_TIME >= (CURRENT_DATE - INTERVAL '1 day')
+            and DATA_TYPE = '1'
+            and upper(in_protocol) in (select distinct in_protocol from SHPTSTATISTICS.SJGC_DATA_SUMMARY where upper(out_protocol) = upper(#{tableId}))
+            and PUSH_HOUR is not null
+         group by DATA_TYPE,PUSH_HOUR,out_en_name,out_cn_name,out_protocol,to_char(CREATE_TIME,'yyyyMMdd')
+--          order by PUSH_HOUR
+    </select>
+    <select id="getChartData3" parameterType="com.synway.dataoperations.pojo.dataSizeMonitor.RequestParameterDSM"
+            resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select out_en_name as outTableNameEn,
+               out_cn_name as outTableNameCh,
+               out_protocol as outProtocol,
+               sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               STORE_TYPE || '>' || PROJECT_NAME as storageLocation,
+               PUSH_HOUR as pushHour,
+               to_char(CREATE_TIME,'yyyyMMdd') as createTime
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where
+            CREATE_TIME >= (CURRENT_DATE - INTERVAL '1 day')
+            and PUSH_HOUR is not null
+            and DATA_TYPE = '3'
+            and PROJECT_NAME is not null
+            <if test="tableId != null and tableId != ''">
+                and upper(in_protocol) = upper(#{tableId})
+            </if>
+         group by STORE_TYPE || '>' || PROJECT_NAME, PUSH_HOUR,out_en_name,out_cn_name,out_protocol,to_char(CREATE_TIME,'yyyyMMdd')
+         order by PUSH_HOUR
+    </select>
+
+    <select id="getDataVolumeAlarmSetting" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.ThresholdConfigSetting">
+        select ID as id, name, THRESHOLD_VALUE as thresholdValue from DGN_COMMON_SETTING where PARENT_ID = 'dataVolumeMonitor' and name is not null
+    </select>
+
+    <select id="getSjgcDataSummarys" resultType="com.synway.dataoperations.pojo.dataSizeMonitor.SjgcDataSummary">
+        select out_en_name as outTableNameEn,
+               out_cn_name as outTableNameCh,
+               out_protocol as outProtocol,
+               sum(OUT_SUCCESS_NUM) as outSuccessSum,
+               sum(OUT_ERROR_NUM) as outErrorSum,
+               case
+                when DATA_TYPE = '1' then '接入'
+                when DATA_TYPE = '2' then '处理'
+                when DATA_TYPE = '3' then '入库'
+                when DATA_TYPE = '4' then '集成'
+                else DATA_TYPE end as dataType,
+               PUSH_HOUR as pushHour,
+               to_char(CREATE_TIME,'yyyyMMdd') as createTime
+          from SHPTSTATISTICS.SJGC_DATA_SUMMARY
+         where
+            CREATE_TIME >= (CURRENT_DATE - INTERVAL '#{days} day')
+            and DATA_TYPE != '4'
+            and PUSH_HOUR is not null
+            and out_en_name is not null
+         group by DATA_TYPE,PUSH_HOUR,out_en_name,out_cn_name,out_protocol,to_char(CREATE_TIME,'yyyyMMdd')
+         order by PUSH_HOUR
+    </select>
+
+</mapper>

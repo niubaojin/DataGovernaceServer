@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<package>
+    <!-- 组件（安装包）描述文件，此文件必须放在包根目录下 -->
+    <!-- 带*为必填项 -->
+    <!-- 组件基本信息 -->
+    <base>
+        <!-- * 名称,如：统一部署工具 -->
+        <name>数据工厂_主框架模块</name>
+        <!-- * 标识 -->
+        <sign>datagovernance</sign>
+        <!-- * 版本号，格式以v开头，如：v1.0.0 -->
+        <version>V2.1.0-20220929</version>
+        <!-- * 发布时间，如：2022-04-08 -->
+        <releaseTime>20220929</releaseTime>
+        <!-- * 分类，如：服务端或客户端 -->
+        <classify>服务端</classify>
+        <!-- * 业务系统，展示该组件所属的业务应用模块,如标签业务系统 -->
+        <serviceModule>数据工厂</serviceModule>
+        <!-- * 默认安装路径，如:/home/soft/ -->
+        <defaultInstallPath>/home/synway/apps/datagovernance</defaultInstallPath>
+        <!-- 如果是服务端，则需要相对于安装路径的日志地址，如:logs/gateway-server-1.0_startup.log -->
+        <defaultLogPath>log/log_info.log</defaultLogPath>
+        <defaultLogPath>log/log_error.log</defaultLogPath>
+        <shells>
+            <!-- 如果没有相应脚本也可以空着，如客户端或资源包时 -->
+            <!-- 脚本配置，其中type必须唯一，且启动为start\停止为stop固定，其它可以随意，url是启本脚本在包中的相对路径,
+            function是脚本中的启动方法（可以没有，则整个脚本就是启动脚本） -->
+            <shell name="启动" type="start" url="start.sh" fun=""/>
+            <shell name="停止" type="stop" url="stop.sh" fun=""/>
+            <!-- 或者 -->
+            <!-- <shell name="启动" type="start" url="bin/shell.sh" fun="start"/>
+            <shell name="停止" type="stop" url="bin/shell.sh" fun="stop"/> -->
+        </shells>
+        <!-- 配置文件，包中的相对路径，可配置多个，如conf/deploy.env -->
+        <configFiles>
+            <configFile ver="config/bootstrap.yaml"/>
+        </configFiles>
+        <!-- 类型，如：共性业务组件、特定业务组件、共性依赖组件、驱动组件等 -->
+        <type>共性依赖组件</type>
+        <!-- 来源，如：自研组件、组织内部组件、第三方组件 -->
+        <source>自研组件</source>
+        <!-- 所属部门,如：战略与解决方案中心 -->
+        <ascription>数据产品线</ascription>
+        <!-- 支持的系统，视具体情况可填多个系统或不填（表示支持所有系统） -->
+        <supportSystem>
+            <system ver="CentOS7.4_x64"/>
+        </supportSystem>
+        <!-- 支持的浏览器，分类是客户端时需要填，视具体情况可填多个浏览器或不填（表示支持所有浏览器） -->
+        <supportBrowser>
+            <browser ver="Google Chrome 11"/>
+        </supportBrowser>
+        <!-- 功能描述 -->
+        <functionDescription>功能描述</functionDescription>
+        <!-- 性能描述 -->
+        <powerDescription>性能描述</powerDescription>
+        <!-- 设备兼容性 -->
+        <equipmentCompatibility>设备兼容性</equipmentCompatibility>
+    </base>
+    <!-- 依赖信息,包括系统、软、硬件要求 -->
+    <dependents>
+        <!-- 依赖组件 -->
+        <softwares>
+        </softwares>
+        <!-- 最低磁盘要求，如：10G -->
+        <minDisk>5G</minDisk>
+        <!-- 最低内存要求，如：512M -->
+        <minMemory>512M</minMemory>
+    </dependents>
+    <!-- 版本日志,最新版本写最上方 -->
+    <versionNotes>
+        <version ver="v1.9.0" time="20220707">
+            功能：
+        </version>
+    </versionNotes>
+</package>
+

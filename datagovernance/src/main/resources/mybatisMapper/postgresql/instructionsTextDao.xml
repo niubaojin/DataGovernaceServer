@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.InstructionsTextDao">
+
+    <insert id="insert" parameterType="com.synway.governace.pojo.instructions.InstructionsText">
+        insert into DGN_INSTRUCTIONS (TREE_NAME,PARENT_ID,TREE_TYPE,CONTENT,ID)values(
+				        #{treeName,jdbcType=VARCHAR},
+				        #{parentId,jdbcType=VARCHAR},
+				        #{treeType,jdbcType=NUMERIC},
+				        #{content,jdbcType=VARCHAR},#{id,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <delete id="delete" parameterType="java.lang.String">
+        delete from DGN_INSTRUCTIONS where id = #{treeId}
+    </delete>
+
+    <update id="updateName" parameterType="java.lang.String">
+        update DGN_INSTRUCTIONS set TREE_NAME = #{treeNameNew,jdbcType=VARCHAR} where id = #{treeId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateContent" parameterType="java.lang.String">
+        update DGN_INSTRUCTIONS set content = #{content} where id = #{treeId}
+    </update>
+
+    <select id="getInstructionsContent" resultType="java.lang.String">
+        select CONTENT from DGN_INSTRUCTIONS where id='${treeId}'
+    </select>
+    <select id="getTreeTypeByName" resultType="java.lang.Integer">
+        select TREE_TYPE from DGN_INSTRUCTIONS where id='${treeId}'
+    </select>
+    <select id="getRootTreeNode" resultType="com.synway.governace.pojo.TreeNode">
+        select tree_name as text,tree_type as icon,id ,parent_id as parentId
+        from DGN_INSTRUCTIONS where parent_id='root'
+    </select>
+    <select id="getAllTreeNodes" resultType="com.synway.governace.pojo.TreeNode">
+        select tree_name as text,tree_type as icon,id ,parent_id as parentId
+        from DGN_INSTRUCTIONS where parent_id is not null and parent_id != 'root'
+    </select>
+    <select id="getMaxNum" resultType="java.lang.Long">
+        select max(id) from DGN_INSTRUCTIONS where parent_id =#{parentId}
+    </select>
+</mapper>

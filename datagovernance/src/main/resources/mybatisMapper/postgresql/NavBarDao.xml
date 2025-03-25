@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.NavBarDao">
+    <select id="getAllNavBars" resultType="com.synway.governace.pojo.navbar.NavBars">
+        select nav_id as navId,
+       nav_name as navName,
+       nav_class as navClass,
+       nav_ip as navIp,
+       nav_link as navLink,
+       nav_show as navShow,
+       nav_blank as navBlank,
+       nav_level as navLevel,
+       nav_parent_name as navParentName,
+       nav_order as navOrder,
+        nav_name_en as navNameEn from DGN_NAVBAR where nav_show = '1'
+    </select>
+    <select id="getNavStatusByName" resultType="java.lang.Boolean">
+        select nav_show from DGN_NAVBAR where nav_name = #{name}
+    </select>
+    <select id="getAllNewNavBars" resultType="com.synway.governace.pojo.navbar.NavBars">
+        select nav_id as navId,
+       nav_name as navName,
+       nav_class as navClass,
+       nav_ip as navIp,
+       nav_link as navLink,
+       nav_show as navShow,
+       nav_blank as navBlank,
+       nav_level as navLevel,
+       nav_parent_name as navParentName,
+       nav_order as navOrder,
+        nav_name_en as navNameEn,
+        nav_redirect as redirect,
+        nav_hidden as navHidden from DGN_NAVBAR where nav_show = '1'
+    </select>
+
+</mapper>

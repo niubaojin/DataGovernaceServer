@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="com.synway.property.dao.DBOperatorMonitorDao">
+
+    <insert id="insertDBOperatorRecord" parameterType="java.util.List">
+        insert into DBOPERATE_MONITOR
+            (ID,
+            DB_TYPE,
+            PROJECT_NAME,
+            SQL_TYPE,
+            EXECUTE_STATE,
+            SQL,
+            START_TIME,
+            END_TIME,
+            EXECUTE_TIME,
+            INST_OWNER_NAME,
+            MONITOR_TIME)
+        <foreach  collection="list" item="record" index="index" separator="union all">
+            select
+            #{record.id,jdbcType=VARCHAR},
+            #{record.dbType,jdbcType=VARCHAR},
+            #{record.projectName,jdbcType=VARCHAR},
+            #{record.sqlTyle,jdbcType=INTEGER},
+            #{record.executiveState,jdbcType=VARCHAR},
+            #{record.sql,jdbcType=VARCHAR},
+            #{record.startTime,jdbcType=VARCHAR},
+            #{record.endTime,jdbcType=VARCHAR},
+            #{record.excuteTime,jdbcType=VARCHAR},
+            #{record.ownerName,jdbcType=VARCHAR},
+            #{record.monitorTime,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+        select 1 from dual
+    </insert>
+    
+    <delete id="deleteDBOperatorRecord" parameterType="java.lang.String">
+         delete from dboperate_monitor d where d.monitor_time = #{dt}
+    </delete>
+    
+    <delete id="deleteDBExeData">
+         delete from dboperate_monitor m where m.execute_state not in('0','1','2','3','4','5','6','7','8','9','10','11')
+    </delete>
+    
+    
+    
+</mapper>

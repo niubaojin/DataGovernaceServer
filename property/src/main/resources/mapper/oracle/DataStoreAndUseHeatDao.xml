@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataStoreAndUseHeatDao">
+
+	<sql id="baseColumn"> lastDate,TABLETYPE,tableNameEN,tableNameZH,LIFECYCLE,TABLEALLCOUNT,TABLESIZE,SUBCLASS,CLASSNAME,tableusecount,tableUseCountOfDay,tableUseCountOfWeek,tableUseCountOfMonth </sql>
+
+	<sql id="useHeatBaseQuery">
+	select a.tableproject, a.lastDate, a.TABLETYPE, a.tableNameEN, a.tableNameZH,a.LIFECYCLE, a.TABLEALLCOUNT,a.TABLESIZE, a.tableusecount,a.tableUseCountOfDay,a.tableUseCountOfWeek,a.tableUseCountOfMonth from(
+    select s.tableproject,s.PARTITIONDATE as lastDate,s.TABLETYPE,s.tableproject||'.'||s.TABLENAME as tableNameEN,s.TABLECOMMENT as tableNameZH,s.LIFECYCLE,s.TABLEALLCOUNT,s.TABLESIZE,
+      u.tableUseCountOfDay,u.tableUseCountOfWeek,u.tableUseCountOfMonth,u.tableUseCount
+      from SYNLTE.SYNDMG_TABLE_ALL s
+        left join (
+        select t0.tablename,t0.project,t3.tableUseCountOfMonth,t2.tableUseCountOfWeek,t1.tableUseCountOfDay,t0.tableUseCount from
+        (
+        select  sum(table_Use_Count) as tableUseCount,tablename,project from UT_ODPSSQLCOUNT t group by tablename,project) t0
+        left join
+        (select sum(table_Use_Count) as tableUseCountOfMonth,tablename,project from UT_ODPSSQLCOUNT t
+        where dt between to_char(trunc(sysdate - interval '31' day),'yyyy-MM-dd') and to_char(trunc(sysdate - interval '1' day),'yyyy-MM-dd') group by tablename,project)
+        t3 on (t0.tablename=t3.tablename and t0.project = t3.project)
+        left join
+        (select sum(table_Use_Count) as tableUseCountOfWeek,tablename,project from UT_ODPSSQLCOUNT t
+        where dt between to_char(trunc(sysdate - interval '7' day),'yyyy-MM-dd') and to_char(trunc(sysdate - interval '1' day),'yyyy-MM-dd') group by tablename,project) t2
+        on (t0.tablename=t2.tablename and t0.project = t2.project)
+        left join
+        (select sum(table_Use_Count) as tableUseCountOfDay,tablename,project from UT_ODPSSQLCOUNT t
+        where dt=to_char(trunc(sysdate - interval '1' day),'yyyy-MM-dd') group by tablename,project) t1
+        on (t0.tablename=t1.tablename and t0.project = t1.project)
+      ) u on (upper(u.tablename)=upper(s.tablename) and upper(s.tableproject)=upper(u.project))
+    ) a where lastDate = to_char(sysdate -1 ,'yyyyMMdd')
+	</sql>
+
+	<select id="findUseHeatByTableNameList" parameterType="java.util.HashMap" resultType="java.lang.Long">
+		select sum(table_use_count) from
+		<foreach collection="map.keys" item="key" open="(" close=")" separator=" union ">
+			select sum(table_use_count) as table_use_count from ut_odpssqlcount where tablename = #{key} and project = #{map[${key}]}
+		</foreach>
+	</select>
+
+
+	<select id="findAll" resultType="com.synway.property.pojo.DataStoreAndUseHeat">
+		<include refid="useHeatBaseQuery"></include>
+	</select>
+
+	<delete id="deleteAll" >
+		delete from storecycleanduseheat
+	</delete>
+
+	<insert id="insertIntoStoreCycleAndUseHeat" parameterType="java.util.List" useGeneratedKeys="false">
+		insert into StoreCycleAndUseHeat (
+		<include refid="baseColumn"></include>
+		)
+		<foreach collection="list" index="index" item="item" separator="union all">
+			(
+			SELECT
+			#{item.lastDate,jdbcType=VARCHAR},
+			#{item.tableType,jdbcType=VARCHAR},
+			#{item.tableNameEN,jdbcType=VARCHAR},
+			#{item.tableNameZH,jdbcType=VARCHAR},
+			#{item.lifeCycle,jdbcType=INTEGER},
+			#{item.tableAllCount,jdbcType=NUMERIC},
+			#{item.tableSize,jdbcType=NUMERIC},
+			#{item.subclass,jdbcType=VARCHAR},
+			#{item.className,jdbcType=VARCHAR},
+			#{item.tableUseCount,jdbcType=NUMERIC},
+			#{item.tableUseCountOfDay,jdbcType=NUMERIC},
+			#{item.tableUseCountOfWeek,jdbcType=NUMERIC},
+			#{item.tableUseCountOfMonth,jdbcType=NUMERIC}
+			FROM DUAL
+			)
+		</foreach>
+	</insert>
+
+	<select id="findObjectExtend" resultType="com.synway.property.pojo.DataStoreAndUseHeat">
+		  select b.partitiondate,a.tablename as tableNameEN,a.tabletype,a.TABLECREATEDTIME,a.TABLELASTMETAMODIFIEDTIME,a.PARTITIONCOUNT,a.TABLELASTDATAMODIFIEDTIME,a.tableProject,a.tableSize from SYNLTE.SYNDMG_TABLE_ALL a
+		  right join
+			   (select a.tablename,max(a.partitiondate) as partitiondate from SYNLTE.SYNDMG_TABLE_ALL a group by a.tablename) b
+		  on
+			   (a.tablename=b.tablename and a.partitiondate =  b.partitiondate)
+	</select>
+
+
+</mapper>

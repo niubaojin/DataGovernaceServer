@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.UserAuthorityManageDao">
+
+    <insert id="updateInsertUserAuthority">
+        merge into USER_AUTHORITY a
+            using (select #{userAuthority.userId,jdbcType=VARCHAR} as userId,
+            #{userAuthority.id,jdbcType=VARCHAR} as id ) b
+            on (a.USERID = b.userId and upper(a.ID)=upper(b.id))
+            when matched then
+            update  set CMN_MEMO = #{userAuthority.cmnMemo} , MODULECODE =#{userAuthority.moduleCode} ,
+                MODULENAME = #{userAuthority.moduleName}, ISCREATER = #{userAuthority.isCreater} ,
+								USERNAME = #{userAuthority.userName},
+                CMN_NAME =#{userAuthority.cmnName} , CREATE_TIME = CURRENT_DATE
+            when not matched then
+             insert  (ID,CMN_MEMO,MODULECODE,MODULENAME,ISCREATER,USERNAME,USERID,CMN_NAME)
+            values(#{userAuthority.id},#{userAuthority.cmnMemo},#{userAuthority.moduleCode},#{userAuthority.moduleName},#{userAuthority.isCreater}
+						,#{userAuthority.userName},#{userAuthority.userId},#{userAuthority.cmnName})
+    </insert>
+
+    <delete id="delUserAddRealTimeTable">
+        delete from USER_AUTHORITY
+        where id in (
+        <foreach collection="list" item="item" separator=",">
+            #{item.tableUuid,jdbcType=VARCHAR}
+        </foreach>
+        ) and userid = #{userId} and modulecode = #{moduleCode}
+    </delete>
+
+
+</mapper>

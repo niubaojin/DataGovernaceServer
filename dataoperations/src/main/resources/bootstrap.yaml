@@ -1,0 +1,42 @@
+server:
+  address: ${spring.cloud.client.ip-address}
+#  address: 192.168.71.219
+  port: 8227
+  servlet:
+    context-path: /dataoperations
+
+nacosServer:
+  server-Addr: 10.1.15.132:8848
+  namespace: SH_SHUHUI360
+  username: nacos
+  passwrod: nacos
+
+spring:
+  application:
+    name: dataoperations
+  profiles:
+    active: prod
+  cloud:
+    nacos:
+      discovery:
+        server-addr:  ${nacosServer.server-Addr}
+        namespace: ${nacosServer.namespace}
+        group: SH_DATAFACTORY
+        username: ${nacosServer.username}
+        password: ${nacosServer.passwrod}
+      config:
+        server-addr: ${nacosServer.server-Addr}
+        file-extension: yaml
+        namespace: ${nacosServer.namespace}
+        group: SH_DATAFACTORY
+        extension-configs[0]:
+          data-id: datafactory-common.yaml
+          group: SH_DATAFACTORY
+          refresh: true
+        username: ${nacosServer.username}
+        password: ${nacosServer.passwrod}
+
+logging:
+  config:
+    classpath: logback-spring.xml
+

@@ -1,0 +1,4086 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.reconciliation.dao.ReconciliationUIDao">
+
+    <select id="getOrganizationList" resultType="com.synway.reconciliation.pojo.Relation">
+        SELECT
+        PRIMARYORGANIZATIONCH parent,
+        SECONDARYORGANIZATIONCH child,
+        SJXJBM resourceId,
+        NAME tableName
+        FROM
+        CLASSIFY_INTERFACE_ALL_DATE
+        where
+        PRIMARYORGANIZATIONCH is not null
+        and SECONDARYORGANIZATIONCH is not null
+        <if test="nodeName != null and nodeName != ''">
+            and (PRIMARYORGANIZATIONCH like '%'||#{nodeName}||'%' or SECONDARYORGANIZATIONCH like '%'||#{nodeName}||'%'or NAME like '%'||#{nodeName}||'%')
+        </if>
+        GROUP BY
+        PRIMARYORGANIZATIONCH,
+        SECONDARYORGANIZATIONCH,
+        SJXJBM,
+        NAME
+    </select>
+    <select id="getDataSourceList" resultType="com.synway.reconciliation.pojo.Relation">
+        SELECT
+        PRIMARYDATASOURCECH parent,
+        SECONDARYDATASOURCECH child,
+        SJXJBM resourceId,
+        NAME tableName
+        FROM
+        CLASSIFY_INTERFACE_ALL_DATE
+        WHERE
+        PRIMARYDATASOURCECH IS NOT NULL
+        and SECONDARYDATASOURCECH IS NOT NULL
+        <if test="nodeName != null and nodeName != ''">
+            and (PRIMARYDATASOURCECH like '%'||#{nodeName}||'%' or SECONDARYDATASOURCECH like '%'||#{nodeName}||'%'or NAME like '%'||#{nodeName}||'%')
+        </if>
+        GROUP BY
+        PRIMARYDATASOURCECH,
+        SECONDARYDATASOURCECH,
+        SJXJBM,
+        NAME
+    </select>
+    <select id="getFactorList" resultType="com.synway.reconciliation.pojo.Relation">
+        SELECT
+        FACTORONENAME parent,
+        FACTORTWONAME child,
+        SJXJBM resourceId,
+        NAME tableName
+        FROM
+        CLASSIFY_INTERFACE_ALL_DATE
+        WHERE
+        FACTORONENAME IS NOT NULL
+        and FACTORTWONAME IS NOT NULL
+        <if test="nodeName != null and nodeName != ''">
+            and (FACTORONENAME like '%'||#{nodeName}||'%' or FACTORTWONAME like '%'||#{nodeName}||'%'or NAME like '%'||#{nodeName}||'%')
+        </if>
+        GROUP BY
+        FACTORONENAME,
+        FACTORTWONAME,
+        SJXJBM,
+        NAME
+    </select>
+
+    <select id="getAccessUpdate" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        SELECT
+        T.resourceId,
+        T.accessProvide,
+        T.beginTime,
+        T.dataDirection,
+        T.accessAccept,
+        T.thirdpartyProvide,
+        T.tache,
+        T1.NAME dataName
+        FROM
+        (
+        SELECT
+            P.RESOURCE_ID resourceId,
+            SUM( P.DATA_COUNT ) accessProvide,
+            MIN( P.START_NO ) beginTime,
+            P.DATA_DIRECTION dataDirection,
+            SUM( A.DATA_COUNT ) accessAccept,
+            0 thirdpartyProvide,
+            1 tache
+        FROM
+        (
+        SELECT RESOURCE_ID, DATA_COUNT, DATA_DIRECTION, START_NO, DATA_ID FROM DAC_ACCESS_INSIDE_BILL WHERE
+        BILL_TYPE = 1
+        AND RESOURCE_ID = #{resourceId}
+        AND START_NO >= #{startTime}
+        AND START_NO &lt;= #{endTime}
+        ) P
+        LEFT JOIN (
+        SELECT DATA_COUNT, DATA_ID FROM DAC_ACCESS_INSIDE_BILL WHERE
+        BILL_TYPE = 2
+        AND RESOURCE_ID = #{resourceId}
+        AND START_NO >= #{startTime}
+        AND START_NO &lt;= #{endTime}
+        ) A ON P.DATA_ID = A.DATA_ID
+        GROUP BY
+        P.RESOURCE_ID,
+        P.DATA_DIRECTION
+        ) T
+        LEFT JOIN ( SELECT DISTINCT SJXJBM, NAME FROM TABLE_ORGANIZATION_ASSETS ) T1 ON T.resourceId = t1.SJXJBM
+    </select>
+
+    <select id="getAccessList" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        select n.resourceId,n.accessProvide,n.accessAccept,n.updateTime,n.beginTime,n.tache,n.dataDirection,n.thirdpartyProvide,
+        n.isIssued,n.userId,n.userName,n.dataName,n.primaryDatasourceCh,n.secondaryDatasourceCh,n.primaryOrganizationCh,n.firstOrganizationCh,n.secondaryOrganizationCh from (
+        SELECT
+        A.resourceId,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.beginTime,
+        A.tache,
+        A.dataDirection,
+        decode(thirdpartyProvide,0,accessProvide,thirdpartyProvide) thirdpartyProvide,
+        A.isIssued,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, NVL(A.jobName, A.resourceId)) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') primaryDatasourceCh,
+        nvl(B.SECONDARYDATASOURCECH,'未知') secondaryDatasourceCh,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') primaryOrganizationCh,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') firstOrganizationCh,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') secondaryOrganizationCh
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( OUTSIDE_PROVIDE ) thirdpartyProvide,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        max( CREATETIME ) updateTime,
+        min( START_NO) beginTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        TABLE_NAME,
+        '0' isIssued,
+        USER_ID userId,
+        min(USER_NAME) userName,
+        max(job_name) jobName
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        WHERE (IS_ISSUED='0' OR IS_ISSUED='' OR IS_ISSUED IS NULL) AND IS_LOCAL = '0'
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="direction !=null and direction !=''">
+            and DIRCTION = #{direction}
+        </if>
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A left JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B
+        ON A.resourceId = B.YXYBM AND B.rn = 1
+        )n
+        <where>
+            <if test="abnormal == 1">
+                and (thirdpartyProvide != accessProvide or accessProvide != accessAccept)
+            </if>
+            <if test="abnormal == 2">
+                and  thirdpartyProvide = accessProvide and accessProvide = accessAccept
+            </if>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and primaryOrganizationCh = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and firstOrganizationCh = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and secondaryOrganizationCh = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and primaryDatasourceCh = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and secondaryDataSourceCh = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and dataName like '%'||#{dataName}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="getIssuedList" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        select n.resourceId,n.updateTime,n.dataTime,n.tache,n.dataDirection,n.thirdpartyProvide,
+        n.isIssued,n.dataName,n.primaryDatasourceCh,n.secondaryDatasourceCh,n.primaryOrganizationCh,n.firstOrganizationCh,n.secondaryOrganizationCh from (
+        SELECT
+        A.resourceId,
+        A.updateTime,
+        to_char(A.dataTime, 'yyyy-MM-dd') dataTime,
+        A.tache,
+        A.dataDirection,
+        A.thirdpartyProvide thirdpartyProvide,
+        A.isIssued,
+        decode(B.NAME,null,A.resourceId,B.NAME) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') primaryDatasourceCh,
+        nvl(B.SECONDARYDATASOURCECH,'未知') secondaryDatasourceCh,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') primaryOrganizationCh,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') firstOrganizationCh,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') secondaryOrganizationCh
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( OUTSIDE_PROVIDE ) thirdpartyProvide,
+        max( CREATETIME ) updateTime,
+        max( DATA_TIME ) dataTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        TABLE_NAME,
+        '1' isIssued
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        WHERE IS_ISSUED='1'
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME,
+        TACHE,
+        DIRCTION
+        )A left JOIN CLASSIFY_INTERFACE_ALL_DATE B
+        ON UPPER(a.TABLE_NAME) = UPPER(b.TABLENAME)
+        )n
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and primaryOrganizationCh = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and firstOrganizationCh = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and secondaryOrganizationCh = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and primaryDatasourceCh = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and secondaryDataSourceCh = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and dataName like '%'||#{dataName}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="getStorageList" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        select n.resourceId,n.accessProvide,n.accessAccept,n.updateTime,n.beginTime,n.tache,n.dataDirection,n.thirdpartyProvide,
+        n.isLocal,n.userId,n.userName,n.tableNameEn,n.dataName,n.primaryDatasourceCh,n.secondaryDatasourceCh,n.primaryOrganizationCh,n.firstOrganizationCh,n.secondaryOrganizationCh from (
+        SELECT
+        A.resourceId,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.beginTime,
+        A.tache,
+        A.dataDirection,
+        decode(thirdpartyProvide,0,accessProvide,thirdpartyProvide) thirdpartyProvide,
+        A.isLocal,
+        A.userId,
+        A.userName,
+        A.tableNameEn,
+        nvl(B.NAME, NVL(A.jobName, A.resourceId)) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') primaryDatasourceCh,
+        nvl(B.SECONDARYDATASOURCECH,'未知') secondaryDatasourceCh,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') primaryOrganizationCh,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') firstOrganizationCh,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') secondaryOrganizationCh
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( OUTSIDE_PROVIDE ) thirdpartyProvide,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        max( CREATETIME ) updateTime,
+        min( START_NO) beginTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        TABLE_NAME_EN tableNameEn,
+        '1' isLocal,
+        USER_ID userId,
+        min(USER_NAME) userName,
+        max(job_name) jobName
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        WHERE (IS_ISSUED='0' OR IS_ISSUED='' OR IS_ISSUED IS NULL) AND IS_LOCAL = '1'
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="direction !=null and direction !=''">
+            and DIRCTION = #{direction}
+        </if>
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A left JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B
+        ON A.resourceId = B.YXYBM and B.rn = 1
+        UNION ALL
+        SELECT
+        A.resourceId,
+        A.accessAccept accessProvide,
+        decode(A.outsideAccept,0,A.accessAccept,A.outsideAccept) accessAccept,
+        A.updateTime,
+        A.beginTime,
+        A.tache,
+        A.dataDirection,
+        A.accessProvide thirdpartyProvide,
+        '0' isLocal,
+        A.userId,
+        A.userName,
+        A.tableNameEn,
+        nvl(B.NAME, A.resourceId) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') primaryDatasourceCh,
+        nvl(B.SECONDARYDATASOURCECH,'未知') secondaryDatasourceCh,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') primaryOrganizationCh,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') firstOrganizationCh,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') secondaryOrganizationCh
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        sum( OUTSIDE_ACCEPT ) outsideAccept,
+        max( CREATETIME ) updateTime,
+        min( START_NO) beginTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        USER_ID userId,
+        min(USER_NAME) userName,
+        TABLE_NAME_EN tableNameEn
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        and tache = 2
+        and upper(DIRCTION) = 'ODPS'
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID,
+        TABLE_NAME_EN
+        )A LEFT JOIN CLASSIFY_SOURCE_TARGET B
+        ON A.resourceId = B.SJXJBM
+        where (primaryOrganizationCh = '原始库' or secondaryOrganizationCh = '业务生产库')
+        )n
+        <where>
+            <if test="abnormal == 1">
+                and (thirdpartyProvide != accessProvide or accessProvide != accessAccept)
+            </if>
+            <if test="abnormal == 2">
+                and thirdpartyProvide = accessProvide and accessProvide = accessAccept
+            </if>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and primaryOrganizationCh = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and firstOrganizationCh = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and secondaryOrganizationCh = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and primaryDatasourceCh = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and secondaryDataSourceCh = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and dataName like '%'||#{dataName}||'%'
+            </if>
+            <if test="tableNameEn !=null and tableNameEn !=''">
+                and tableNameEn like '%'||#{tableNameEn}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="getDistributionList" resultType="com.synway.reconciliation.pojo.StandardListResponse">
+        select n.resourceId,n.accessProvide,n.accessAccept,n.updateTime,n.beginTime,n.tache,n.dataDirection,n.thirdpartyProvide,
+        n.isLocal,n.userId,n.userName,n.dataName,n.primaryDatasourceCh,n.secondaryDatasourceCh,n.primaryOrganizationCh,n.firstOrganizationCh,n.secondaryOrganizationCh from (
+        SELECT
+        A.resourceId,
+        A.accessAccept accessProvide,
+        A.accessAccept accessAccept,
+        A.updateTime,
+        A.beginTime,
+        A.tache,
+        A.dataDirection,
+        A.accessProvide thirdpartyProvide,
+        '0' isLocal,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, A.resourceId) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') primaryDatasourceCh,
+        nvl(B.SECONDARYDATASOURCECH,'未知') secondaryDatasourceCh,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') primaryOrganizationCh,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') firstOrganizationCh,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') secondaryOrganizationCh
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        max( CREATETIME ) updateTime,
+        min( START_NO) beginTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        USER_ID userId,
+        min(USER_NAME) userName
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        and tache = 2
+        <if test="direction !=null and direction !=''">
+            and DIRCTION = #{direction}
+        </if>
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A LEFT JOIN CLASSIFY_SOURCE_TARGET B
+        ON A.resourceId = B.SJXJBM
+        )n where (upper(dataDirection) != 'ODPS' or (primaryOrganizationCh != '原始库' AND secondaryOrganizationCh != '业务生产库'))
+        <if test="abnormal == 1">
+            and (thirdpartyProvide != accessProvide or accessProvide != accessAccept)
+        </if>
+        <if test="abnormal == 2">
+            and thirdpartyProvide = accessProvide and accessProvide = accessAccept
+        </if>
+        <if test="primaryOrganization !=null and primaryOrganization !=''">
+            and primaryOrganizationCh = #{primaryOrganization}
+        </if>
+        <if test="firstOrganization !=null and firstOrganization !=''">
+            and firstOrganizationCh = #{firstOrganization}
+        </if>
+        <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+            and secondaryOrganizationCh = #{secondaryOrganization}
+        </if>
+        <if test="primaryDatasource !=null and primaryDatasource !=''">
+            and primaryDatasourceCh = #{primaryDatasource}
+        </if>
+        <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+            and secondaryDataSourceCh = #{secondaryDataSource}
+        </if>
+        <if test="dataName !=null and dataName !=''">
+            and dataName like '%'||#{dataName}||'%'
+        </if>
+    </select>
+
+    <select id="getStorageUpdate" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        SELECT
+        T.resourceId,
+        T.accessProvide,
+        T.beginTime,
+        T.dataDirection,
+        T.accessAccept,
+        T.thirdpartyProvide,
+        T.tache,
+        T1.NAME dataName
+        FROM
+        (
+        SELECT
+            P.RESOURCE_ID resourceId,
+            SUM( P.DATA_COUNT ) accessProvide,
+            MIN( P.START_NO ) beginTime,
+            P.DATA_DIRECTION dataDirection,
+            SUM( A.DATA_COUNT ) accessAccept,
+            SUM( T.DATA_COUNT ) thirdpartyProvide,
+            2 tache
+        FROM
+        (
+        SELECT RESOURCE_ID, DATA_COUNT, DATA_ID, START_NO, DATA_DIRECTION FROM DAC_ACCESS_STORAGE_INSIDE_BILL WHERE
+        BILL_TYPE = 1
+        AND RESOURCE_ID = #{resourceId}
+        AND START_NO >= #{startTime}
+        AND START_NO &lt;= #{endTime}
+        ) P
+        LEFT JOIN (
+        SELECT DATA_COUNT, DATA_ID FROM DAC_ACCESS_STORAGE_INSIDE_BILL WHERE
+        BILL_TYPE = 2
+        AND RESOURCE_ID = #{resourceId}
+        AND START_NO >= #{startTime}
+        AND START_NO &lt;= #{endTime}
+        ) A ON P.DATA_ID = A.DATA_ID
+        LEFT JOIN ( SELECT DATA_ID, DATA_COUNT FROM DAC_ACCESS_PROVIDER_BILL WHERE
+        RESOURCE_ID = #{resourceId}
+            ) T ON P.DATA_ID = T.DATA_ID
+        WHERE
+            T.DATA_ID IS NOT NULL
+        GROUP BY
+            P.RESOURCE_ID,
+            P.DATA_DIRECTION
+        ) T
+        LEFT JOIN ( SELECT DISTINCT SJXJBM, NAME FROM TABLE_ORGANIZATION_ASSETS ) T1 ON T.resourceId = t1.SJXJBM
+    </select>
+
+    <select id="getStandardList" resultType="com.synway.reconciliation.pojo.StandardListResponse">
+        SELECT n.resourceId,n.accessProvide,n.accessAccept,n.updateTime,n.beginTime,n.tache,n.dataDirection,n.userId,n.userName,
+        n.dataName,n.primaryDatasourceCh,n.secondaryDatasourceCh,n.primaryOrganizationCh,n.firstOrganizationCh,n.secondaryOrganizationCh FROM(
+        SELECT
+        A.resourceId,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.beginTime,
+        A.tache,
+        A.dataDirection,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, A.resourceId) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') primaryDatasourceCh,
+        nvl(B.SECONDARYDATASOURCECH,'未知') secondaryDatasourceCh,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') primaryOrganizationCh,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') firstOrganizationCh,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') secondaryOrganizationCh
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        max( CREATETIME ) updateTime,
+        min( START_NO) beginTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        USER_ID userId,
+        min(USER_NAME) userName
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        and tache = 1
+        <if test="direction !=null and direction !=''">
+            and DIRCTION = #{direction}
+        </if>
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B
+        ON A.resourceId = B.YXYBM and B.rn = 1) n
+        <where>
+            <if test="abnormal == 1">
+                and accessProvide != accessAccept
+            </if>
+            <if test="abnormal == 2">
+                and accessProvide = accessAccept
+            </if>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and primaryOrganizationCh = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and firstOrganizationCh = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and secondaryOrganizationCh = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and primaryDatasourceCh = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and secondaryDataSourceCh = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and dataName like '%'||#{dataName}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="getStandardAccessUpdate" resultType="com.synway.reconciliation.pojo.StandardListResponse">
+        SELECT
+        sum( a.DATA_COUNT ) accessAccept,
+        sum( p.DATA_COUNT ) accessProvide,
+        min( a.START_NO ) beginTime,
+        p.RESOURCE_ID resourceId,
+        1 tache,
+        a.DATA_DIRECTION dataDirection,
+        a.USER_ID userId,
+        min(a.USER_NAME) userName,
+        t4.NAME dataName
+        FROM
+        DAC_STANDARD_ACCEPTOR_BILL a
+        LEFT JOIN DAC_ACCESS_PROVIDER_BILL p ON a.DATA_ID = p.DATA_ID AND a.INCEPT_DATA_ID = p.INCEPT_DATA_ID
+        LEFT JOIN ( SELECT DISTINCT YXYBM, NAME FROM CLASSIFY_SOURCE_TARGET ) t4 ON p.RESOURCE_ID = T4.YXYBM
+        WHERE
+        p.RESOURCE_ID = #{resourceId}
+        and a.DATA_DIRECTION = #{direction}
+        and a.START_NO >= #{startTime}
+        and a.START_NO &lt; = #{endTime}
+        <if test="userId !=null and userId !=''">
+            and a.USER_ID = #{userId}
+        </if>
+        GROUP BY
+        p.RESOURCE_ID,t4.NAME,a.DATA_DIRECTION,a.USER_ID
+    </select>
+
+    <select id="getStandardStorageUpdate" resultType="com.synway.reconciliation.pojo.StandardListResponse">
+        SELECT
+        sum( p.DATA_COUNT ) accessProvide,
+        sum( a.DATA_COUNT ) accessAccept,
+        min( p.START_NO ) beginTime,
+        p.RESOURCE_ID resourceId,
+        2 tache,
+        a.DATA_DIRECTION dataDirection,
+        a.USER_ID userId,
+        min(a.USER_NAME) userName,
+        t4.NAME dataName
+        FROM
+        DAC_STORAGE_ACCEPTOR_BILL a
+        LEFT JOIN DAC_STANDARD_PROVIDER_BILL p ON a.DATA_ID = p.DATA_ID AND a.INCEPT_DATA_ID = p.INCEPT_DATA_ID
+        LEFT JOIN ( SELECT DISTINCT SJXJBM, NAME FROM CLASSIFY_SOURCE_TARGET ) t4 ON p.RESOURCE_ID = T4.SJXJBM
+        WHERE
+        p.RESOURCE_ID = #{resourceId}
+        and a.DATA_DIRECTION = #{direction}
+        and p.START_NO >= #{startTime}
+        and p.START_NO &lt; = #{endTime}
+        <if test="userId !=null and userId !=''">
+            and a.USER_ID = #{userId}
+        </if>
+        GROUP BY
+        p.RESOURCE_ID,t4.NAME,a.DATA_DIRECTION,a.USER_ID
+    </select>
+
+    <select id="getAccessProviderList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        D.dc receiveDataCount,
+        A.beginNo,
+        A.endNo,
+        D.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        A.jobName,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, NVL(A.jobName, A.resourceId)) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        SELECT *
+        from (
+        SELECT Q.*, rownum rn
+        from (
+        SELECT
+        PROVIDER_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        SEND_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem,
+        JOB_NAME jobName,
+        INCEPT_DATA_TIME,
+        USER_ID userId,
+        USER_NAME userName
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !='' and dataSourceType!=0">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) Q WHERE rownum <![CDATA[<=]]> #{pageSize}
+        ) WHERE rn > #{pageNum}
+        ) A LEFT JOIN (select c.*, row_number() over ( PARTITION BY yxybm ORDER BY INSERT_DATE DESC ) as rn from CLASSIFY_SOURCE_TARGET c) B ON A.resourceId = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT, 0) dc, INCEPT_DATA_TIME, BILL_STATE billStatus FROM DAC_ACCESS_ACCEPTOR_BILL WHERE ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')) D ON A.INCEPT_DATA_TIME = D.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, NVL(A.jobName, A.resourceId)) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="countAccessProviderList" resultType="long">
+        SELECT
+        count(*) as total
+        from (
+        SELECT
+        A.resourceId
+        FROM(
+        SELECT
+        RESOURCE_ID resourceId,
+        BILL_STATE billStatus,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE
+        SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !='' and dataSourceType!=0">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) A LEFT JOIN (select c.*, row_number() over ( PARTITION BY yxybm ORDER BY INSERT_DATE DESC ) as rn from CLASSIFY_SOURCE_TARGET c) B ON A.resourceId = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT, 0) dc, INCEPT_DATA_TIME FROM DAC_ACCESS_ACCEPTOR_BILL WHERE ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')) D ON A.INCEPT_DATA_TIME = D.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, NVL(A.jobName, A.resourceId)) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+        ) Q
+    </select>
+
+    <select id="getAccessAcceptorList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        SELECT
+        ACCEPTOR_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        DATA_ARRIVE_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+        BILL_TYPE =2
+        and DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTRO_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+        </where>
+    </select>
+    <select id="getStorageProviderListInside" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTYORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        SELECT
+        PROVIDER_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        DATA_SEND_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+        BILL_TYPE =1
+        and DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+        </where>
+    </select>
+
+    <select id="getStorageProviderList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        D.dc receiveDataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        A.jobName,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, NVL(A.jobName, A.resourceId)) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        select *
+        from (
+        select Q.*, rownum rn
+        from (
+        SELECT
+        PROVIDER_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        SEND_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem,
+        JOB_NAME jobName,
+        INCEPT_DATA_TIME,
+        USER_ID userId,
+        USER_NAME userName
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE
+        SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) Q where rownum <![CDATA[<=]]> #{pageSize}
+        ) where rn > #{pageNum}
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        left join (SELECT DISTINCT NVL(DATA_COUNT, 0) dc,INCEPT_DATA_TIME FROM DAC_STANDARD_ACCEPTOR_BILL WHERE BILL_TYPE = 2
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D on D.INCEPT_DATA_TIME = A.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, NVL(A.jobName, A.resourceId)) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="countStorageProviderList" resultType="long">
+        SELECT
+        count(*) as total
+        from (
+        SELECT
+        A.resourceId,
+        A.jobName
+        FROM(
+        SELECT
+        RESOURCE_ID resourceId,
+        BILL_STATE billStatus,
+        JOB_NAME jobName,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE
+        SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from
+        CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        left join (SELECT DISTINCT NVL(DATA_COUNT, 0) dc, INCEPT_DATA_TIME FROM DAC_STANDARD_ACCEPTOR_BILL
+        WHERE BILL_TYPE = 2
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D on D.INCEPT_DATA_TIME = A.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, NVL(A.jobName, A.resourceId)) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+        ) Q
+    </select>
+
+    <select id="getStorageAcceptorListInside" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        SELECT
+        ACCEPTOR_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        DATA_ARRIVE_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+        BILL_TYPE =2
+        and DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTRO_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+        </where>
+    </select>
+
+    <select id="getStorageAcceptorList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        D.dc receiveDataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        A.jobName,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, A.resourceId) dataName,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH
+        FROM(
+        select *
+        from (
+        select Q.*, rownum rn
+        from (
+        SELECT
+        ACCEPTOR_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        ACCEPT_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem,
+        JOB_NAME jobName,
+        INCEPT_DATA_TIME,
+        USER_ID userId,
+        USER_NAME userName
+        FROM
+        DAC_ACCESS_ACCEPTOR_BILL
+        WHERE
+        ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTOR_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            AND USER_ID = #{userId}
+        </if>
+        ) Q where rownum <![CDATA[<=]]> #{pageSize}
+        ) where rn > #{pageNum})
+        A
+        LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from
+        CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, INCEPT_DATA_TIME FROM DAC_ACCESS_PROVIDER_BILL WHERE BILL_TYPE = 1
+        AND SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D ON D.INCEPT_DATA_TIME=A.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, A.resourceId) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+    </select>
+
+    <select id="countStorageAcceptorList" resultType="long">
+        SELECT
+        count(*) as total
+        from (
+        SELECT
+        A.resourceId
+        FROM(
+        SELECT
+        RESOURCE_ID resourceId,
+        BILL_STATE billStatus,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_ACCESS_ACCEPTOR_BILL
+        WHERE
+        ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTOR_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            AND USER_ID = #{userId}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from
+        CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, INCEPT_DATA_TIME FROM DAC_ACCESS_PROVIDER_BILL WHERE BILL_TYPE = 1
+        AND SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D ON D.INCEPT_DATA_TIME=A.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, A.resourceId) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+        ) Q
+    </select>
+
+    <select id="getStandardAcceptorList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        SELECT
+        ACCEPTOR_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        DATA_ARRIVE_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_STANDARD_ACCEPTOR_BILL
+        WHERE
+        DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTOR_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+        </where>
+    </select>
+    <select id="getStandardProviderList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT A.billNo,
+        A.resourceId,
+        A.dataCount,
+        A.beginNo,
+        A.endNo,
+        A.billStatus,
+        A.sendTime,
+        A.checkTime,
+        A.dataSourceName,
+        A.dataSourceType,
+        A.accessSystem,
+        nvl(B.PRIMARYDATASOURCECH,'未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH,'未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH,'未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH,'未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH,'未知') SECONDARYORGANIZATIONCH FROM(
+        SELECT
+        PROVIDER_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        BILL_STATE billStatus,
+        SEND_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DATA_SOURCE_TYPE dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE
+        SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_DIRECTION = 2
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+        </where>
+    </select>
+
+    <select id="getStandardStorageProviderList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT  A.PROVIDER_BILL_NO billNo,
+        A.RESOURCE_ID resourceId,
+        A.DATA_COUNT dataCount,
+        D.dc receiveDataCount,
+        A.START_NO beginNo,
+        A.END_NO endNo,
+        A.BILL_STATE billStatus,
+        A.DATA_SEND_TIME sendTime,
+        A.DATA_CHECK_TIME checkTime,
+        A.DATA_SOURCE_NAME dataSourceName,
+        A.DATA_SOURCE_TYPE dataSourceType,
+        A.SERVICE_IP accessSystem,
+        A.jobName,
+        A.USER_ID userId,
+        A.USER_NAME userName,
+        nvl(B.NAME, A.RESOURCE_ID) dataName,
+        nvl(B.PRIMARYDATASOURCECH, '未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH, '未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH, '未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH, '未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH, '未知') SECONDARYORGANIZATIONCH
+        FROM (
+        select * from (
+        select Q.*, rownum rn from
+        (
+        SELECT PROVIDER_BILL_NO,
+        RESOURCE_ID,
+        DATA_COUNT,
+        INCEPT_DATA_TIME,
+        START_NO,
+        END_NO,
+        BILL_STATE,
+        DATA_SEND_TIME,
+        DATA_CHECK_TIME,
+        DATA_SOURCE_NAME,
+        DATA_SOURCE_TYPE,
+        SERVICE_IP,
+        DATA_SIZE,
+        ADMINISTRATOR_TEL,
+        DATA_ADMINISTRATOR,
+        SOURCE_LOCATION,
+        PROVIDER_NO,
+        '' jobName,
+        USER_ID,
+        USER_NAME
+        FROM DAC_STANDARD_PROVIDER_BILL T
+        WHERE BILL_TYPE = 1
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="checkMethod != null and checkMethod == 2 ">
+            AND CHECK_METHOD = 2
+        </if>
+        <if test="checkMethod != null and checkMethod != 2">
+            AND (CHECK_METHOD = 1  or CHECK_METHOD = 3)
+        </if>
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) Q where rownum <![CDATA[<=]]> #{pageSize}
+        ) where rn > #{pageNum}
+        ) A LEFT JOIN CLASSIFY_SOURCE_TARGET B ON A.RESOURCE_ID = B.SJXJBM
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, INCEPT_DATA_TIME  FROM DAC_STORAGE_ACCEPTOR_BILL WHERE (BILL_TYPE = 2)
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D ON D.INCEPT_DATA_TIME=A.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, A.RESOURCE_ID) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+        <!--UNION ALL
+        SELECT  A.ACCEPTOR_BILL_NO billNo,
+        A.RESOURCE_ID resourceId,
+        A.DATA_COUNT dataCount,
+        D.dc receiveDataCount,
+        A.START_NO beginNo,
+        A.END_NO endNo,
+        A.BILL_STATE billStatus,
+        A.DATA_ARRIVE_TIME sendTime,
+        A.DATA_CHECK_TIME checkTime,
+        A.DATA_SOURCE_NAME dataSourceName,
+        A.DATA_SOURCE_TYPE dataSourceType,
+        A.SERVICE_IP accessSystem,
+        A.jobName,
+        A.USER_ID userId,
+        A.USER_NAME userName,
+        nvl(B.NAME, nvl(A.jobName, A.RESOURCE_ID)) dataName,
+        nvl(B.PRIMARYDATASOURCECH, '未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH, '未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH, '未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH, '未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH, '未知') SECONDARYORGANIZATIONCH
+        FROM (
+        SELECT ACCEPTOR_BILL_NO,
+        RESOURCE_ID,
+        DATA_COUNT,
+        DATA_ID,
+        START_NO,
+        END_NO,
+        BILL_STATE,
+        DATA_ARRIVE_TIME,
+        DATA_CHECK_TIME,
+        DATA_SOURCE_NAME,
+        DATA_SOURCE_TYPE,
+        SERVICE_IP,
+        DATA_SIZE,
+        ADMINISTRATOR_TEL,
+        DATA_ADMINISTRATOR,
+        SOURCE_LOCATION,
+        ACCEPTOR_NO,
+        JOB_NAME jobName,
+        USER_ID,
+        USER_NAME
+        FROM DAC_ACCESS_ACCEPTOR_BILL T
+        WHERE BILL_TYPE = 2
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTOR_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        )A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.RESOURCE_ID = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, DATA_ID FROM DAC_ACCESS_STORAGE_INSIDE_BILL  WHERE BILL_TYPE = 1 AND IS_LOCAL='1'
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D ON D.DATA_ID=A.DATA_ID
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, nvl(A.jobName, A.RESOURCE_ID)) like '%'||#{dataName}||'%'
+            </if>
+        </where>-->
+    </select>
+
+    <select id="countStandardStorageProviderList" resultType="long">
+        SELECT
+        count(*) as total
+        from (
+        SELECT
+        A.RESOURCE_ID resourceId
+        FROM (
+        SELECT
+        RESOURCE_ID,
+        INCEPT_DATA_TIME,
+        BILL_STATE
+        FROM DAC_STANDARD_PROVIDER_BILL T
+        WHERE BILL_TYPE = 1
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="checkMethod != null and checkMethod == 2 ">
+            AND CHECK_METHOD = 2
+        </if>
+        <if test="checkMethod != null and checkMethod != 2">
+            AND (CHECK_METHOD = 1 or CHECK_METHOD = 3)
+        </if>
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) A LEFT JOIN CLASSIFY_SOURCE_TARGET B ON A.RESOURCE_ID = B.SJXJBM
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc,INCEPT_DATA_TIME FROM DAC_STORAGE_ACCEPTOR_BILL
+        WHERE (BILL_TYPE = 2)
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D ON D.INCEPT_DATA_TIME = A.INCEPT_DATA_TIME
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, A.RESOURCE_ID) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+        <!--UNION ALL
+        SELECT
+        A.RESOURCE_ID resourceId
+        FROM (
+        SELECT
+        RESOURCE_ID,
+        DATA_ID,
+        BILL_STATE
+        FROM DAC_ACCESS_ACCEPTOR_BILL T
+        WHERE BILL_TYPE = 2
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTOR_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        )A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from
+        CLASSIFY_SOURCE_TARGET C) B ON A.RESOURCE_ID = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, DATA_ID FROM DAC_ACCESS_STORAGE_INSIDE_BILL WHERE BILL_TYPE = 1 AND
+        IS_LOCAL='1'
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')) D ON D.DATA_ID=A.DATA_ID
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, nvl(A.jobName, A.RESOURCE_ID)) like '%'||#{dataName}||'%'
+            </if>
+        </where>-->
+        )
+    </select>
+
+    <select id="getStandardStorageAcceptorList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT  A.PROVIDER_BILL_NO billNo,
+        A.RESOURCE_ID resourceId,
+        A.DATA_COUNT receiveDataCount,
+        D.dc dataCount,
+        A.START_NO beginNo,
+        A.END_NO endNo,
+        A.BILL_STATE billStatus,
+        A.DATA_SEND_TIME sendTime,
+        A.DATA_CHECK_TIME checkTime,
+        A.DATA_SOURCE_NAME dataSourceName,
+        A.DATA_SOURCE_TYPE dataSourceType,
+        A.SERVICE_IP accessSystem,
+        A.jobName,
+        A.USER_ID userId,
+        A.USER_NAME userName,
+        nvl(B.NAME, A.RESOURCE_ID) dataName,
+        nvl(B.PRIMARYDATASOURCECH, '未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH, '未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH, '未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH, '未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH, '未知') SECONDARYORGANIZATIONCH
+        FROM (
+        select *
+        from (
+        select Q.*, rownum rn
+        from (
+        SELECT PROVIDER_BILL_NO,
+        RESOURCE_ID,
+        DATA_COUNT,
+        INCEPT_DATA_TIME,
+        START_NO,
+        END_NO,
+        BILL_STATE,
+        DATA_SEND_TIME,
+        DATA_CHECK_TIME,
+        DATA_SOURCE_NAME,
+        DATA_SOURCE_TYPE,
+        SERVICE_IP,
+        DATA_SIZE,
+        ADMINISTRATOR_TEL,
+        DATA_ADMINISTRATOR,
+        SOURCE_LOCATION,
+        PROVIDER_NO,
+        '' jobName,
+        USER_ID,
+        USER_NAME
+        FROM DAC_STORAGE_PROVIDER_BILL T
+        WHERE BILL_TYPE = 1
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND PROVIDER_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND PROVIDER_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) Q where rownum <![CDATA[<=]]> #{pageSize}
+        ) where rn > #{pageNum}
+        ) A
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, INCEPT_DATA_TIME FROM DAC_STORAGE_ACCEPTOR_BILL WHERE BILL_TYPE = 2 and CHECK_METHOD != 2
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        )D ON D.INCEPT_DATA_TIME=A.INCEPT_DATA_TIME LEFT JOIN CLASSIFY_SOURCE_TARGET B ON A.RESOURCE_ID = B.SJXJBM
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, A.RESOURCE_ID) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+        <!--UNION ALL
+        SELECT  A.PROVIDER_BILL_NO billNo,
+        A.RESOURCE_ID resourceId,
+        A.DATA_COUNT dataCount,
+        D.dc receiveDataCount,
+        A.START_NO beginNo,
+        A.END_NO endNo,
+        A.BILL_STATE billStatus,
+        A.DATA_SEND_TIME sendTime,
+        A.DATA_CHECK_TIME checkTime,
+        A.DATA_SOURCE_NAME dataSourceName,
+        A.DATA_SOURCE_TYPE dataSourceType,
+        A.SERVICE_IP accessSystem,
+        A.jobName,
+        A.USER_ID userId,
+        A.USER_NAME userName,
+        nvl(B.NAME, nvl(A.jobName, A.RESOURCE_ID)) dataName,
+        nvl(B.PRIMARYDATASOURCECH, '未知') PRIMARYDATASOURCECH,
+        nvl(B.SECONDARYDATASOURCECH, '未知') SECONDARYDATASOURCECH,
+        nvl(B.PRIMARYORGANIZATIONCH, '未知') PRIMARYORGANIZATIONCH,
+        nvl(B.FIRSTORGANIZATIONCH, '未知') FIRSTORGANIZATIONCH,
+        nvl(B.SECONDARYORGANIZATIONCH, '未知') SECONDARYORGANIZATIONCH
+        FROM (
+        SELECT PROVIDER_BILL_NO,
+        RESOURCE_ID,
+        DATA_COUNT,
+        DATA_ID,
+        START_NO,
+        END_NO,
+        BILL_STATE,
+        DATA_SEND_TIME,
+        DATA_CHECK_TIME,
+        DATA_SOURCE_NAME,
+        DATA_SOURCE_TYPE,
+        SERVICE_IP,
+        DATA_SIZE,
+        ADMINISTRATOR_TEL,
+        DATA_ADMINISTRATOR,
+        SOURCE_LOCATION,
+        PROVIDER_NO,
+        JOB_NAME jobName,
+        USER_ID,
+        USER_NAME
+        FROM DAC_ACCESS_STORAGE_INSIDE_BILL T
+        WHERE BILL_TYPE = 1
+        AND IS_LOCAL = '1'
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTRO_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.RESOURCE_ID = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT, 0) dc, DATA_ID FROM DAC_ACCESS_STORAGE_INSIDE_BILL WHERE BILL_TYPE = 2 AND IS_LOCAL = '1'
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')) D ON A.DATA_ID = D.DATA_ID
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, nvl(A.jobName, A.RESOURCE_ID)) like '%'||#{dataName}||'%'
+            </if>
+        </where>-->
+    </select>
+
+    <select id="countStandardStorageAcceptorList" resultType="long">
+        SELECT
+        count(*) as total
+        from (
+        SELECT
+        A.RESOURCE_ID resourceId
+        FROM (SELECT
+        RESOURCE_ID,
+        INCEPT_DATA_TIME,
+        BILL_STATE
+        FROM DAC_STORAGE_PROVIDER_BILL T
+        WHERE BILL_TYPE = 1
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTRO_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) A
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT,0) dc, INCEPT_DATA_TIME FROM DAC_STORAGE_ACCEPTOR_BILL WHERE BILL_TYPE = 2 and CHECK_METHOD != 2
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        )D ON  D.INCEPT_DATA_TIME = A.INCEPT_DATA_TIME LEFT JOIN CLASSIFY_SOURCE_TARGET B ON A.RESOURCE_ID = B.SJXJBM
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, A.RESOURCE_ID) like '%'||#{dataName}||'%'
+            </if>
+        </where>
+ <!--       UNION ALL
+        SELECT
+        A.RESOURCE_ID resourceId
+        FROM (
+        SELECT
+        RESOURCE_ID,
+        DATA_ID,
+        BILL_STATE
+        FROM DAC_ACCESS_STORAGE_INSIDE_BILL T
+        WHERE BILL_TYPE = 1
+        AND IS_LOCAL = '1'
+        AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataSourceType != null and dataSourceType !=''">
+            AND DATA_SOURCE_TYPE = #{dataSourceType}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND ACCEPTOR_BILL_NO LIKE '%'||#{billNo}||'%'
+        </if>
+        <if test="partyNo != null and partyNo != ''">
+            AND ACCEPTRO_NO like '%'||#{partyNo}||'%'
+        </if>
+        <if test="dataSourceName !=null and dataSourceName != ''">
+            and DATA_SOURCE_NAME like '%'||#{dataSourceName}||'%'
+        </if>
+        <if test="sourceLocation != null and sourceLocation !=''">
+            and SOURCE_LOCATION like '%'||#{sourceLocation}||'%'
+        </if>
+        <if test="administrator != null and administrator != ''">
+            and DATA_ADMINISTRATOR like '%'||#{administrator}||'%'
+        </if>
+        <if test="administratorTel != null and administratorTel !=''">
+            and ADMINISTRATOR_TEL like '%'||#{administratorTel}||'%'
+        </if>
+        <if test="startNo != null and startNo !=''">
+            and START_NO like '%'||#{startNo}||'%'
+        </if>
+        <if test="endNo != null and endNo !=''">
+            and END_NO like '%'||#{endNo}||'%'
+        </if>
+        <if test="dataSize != null and dataSize !=''">
+            and DATA_SIZE like '%'||#{dataSize}||'%'
+        </if>
+        <if test="resourceId != null and resourceId !=''">
+            and RESOURCE_ID like '%'||#{resourceId}||'%'
+        </if>
+        <if test="billState !=null and billState != 4">
+            and BILL_STATE = #{billState}
+        </if>
+        <if test="accessSystem != null and accessSystem !=''">
+            and SERVICE_IP = #{accessSystem}
+        </if>
+        <if test="userId != null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        ) A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.RESOURCE_ID = B.YXYBM and B.rn = 1
+        LEFT JOIN (SELECT DISTINCT NVL(DATA_COUNT, 0) dc, DATA_ID FROM DAC_ACCESS_STORAGE_INSIDE_BILL WHERE BILL_TYPE = 2 AND IS_LOCAL = '1'
+        AND DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        AND DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')) D ON A.DATA_ID = D.DATA_ID
+        <where>
+            <if test="primaryOrganization !=null and primaryOrganization !=''">
+                and nvl(B.PRIMARYORGANIZATIONCH,'未知') = #{primaryOrganization}
+            </if>
+            <if test="firstOrganization !=null and firstOrganization !=''">
+                and nvl(B.FIRSTORGANIZATIONCH,'未知') = #{firstOrganization}
+            </if>
+            <if test="secondaryOrganization !=null and secondaryOrganization !=''">
+                and nvl(B.SECONDARYORGANIZATIONCH,'未知') = #{secondaryOrganization}
+            </if>
+            <if test="primaryDatasource !=null and primaryDatasource !=''">
+                and nvl(B.PRIMARYDATASOURCECH,'未知') = #{primaryDatasource}
+            </if>
+            <if test="secondaryDataSource !=null and secondaryDataSource !=''">
+                and nvl(B.SECONDARYDATASOURCECH,'未知') = #{secondaryDataSource}
+            </if>
+            <if test="dataName !=null and dataName !=''">
+                and nvl(B.NAME, nvl(A.jobName, A.RESOURCE_ID)) like '%'||#{dataName}||'%'
+            </if>
+        </where>-->
+        )
+    </select>
+
+    <select id="getAccessProviderBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            BILL_TYPE billType,
+            PROVIDER_BILL_NO billNo,
+            PROVIDER_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            SEND_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            JOB_NAME jobName
+        FROM
+            DAC_ACCESS_PROVIDER_BILL
+        WHERE
+            PROVIDER_BILL_NO = #{billNo}
+            AND SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        union all
+        SELECT
+            A.BILL_TYPE billType,
+            A.ACCEPTOR_BILL_NO billNo,
+            A.ACCEPTOR_NO partyNo,
+            A.RESOURCE_ID resourceId,
+            A.DATA_COUNT dataCount,
+            A.DATA_FINGERPRINT dataFingerprint,
+            A.FINGERPRINT_TYPE fingerprintType,
+            A.DATA_SIZE dataSize,
+            A.START_NO startNo,
+            A.END_NO endNo,
+            A.SOURCE_LOCATION sourceLocation,
+            A.BILL_STATE billState,
+            A.LAST_FAIL_BILL lastFailBill,
+            A.CHECK_METHOD checkMethod,
+            A.ACCEPT_TIME dataTime,
+            A.DATA_CHECK_TIME dataCheckTime,
+            A.DATA_SOURCE_NAME dataSourceName,
+            A.RESULT_DES resultDes,
+            A.DATA_SOURCE_TYPE dataSourceType,
+            A.DATA_ADMINISTRATOR dataAdministrator,
+            A.ADMINISTRATOR_TEL administratorTel,
+            A.DATA_ID dataId,
+            A.JOB_NAME jobName
+        FROM
+            DAC_ACCESS_ACCEPTOR_BILL A
+        WHERE EXISTS (SELECT 1 FROM DAC_ACCESS_PROVIDER_BILL WHERE INCEPT_DATA_TIME=A.INCEPT_DATA_TIME  AND PROVIDER_BILL_NO = #{billNo}
+            AND ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss'))
+    </select>
+    <select id="getAccessAcceptorBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            BILL_TYPE billType,
+            ACCEPTOR_BILL_NO billNo,
+            ACCEPTRO_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            DATA_ARRIVE_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            JOB_NAME jobName
+        FROM
+            DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+            BILL_TYPE = 2
+            AND ACCEPTOR_BILL_NO = #{billNo}
+        union all
+        SELECT
+            P.BILL_TYPE billType,
+            P.PROVIDER_BILL_NO billNo,
+            P.PROVIDER_NO partyNo,
+            P.RESOURCE_ID resourceId,
+            P.DATA_COUNT dataCount,
+            P.DATA_FINGERPRINT dataFingerprint,
+            P.FINGERPRINT_TYPE fingerprintType,
+            P.DATA_SIZE dataSize,
+            P.START_NO startNo,
+            P.END_NO endNo,
+            P.SOURCE_LOCATION sourceLocation,
+            P.BILL_STATE billState,
+            P.LAST_FAIL_BILL lastFailBill,
+            P.CHECK_METHOD checkMethod,
+            P.DATA_SEND_TIME dataTime,
+            P.DATA_CHECK_TIME dataCheckTime,
+            P.DATA_SOURCE_NAME dataSourceName,
+            P.RESULT_DES resultDes,
+            P.DATA_SOURCE_TYPE dataSourceType,
+            P.DATA_ADMINISTRATOR dataAdministrator,
+            P.ADMINISTRATOR_TEL administratorTel,
+            P.DATA_ID dataId,
+            P.JOB_NAME jobName
+        FROM
+             DAC_ACCESS_STORAGE_INSIDE_BILL P
+        WHERE
+            BILL_TYPE = 1
+            and P.DATA_ID = (select DATA_ID from DAC_ACCESS_STORAGE_INSIDE_BILL where BILL_TYPE = 2 AND ACCEPTOR_BILL_NO = #{billNo})
+    </select>
+    <select id="getStorageProviderBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            BILL_TYPE billType,
+            PROVIDER_BILL_NO billNo,
+            PROVIDER_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            SEND_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            JOB_NAME jobName,
+            INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_ACCESS_PROVIDER_BILL
+        WHERE
+            BILL_TYPE = 1
+            AND PROVIDER_BILL_NO = #{billNo}
+            AND SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        union all
+        SELECT
+            A.BILL_TYPE billType,
+            A.ACCEPTOR_BILL_NO billNo,
+            A.ACCEPTOR_NO partyNo,
+            A.RESOURCE_ID resourceId,
+            A.DATA_COUNT dataCount,
+            A.DATA_FINGERPRINT dataFingerprint,
+            A.FINGERPRINT_TYPE fingerprintType,
+            A.DATA_SIZE dataSize,
+            A.START_NO startNo,
+            A.END_NO endNo,
+            A.SOURCE_LOCATION sourceLocation,
+            A.BILL_STATE billState,
+            A.LAST_FAIL_BILL lastFailBill,
+            A.CHECK_METHOD checkMethod,
+            A.DATA_ARRIVE_TIME dataTime,
+            A.DATA_CHECK_TIME dataCheckTime,
+            A.DATA_SOURCE_NAME dataSourceName,
+            A.RESULT_DES resultDes,
+            A.DATA_SOURCE_TYPE dataSourceType,
+            A.DATA_ADMINISTRATOR dataAdministrator,
+            A.ADMINISTRATOR_TEL administratorTel,
+            A.DATA_ID dataId,
+            '' jobName,
+            A.INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_STANDARD_ACCEPTOR_BILL A
+        WHERE EXISTS (SELECT 1 FROM DAC_ACCESS_PROVIDER_BILL WHERE INCEPT_DATA_TIME = A.INCEPT_DATA_TIME AND PROVIDER_BILL_NO = #{billNo}
+            AND SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss'))
+        AND A.BILL_TYPE = 2
+    </select>
+    <select id="getStorageAcceptorBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            BILL_TYPE billType,
+            ACCEPTOR_BILL_NO billNo,
+            ACCEPTOR_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            ACCEPT_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            JOB_NAME jobName,
+            INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_ACCESS_ACCEPTOR_BILL
+        WHERE
+            BILL_TYPE = 2
+            AND ACCEPTOR_BILL_NO = #{billNo}
+            and ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            and ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        union all
+        SELECT
+            P.BILL_TYPE billType,
+            P.ACCEPTOR_BILL_NO billNo,
+            P.ACCEPTOR_NO partyNo,
+            P.RESOURCE_ID resourceId,
+            P.DATA_COUNT dataCount,
+            P.DATA_FINGERPRINT dataFingerprint,
+            P.FINGERPRINT_TYPE fingerprintType,
+            P.DATA_SIZE dataSize,
+            P.START_NO startNo,
+            P.END_NO endNo,
+            P.SOURCE_LOCATION sourceLocation,
+            P.BILL_STATE billState,
+            P.LAST_FAIL_BILL lastFailBill,
+            P.CHECK_METHOD checkMethod,
+            P.ACCEPT_TIME dataTime,
+            P.DATA_CHECK_TIME dataCheckTime,
+            P.DATA_SOURCE_NAME dataSourceName,
+            P.RESULT_DES resultDes,
+            P.DATA_SOURCE_TYPE dataSourceType,
+            P.DATA_ADMINISTRATOR dataAdministrator,
+            P.ADMINISTRATOR_TEL administratorTel,
+            P.DATA_ID dataId,
+            P.JOB_NAME jobName,
+            P.INCEPT_DATA_ID synInceptDataId
+        FROM
+             DAC_ACCESS_ACCEPTOR_BILL P
+        WHERE  BILL_TYPE = 2 AND ACCEPTOR_BILL_NO = #{billNo}
+            and ACCEPT_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            and ACCEPT_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+    </select>
+    <select id="getStandardProviderBill" resultType="com.synway.reconciliation.pojo.Detail">
+            SELECT
+            BILL_TYPE billType,
+            PROVIDER_BILL_NO billNo,
+            PROVIDER_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            SEND_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId
+        FROM
+            DAC_ACCESS_PROVIDER_BILL
+        WHERE
+            BILL_TYPE = 1
+            AND PROVIDER_BILL_NO = #{billNo}
+        union all
+        SELECT
+            A.BILL_TYPE billType,
+            A.ACCEPTOR_BILL_NO billNo,
+            A.ACCEPTOR_NO partyNo,
+            A.RESOURCE_ID resourceId,
+            A.DATA_COUNT dataCount,
+            A.DATA_FINGERPRINT dataFingerprint,
+            A.FINGERPRINT_TYPE fingerprintType,
+            A.DATA_SIZE dataSize,
+            A.START_NO startNo,
+            A.END_NO endNo,
+            A.SOURCE_LOCATION sourceLocation,
+            A.BILL_STATE billState,
+            A.LAST_FAIL_BILL lastFailBill,
+            A.CHECK_METHOD checkMethod,
+            A.DATA_ARRIVE_TIME dataTime,
+            A.DATA_CHECK_TIME dataCheckTime,
+            A.DATA_SOURCE_NAME dataSourceName,
+            A.RESULT_DES resultDes,
+            A.DATA_SOURCE_TYPE dataSourceType,
+            A.DATA_ADMINISTRATOR dataAdministrator,
+            A.ADMINISTRATOR_TEL administratorTel,
+            A.DATA_ID dataId
+        FROM
+            DAC_STANDARD_ACCEPTOR_BILL A
+        WHERE
+            A.BILL_TYPE = 2
+            AND A.DATA_ID = (select DATA_ID from DAC_ACCESS_PROVIDER_BILL where PROVIDER_BILL_NO = #{billNo} AND INCEPT_DATA_ID=A.INCEPT_DATA_ID)
+    </select>
+    <select id="getStandardAcceptorBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            BILL_TYPE billType,
+            ACCEPTOR_BILL_NO billNo,
+            ACCEPTOR_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            DATA_ARRIVE_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId
+        FROM
+            DAC_STANDARD_ACCEPTOR_BILL
+        WHERE
+            BILL_TYPE = 2
+            AND ACCEPTOR_BILL_NO = #{billNo}
+        union all
+        SELECT
+            P.BILL_TYPE billType,
+            P.PROVIDER_BILL_NO billNo,
+            P.PROVIDER_NO partyNo,
+            P.RESOURCE_ID resourceId,
+            P.DATA_COUNT dataCount,
+            P.DATA_FINGERPRINT dataFingerprint,
+            P.FINGERPRINT_TYPE fingerprintType,
+            P.DATA_SIZE dataSize,
+            P.START_NO startNo,
+            P.END_NO endNo,
+            P.SOURCE_LOCATION sourceLocation,
+            P.BILL_STATE billState,
+            P.LAST_FAIL_BILL lastFailBill,
+            P.CHECK_METHOD checkMethod,
+            P.SEND_TIME dataTime,
+            P.DATA_CHECK_TIME dataCheckTime,
+            P.DATA_SOURCE_NAME dataSourceName,
+            P.RESULT_DES resultDes,
+            P.DATA_SOURCE_TYPE dataSourceType,
+            P.DATA_ADMINISTRATOR dataAdministrator,
+            P.ADMINISTRATOR_TEL administratorTel,
+            P.DATA_ID dataId
+        FROM
+             DAC_ACCESS_PROVIDER_BILL P
+        WHERE
+            BILL_TYPE = 1
+            AND P.DATA_ID = (select DATA_ID from DAC_STANDARD_ACCEPTOR_BILL where ACCEPTOR_BILL_NO = #{billNo} AND INCEPT_DATA_ID=P.INCEPT_DATA_ID)
+    </select>
+
+    <select id="getStandardStorageProviderBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            BILL_TYPE billType,
+            PROVIDER_BILL_NO billNo,
+            PROVIDER_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            DATA_SEND_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            '' jobName,
+            '' isLocal,
+            INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_STANDARD_PROVIDER_BILL
+        WHERE
+            BILL_TYPE = 1
+            AND PROVIDER_BILL_NO = #{billNo}
+            AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        union all
+        SELECT
+            A.BILL_TYPE billType,
+            A.ACCEPTOR_BILL_NO billNo,
+            A.ACCEPTRO_NO partyNo,
+            A.RESOURCE_ID resourceId,
+            A.DATA_COUNT dataCount,
+            A.DATA_FINGERPRINT dataFingerprint,
+            A.FINGERPRINT_TYPE fingerprintType,
+            A.DATA_SIZE dataSize,
+            A.START_NO startNo,
+            A.END_NO endNo,
+            A.SOURCE_LOCATION sourceLocation,
+            A.BILL_STATE billState,
+            A.LAST_FAIL_BILL lastFailBill,
+            A.CHECK_METHOD checkMethod,
+            A.DATA_ARRIVE_TIME dataTime,
+            A.DATA_CHECK_TIME dataCheckTime,
+            A.DATA_SOURCE_NAME dataSourceName,
+            A.RESULT_DES resultDes,
+            A.DATA_SOURCE_TYPE dataSourceType,
+            A.DATA_ADMINISTRATOR dataAdministrator,
+            A.ADMINISTRATOR_TEL administratorTel,
+            A.DATA_ID dataId,
+            '' jobName,
+            '' isLocal,
+            A.INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_STORAGE_ACCEPTOR_BILL A
+        WHERE EXISTS (SELECT 1 FROM DAC_STANDARD_PROVIDER_BILL WHERE INCEPT_DATA_TIME = A.INCEPT_DATA_TIME AND BILL_TYPE = 1 AND PROVIDER_BILL_NO = #{billNo}
+            AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss'))
+        AND A.BILL_TYPE = 2
+    </select>
+
+    <select id="getStandardStorageAcceptorBill" resultType="com.synway.reconciliation.pojo.Detail">
+        SELECT
+            2 billType,
+            PROVIDER_BILL_NO billNo,
+            PROVIDER_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            DATA_SEND_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            '' jobName,
+            '' isLocal,
+            INCEPT_DATA_ID synInceptDataId
+        FROM
+             DAC_STORAGE_PROVIDER_BILL
+        WHERE
+        BILL_TYPE = 1
+        AND PROVIDER_BILL_NO = #{billNo}
+        and DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        union all
+        SELECT
+            1 billType,
+            P.ACCEPTOR_BILL_NO billNo,
+            P.ACCEPTRO_NO partyNo,
+            P.RESOURCE_ID resourceId,
+            P.DATA_COUNT dataCount,
+            P.DATA_FINGERPRINT dataFingerprint,
+            P.FINGERPRINT_TYPE fingerprintType,
+            P.DATA_SIZE dataSize,
+            P.START_NO startNo,
+            P.END_NO endNo,
+            P.SOURCE_LOCATION sourceLocation,
+            P.BILL_STATE billState,
+            P.LAST_FAIL_BILL lastFailBill,
+            P.CHECK_METHOD checkMethod,
+            P.DATA_ARRIVE_TIME dataTime,
+            P.DATA_CHECK_TIME dataCheckTime,
+            P.DATA_SOURCE_NAME dataSourceName,
+            P.RESULT_DES resultDes,
+            P.DATA_SOURCE_TYPE dataSourceType,
+            P.DATA_ADMINISTRATOR dataAdministrator,
+            P.ADMINISTRATOR_TEL administratorTel,
+            P.DATA_ID dataId,
+            '' jobName,
+            '' isLocal,
+            P.INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_STORAGE_ACCEPTOR_BILL P
+        WHERE EXISTS (SELECT 1 FROM DAC_STORAGE_PROVIDER_BILL WHERE INCEPT_DATA_TIME = P.INCEPT_DATA_TIME AND BILL_TYPE = 1 AND PROVIDER_BILL_NO = #{billNo}
+            and DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            and DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss'))
+            AND BILL_TYPE = 2
+        UNION ALL
+            SELECT
+            BILL_TYPE billType,
+            PROVIDER_BILL_NO billNo,
+            PROVIDER_NO partyNo,
+            RESOURCE_ID resourceId,
+            DATA_COUNT dataCount,
+            DATA_FINGERPRINT dataFingerprint,
+            FINGERPRINT_TYPE fingerprintType,
+            DATA_SIZE dataSize,
+            START_NO startNo,
+            END_NO endNo,
+            SOURCE_LOCATION sourceLocation,
+            BILL_STATE billState,
+            LAST_FAIL_BILL lastFailBill,
+            CHECK_METHOD checkMethod,
+            DATA_SEND_TIME dataTime,
+            DATA_CHECK_TIME dataCheckTime,
+            DATA_SOURCE_NAME dataSourceName,
+            RESULT_DES resultDes,
+            DATA_SOURCE_TYPE dataSourceType,
+            DATA_ADMINISTRATOR dataAdministrator,
+            ADMINISTRATOR_TEL administratorTel,
+            DATA_ID dataId,
+            JOB_NAME jobName,
+            '1' isLocal,
+            INCEPT_DATA_ID synInceptDataId
+        FROM
+            DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+            BILL_TYPE = 1
+            AND IS_LOCAL = '1'
+            AND PROVIDER_BILL_NO = #{billNo}
+            AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        union all
+        SELECT
+            P.BILL_TYPE billType,
+            P.ACCEPTOR_BILL_NO billNo,
+            P.ACCEPTRO_NO partyNo,
+            P.RESOURCE_ID resourceId,
+            P.DATA_COUNT dataCount,
+            P.DATA_FINGERPRINT dataFingerprint,
+            P.FINGERPRINT_TYPE fingerprintType,
+            P.DATA_SIZE dataSize,
+            P.START_NO startNo,
+            P.END_NO endNo,
+            P.SOURCE_LOCATION sourceLocation,
+            P.BILL_STATE billState,
+            P.LAST_FAIL_BILL lastFailBill,
+            P.CHECK_METHOD checkMethod,
+            P.DATA_ARRIVE_TIME dataTime,
+            P.DATA_CHECK_TIME dataCheckTime,
+            P.DATA_SOURCE_NAME dataSourceName,
+            P.RESULT_DES resultDes,
+            P.DATA_SOURCE_TYPE dataSourceType,
+            P.DATA_ADMINISTRATOR dataAdministrator,
+            P.ADMINISTRATOR_TEL administratorTel,
+            P.DATA_ID dataId,
+            P.JOB_NAME jobName,
+            '1' isLocal,
+            P.INCEPT_DATA_ID synInceptDataId
+        FROM
+             DAC_ACCESS_STORAGE_INSIDE_BILL P
+        WHERE EXISTS (SELECT 1 FROM DAC_ACCESS_STORAGE_INSIDE_BILL WHERE DATA_ID = P.DATA_ID AND BILL_TYPE = 1 AND IS_LOCAL = '1' AND PROVIDER_BILL_NO = #{billNo}
+            AND DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+            AND DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss'))
+        AND P.BILL_TYPE = 2 AND P.IS_LOCAL = '1'
+    </select>
+    <select id="getAccessAccessStateList" resultType="com.synway.reconciliation.pojo.AccessAccessStateListResponse">
+        SELECT
+        A.accessSystem,
+        A.dataSourceName,
+        A.resourceId,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.beginNo,
+        A.tache,
+        A.dataDirection,
+        A.userId,
+        A.userName,
+        decode(thirdpartyProvide,0,accessProvide,thirdpartyProvide) thirdpartyProvide,
+        nvl(B.NAME, nvl(A.jobName, A.resourceId)) dataName
+        FROM
+        (
+        SELECT
+        ACCESS_SYSTEM accessSystem,
+        DATA_SOURCE dataSourceName,
+        RESOURCE_ID resourceId,
+        sum( OUTSIDE_PROVIDE ) thirdpartyProvide,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        min( CREATETIME ) updateTime,
+        min(start_no) beginNo,
+        TACHE tache,
+        DIRCTION dataDirection,
+        min(is_issued) isIssued,
+        USER_ID userId,
+        min(USER_NAME) userName,
+        max(job_name) jobName
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        where
+        <choose>
+            <when test="resourceId !=null and resourceId !=''">
+                resource_id = #{resourceId}
+            </when>
+            <otherwise>
+                job_name = #{dataName}
+            </otherwise>
+        </choose>
+        and tache = #{tache}
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="isLocal !=null and isLocal !=''">
+            and is_local = #{isLocal}
+        </if>
+        <if test="direction !=null and direction !=''">
+            and dirction = #{direction}
+        </if>
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        ACCESS_SYSTEM,
+        DATA_SOURCE,
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+    </select>
+    <select id="getStandardAccessStateList" resultType="com.synway.reconciliation.pojo.StandardAccessStateListResponse">
+        SELECT
+        A.accessSystem,
+        A.dataSourceName,
+        A.resourceId,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.beginNo,
+        A.tache,
+        A.dataDirection,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, A.resourceId) dataName
+        FROM
+        (
+        SELECT
+        ACCESS_SYSTEM accessSystem,
+        DATA_SOURCE dataSourceName,
+        RESOURCE_ID resourceId,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        min( CREATETIME ) updateTime,
+        min(start_no) beginNo,
+        TACHE tache,
+        DIRCTION dataDirection,
+        USER_ID userId,
+        min(USER_NAME) userName
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE
+        resource_id = #{resourceId}
+        and tache = #{tache}
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        ACCESS_SYSTEM,
+        DATA_SOURCE,
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+    </select>
+
+    <select id="getStandardStorageStateList" resultType="com.synway.reconciliation.pojo.StandardAccessStateListResponse">
+        SELECT
+        A.accessSystem,
+        A.dataSourceName,
+        A.resourceId,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.beginNo,
+        A.tache,
+        A.dataDirection,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, A.resourceId) dataName
+        FROM
+        (
+        SELECT
+        ACCESS_SYSTEM accessSystem,
+        DATA_SOURCE dataSourceName,
+        RESOURCE_ID resourceId,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        min( CREATETIME ) updateTime,
+        min(start_no) beginNo,
+        TACHE tache,
+        DIRCTION dataDirection,
+        USER_ID userId,
+        min(USER_NAME) userName
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE
+        resource_id = #{resourceId}
+        and tache = #{tache}
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        ACCESS_SYSTEM,
+        DATA_SOURCE,
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A LEFT JOIN ( SELECT DISTINCT SJXJBM, NAME FROM CLASSIFY_SOURCE_TARGET) B ON A.resourceId = B.SJXJBM
+    </select>
+
+    <select id="getAccessDataTimeList" resultType="java.lang.String">
+        select to_char(DATA_TIME,'yyyy-MM-dd') dataTime from DAC_ACCESS_BILL_STATISTICS
+        WHERE (IS_ISSUED='0' OR IS_ISSUED='' OR IS_ISSUED IS NULL) AND IS_LOCAL = '0'
+        group by to_char(DATA_TIME,'yyyy-MM-dd')
+    </select>
+
+    <select id="getIssuedDataTimeList" resultType="java.lang.String">
+        select to_char(data_time,'yyyy-MM-dd') dataTime from DAC_ACCESS_BILL_STATISTICS
+        WHERE IS_ISSUED='1'
+        group by to_char(data_time,'yyyy-MM-dd')
+    </select>
+
+    <select id="getStorageDataTimeList" resultType="java.lang.String">
+        select T.dataTime from
+        (select to_char(DATA_TIME, 'yyyy-MM-dd') dataTime from DAC_ACCESS_BILL_STATISTICS WHERE (IS_ISSUED='0' OR IS_ISSUED='' OR IS_ISSUED IS NULL) AND IS_LOCAL = '1'
+        union all
+        select to_char(DATA_TIME, 'yyyy-MM-dd') dataTime from DAC_STANDARD_BILL_STATISTICS a
+        left join CLASSIFY_SOURCE_TARGET b on a.RESOURCE_ID = b.SJXJBM
+        WHERE a.tache = 2 and upper(a.DIRCTION) = 'ODPS'
+        and (b.PRIMARYORGANIZATIONCH = '原始库' or b.SECONDARYORGANIZATIONCH = '业务生产库'))T
+        group by T.dataTime
+    </select>
+
+    <select id="getDistributionDataTimeList" resultType="java.lang.String">
+        select to_char(DATA_TIME,'yyyy-MM-dd') dataTime from DAC_STANDARD_BILL_STATISTICS a
+        left join CLASSIFY_SOURCE_TARGET b on a.RESOURCE_ID = b.SJXJBM
+        WHERE a.tache = 2 and (upper(a.DIRCTION) != 'ODPS'
+        or (b.PRIMARYORGANIZATIONCH != '原始库' and b.SECONDARYORGANIZATIONCH != '业务生产库'))
+        group by to_char(DATA_TIME,'yyyy-MM-dd')
+    </select>
+
+    <select id="getStandardDataTimeList" resultType="java.lang.String">
+        select to_char(DATA_TIME, 'yyyy-MM-dd') from DAC_STANDARD_BILL_STATISTICS
+        where tache = 1 group by to_char(DATA_TIME, 'yyyy-MM-dd')
+    </select>
+
+    <select id="getAccessSystemList1" resultType="java.lang.String">
+        SELECT DISTINCT
+             SERVICE_IP
+        FROM
+            DAC_ACCESS_ACCEPTOR_BILL
+        UNION
+        SELECT DISTINCT
+             SERVICE_IP
+        FROM
+            DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE BILL_TYPE =1 AND IS_LOCAL = '0'
+    </select>
+
+    <select id="getAccessSystemList2" resultType="java.lang.String">
+        SELECT DISTINCT
+            SERVICE_IP
+        FROM
+            DAC_ACCESS_PROVIDER_BILL
+    </select>
+
+    <select id="getAccessSystemList3" resultType="java.lang.String">
+        SELECT DISTINCT SERVICE_IP
+          FROM DAC_STANDARD_PROVIDER_BILL
+         WHERE BILL_TYPE = 1
+        UNION
+        SELECT DISTINCT SERVICE_IP
+          FROM DAC_STORAGE_ACCEPTOR_BILL
+         WHERE BILL_TYPE = 2
+        UNION
+        SELECT DISTINCT SERVICE_IP
+          FROM DAC_ACCESS_ACCEPTOR_BILL
+         WHERE BILL_TYPE = 2
+        UNION
+        SELECT DISTINCT SERVICE_IP
+          FROM DAC_ACCESS_STORAGE_INSIDE_BILL
+         WHERE BILL_TYPE = 1
+           AND IS_LOCAL = '1'
+    </select>
+
+    <select id="getAccessSystemList4" resultType="java.lang.String">
+        SELECT DISTINCT
+            SERVICE_IP
+        FROM
+            DAC_STANDARD_PROVIDER_BILL
+            union
+        SELECT DISTINCT
+            SERVICE_IP
+        FROM
+            DAC_STORAGE_ACCEPTOR_BILL
+    </select>
+
+    <select id="getAccessDataCount" resultType="java.lang.Integer">
+        SELECT
+        count( 1 )
+        FROM
+        (
+        SELECT
+        A.RESOURCE_ID
+        FROM
+        DAC_ACCESS_BILL_STATISTICS A
+        LEFT JOIN CLASSIFY_INTERFACE_ALL_DATE B ON UPPER(A.TABLE_NAME) = UPPER(B.TABLENAME)
+        WHERE A.IS_ISSUED='1'
+        and A.TACHE = #{tache}
+        and A.DATA_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and A.DATA_TIME &lt; to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataName !=null and dataName !=''">
+            and decode(B.NAME,null,A.resource_Id,B.NAME) like '%'||#{dataName}||'%'
+        </if>
+        GROUP BY
+        A.RESOURCE_ID,
+        A.DIRCTION
+        UNION ALL
+        SELECT
+        A.RESOURCE_ID
+        FROM
+        DAC_ACCESS_BILL_STATISTICS A
+        LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resource_Id = B.YXYBM and B.rn = 1
+        WHERE (A.IS_ISSUED='0' OR A.IS_ISSUED='' OR A.IS_ISSUED IS NULL)
+        and TACHE = #{tache}
+        and DATA_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataName !=null and dataName !=''">
+            and nvl(B.NAME, nvl(A.JOB_NAME, A.RESOURCE_ID)) like '%'||#{dataName}||'%'
+        </if>
+        GROUP BY
+        A.RESOURCE_ID,
+        A.DIRCTION
+        )
+    </select>
+
+    <select id="getStandardDataCount" resultType="java.lang.Integer">
+        SELECT
+        count( 1 )
+        FROM
+        (
+        SELECT
+        A.RESOURCE_ID
+        FROM
+        DAC_STANDARD_BILL_STATISTICS A LEFT JOIN CLASSIFY_SOURCE_TARGET B ON A.resource_Id = B.SJXJBM
+        WHERE
+        A.DATA_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and A.DATA_TIME &lt; to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="dataName !=null and dataName !=''">
+            and nvl(B.NAME, A.RESOURCE_ID) LIKE '%'||#{dataName}||'%'
+        </if>
+        GROUP BY
+        A.RESOURCE_ID,
+        A.DIRCTION)
+    </select>
+
+    <select id="getAccessStatisticResourceIds" resultType="java.lang.String">
+        SELECT
+        DISTINCT RESOURCE_ID
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        WHERE
+        DATA_TIME >= to_date( #{startTime}, 'yyyy-mm-dd hh24:mi:ss' )
+        AND DATA_TIME &lt;= to_date( #{endTime}, 'yyyy-mm-dd hh24:mi:ss' )
+    </select>
+
+    <select id="getStandardStatisticResourceIds" resultType="java.lang.String">
+        SELECT
+        DISTINCT RESOURCE_ID
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE
+        DATA_TIME >= to_date( #{startTime}, 'yyyy-mm-dd hh24:mi:ss' )
+        AND DATA_TIME &lt;= to_date( #{endTime}, 'yyyy-mm-dd hh24:mi:ss' )
+    </select>
+
+    <delete id="deleteFromAccessBillStatics">
+        DELETE
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        WHERE
+        RESOURCE_ID = #{resourceId}
+        AND DIRCTION = #{direction}
+        and tache = #{tache}
+        AND DATA_TIME >= to_date ( #{startTime}, 'yyyy-mm-dd hh24:mi:ss' )
+        AND DATA_TIME &lt; to_date ( #{endTime}, 'yyyy-mm-dd hh24:mi:ss' )
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+    </delete>
+
+    <delete id="deleteFromStandardBillStatics">
+        DELETE
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE
+        RESOURCE_ID = #{resourceId}
+        AND DIRCTION = #{direction}
+        and tache = #{tache}
+        AND DATA_TIME >= to_date ( #{startTime}, 'yyyy-mm-dd hh24:mi:ss' )
+        AND DATA_TIME &lt; to_date ( #{endTime}, 'yyyy-mm-dd hh24:mi:ss' )
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+    </delete>
+
+    <select id="getAccessUpdateData" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        SELECT
+        A.resourceId,
+        A.thirdpartyProvide,
+        A.accessProvide,
+        A.accessAccept,
+        A.updateTime,
+        A.tache,
+        A.dataDirection,
+        A.userId,
+        A.userName,
+        nvl(B.NAME, nvl(A.jobName, A.resourceId)) dataName
+        FROM
+        (
+        SELECT
+        RESOURCE_ID resourceId,
+        sum( OUTSIDE_PROVIDE ) thirdpartyProvide,
+        sum( INSIDE_PROVIDE ) accessProvide,
+        sum( INSIDE_ACCEPT ) accessAccept,
+        max( CREATETIME ) updateTime,
+        TACHE tache,
+        DIRCTION dataDirection,
+        max(JOB_NAME) jobName,
+        USER_ID userId,
+        min(USER_NAME) userName
+        FROM
+        DAC_ACCESS_BILL_STATISTICS
+        WHERE
+        resource_id = #{resourceId}
+        and DIRCTION = #{direction}
+        and tache = #{tache}
+        and DATA_TIME >= TO_DATE(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        and DATA_TIME &lt; TO_DATE(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TACHE,
+        DIRCTION,
+        USER_ID
+        )A LEFT JOIN (select C.*, row_number() over (PARTITION BY yxybm ORDER BY INSERT_DATE DESC) as rn from CLASSIFY_SOURCE_TARGET C) B ON A.resourceId = B.YXYBM and B.rn = 1
+    </select>
+    <insert id="insertStatisticsUpdateHistory" parameterType="com.synway.reconciliation.pojo.BillStatisticsHistory">
+        INSERT INTO BILL_STATISTIC_HISTORY ( RESOURCE_ID, DIRECTION, DATA_TIME, TACHE, SYSTEM, STATUS, ID, CREATETIME )
+        VALUES(#{resourceId,jdbcType=VARCHAR},#{direction,jdbcType=NUMERIC},#{DataTime,jdbcType=DATE},#{tache,jdbcType=NUMERIC}
+        ,#{system,jdbcType=NUMERIC},#{status,jdbcType=NUMERIC},#{id,jdbcType=VARCHAR},sysdate)
+    </insert>
+    <update id="updateStatisticsUpdateHistory" parameterType="com.synway.reconciliation.pojo.BillStatisticsHistory">
+        UPDATE BILL_STATISTIC_HISTORY set STATUS=#{status} where ID = #{id}
+    </update>
+    <select id="getStatisticsHistory" resultType="com.synway.reconciliation.pojo.BillStatisticsHistory">
+        SELECT
+            RESOURCE_ID resourceId,
+            DIRECTION direction,
+            TACHE tache,
+            STATUS status
+        FROM
+            BILL_STATISTIC_HISTORY t
+        WHERE
+            NOT EXISTS (
+        SELECT
+            1
+        FROM
+            BILL_STATISTIC_HISTORY
+        WHERE
+            RESOURCE_ID = t.RESOURCE_ID
+            AND TACHE = t.TACHE
+            AND DIRECTION = t.DIRECTION
+            AND SYSTEM = t.SYSTEM
+            AND CREATETIME > t.CREATETIME
+            )
+        and DATA_TIME = to_date(#{dataTime},'yyyy-mm-dd hh24:mi:ss')
+        and SYSTEM = #{system}
+    </select>
+    <select id="getAccessDirection" resultType="java.lang.String">
+      select DISTINCT dirction from DAC_ACCESS_BILL_STATISTICS WHERE IS_LOCAL = '0'
+    </select>
+
+    <select id="getStandardDirection" resultType="java.lang.String">
+      select DISTINCT dirction from DAC_STANDARD_BILL_STATISTICS WHERE TACHE = 1
+    </select>
+
+    <select id="getStorageDirection" resultType="java.lang.String">
+      select DISTINCT dirction from DAC_ACCESS_BILL_STATISTICS WHERE IS_LOCAL = '1'
+      UNION
+      select DISTINCT dirction from DAC_STANDARD_BILL_STATISTICS a
+      left join CLASSIFY_SOURCE_TARGET b on a.RESOURCE_ID = b.SJXJBM
+      WHERE a.tache = 2 and upper(a.DIRCTION)='ODPS'
+      and (b.PRIMARYORGANIZATIONCH = '原始库' or b.SECONDARYORGANIZATIONCH = '业务生产库')
+    </select>
+
+    <select id="getDistributionDirection" resultType="java.lang.String">
+      select DISTINCT dirction from DAC_STANDARD_BILL_STATISTICS a
+      left join CLASSIFY_SOURCE_TARGET b on a.RESOURCE_ID = b.SJXJBM
+      WHERE a.tache = 2 and (upper(a.DIRCTION)!='ODPS'
+      or (b.PRIMARYORGANIZATIONCH != '原始库' and b.SECONDARYORGANIZATIONCH != '业务生产库'))
+    </select>
+
+    <select id="queryCheckBillList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT
+        PROVIDER_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        '提供方账单' billType,
+        DATA_SEND_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DECODE(DATA_SOURCE_TYPE,'1','数据包','2','数据文件','3','数据库') dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_STANDARD_PROVIDER_BILL
+        WHERE
+        BILL_TYPE =1
+        <if test="startTime != null and startTime != ''">
+            and DATA_SEND_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        </if>
+        <if test="endTime != null and endTime != ''">
+            and DATA_SEND_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        </if>
+    </select>
+
+    <select id="queryCancelBillList" resultType="com.synway.reconciliation.pojo.ReconciliationListResponse">
+        SELECT
+        ACCEPTOR_BILL_NO billNo,
+        RESOURCE_ID resourceId,
+        DATA_COUNT dataCount,
+        START_NO beginNo,
+        END_NO endNo,
+        '接入方账单' billType,
+        DATA_ARRIVE_TIME sendTime,
+        DATA_CHECK_TIME checkTime,
+        DATA_SOURCE_NAME dataSourceName,
+        DECODE(DATA_SOURCE_TYPE,'1','数据包','2','数据文件','3','数据库') dataSourceType,
+        SERVICE_IP accessSystem
+        FROM
+        DAC_STORAGE_ACCEPTOR_BILL
+        WHERE
+        BILL_TYPE =2
+        <if test="startTime != null and startTime != ''">
+            and DATA_ARRIVE_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        </if>
+        <if test="endTime != null and endTime != ''">
+            and DATA_ARRIVE_TIME &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        </if>
+    </select>
+
+    <select id="statisticsAcccessStorage" resultType="com.synway.reconciliation.pojo.AccessBillStatistics">
+        SELECT
+        P.RESOURCE_ID resourceId,
+        P.TABLE_NAME_EN tableNameEn,
+        P.DATA_SOURCE_NAME dataSource,
+        P.SERVICE_IP accessSystem,
+        P.DATA_DIRECTION direction,
+        P.USER_ID userId,
+        P.USER_NAME userName,
+        P.INSIDE_PROVIDE insideProvide,
+        P.startNo,
+        P.jobName,
+        P.isLocal,
+        A.INSIDE_ACCEPT insideAccess,
+        O.OUTSIDE_PROVIDE outSideProvide,
+        2 tache,
+        '0' isIssued,
+        to_date ( #{date1}, 'yyyy-mm-dd HH24:mi:ss' ) dataTime,
+        P.INCEPT_DATA_TIME inceptDataTime
+        FROM
+        (
+        SELECT
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        min(USER_ID) USER_ID,
+        min(USER_NAME) USER_NAME,
+        sum( DATA_COUNT ) INSIDE_PROVIDE,
+        min( START_NO ) startNo,
+        max(JOB_NAME) jobName,
+        max(IS_LOCAL) isLocal,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+        BILL_TYPE = 1
+        AND RESOURCE_ID = #{resourceId}
+        AND DATA_DIRECTION = #{dataDirection}
+        AND DATA_ARRIVE_TIME >= to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_ARRIVE_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        INCEPT_DATA_TIME
+        ) P
+        LEFT JOIN (
+        SELECT
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        sum( DATA_COUNT ) INSIDE_ACCEPT,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE
+        BILL_TYPE = 2
+        AND RESOURCE_ID = #{resourceId}
+        AND DATA_DIRECTION = #{dataDirection}
+        AND DATA_ARRIVE_TIME >= to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_ARRIVE_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        INCEPT_DATA_TIME
+        ) A ON P.RESOURCE_ID = A.RESOURCE_ID
+        AND P.DATA_SOURCE_NAME = A.DATA_SOURCE_NAME
+        AND P.SERVICE_IP = A.SERVICE_IP
+        AND P.DATA_DIRECTION = A.DATA_DIRECTION
+        AND P.INCEPT_DATA_TIME = A.INCEPT_DATA_TIME
+        LEFT JOIN (
+        SELECT
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SUM( DATA_COUNT ) OUTSIDE_PROVIDE
+        FROM
+        (
+        SELECT
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        DATA_ID
+        FROM
+        DAC_ACCESS_ACCEPTOR_BILL
+        WHERE
+        RESOURCE_ID = #{resourceId}
+        AND DATA_DIRECTION = #{dataDirection}
+        and ACCEPT_TIME >= to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND ACCEPT_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        ) A INNER JOIN (
+        SELECT
+        DATA_ID,
+        DATA_COUNT
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE
+        SEND_TIME >= to_date( #{ date3 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND SEND_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        ) P ON A.DATA_ID = P.DATA_ID
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION
+        ) O ON P.RESOURCE_ID = O.RESOURCE_ID
+        AND P.DATA_SOURCE_NAME = O.DATA_SOURCE_NAME
+        AND P.SERVICE_IP = O.SERVICE_IP
+        AND P.DATA_DIRECTION = O.DATA_DIRECTION
+    </select>
+
+    <select id="statisticsAcccess" resultType="com.synway.reconciliation.pojo.AccessBillStatistics">
+        SELECT
+        P.RESOURCE_ID resourceId,
+        P.DATA_SOURCE_NAME dataSource,
+        P.SERVICE_IP accessSystem,
+        P.DATA_DIRECTION direction,
+        P.USER_ID userId,
+        P.USER_NAME userName,
+        P.INSIDE_PROVIDE insideProvide,
+        P.startNo,
+        A.INSIDE_ACCEPT insideAccess,
+        1 tache,
+        to_date ( #{date1}, 'yyyy-mm-dd HH24:mi:ss' ) dataTime
+        FROM
+        (
+        SELECT
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        min(USER_ID) USER_ID,
+        min(USER_NAME) USER_NAME,
+        sum( DATA_COUNT ) INSIDE_PROVIDE,
+        min( START_NO ) startNo
+        FROM
+        DAC_ACCESS_INSIDE_BILL
+        WHERE
+        BILL_TYPE = 1
+        AND RESOURCE_ID = #{resourceId}
+        AND DATA_DIRECTION = #{dataDirection}
+        AND DATA_SEND_TIME >= to_date ( #{date1}, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_SEND_TIME <![CDATA[< ]]> to_date ( #{date2}, 'yyyy-mm-dd HH24:mi:ss' )
+        GROUP BY
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION
+        ) P
+        LEFT JOIN (
+        SELECT
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        sum( DATA_COUNT ) INSIDE_ACCEPT
+        FROM
+        DAC_ACCESS_INSIDE_BILL
+        WHERE
+        BILL_TYPE = 2
+        AND RESOURCE_ID = #{resourceId}
+        AND DATA_DIRECTION = #{dataDirection}
+        AND DATA_SEND_TIME >= to_date ( #{date1}, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_SEND_TIME <![CDATA[< ]]> to_date ( #{date2}, 'yyyy-mm-dd HH24:mi:ss' )
+        GROUP BY
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION
+        ) A ON P.RESOURCE_ID = A.RESOURCE_ID
+        AND P.DATA_SOURCE_NAME = A.DATA_SOURCE_NAME
+        AND P.SERVICE_IP = A.SERVICE_IP
+        AND P.DATA_DIRECTION = A.DATA_DIRECTION
+    </select>
+
+    <select id="statisticsStandardAccess" resultType="com.synway.reconciliation.pojo.AccessBillStatistics">
+        SELECT
+        RESOURCE_ID resourceId,
+        DATA_SOURCE_NAME dataSource,
+        SERVICE_IP accessSystem,
+        DATA_DIRECTION direction,
+        sys_code sysCode,
+        data_source dataSourceCode,
+        INSIDE_PROVIDE insideProvide,
+        startNo,
+        INSIDE_ACCEPT insideAccess,
+        1 tache,
+        to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' ) dataTime,
+        USER_ID userId,
+        USER_NAME userName,
+        INCEPT_DATA_TIME inceptDataTime
+        FROM
+        (
+        SELECT
+        A.RESOURCE_ID,
+        A.DATA_SOURCE_NAME,
+        A.SERVICE_IP,
+        A.DATA_DIRECTION,
+        A.sys_code,
+        A.data_source,
+        MIN(A.USER_ID) USER_ID,
+        MIN(A.USER_NAME) USER_NAME,
+        sum( A.DATA_COUNT ) INSIDE_ACCEPT,
+        sum( B.DATA_COUNT ) INSIDE_PROVIDE,
+        MIN(A.START_NO) startNo,
+        A.INCEPT_DATA_TIME
+        FROM
+        DAC_STANDARD_ACCEPTOR_BILL A
+        LEFT JOIN (
+        SELECT
+        DATA_ID,
+        DATA_COUNT,
+        INCEPT_DATA_ID
+        FROM
+        DAC_ACCESS_PROVIDER_BILL
+        WHERE
+        SEND_TIME >= to_date( #{ date3 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND SEND_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND RESOURCE_ID = #{resourceId}
+        ) B
+        ON A.DATA_ID = B.DATA_ID
+        and A.INCEPT_DATA_ID=B.INCEPT_DATA_ID
+        WHERE
+        A.DATA_ARRIVE_TIME >= to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND A.DATA_ARRIVE_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND A.RESOURCE_ID = #{resourceId}
+        AND A.DATA_DIRECTION = #{direction}
+        <if test="userId !=null and userId !=''">
+            and A.USER_ID = #{userId}
+        </if>
+        GROUP BY
+        A.RESOURCE_ID,
+        A.DATA_SOURCE_NAME,
+        A.SERVICE_IP,
+        A.DATA_DIRECTION,
+        A.SYS_CODE,
+        A.DATA_SOURCE,
+        A.INCEPT_DATA_TIME
+        )
+    </select>
+
+    <select id="statisticsStandardStorage" resultType="com.synway.reconciliation.pojo.AccessBillStatistics">
+        SELECT
+        P.RESOURCE_ID resourceId,
+        A.TABLE_NAME_EN tableNameEn,
+        P.DATA_SOURCE_NAME dataSource,
+        P.SERVICE_IP accessSystem,
+        P.PLATFORM direction,
+        P.SYS_CODE sysCode,
+        P.DATA_SOURCE dataSourceCode,
+        P.INSIDE_PROVIDE insideProvide,
+        P.startNo,
+        A.INSIDE_ACCEPT insideAccess,
+        2 tache,
+        to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' ) dataTime,
+        P.USER_ID userId,
+        P.USER_NAME userName,
+        P.INCEPT_DATA_TIME inceptDataTime,
+        O.OUTSIDE_ACCEPT outsideAccept
+        FROM
+        (
+        SELECT
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SYS_CODE,
+        DATA_SOURCE,
+        PLATFORM,
+        sum( DATA_COUNT ) INSIDE_PROVIDE,
+        min( START_NO ) startNo,
+        min(USER_ID) USER_ID,
+        min(USER_NAME) USER_NAME,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_STANDARD_PROVIDER_BILL
+        WHERE
+        DATA_SEND_TIME >= to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_SEND_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND RESOURCE_ID = #{resourceId}
+        AND upper(PLATFORM) = upper(#{direction})
+        <if test="userId !=null and userId !=''">
+            and USER_ID = #{userId}
+        </if>
+        GROUP BY
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SYS_CODE,
+        DATA_SOURCE,
+        PLATFORM,
+        INCEPT_DATA_TIME
+        ) P LEFT JOIN (
+        SELECT
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SYS_CODE,
+        DATA_SOURCE,
+        PLATFORM,
+        sum( DATA_COUNT ) INSIDE_ACCEPT,
+        INCEPT_DATA_TIME
+        FROM
+        DAC_STORAGE_ACCEPTOR_BILL
+        WHERE
+        DATA_ARRIVE_TIME >= to_date( #{ date1 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_ARRIVE_TIME <![CDATA[< ]]> to_date( #{ date2 }, 'yyyy-mm-dd HH24:mi:ss' )
+        AND RESOURCE_ID = #{resourceId}
+        AND upper(PLATFORM) = upper(#{direction})
+        GROUP BY
+        RESOURCE_ID,
+        TABLE_NAME_EN,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SYS_CODE,
+        DATA_SOURCE,
+        PLATFORM,
+        INCEPT_DATA_TIME
+        ) A ON P.RESOURCE_ID = A.RESOURCE_ID
+        AND P.DATA_SOURCE_NAME = A.DATA_SOURCE_NAME
+        AND P.SERVICE_IP = A.SERVICE_IP
+        AND P.SYS_CODE=A.SYS_CODE
+        AND P.DATA_SOURCE = A.DATA_SOURCE
+        AND P.PLATFORM = A.PLATFORM
+        AND P.INCEPT_DATA_TIME = A.INCEPT_DATA_TIME
+        LEFT JOIN (
+        SELECT
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SYS_CODE,
+        DATA_SOURCE,
+        PLATFORM,
+        INCEPT_DATA_TIME,
+        SUM( DATA_COUNT ) OUTSIDE_ACCEPT
+        FROM
+        DAC_STORAGE_ACCEPTOR_BILL S
+        WHERE DATA_ARRIVE_TIME <![CDATA[< ]]> to_date ( #{date2}, 'yyyy-mm-dd HH24:mi:ss' )
+        AND RESOURCE_ID = #{resourceId}
+        AND upper(PLATFORM) = upper(#{direction})
+        AND EXISTS (SELECT 1 FROM DAC_STORAGE_PROVIDER_BILL
+        WHERE DATA_SEND_TIME >= to_date ( #{date1}, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_SEND_TIME <![CDATA[< ]]> to_date ( #{date2}, 'yyyy-mm-dd HH24:mi:ss' )
+        AND DATA_ID = S.DATA_ID AND INCEPT_DATA_ID = S.INCEPT_DATA_ID)
+        GROUP BY
+        RESOURCE_ID,
+        DATA_SOURCE_NAME,
+        SERVICE_IP,
+        DATA_DIRECTION,
+        SYS_CODE,
+        DATA_SOURCE,
+        PLATFORM,
+        INCEPT_DATA_TIME
+        ) O ON P.RESOURCE_ID = O.RESOURCE_ID
+        AND P.DATA_SOURCE_NAME = O.DATA_SOURCE_NAME
+        AND P.SERVICE_IP = O.SERVICE_IP
+        AND P.SYS_CODE=O.SYS_CODE
+        AND P.DATA_SOURCE = O.DATA_SOURCE
+        AND P.PLATFORM = O.PLATFORM
+        AND P.INCEPT_DATA_TIME = O.INCEPT_DATA_TIME
+    </select>
+
+    <select id="getAccessOutsideDataTimeList" resultType="java.lang.String">
+        select to_char(accept_time, 'yyyy-MM-dd') from DAC_ACCESS_ACCEPTOR_BILL
+        group by to_char(accept_time, 'yyyy-MM-dd')
+    </select>
+
+    <select id="getAccessInsideDataTimeList" resultType="java.lang.String">
+        select to_char(data_send_time, 'yyyy-MM-dd') from DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE BILL_TYPE =1 AND IS_LOCAL = '0' group by to_char(data_send_time, 'yyyy-MM-dd')
+    </select>
+
+    <select id="getStandardOutsideDataTimeList" resultType="java.lang.String">
+        select to_char(send_time, 'yyyy-MM-dd') from DAC_ACCESS_PROVIDER_BILL
+        WHERE DATA_DIRECTION = 2 group by to_char(send_time, 'yyyy-MM-dd')
+    </select>
+
+    <select id="getStorageOutsideDataTimeList" resultType="java.lang.String">
+        select to_char(T.dataTime, 'yyyy-MM-dd') from
+        (select data_send_time dataTime FROM DAC_STANDARD_PROVIDER_BILL WHERE BILL_TYPE = 1
+        union all
+        select accept_time dataTime FROM DAC_ACCESS_ACCEPTOR_BILL WHERE BILL_TYPE = 2) T
+        group by to_char(T.dataTime, 'yyyy-MM-dd')
+    </select>
+
+    <select id="getStorageInsideDataTimeList" resultType="java.lang.String">
+        select to_char(T.dataTime, 'yyyy-MM-dd') from
+        (select data_arrive_time dataTime FROM DAC_STORAGE_ACCEPTOR_BILL WHERE BILL_TYPE = 2
+        union all
+        select data_send_time dataTime FROM DAC_ACCESS_STORAGE_INSIDE_BILL
+        WHERE BILL_TYPE = 1 AND IS_LOCAL = '1') T
+        group by to_char(T.dataTime, 'yyyy-MM-dd')
+    </select>
+
+    <select id="getAccessHistoryCompareStatistics" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        select days.dataTime beginTime,
+        nvl(sum(m.thirdpartyProvide), 0) thirdpartyProvide,
+        nvl(sum(m.accessProvide), 0) accessProvide,
+        nvl(sum(m.accessAccept), 0) accessAccept
+        from (select to_char(to_date(#{endTime}, 'yyyy-MM-dd') - LEVEL + 1, 'yyyy-MM-dd') dataTime from dual
+        connect by LEVEL <![CDATA[<= ]]> #{days}) days
+        left join (SELECT to_char(DATA_TIME, 'yyyy-MM-dd') dataTime,
+        ACCESS_SYSTEM accessSystem,
+        DATA_SOURCE dataSourceName,
+        RESOURCE_ID resourceId,
+        decode(OUTSIDE_PROVIDE, 0, INSIDE_PROVIDE, OUTSIDE_PROVIDE) thirdpartyProvide,
+        INSIDE_PROVIDE accessProvide,
+        INSIDE_ACCEPT accessAccept,
+        DIRCTION dataDirection
+        FROM DAC_ACCESS_BILL_STATISTICS
+        where resource_id = #{resourceId}
+        and tache = 2
+        <if test="isLocal !=null and isLocal !=''">
+            and is_local = #{isLocal}
+        </if>
+        <if test="direction !=null and direction !=''">
+            and dirction = #{direction}
+        </if>
+        ) m on days.dataTime = m.dataTime
+        group by days.dataTime
+        order by days.dataTime
+    </select>
+
+    <select id="getStandardHistoryCompareStatistics" resultType="com.synway.reconciliation.pojo.AccessListResponse">
+        select days.dataTime beginTime,
+        nvl(sum(m.thirdpartyProvide), 0) thirdpartyProvide,
+        nvl(sum(m.accessProvide), 0) accessProvide,
+        nvl(sum(m.accessAccept), 0) accessAccept
+        from (select to_char(to_date(#{endTime}, 'yyyy-MM-dd') - LEVEL + 1, 'yyyy-MM-dd') dataTime from dual
+        connect by LEVEL <![CDATA[<= ]]> #{days}) days
+        left join (SELECT to_char(DATA_TIME, 'yyyy-MM-dd') dataTime,
+        ACCESS_SYSTEM accessSystem,
+        DATA_SOURCE dataSourceName,
+        RESOURCE_ID resourceId,
+        INSIDE_PROVIDE accessProvide,
+        INSIDE_ACCEPT accessAccept,
+        DIRCTION dataDirection
+        FROM
+        DAC_STANDARD_BILL_STATISTICS
+        WHERE
+        resource_id = #{resourceId}
+        and tache = #{tache}
+        ) m on days.dataTime = m.dataTime
+        group by days.dataTime
+        order by days.dataTime
+    </select>
+
+
+</mapper>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<!--my-theme-->
+		<link rel="stylesheet" href="myCss/my-base.css">
+
+		<script type="text/javascript" src="bootstrap/jQuery/jquery-3.0.0.js"></script>
+		<script type="text/javascript" src="bootstrap/jQuery/jquery.min.js"></script>
+		<script type="text/javascript" src="bootstrap/jQuery/jquery.serializejson.js"></script>
+
+		<script type="text/javascript" src="bootstrap/js/bootstrap.js"></script>
+		<script type="text/javascript" src="bootstrap-table/bootstrap-table.js"></script>
+		<script type="text/javascript" src="bootstrap/js/bootstrap-table-zh-CN.js"></script>
+
+		<link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+		<link rel="stylesheet" href="bootstrap-table/bootstrap-table.css">
+		<link rel="stylesheet" href="myCss/bootstrap-tablePage.css">
+
+		<!-- 时间插件 -->
+		<link rel="stylesheet"  href="bootstrap-datetimepicker/bootstrap-datetimepicker.css"/>
+		<script type="text/javascript" src="bootstrap/js/moment-with-locales.js"></script>
+		<script type="text/javascript" src="bootstrap-datetimepicker/bootstrap-datetimepicker.min.js"></script>
+		<script type="text/javascript" src="bootstrap-datetimepicker/bootstrap-datetimepicker.zh-CN.js"></script>
+
+		<!-- toastr -->
+		<script type="text/javascript" src="bootstrap/js/toastr.min.js"></script>
+		<link rel="stylesheet" href="bootstrap/css/toastr.css">
+
+		<!--jumpto-->
+		<link rel="stylesheet" href="page-jumpto/bootstrap-table-jumpto.css">
+		<script type="text/javascript" src="page-jumpto/bootstrap-table-jumpto.js"></script>
+
+		<link rel="stylesheet" href="perfect-scrollbar/perfect-scrollbar.css">
+		<script type="text/javascript" src="perfect-scrollbar/perfect-scrollbar.js"></script>
+
+		<link rel="stylesheet" href="myCss/metadataDefineTable.css">
+		<script  src="myJs/commons.js"></script>
+		<script type="text/javascript" src="myJs/metadataDefineTable.js"></script>
+		<script type="text/javascript" src="bootstrap/js/bootbox.js"></script>
+		<!--&lt;!&ndash; bootstrap table 的导出功能&ndash;&gt;-->
+		<!--<script type="text/javascript" src="../bootstrap/table_export/table-export.js"></script>-->
+		<!--<script type="text/javascript" src="../bootstrap/table_export/tableExport.js"></script>-->
+		<!--<script type="text/javascript" src="../bootstrap/table_export/jquery.base64.js"></script>-->
+
+		<!--王琛自己写的css和js-->
+		<link rel="stylesheet" href="myCss/my-style.css">
+		<link rel="stylesheet" href="myCss/my-build.css">
+		<title>元数据定义表</title>
+	</head>
+	<body onselectstart="return false">
+		<div class="outerdiv my-dialog" id="allHtml">
+			 <div class="leftdiv">
+<!--		        <img src="img/icon2.png"/>-->
+<!--		        <font>元数据定义表</font>-->
+		    </div>
+		    <div class="rightdiv" style="display: block;float:left;">
+				<!--<div id="findData"  class="my-btn my-box-right" onclick="selectBtnClick(this)">查询</div>-->
+				<button id="findData"  class="my-btn my-box-right" onclick="selectBtnClick(this)">搜索</button>
+				<input id="fieldChineseNameInput" type='text' placeholder="中文字段名" class="form-control my-box-right"/>
+                <input id="columNameInput" type='text' placeholder="数据库列名" class="form-control my-box-right"/>
+				<input id="fieldIdInput" type='text' placeholder="元素编码" class="form-control my-box-right"/>
+
+				<button id="metadataDefineExport" class="my-btn my-box-left" >导出</button>
+				<!--<div id="metadataDefineExport" class="my-btn my-box-left" >导出</div>-->
+				<!--<div id="findData"  class="my-group-btn" style="float: right;border-right: 0px;margin-left: 3px" onclick="selectBtnClick(this)">查询</div>-->
+			</div>
+		    <div class="bottomdiv" style="padding: 0px" id="contentPagin">
+				 <table id="metadataDefineTable" class="table table-striped table-hover" >
+					<!--<tr>-->
+						<!--<th >元素编码</th>-->
+						<!--<th >列名</th>-->
+						<!--<th >标准列名</th>-->
+						<!--<th >中文名称</th>-->
+						<!--<th >字段信息</th>-->
+						<!--<th >代码表ID</th>-->
+						<!--<th >语义ID</th>-->
+						<!--<th>操作</th>-->
+					<!--</tr>-->
+				</table>
+			 </div>
+
+			<!--fieldcodeval模态框 -->
+			<div class="modal fade my-dialog" id="fieldCodeValModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+				  aria-hidden="true" data-backdrop='static'>
+				<div class="modal-dialog" style="width: 800px">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title" style="color: #fff; font-size: 16px;">fieldCodeVal查看</h4>
+						</div>
+						<div class="modal-body">
+							<div class="northDiv">
+							    <font class="valText">代码值名:</font>
+				                <input id="valTextInput" type='text' class="form-control" />
+				                <font class="valValue">代码值:</font>
+				                <input id="valValueInput" type='text' class="form-control" />
+								<button id="findDataModal" style="display: inline-block;margin-bottom: 10px;" class="my-btn" onclick="selectDataModal(this)">搜索</button>
+				                <!--<div id="findDataModal" style="display: inline-block" class="my-btn" onclick="selectDataModal(this)">查询</div>-->
+							</div>
+							<div class="southDiv">
+								<table id="fieldCodeValModalTable" class="table table-striped table-hover">
+<!--									<tr>-->
+<!--										<th >代码值名称</th>-->
+<!--										<th >集的代码值</th>-->
+<!--										<th >顺序</th>-->
+<!--										<th >英文简写</th>-->
+<!--										<th >备注</th>-->
+<!--									</tr>-->
+								</table>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<div  style="display: inline-block" class="exportFieldCodeVal btn my-btn-confirm" >导出</div>
+							<div  style="display: inline-block" class="btn my-btn-cancle" data-dismiss="modal"  >关闭</div>
+<!--							<button type="button" class="querybtn exportFieldCodeVal"-->
+<!--									>导出</button>-->
+<!--							<button type="button" class="querybtn"-->
+<!--								data-dismiss="modal"  onclick="closeImport">关闭</button>-->
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!--查看表 -->
+			<div class="modal fade my-dialog" id="viewTable" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+				 aria-hidden="true" data-backdrop='static'>
+				<div class="modal-dialog" style="width: 800px">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title" style="color: #fff; font-size: 16px;">【】关联表信息</h4>
+						</div>
+						<div class="modal-body">
+							<div class="southDiv">
+								<table id="tableNames" class="table table-striped table-hover" >
+
+								</table>
+								<input id="forView" style="display: none"/>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<div  style="display: inline-block" class="btn my-btn-confirm exportTableNames" >导出</div>
+							<div  style="display: inline-block" class="btn my-btn-cancle" data-dismiss="modal" onclick="closeImport()" >关闭</div>
+<!--                            <button type="button" class="btn btn-default exportTableNames"-->
+<!--                                 >导出</button>-->
+<!--							<button type="button" class="btn btn-default"-->
+<!--									data-dismiss="modal" >关闭</button>-->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

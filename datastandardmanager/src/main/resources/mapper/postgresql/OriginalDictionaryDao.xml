@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.dao.master.OriginalDictionaryDao">
+
+    <resultMap id="originalDictionaryPojoResult" type="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryPojo">
+        <result property="id" column="ID"/>
+        <result property="dictionaryName" column="DICTIONARY_NAME"/>
+        <result property="facturerId" column="FACTURER_ID"/>
+        <result property="facturer" column="FACTURER"/>
+        <result property="createDate" column="CREATE_DATE"/>
+        <result property="creator" column="CREATOR"/>
+        <result property="standardDictionary" column="STANDARD_DICTIONARY"/>
+        <result property="standardDictionaryId" column="STANDARD_DICTIONARY_ID"/>
+        <result property="memo" column="MEMO"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="updateTime" column="UPDATE_TIME"/>
+    </resultMap>
+
+    <resultMap id="originalDictionaryFieldPojoResult" type="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryFieldPojo">
+        <result property="groupId" column="GROUP_ID"/>
+        <result property="id" column="ID"/>
+        <result property="recno" column="RECNO"/>
+        <result property="codeValText" column="CODE_VALTEXT"/>
+        <result property="codeValValue" column="CODE_VALVALUE"/>
+        <result property="standardCodeValText" column="STANDARD_CODE_VALTEXT"/>
+        <result property="standardCodeValValue" column="STANDARD_CODE_VALVALUE"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="updateTime" column="UPDATE_TIME"/>
+    </resultMap>
+
+    <insert id="addOneOriginalDictionary" parameterType="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryPojo">
+        insert into STANDARDIZE_ORIGINAL_DICT(ID,DICTIONARY_NAME,FACTURER_ID,FACTURER,CREATE_DATE,CREATOR,STANDARD_DICTIONARY,
+        STANDARD_DICTIONARY_ID,MEMO,CREATE_TIME,UPDATE_TIME)
+        VALUES (#{id},#{dictionaryName},#{facturerId},#{facturer},CURRENT_DATE,#{creator},#{standardDictionary},#{standardDictionaryId},
+        #{memo},CURRENT_DATE,CURRENT_DATE)
+    </insert>
+
+    <delete id="deleteOneOriginalDictionary" parameterType="java.lang.String">
+        delete from STANDARDIZE_ORIGINAL_DICT WHERE id = #{id} and DICTIONARY_NAME = #{dictionaryName}
+    </delete>
+
+    <update id="updateOneOriginalDictionary" parameterType="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryPojo">
+        update STANDARDIZE_ORIGINAL_DICT set DICTIONARY_NAME=#{dictionaryName},FACTURER_ID=#{facturerId},FACTURER=#{facturer,jdbcType=VARCHAR},
+        STANDARD_DICTIONARY=#{standardDictionary},STANDARD_DICTIONARY_ID=#{standardDictionaryId},MEMO=#{memo,jdbcType=VARCHAR},UPDATE_TIME=CURRENT_DATE where id=#{id}
+    </update>
+
+    <select id="searchOneData" resultType="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryPojo"
+            resultMap="originalDictionaryPojoResult">
+        select ID,DICTIONARY_NAME,FACTURER_ID,FACTURER,CREATE_DATE,CREATOR,STANDARD_DICTIONARY,STANDARD_DICTIONARY_ID,
+        MEMO,CREATE_TIME,UPDATE_TIME from STANDARDIZE_ORIGINAL_DICT where ID=#{id} and DICTIONARY_NAME=#{dictionaryName}
+    </select>
+
+    <insert id="insertOriginalDictionaryFieldList" >
+        insert into STANDARDIZE_ORIGINAL_D_F(GROUP_ID,ID,RECNO,CODE_VALTEXT,CODE_VALVALUE,STANDARD_CODE_VALTEXT,
+        STANDARD_CODE_VALVALUE,CREATE_TIME)
+        select * from(
+        <foreach collection="originalDictionaryFieldList" item="item" separator="union all" open="(" close=")">
+            select #{item.groupId},#{item.id},#{item.recno},#{item.codeValText},#{item.codeValValue},#{item.standardCodeValText},
+            #{item.standardCodeValValue,jdbcType=VARCHAR},CURRENT_DATE
+        </foreach>
+        ) AS subquery
+    </insert>
+
+    <insert id="insertOneDictionaryField" parameterType="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryFieldPojo">
+        insert into STANDARDIZE_ORIGINAL_D_F(GROUP_ID,ID,RECNO,CODE_VALTEXT,CODE_VALVALUE,STANDARD_CODE_VALTEXT,
+        STANDARD_CODE_VALVALUE,CREATE_TIME,UPDATE_TIME)VALUES(#{groupId},#{id},#{recno},#{codeValText},#{codeValValue},
+        #{standardCodeValText},#{standardCodeValValue},CURRENT_DATE,CURRENT_DATE)
+    </insert>
+
+    <delete id="deleteAllDictionaryFieldByGroupId" parameterType="java.lang.String">
+        delete from STANDARDIZE_ORIGINAL_D_F where GROUP_ID=#{groupId}
+    </delete>
+
+    <select id="searchDictionaryFieldByGroupId" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryFieldPojo"
+            resultMap="originalDictionaryFieldPojoResult">
+        select GROUP_ID,ID,RECNO,CODE_VALTEXT,CODE_VALVALUE,STANDARD_CODE_VALTEXT,STANDARD_CODE_VALVALUE,CREATE_TIME,
+        UPDATE_TIME from STANDARDIZE_ORIGINAL_D_F where GROUP_ID=#{groupId}
+    </select>
+
+    <select id="searchLeftTreeInfo" resultType="com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryPojo"
+            resultMap="originalDictionaryPojoResult">
+        select ID,DICTIONARY_NAME,FACTURER_ID,FACTURER FROM STANDARDIZE_ORIGINAL_DICT
+    </select>
+
+    <select id="searchDictionaryByFacturer" resultType="java.lang.Integer">
+        select count(0) from STANDARDIZE_ORIGINAL_DICT where dictionary_name=#{dictionaryName} and facturer=#{facturer}
+    </select>
+
+    <select id="getOriginalDictionaryNameList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+		select id as value,DICTIONARY_NAME as label,FACTURER as memo from STANDARDIZE_ORIGINAL_DICT
+<!--        <where>-->
+<!--            <if test="searchText != null and searchText != ''">-->
+<!--                and (upper(DICTIONARY_NAME) like upper(concat('%',concat(#{searchText},'%')))) or-->
+<!--                (upper(FACTURER) like upper(concat('%',concat(#{searchText},'%'))))-->
+<!--            </if>-->
+<!--        </where>-->
+    </select>
+
+</mapper>

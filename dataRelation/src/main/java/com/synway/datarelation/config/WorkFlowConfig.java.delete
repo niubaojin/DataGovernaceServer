@@ -1,0 +1,100 @@
+//package com.synway.datarelation.config;
+//
+//
+//import com.synway.datarelation.constant.Constant;
+//import com.synway.datarelation.service.monitor.WorkFlowInstanceService;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.beans.factory.annotation.Qualifier;
+//import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.context.annotation.Configuration;
+//
+///**
+// * @author  薛东模型监控的相关代码
+// * 20201202 弃用这个代码
+// * @date 2018/11/8 14:56
+// */
+//@Configuration
+//public class WorkFlowConfig {
+//    private static Logger logger = LoggerFactory.getLogger(WorkFlowConfig.class);
+//
+//    @Autowired()@Qualifier("WorkFlowInstanceV2ServiceImp")
+//    private WorkFlowInstanceService workFlowInstanceV2Service;
+//    @Autowired()@Qualifier("WorkFlowInstanceV3ServiceImp")
+//    private WorkFlowInstanceService workFlowInstanceV3Service;
+//
+//    //     dataPlatFormType
+//    @Value("${dataPlatFormVersion}")
+//    private String version;
+//
+//    @Value("${dataPlatFormType}")
+//    private String dataPlatFormType;
+//
+//
+////    @Scheduled(cron = "${modelMonitorStatistic}")
+//    public void modelProjectStatistic(){
+//        logger.info("调度模型项目数据开始");
+//        try {
+//            if(Constant.ALI_YUN.equalsIgnoreCase(dataPlatFormType)){
+//                if("2".equals(version)){
+//                    workFlowInstanceV2Service.statisticProject();
+//                }else if("3".equals(version)){
+//                    workFlowInstanceV3Service.statisticProject();
+//                }else{
+//                    logger.error(String.format("不支持工作流版本：[%s]",version));
+//                }
+//            }else{
+//                logger.info("【模型监控】版本类型为："+dataPlatFormType+"不需要进行调度");
+//            }
+//        }catch (Exception e){
+//            logger.error("统计模型项目数据出错"+e);
+//        }
+//        logger.info("调度模型项目数据结束");
+//    }
+//
+////    @Scheduled(cron = "${modelMonitorStatistic}")
+//    public void modelNodeInfoStatistic(){
+//        logger.info("调度模型节点数据开始");
+//        try {
+//            if(Constant.ALI_YUN.equalsIgnoreCase(dataPlatFormType)){
+//                if("2".equals(version)){
+//                    workFlowInstanceV2Service.statisticNode();
+//                }else if("3".equals(version)){
+//                    workFlowInstanceV3Service.statisticNode();
+//                }else{
+//                    logger.error(String.format("不支持工作流版本：[%s]",version));
+//                }
+//            }else{
+//                logger.info("【模型监控】版本类型为："+dataPlatFormType+"不需要进行调度");
+//            }
+//        }catch (Exception e){
+//            logger.error("统计模型节点数据出错", e);
+//        }
+//        logger.info("调度模型节点数据结束");
+//    }
+//
+////    @Scheduled(cron = "${modelMonitorStatistic}")
+//    public void modelFlowInsInfoStatistic(){
+//        logger.info("调度模型工作流实例数据开始");
+//        try {
+//            if(Constant.ALI_YUN.equalsIgnoreCase(dataPlatFormType)){
+//                if("2".equals(version)){
+//                    workFlowInstanceV2Service.statisticFlowIns();
+//                }else if("3".equals(version)){
+//                    workFlowInstanceV3Service.statisticFlowIns();
+//                }else{
+//                    logger.error(String.format("不支持工作流版本：[%s]",version));
+//                }
+//            }else{
+//                logger.info("【模型监控】版本类型为："+dataPlatFormType+"不需要进行调度");
+//            }
+//        }catch (Exception e){
+//            logger.error("统计模型工作流实例数据出错"+e);
+//        }
+//        logger.info("调度模型工作流实例数据结束");
+//    }
+//
+//
+//
+//}

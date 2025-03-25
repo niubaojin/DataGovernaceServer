@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.master.ResourceManageAddDao">
+
+    <resultMap id="sysInfo" type="map">
+        <result property="sysID" column="SYS_ID"/>
+        <result property="sysEngName" column="SYS_ENGNAME"/>
+        <result property="sysChiName" column="SYS_CHINAME"/>
+        <result property="sysMemo" column="SYS_MEMO"/>
+        <result property="sysStatus" column="SYS_STATUS"/>
+        <result property="sysAllMatch" column="SYS_ALLMATCH"/>
+    </resultMap>
+
+    <!-- SourceInfo -->
+    <resultMap id="sourceInfo" type="com.synway.datastandardmanager.pojo.SourceInfo">
+        <result property="id" column="id"/>
+        <result property="createTime" column="create_Time"/>
+        <result property="updateTime" column="UPDATE_TIME"/>
+        <result property="sourceProtocol" column="SOURCEPROTOCOL"/>
+        <result property="tableName" column="TABLENAME"/>
+        <result property="sourceSystem" column="SOURCESYSTEM"/>
+        <result property="sourceFirm" column="SOURCEFIRM"/>
+        <result property="dataName" column="DATANAME"/>
+        <result property="dataId" column="DATA_ID"/>
+        <result property="projectName" column="PROJECT_NAME"/>
+        <result property="centerName" column="CENTER_NAME"/>
+        <result property="centerId" column="CENTER_ID"/>
+    </resultMap>
+
+    <!-- SourceFieldInfo -->
+    <resultMap id="sourceFieldInfo" type="com.synway.datastandardmanager.pojo.SourceFieldInfo">
+        <result property="sourceInfoID" column="SOURCEINFOID"/>
+        <result property="recno" column="ID"/>
+        <result property="tableId" column="TABLEID"/>
+        <result property="resourceId" column="RESOURCEID"/>
+        <result property="fieldName" column="FIELDNAME"/>
+        <result property="fieldDescription" column="FIELDDESCRIPTION"/>
+        <result property="fieldType" column="FIELDTYPE"/>
+        <result property="fieldLength" column="FIELDLENGTH"/>
+        <result property="isNonnull" column="ISNONNULL"/>
+        <result property="isDeleted" column="ISDELETED"/>
+        <result property="isPrimarykey" column="ISPRIMARYKEY"/>
+        <result property="isForeignKey" column="ISFOREIGNKEY"/>
+        <result property="insertTime" column="INSERTTIME"/>
+        <result property="updateTime" column="UPDATETIME"/>
+        <result property="databaseUrl" column="DATABASEURL"/>
+        <result property="schemeId" column="SCHEMEID"/>
+        <result property="fieldCode" column="FIELDCODE"/>
+        <result property="gadsjFieldId" column="GADSJFIELDID"/>
+        <result property="determinerId" column="DETERMINERID"/>
+        <result property="determinerName" column="DETERMINERNAME"/>
+    </resultMap>
+
+    <sql id="sourceInfoCols" > id,create_Time,UPDATE_TIME,SOURCEPROTOCOL,TABLENAME,SOURCESYSTEM,SOURCEFIRM </sql>
+    <sql id="sourceInfoWhereConditions" >
+        <if test="sourceProtocol != null and sourceProtocol != ''">
+            and upper(sourceProtocol) = upper(#{sourceProtocol})
+        </if>
+        <if test="tableName != null and tableName != ''">
+            and upper(tableName) = upper(#{tableName})
+        </if>
+        <if test="sourceSystem != null and sourceSystem != ''">
+            and sourceSystem = #{sourceSystem}
+        </if>
+        and rownum =1
+    </sql>
+
+    <select id="searchSourceInfoIsExist" resultType="java.lang.Integer" parameterType="java.lang.String">
+        select count(0) from SourceInfo where SOURCEPROTOCOL=#{sourceProtocol} and TABLENAME=#{tableName}
+        and DATA_ID =#{dataId,jdbcType=VARCHAR}
+    </select>
+
+    <insert id="insertSourceInfo"  parameterType="com.synway.datastandardmanager.pojo.SourceInfo">
+        merge into SourceInfo a
+        using (select
+            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR} as sourceProtocol,
+            #{sourceInfo.tableName,jdbcType=VARCHAR} as tableName,
+            #{sourceInfo.sourceSystem,jdbcType=VARCHAR} as sourceSystem
+        from dual) b
+        on (
+            upper(a.SOURCEPROTOCOL) = upper(b.sourceProtocol) and
+            upper(a.TABLENAME) = upper(b.tableName) and
+            upper(a.SOURCESYSTEM) = upper(b.sourceSystem))
+        when matched then
+        update
+        set
+            id = #{sourceInfo.id}
+            <if test="sourceInfo.updateTime != null">
+                ,UPDATE_TIME = #{sourceInfo.updateTime}
+            </if>
+            <if test="sourceInfo.sourceFirm != null">
+                ,SOURCEFIRM = #{sourceInfo.sourceFirm,jdbcType=VARCHAR}
+            </if>
+        when not matched then
+            insert values (#{sourceInfo.id},#{sourceInfo.createTime},#{sourceInfo.updateTime},
+            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR},#{sourceInfo.tableName,jdbcType=VARCHAR},
+            #{sourceInfo.sourceSystem,jdbcType=VARCHAR},#{sourceInfo.sourceFirm,jdbcType=VARCHAR},null,null,null,null,null)
+    </insert>
+
+    <insert id="addSourceInfo" parameterType="com.synway.datastandardmanager.pojo.SourceInfo">
+        merge into SourceInfo a
+        using (select
+            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR} as sourceProtocol,
+            #{sourceInfo.tableName,jdbcType=VARCHAR} as tableName,
+            #{sourceInfo.sourceSystem,jdbcType=VARCHAR} as sourceSystem
+        from dual) b
+        on (
+            upper(a.SOURCEPROTOCOL) = upper(b.sourceProtocol) and
+            upper(a.TABLENAME) = upper(b.tableName) and
+            upper(a.SOURCESYSTEM) = upper(b.sourceSystem))
+            when matched then
+        update
+        set
+            UPDATE_TIME = #{sourceInfo.updateTime}
+            <if test="sourceInfo.createTime != null">
+                ,create_Time = #{sourceInfo.createTime}
+            </if>
+            <if test="sourceInfo.sourceFirm != '' and sourceInfo.sourceFirm != null">
+                ,SOURCEFIRM = #{sourceInfo.sourceFirm,jdbcType=VARCHAR}
+            </if>
+            <if test="sourceInfo.dataName != '' and sourceInfo.dataName != null">
+                ,DATANAME = #{sourceInfo.dataName,jdbcType=VARCHAR}
+            </if>
+            <if test="sourceInfo.dataId != '' and sourceInfo.dataId != null">
+                ,DATA_ID = #{sourceInfo.dataId,jdbcType=VARCHAR}
+            </if>
+            <if test="sourceInfo.projectName != '' and sourceInfo.projectName != null">
+                ,PROJECT_NAME = #{sourceInfo.projectName,jdbcType=VARCHAR}
+            </if>
+            <if test="sourceInfo.centerName != '' and sourceInfo.centerName != null">
+                ,CENTER_NAME = #{sourceInfo.centerName,jdbcType=VARCHAR}
+            </if>
+            <if test="sourceInfo.centerId != '' and sourceInfo.centerId != null">
+                ,CENTER_ID = #{sourceInfo.centerId,jdbcType=VARCHAR}
+            </if>
+        when not matched then
+        insert values (#{sourceInfo.id},#{sourceInfo.createTime},#{sourceInfo.updateTime},
+        #{sourceInfo.sourceProtocol,jdbcType=VARCHAR},#{sourceInfo.tableName,jdbcType=VARCHAR},
+        #{sourceInfo.sourceSystem,jdbcType=VARCHAR},#{sourceInfo.sourceFirm,jdbcType=VARCHAR},#{sourceInfo.dataName,jdbcType=VARCHAR},
+        #{sourceInfo.dataId,jdbcType=VARCHAR},#{sourceInfo.projectName,jdbcType=VARCHAR},#{sourceInfo.centerName,jdbcType=VARCHAR},
+        #{sourceInfo.centerId,jdbcType=VARCHAR})
+    </insert>
+    
+    <select id="findSourceInfo" parameterType="String" resultMap="sourceInfo" >
+        select <include refid="sourceInfoCols"></include> from SourceInfo
+        <where>
+            <include refid="sourceInfoWhereConditions"></include>
+        </where>
+    </select>
+
+    <select id="findSourceAllInfo" resultType="com.synway.datastandardmanager.pojo.SourceInfo" resultMap="sourceInfo">
+        select ID,CREATE_TIME,UPDATE_TIME,SOURCEPROTOCOL,TABLENAME,SOURCESYSTEM,SOURCEFIRM,DATANAME,DATA_ID,PROJECT_NAME,
+        CENTER_NAME,CENTER_ID from SourceInfo where SOURCEPROTOCOL=#{sourceProtocol} and TABLENAME=#{tableName}
+        and SOURCESYSTEM=#{sourceSystem}
+    </select>
+
+    <select id="findSourceFieldInfoBySourceInfoID" parameterType="String" resultMap="sourceFieldInfo">
+        select ID,
+           SOURCEINFOID,
+           TABLEID,
+           RESOURCEID,
+           FIELDNAME,
+           FIELDDESCRIPTION,
+           FIELDTYPE,
+           FIELDLENGTH,
+           ISNONNULL,
+           ISDELETED,
+           ISPRIMARYKEY,
+           ISFOREIGNKEY,
+           INSERTTIME,
+           UPDATETIME,
+           DATABASEURL,
+           SCHEMEID,
+           FIELDSOURCETYPE,
+           FIELDCODE as fieldId,
+           FIELDCODE,
+           GADSJFIELDID,
+           DETERMINERID,
+           fd.determinerName as determinerName
+      from (select *
+              from Source_Field_Info
+             where SourceInfoID = #{SourceInfoID}) sfi
+      left join (select distinct dchinsename  as determinerName,
+                                 determinerId as value
+                   from synlte.fielddeterminer
+                  where determinerstate = '05') fd on fd.value = sfi.DETERMINERID
+    </select>
+
+    <delete id="deleteSourceFieldInfoBySourceInfoID" parameterType="java.lang.String">
+        delete from Source_Field_Info where SourceInfoID = #{sourceInfoID}
+    </delete>
+
+    <select id="standardizeObjecttFieldWeb" resultType="Integer">
+        select case when max(recno) is null then 0 else max(recno)  end  as recno
+         from synlte.OBJECTFIELD where objectId = #{objectId}
+    </select>
+
+    <insert id="insertObjectfieldextend" parameterType="java.util.List" >
+        insert into synlte.OBJECTFIELD (objectID,COLUMNNAME,fieldchineename,
+        fieldtypes,fieldtype,fieldlen,isquery,isIndex,recno,deleted,FIELDID,INDEXTYPE,NEEDVALUE,ISCONTORL)
+        <foreach  collection="sourceFieldInfos" item="item" separator="union all" >
+            (select
+                #{item.tableId,jdbcType=VARCHAR},
+                #{item.fieldName,jdbcType=VARCHAR},
+                #{item.fieldDescription,jdbcType=VARCHAR},
+                #{item.fieldType,jdbcType=VARCHAR},
+                #{item.iFieldType,jdbcType=VARCHAR},
+                #{item.fieldLength,jdbcType=VARCHAR},
+                #{item.isNonnull,jdbcType=VARCHAR},
+                #{item.isPrimarykey,jdbcType=VARCHAR},
+                #{item.seq,jdbcType=VARCHAR},
+                #{item.isDeleted,jdbcType=VARCHAR},
+                #{item.fieldId,jdbcType=VARCHAR},
+                0,0,0
+            from dual)
+        </foreach>
+    </insert>
+
+    <select id="getObjectIDByTableID" resultType="String">
+        select objectID from synlte.object where tableID = #{tableID,jdbcType=VARCHAR} and rownum = 1
+    </select>
+
+    <insert id="insertSourceFieldInfo" parameterType="com.synway.datastandardmanager.pojo.SourceFieldInfo">
+        insert into Source_Field_Info(SourceInfoID,id,tableId,resourceId,fieldName,fieldDescription,fieldType,fieldLength,isNonnull,
+        isDeleted,isPrimarykey,isForeignKey,insertTime,updateTime,databaseUrl,schemeId,FIELDSOURCETYPE,FIELDCODE,GADSJFIELDID,DETERMINERID,ELEMENTID)
+        <foreach collection="sourceFieldInfo" item="item" separator="union all">
+            (select
+                #{item.sourceInfoID,jdbcType=VARCHAR},
+                #{item.recno,jdbcType=VARCHAR},
+                #{item.tableId,jdbcType=VARCHAR},
+                #{item.resourceId,jdbcType=VARCHAR},
+                #{item.fieldName,jdbcType=VARCHAR},
+                #{item.fieldDescription,jdbcType=VARCHAR},
+                #{item.fieldType,jdbcType=VARCHAR},
+                #{item.fieldLength,jdbcType=VARCHAR},
+                #{item.isNonnull,jdbcType=VARCHAR},
+                #{item.isDeleted,jdbcType=VARCHAR},
+                #{item.isPrimarykey,jdbcType=VARCHAR},
+                #{item.isForeignKey,jdbcType=VARCHAR},
+                #{item.insertTime,jdbcType=VARCHAR},
+                #{item.updateTime,jdbcType=VARCHAR},
+                #{item.databaseUrl,jdbcType=VARCHAR},
+                #{item.schemeId,jdbcType=VARCHAR},
+                #{item.fieldSourceType,jdbcType=VARCHAR},
+                #{item.fieldCode,jdbcType=VARCHAR},
+                #{item.gadsjFieldId,jdbcType=VARCHAR},
+                #{item.determinerId,jdbcType=VARCHAR},
+                #{item.elementId,jdbcType=VARCHAR}
+            from dual)
+        </foreach>
+    </insert>
+
+    <select id="getClassifyObject" resultType="com.synway.datastandardmanager.pojo.StandardTableRelation">
+        select  distinct PRIMARYORGANIZATIONCH||SECONDARYORGANIZATIONCH ,
+          '1' as mainClassifyId , '数据组织分类' as mainClassifyCh ,
+           SJYJFL as primaryClassifyId , PRIMARYORGANIZATIONCH as primaryClassifyCh ,
+           SJEJFL as secondaryClassifyId ,  SECONDARYORGANIZATIONCH as secondaryClassifyCh
+        from CLASSIFY_INTERFACE_ALL_DATE
+        where SJXJBM is not null
+        <if test="primaryClassifyCh != null and primaryClassifyCh != ''">
+            and PRIMARYORGANIZATIONCH = #{primaryClassifyCh}
+        </if>
+        order by sjyjfl
+    </select>
+
+
+    <select id="getOrganizationRelationDao" resultType="com.synway.datastandardmanager.pojo.DataResourceRawInformation">
+        select sjxjbm as sourceId ,name as dataSourceName from CLASSIFY_INTERFACE_ALL_DATE
+        where upper(tablename) = upper(#{addTableName}) AND  sjxjbm is not null
+        AND  PRIMARYORGANIZATIONCH is not null and rownum =1
+    </select>
+
+
+    <select id="getAllClassify" resultType="com.synway.datastandardmanager.pojo.StandardTableRelation">
+        select v1.codeid as mainClassifyId , v1.codetext as mainClassifyCh ,
+         v2.codeid as primaryClassifyId , v2.codetext as primaryClassifyCh ,
+         v3.codeid as secondaryClassifyId ,  v3.codetext as secondaryClassifyCh,
+        v4.CODEID as threeClassifyId,
+        v4.CODETEXT as threeClassifyCh
+         from (select CODEID, CODENAME, CODETEXT, PARCODEID from v_classify_info
+         <if test="mainClassifyCh == '数据组织分类'">
+             where codetext = '数据组织分类'
+         </if>
+         <if test="mainClassifyCh == '数据来源分类'">
+            where codetext = '数据来源分类'
+         </if>
+         ) v1
+         left join v_classify_info v2 on v1.codeid = v2.PARCODEID
+         left join v_classify_info v3 on v2.codeid = v3.PARCODEID
+        left join v_classify_info v4 on v3.codeid = v4.PARCODEID
+        order by v3.codeid asc
+    </select>
+
+
+    <select id="findCheckTableNameImformationTwo" resultType="string">
+        select value from object_manage_standard where deleted='0' and rownum = 1
+        <where>
+            <if test="classType!=null and classType!=''" >
+                and remarks = #{classType}
+            </if>
+            <if test="subClassType!=null and subClassType!=''">
+               and  text = #{subClassType}
+            </if>
+        </where>
+    </select>
+
+    <select id="findCheckTableNameImformationThree" resultType="string">
+        <if test="type == 2">
+            select v3.codename as codeName  from v_classify_info v1
+            left join v_classify_info v2 on v1.codeid=v2.parcodeid
+            left join v_classify_info v3 on v3.parcodeid = v2.codeid
+            <where>
+                v1.codetext = '数据来源分类' and rownum =1
+                <if test="midClassType!=null and midClassType!=''">
+                    and v3.codetext = #{midClassType}
+                </if>
+            </where>
+        </if>
+        <if test="type == 1">
+            select v2.codename as codeName  from v_classify_info v1
+            left join v_classify_info v2 on v1.codeid=v2.parcodeid
+            <where>
+                v1.codetext = '数据来源分类' and rownum =1
+                <if test="midClassType!=null and midClassType!=''">
+                    and v2.codetext = #{midClassType}
+                </if>
+            </where>
+        </if>
+    </select>
+
+    <select id="checTableNamekIsExit" resultType="string">
+        select tablename from  synlte.object
+        <where>
+            <if test="realTableName!=null and realTableName!=''">
+                 tablename = #{realTableName}
+            </if>
+        </where>
+    </select>
+
+    <select id="findObjectId" resultType="string">
+        select objectId from  synlte.object
+        <where>
+            <if test="realTableName!=null and realTableName!=''">
+                tablename = #{realTableName}
+            </if>
+        </where>
+    </select>
+
+    <select id="getTableNameByObjectId" resultType="string">
+        select tablename from  synlte.object where objectid = #{objectId}
+    </select>
+
+    <select id="getAllTagDataList" resultType="com.synway.datastandardmanager.pojo.TagData">
+         select  distinct labelcode , labelname ,  labellevel ,classid ,PARENTID,LABELLEVELNAME from synlte.labels
+         order by nlssort(labelname,'NLS_SORT=SCHINESE_PINYIN_M') asc
+    </select>
+
+    <select id="getTableCountByAssets" resultType="java.lang.Integer">
+        select count(*) from synlte.syndmg_table_all where partitiondate > to_char(sysdate -7 ,'yyyyMMdd')
+            and  upper(tablename) = upper(#{tableName})
+    </select>
+
+    <select id="getTableCountByCreated" resultType="java.lang.Integer">
+       select count(*) from STANDARD_TABLE_CREATED where upper(TABLE_NAME) = upper(#{tableName})
+    </select>
+
+    <update id="updateAssetsClassify">
+       update  table_organization_assets set PRIMARY_DATASOURCE_CH=#{oneSourceClassifyCh},
+       SECONDARY_DATASOURCE_CH=#{twoSourceClassifyCh},
+       PRIMARY_ORGANIZATION_CH=#{oneOrganizationClassifyCh},SECONDARY_ORGANIZATION_CH=#{twoOrganizationClassifyCh},
+       THREELEVEL_ORGANIZATION_CH=#{threeOrganizationClassifyCh,jdbcType=VARCHAR}
+       where upper(TABLE_NAME_EN) = #{tableName}
+    </update>
+
+    <update id="updateAssetsTempClassify">
+        update  TABLE_ORGANIZATION_ASSETS_TEMP set PRIMARY_DATASOURCE_CH=#{oneSourceClassifyCh},
+        SECONDARY_DATASOURCE_CH=#{twoSourceClassifyCh},
+        PRIMARY_ORGANIZATION_CH=#{oneOrganizationClassifyCh},SECONDARY_ORGANIZATION_CH=#{twoOrganizationClassifyCh},
+        THREE_ORGANIZATION_CH=#{threeOrganizationClassifyCh,jdbcType=VARCHAR}
+        where upper(TABLE_NAME_EN) = #{tableName}
+    </update>
+
+    <select id="findCheckTableNameImformationMain" resultType="java.lang.String">
+        select value from object_manage_standard where deleted='0' and rownum = 1
+        <if test="type == 0">
+            and text = #{mainClassName}
+        </if>
+        <if test="type == 1">
+            and text = #{mainClassName}
+        </if>
+        <if test="type == 2">
+            and text = #{mainClassName}||'库'
+        </if>
+    </select>
+
+
+    <select id="getCountByFiledId" resultType="java.lang.Integer">
+        select count(*) from  synlte.SYNLTEFIELD where upper(fieldId) = upper(#{fieldId})
+    </select>
+
+    <select id="getCountByFiledName" resultType="java.lang.Integer">
+        select count(*) from  synlte.SYNLTEFIELD where upper(fieldname) = upper(#{fieldName})
+    </select>
+
+    <select id="getOrganizationClass" resultType="java.lang.String">
+        select v2.codetext||'/'||v3.codetext from v_classify_info v1
+            left join v_classify_info v2 on v1.codeid=v2.parcodeid
+						left join v_classify_info v3 on v2.codeid=v3.parcodeid
+            where
+                v1.codetext = '数据组织分类' and v2.codetext = '原始库'
+                and v3.codetext = #{classifyStr}
+    </select>
+
+    <select id="getClassIdByCh" resultType="java.lang.String">
+        select distinct  v2.codeid ||'/'|| v3.codeid from v_classify_info v1
+            left join v_classify_info v2 on v1.codeid=v2.parcodeid
+            left join v_classify_info v3 on v2.codeid=v3.parcodeid
+             where
+                <if test="type == 1">
+                    v1.codetext = '数据组织分类'
+                </if>
+                <if test="type == 2">
+                    v1.codetext = '数据来源分类'
+                </if>
+
+                and v2.codetext = #{firstClassCh}
+
+                <if test="secondClassCh != null and secondClassCh != ''">
+                    and v3.codetext = #{secondClassCh}
+                </if>
+                <if test="secondClassCh == null">
+                    and v3.codetext is null
+                </if>
+    </select>
+
+    <select id="getAllTableIdDao" resultType="java.lang.String">
+        select distinct tableId  from synlte.object
+    </select>
+
+    <select id="getSourceRelationDataDao" resultType="com.synway.datastandardmanager.pojo.sourcedata.PublicDataInfo">
+        select  SJZYLYLX, YYYXTMC, YYYXTMM, YYYXTJSGS, SOURCEID, SJZYSQDWMC, SJZYSQDW_SQDWDM,
+          SQDWLXR, SQDWLXDH, SJZYWZ, SJZYCCFZX, SJZYGLMC, SJZYBSF,SJZZYJFL,SJZZEJFL,SJZYGLDW_GAJGJGDM,
+          JRFWF,TGJRFS,JRFWR,JRFWLXDH,SJJRSM , YYYXTGLDW , to_char(GXSJ,'yyyy-mm-dd HH24:mi:ss ') as GXSJ, GSMS,SJZYGXZQ,
+          SJGXFS as updateType, SJGXSJ as avgRecord,SJZYMS as avgStore,CLSJJLGM as dataNumberScale,CLSJCCGM as dataStoreScale,
+          SJZYBQ1,SJZYBQ2,SJZYBQ3,SJZYBQ4,SJZYBQ5,SJZYBQ6
+          from  synlte.PUBLIC_DATA_INFO  where upper(SJXJBM) = upper(#{tableId}) and zyzt = '1'
+    </select>
+
+    <select id="getCodeNameCn" resultType="java.lang.String">
+         select distinct codetext from v_classify_info where upper(codeid) =upper(#{codeId})
+         and CODENAME IS NOT NULL and codetext IS NOT NULL and codetext !='数据来源分类'
+    </select>
+
+    <select id="getCodeIdByName" resultType="java.lang.String">
+        select distinct codeid  from v_classify_info where upper(codetext) =upper(#{codeText,jdbcType=VARCHAR})
+           and CODENAME IS NOT NULL and codeid IS NOT NULL  and rownum =1
+    </select>
+
+    <select id="getCodeIdByAllName" resultType="java.lang.String">
+     select ids from(
+        <if test="queryType == 1">
+            select distinct parentId as ids from(select v1.codeid as parentId ,v1.codetext as parentText ,v2.codeid as childId
+            ,v2.codetext as childText
+            from v_classify_info v1
+            left join v_classify_info v2 on v1.codeid = v2.parcodeid)
+            where parentText =#{parentText}
+            <if test="childText == null">
+                and childText is null
+            </if>
+            <if test="childText != null">
+                and childText =#{childText}
+            </if>
+
+        </if>
+        <if test="queryType == 2">
+            select  distinct childId  as ids from(select v1.codeid as parentId ,v1.codetext as parentText ,v2.codeid as childId
+            ,v2.codetext as childText
+            from v_classify_info v1
+            left join v_classify_info v2 on v1.codeid = v2.parcodeid)
+            where parentText =#{parentText}
+            <if test="childText == null">
+                and childText is null
+            </if>
+            <if test="childText != null">
+                and childText =#{childText}
+            </if>
+        </if>
+        )
+    </select>
+
+    <select id="getCodeNameByClassifyIdDao" resultType="java.lang.String">
+        <if test="type == 2">
+            select v3.codename  from v_classify_info v1
+                left join v_classify_info v2 on v1.codeid=v2.parcodeid
+                left join v_classify_info v3 on v3.parcodeid = v2.codeid
+                where
+                v1.codetext = '数据来源分类' and rownum =1
+                and upper(v3.codeid) = upper(#{id})
+        </if>
+        <if test="type == 1">
+            select v2.codename  from v_classify_info v1
+                left join v_classify_info v2 on v1.codeid=v2.parcodeid
+                where v1.codetext = '数据来源分类'
+                and upper(v2.codeid) = upper(#{id})
+        </if>
+
+    </select>
+
+    <select id="searchFieldCodeValByCodeId" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select valvalue as value, valtext as label, memo  from synlte.fieldcodeval
+         where upper(codeid) =upper(#{codeId})
+    </select>
+
+    <select id="getParCodeTextById" resultType="java.lang.String">
+        select distinct b.codetext  from( select parcodeid from v_classify_info
+         where upper(codeid) = upper(#{codeId})) a
+        left join v_classify_info b on a.parcodeid = b.codeid
+    </select>
+
+    <select id="getAllSourceId" resultType="java.lang.String">
+        select distinct sourceid  from synlte.PUBLIC_DATA_INFO where sourceid is not null and zyzt = '1'
+    </select>
+
+
+    <select id="querySumBySourceId" resultType="java.lang.Integer">
+        select count(0) from  synlte.PUBLIC_DATA_INFO where upper(sourceid) = upper(#{sourceId}) and zyzt = '1'
+    </select>
+
+    <select id="getObjectPojoByUserId" resultType="com.synway.datastandardmanager.pojo.ObjectPojo">
+        select
+            OBJECTID, OBJECTNAME,  OBJECTMEMO, OBJECTSTATE, TABLEID,TABLENAME,RECENTDAYS
+            OBJECTFLAG,DATATYPE,STORETYPE,DBSOURCE,SORTINDEX,PARENTID,TABLENAMEALIAS,DATA_SOURCE,
+            EXHIVETABLENAME,HIVETABLENAME,DELETED,ELLEMENTNAME,DELETER,ISPRIVATE,SECRETLEVEL,
+            RELATE_TABLENAME,SOURCEID,ISACTIVETABLE,HD_DBSOURCE,TABLENAME_B,ISQUERY,GA_SOURCEID,to_char(CREATETIME ,'yyyy-mm-dd hh24:mi:ss')
+             as createTime,
+            to_char(UPDATETIME ,'yyyy-mm-dd hh24:mi:ss') as updateTime, CREATOR as creator, UPDATER as updater
+         from synlte.OBJECT l
+         <if test=" userId != null">
+             right join (select distinct id,userid , username from USER_AUTHORITY where USERID = #{userId}
+             and upper(MODULECODE) = 'BZGL' ) r
+             on upper(l.TABLEID) = upper(r.id)
+         </if>
+         <if test=" userId == null">
+             left join(select distinct id, userid , username from USER_AUTHORITY where upper(MODULECODE) = 'BZGL') r
+             on upper(l.TABLEID) = upper(r.id)
+         </if>
+    </select>
+
+    <select id="checkUserAuthorityExit" resultType="java.lang.Integer">
+        select count(0) from USER_AUTHORITY where ID = #{id} and USERID = #{userId}
+    </select>
+
+    <insert id="insertUserAuthority" parameterType="com.synway.datastandardmanager.pojo.UserAuthority">
+        insert into USER_AUTHORITY(ID,CMN_MEMO,MODULECODE,MODULENAME,ISCREATER,USERNAME,USERID,CMN_NAME,ORGANID,ORGANNAME)
+        values(#{id},#{cmnMemo},#{moduleCode},#{moduleName},#{isCreater},#{userName},#{userId},#{cmnName},#{organId},#{organName})
+    </insert>
+
+    <update id="updateUserAuthority" parameterType="com.synway.datastandardmanager.pojo.UserAuthority">
+        update USER_AUTHORITY set CMN_MEMO = #{cmnMemo} , MODULECODE =#{moduleCode} ,
+        MODULENAME = #{moduleName}, ISCREATER = #{isCreater} ,USERNAME = #{userName},
+        CMN_NAME =#{cmnName}, CREATE_TIME = sysdate, USERID = #{userId} where ORGANID = #{organId} and ID =#{id}
+    </update>
+
+
+    <select id="getAllFieldClassList" resultType="com.synway.datastandardmanager.pojo.FieldCodeVal">
+        select CODEID    as codeValId,
+               PARCODEID as codeId,
+               CODETEXT  as valText,
+               CODEID    as valValue
+          from synlte.fieldcode
+         where PARCODEID = 'GACODE000414'
+        union
+        select CODEVALID as codeValId,
+               CODEID    as codeId,
+               VALTEXT   as valText,
+               VALVALUE  as valValue
+          from synlte.fieldcodeval
+         where codeid in
+               (select codeid from synlte.fieldcode where PARCODEID = 'GACODE000414')
+    </select>
+
+
+    <update id="updateFieldClassByFieldId" parameterType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+        update synlte.SYNLTEFIELD set field_class = #{fieldClassId} where upper(fieldid) = upper(#{fieldId})
+    </update>
+
+    <select id="getUpdateTimeStr" resultType="java.lang.String">
+        select to_char(updatetime,'yyyy-mm-dd HH24:mi:ss') from synlte.object
+            where upper(tableid) = upper(#{tableId})
+            and updatetime is not null and updatetime > to_date(#{updateStr},'yyyy-mm-dd HH24:mi:ss')
+    </select>
+
+    <select id="countObjectTableId" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(*) from synlte.object where tableId = #{tableId}
+    </select>
+
+    <select id="getDataRDataResourceOrigin" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+          select v1.CODETEXT||'/'||v2.CODETEXT as label,v1.codeid||'/'||v2.codeid as value from v_classify_info v1
+                left join v_classify_info v2 on v1.CODEID = v2.PARCODEID
+                where v2.CODENAME = '01001'
+    </select>
+
+    <select id="searchObjectBySourceId" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(0) from synlte.OBJECT where upper(TABLEID)= upper(#{tableId})
+    </select>
+
+</mapper>

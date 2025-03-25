@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datarelation.dao.dataworks_task_definition_instance.TaskDefinitionInstanceDao">
+
+    <delete id="delIdOldList" parameterType="java.util.List">
+        delete from m_flow_three
+        where ID in (
+        <foreach collection="list" item="item" separator=",">#{item}</foreach>
+        )
+    </delete>
+    <delete id="delTaskOldList" parameterType="java.util.List">
+        delete from m_flow_three
+        where TASK_ID in (
+        <foreach collection="list" item="item" separator=",">#{item}</foreach>
+        )
+    </delete>
+
+    <insert id="insertTaskList" parameterType="com.synway.datarelation.pojo.datawork.v3.TaskEntity">
+        insert into m_flow_three(ID,TASK_ID,NODE_ID,DAG_ID,INGROUP_ID,TASK_TYPE,DAG_TYPE,DUE_TIME,STATUS,OP_SEQ,OP_CODE,
+        OWNER,BIZ_DATE,GMT_DATE,GATE_WAY,GW_PROCESS_ID,GW_LOG_FILE,ALISA_RETURN_TIME,PRG_NAME,PRG_TYPE,PRIORITY,WEIGHT,
+        EXEC_NAME,FILE_ID,FILE_VERSION,ODPS_PROJECT_NAME,PARA_VALUE,GW_LOG_LOCAL_FILE,RES_GROUP_IDENTIFIER,RES_GROUPID,
+        BASE_LINE_ID,APP_ID,APP_NAME,BEGIN_WAITTIME_TIME,BEGIN_WAIT_RESTIME,BEGIN_RUNNING_TIME,FINISH_TIME,CREATE_TIME,
+        CREATE_USER,MODIFY_TIME,MODIFY_USER,MULTI_INST_CHECK_TYPE,MULTI_KILL_TYPE,CYC_TIME,ROLE_TYPE,DEPENDENT_TYPE,
+        DEPLOY_DATE,NODE_NAME,RERUN_TIMES,NODE_MODIFY_TIME,REFRESH_TIME,DELAY_EXECTIME,RERUN_ABLE,ISRUN_OVER,BIZ_ID,
+        PARENT_TASK_RELATIONS,CHILD_TASK_RELATIONS,PARENT_OUTPUTTAB_METAS,OUTPUTTAB_METAS,CYC_TYPE)
+        select  * from(
+        <foreach collection="list" item="record" separator="union all">
+            SELECT
+            #{record.id,jdbcType=VARCHAR},#{record.taskId,jdbcType=VARCHAR},#{record.nodeId,jdbcType=VARCHAR},
+            #{record.dagId,jdbcType=VARCHAR},#{record.inGroupId,jdbcType=INTEGER},#{record.taskType,jdbcType=INTEGER},
+            #{record.dagType,jdbcType=INTEGER},#{record.dueTime,jdbcType=TIMESTAMP},#{record.status,jdbcType=INTEGER},
+            #{record.opSeq,jdbcType=VARCHAR},#{record.opCode,jdbcType=INTEGER},#{record.owner,jdbcType=VARCHAR},
+            #{record.bizdate,jdbcType=TIMESTAMP},#{record.gmtdate,jdbcType=TIMESTAMP},#{record.gateway,jdbcType=VARCHAR},
+            #{record.gwProcessId,jdbcType=VARCHAR},#{record.gwLogFile,jdbcType=VARCHAR},#{record.alisaReturnTime,jdbcType=TIMESTAMP},
+            #{record.prgName,jdbcType=VARCHAR},#{record.prgType,jdbcType=INTEGER},#{record.priority,jdbcType=INTEGER},
+            #{record.weight,jdbcType=INTEGER},#{record.execName,jdbcType=VARCHAR},#{record.fileId,jdbcType=VARCHAR},
+            #{record.fileVersion,jdbcType=INTEGER},#{record.odpsProjectName,jdbcType=VARCHAR},#{record.paraValue,jdbcType=VARCHAR},
+            #{record.gwLogLocalFile,jdbcType=VARCHAR},#{record.resGroupIdentifier,jdbcType=VARCHAR},#{record.resGroupId,jdbcType=VARCHAR},
+            #{record.baseLineId,jdbcType=VARCHAR},#{record.appId,jdbcType=VARCHAR},#{record.appName,jdbcType=VARCHAR},
+            #{record.beginWaitTimeTime,jdbcType=TIMESTAMP},#{record.beginWaitResTime,jdbcType=TIMESTAMP},#{record.beginRunningTime,jdbcType=TIMESTAMP},
+            #{record.finishTime,jdbcType=TIMESTAMP},#{record.createTime,jdbcType=TIMESTAMP},#{record.createUser,jdbcType=VARCHAR},
+            #{record.modifyTime,jdbcType=TIMESTAMP},#{record.modifyUser,jdbcType=VARCHAR},#{record.multiInstCheckType,jdbcType=INTEGER},
+            #{record.multiKillType,jdbcType=INTEGER},#{record.cycTime,jdbcType=TIMESTAMP},
+            #{record.roleType,jdbcType=INTEGER},#{record.dependentType,jdbcType=INTEGER},#{record.deployDate,jdbcType=TIMESTAMP},
+            #{record.nodeName,jdbcType=VARCHAR},#{record.rerunTimes,jdbcType=INTEGER},#{record.nodeModifyTime,jdbcType=TIMESTAMP},
+            #{record.refreshTime,jdbcType=TIMESTAMP},#{record.delayExecTime,jdbcType=TIMESTAMP},#{record.rerunAble,javaType = Boolean ,jdbcType=INTEGER},
+            #{record.isRunOver,jdbcType=INTEGER},#{record.bizId,jdbcType=VARCHAR},#{record.parentTaskRelations,jdbcType=VARCHAR},
+            #{record.childTaskRelations,jdbcType=VARCHAR},#{record.parentOutputTabMetas,jdbcType=VARCHAR},#{record.outputTabMetas,jdbcType=VARCHAR},
+            #{record.cycType,jdbcType=INTEGER}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <!--<insert id="insertTaskList" parameterType="com.synway.dataRelation.pojo.dataWorksTaskDefinitionInstance.versionThree.TaskEntity">-->
+        <!--insert all-->
+        <!--<foreach collection="list" item="record" index="index">-->
+            <!--INTO m_flow_three(ID,TASK_ID,NODE_ID,DAG_ID,INGROUP_ID,TASK_TYPE,DAG_TYPE,DUE_TIME,STATUS,OP_SEQ,OP_CODE,-->
+            <!--OWNER,BIZ_DATE,GMT_DATE,GATE_WAY,GW_PROCESS_ID,GW_LOG_FILE,ALISA_RETURN_TIME,PRG_NAME,PRG_TYPE,PRIORITY,WEIGHT,-->
+            <!--EXEC_NAME,FILE_ID,FILE_VERSION,ODPS_PROJECT_NAME,PARA_VALUE,GW_LOG_LOCAL_FILE,RES_GROUP_IDENTIFIER,RES_GROUPID,-->
+            <!--BASE_LINE_ID,APP_ID,APP_NAME,BEGIN_WAITTIME_TIME,BEGIN_WAIT_RESTIME,BEGIN_RUNNING_TIME,FINISH_TIME,CREATE_TIME,-->
+            <!--CREATE_USER,MODIFY_TIME,MODIFY_USER,MULTI_INST_CHECK_TYPE,MULTI_KILL_TYPE,CYC_TIME,ROLE_TYPE,DEPENDENT_TYPE,-->
+            <!--DEPLOY_DATE,NODE_NAME,RERUN_TIMES,NODE_MODIFY_TIME,REFRESH_TIME,DELAY_EXECTIME,RERUN_ABLE,ISRUN_OVER,BIZ_ID,-->
+            <!--PARENT_TASK_RELATIONS,CHILD_TASK_RELATIONS,PARENT_OUTPUTTAB_METAS,OUTPUTTAB_METAS,CYC_TYPE)-->
+            <!--values(-->
+            <!--#{record.id,jdbcType=VARCHAR},#{record.taskId,jdbcType=VARCHAR},#{record.nodeId,jdbcType=VARCHAR},-->
+            <!--#{record.dagId,jdbcType=VARCHAR},#{record.inGroupId,jdbcType=INTEGER},#{record.taskType,jdbcType=INTEGER},-->
+            <!--#{record.dagType,jdbcType=INTEGER},#{record.dueTime,jdbcType=TIMESTAMP},#{record.status,jdbcType=INTEGER},-->
+            <!--#{record.opSeq,jdbcType=VARCHAR},#{record.opCode,jdbcType=INTEGER},#{record.owner,jdbcType=VARCHAR},-->
+            <!--#{record.bizdate,jdbcType=TIMESTAMP},#{record.gmtdate,jdbcType=TIMESTAMP},#{record.gateway,jdbcType=VARCHAR},-->
+            <!--#{record.gwProcessId,jdbcType=VARCHAR},#{record.gwLogFile,jdbcType=VARCHAR},#{record.alisaReturnTime,jdbcType=TIMESTAMP},-->
+            <!--#{record.prgName,jdbcType=VARCHAR},#{record.prgType,jdbcType=INTEGER},#{record.priority,jdbcType=INTEGER},-->
+            <!--#{record.weight,jdbcType=INTEGER},#{record.execName,jdbcType=VARCHAR},#{record.fileId,jdbcType=VARCHAR},-->
+            <!--#{record.fileVersion,jdbcType=INTEGER},#{record.odpsProjectName,jdbcType=VARCHAR},#{record.paraValue,jdbcType=VARCHAR},-->
+            <!--#{record.gwLogLocalFile,jdbcType=VARCHAR},#{record.resGroupIdentifier,jdbcType=VARCHAR},#{record.resGroupId,jdbcType=VARCHAR},-->
+            <!--#{record.baseLineId,jdbcType=VARCHAR},#{record.appId,jdbcType=VARCHAR},#{record.appName,jdbcType=VARCHAR},-->
+            <!--#{record.beginWaitTimeTime,jdbcType=TIMESTAMP},#{record.beginWaitResTime,jdbcType=TIMESTAMP},#{record.beginRunningTime,jdbcType=TIMESTAMP},-->
+            <!--#{record.finishTime,jdbcType=TIMESTAMP},#{record.createTime,jdbcType=TIMESTAMP},#{record.createUser,jdbcType=VARCHAR},-->
+            <!--#{record.modifyTime,jdbcType=TIMESTAMP},#{record.modifyUser,jdbcType=VARCHAR},#{record.multiInstCheckType,jdbcType=INTEGER},-->
+            <!--#{record.multiKillType,jdbcType=INTEGER},#{record.cycTime,jdbcType=TIMESTAMP},-->
+            <!--#{record.roleType,jdbcType=INTEGER},#{record.dependentType,jdbcType=INTEGER},#{record.deployDate,jdbcType=TIMESTAMP},-->
+            <!--#{record.nodeName,jdbcType=VARCHAR},#{record.rerunTimes,jdbcType=INTEGER},#{record.nodeModifyTime,jdbcType=TIMESTAMP},-->
+            <!--#{record.refreshTime,jdbcType=TIMESTAMP},#{record.delayExecTime,jdbcType=TIMESTAMP},#{record.rerunAble,javaType = Boolean ,jdbcType=INTEGER},-->
+            <!--#{record.isRunOver,jdbcType=INTEGER},#{record.bizId,jdbcType=VARCHAR},#{record.parentTaskRelations,jdbcType=VARCHAR},-->
+            <!--#{record.childTaskRelations,jdbcType=VARCHAR},#{record.parentOutputTabMetas,jdbcType=VARCHAR},#{record.outputTabMetas,jdbcType=VARCHAR},-->
+            <!--#{record.cycType,jdbcType=INTEGER}-->
+            <!--)-->
+        <!--</foreach>-->
+        <!--select 1 from dual-->
+    <!--</insert>-->
+
+    <select id="getTaskDefinitionCountDao" resultType="java.lang.Integer"
+            parameterType="com.synway.datarelation.pojo.datawork.v3.TaskRunQueryParameters">
+      select count(0) from task_run_analyze
+      <where>
+          <if test="taskId !=null and taskId != ''">
+              and TASK_ID =#{taskId}
+          </if>
+          <if test="historyId !=null and historyId !=''">
+              and ID = #{historyId}
+          </if>
+          <if test="taskId ==null or taskId == ''">
+              and TASK_ID is null
+          </if>
+          <if test="historyId ==null or historyId == ''">
+              and ID is null
+          </if>
+      </where>
+    </select>
+
+    <update id="updateTaskRunAnalyzeDao" parameterType="com.synway.datarelation.pojo.datawork.TaskRunAnalyze">
+        UPDATE task_run_analyze set SOURCE_TYPE=#{sourceType},SOURCE_TABLE_NAME=#{sourceTableName},
+        SOURCE_TABLE_PROJECT=#{sourceTableProject},TARGET_TYPE=#{targetType},TARGET_TABLE_NAME=#{targetTableName},
+        TARGET_TABLE_PROJECT=#{targetTableProject},TASK_TOTAL_TIME=#{taskTotalTime},TASK_AVERAGE_TRAFFIC=#{taskAverageTraffic},
+        RECORD_WRITING_SPEED=#{recordWritingSpeed},READ_RECORDS=#{readRecords},READ_FAILURE_RECORDS=#{readFailureRecords},
+        TASK_START_TIME=#{taskStartTime},TASK_END_TIME=#{taskEndTime},
+        SYNCHRONIZATION_STATUS=#{synchronizationStatus},MESSGAE_INSERT_TIME=sysdate
+        <where>
+            <if test="taskId !=null and taskId != ''">
+                and TASK_ID =#{taskId}
+            </if>
+            <if test="id !=null and id !=''">
+                and ID = #{id}
+            </if>
+            <if test="taskId ==null or taskId == ''">
+                and TASK_ID is null
+            </if>
+            <if test="id ==null or id == ''">
+                and ID is null
+            </if>
+        </where>
+    </update>
+
+    <insert id="insertTaskRunAnalyzeDao" parameterType="com.synway.datarelation.pojo.datawork.TaskRunAnalyze">
+        INSERT into task_run_analyze(TASK_ID,ID,SOURCE_TYPE,SOURCE_TABLE_NAME,SOURCE_TABLE_PROJECT,TARGET_TYPE,
+        TARGET_TABLE_NAME,TARGET_TABLE_PROJECT,TASK_TOTAL_TIME,TASK_AVERAGE_TRAFFIC,RECORD_WRITING_SPEED,
+        READ_RECORDS,READ_FAILURE_RECORDS,TASK_START_TIME,TASK_END_TIME,SYNCHRONIZATION_STATUS) VALUES (
+            #{taskId},#{id},#{sourceType},#{sourceTableName},#{sourceTableProject},#{targetType},#{targetTableName},
+            #{targetTableProject},#{taskTotalTime},#{taskAverageTraffic},#{recordWritingSpeed},#{readRecords},
+            #{readFailureRecords},#{taskStartTime},#{taskEndTime},#{synchronizationStatus}
+        )
+    </insert>
+
+    <select id="getTaskLogCountDao" resultType="java.lang.Integer"
+            parameterType="com.synway.datarelation.pojo.datawork.v3.TaskRunQueryParameters">
+        select count(0) from task_run_log
+        <where>
+            <if test="taskId !=null and taskId != ''">
+                and TASK_ID =#{taskId}
+            </if>
+            <if test="historyId !=null and historyId !=''">
+                and ID = #{historyId}
+            </if>
+            <if test="taskId ==null or taskId == ''">
+                and TASK_ID is null
+            </if>
+            <if test="historyId ==null or historyId == ''">
+                and ID is null
+            </if>
+        </where>
+    </select>
+
+    <update id="updateTaskLogMessageDao">
+        update task_run_log set MESSAGE= #{logStr},INSERT_TIME=sysdate
+        <where>
+            <if test="taskId !=null and taskId != ''">
+                and TASK_ID =#{taskId}
+            </if>
+            <if test="id !=null and id !=''">
+                and ID = #{id}
+            </if>
+            <if test="taskId ==null or taskId == ''">
+                and TASK_ID is null
+            </if>
+            <if test="id ==null or id == ''">
+                and ID is null
+            </if>
+        </where>
+    </update>
+
+    <insert id="insertTaskLogMessageDao">
+          INSERT into task_run_log(ID,TASK_ID,MESSAGE) values(
+             #{id},#{taskId},#{logStr}
+          )
+    </insert>
+
+    <select id="getNormalTask" parameterType="java.util.List"
+            resultType="java.lang.String">
+        select ids from (
+        <if test="list != null">
+            SELECT idstr ||'|'||TASK_ID_str as ids  from(
+             select case when id is null then '' else id end as idstr ,
+              case when TASK_ID is null then '' else TASK_ID end as TASK_ID_str
+            from task_run_analyze
+            where SYNCHRONIZATION_STATUS = 0 and (
+            <foreach collection="list" item="item" separator="or">
+                TASK_ID = #{item}
+            </foreach>)
+            )
+        </if>
+        <if test="listId != null">
+          UNION ALL
+            SELECT idstr ||'|'||TASK_ID_str as ids  from(
+            select case when id is null then '' else id end as idstr ,
+            case when TASK_ID is null then '' else TASK_ID end as TASK_ID_str
+            from task_run_analyze where SYNCHRONIZATION_STATUS = 0
+            and id  in (
+            <foreach collection="listId" item="item" separator=",">#{item}</foreach>
+            )
+        </if>
+        )
+    </select>
+
+    <select id="getMaxVersionNodeByPrgtype" resultType="com.synway.datarelation.pojo.monitor.node.MaxVersionNodeId">
+        select nodeId,maxVersion from (
+        select NODE_ID as nodeId,max(FILE_VERSION) as maxVersion from M_NODE_THREE
+        <where>
+            PRG_TYPE = #{prgType}
+        </where>
+        group by NODE_ID)
+        <where>
+            <foreach collection="list" item="item" separator="or">
+                (nodeId=#{item.nodeId,jdbcType=VARCHAR} and maxVersion=#{item.fileVersion,jdbcType=INTEGER})
+            </foreach>
+        </where>
+    </select>
+
+    <delete id="delMaxVersionNode">
+        BEGIN
+        DELETE from M_NODE_THREE
+        <where>
+            <foreach collection="list" item="item" separator="or">
+                (NODE_ID=#{item.nodeId,jdbcType=VARCHAR} and FILE_VERSION=#{item.maxVersion,jdbcType=INTEGER})
+            </foreach>
+        </where>;
+        DELETE from M_NODE_RELATION
+        <where>
+            <foreach collection="list" item="item" separator="or">
+                (NODE_ID=#{item.nodeId,jdbcType=VARCHAR} and FILE_VERSION=#{item.maxVersion,jdbcType=INTEGER})
+            </foreach>
+        </where>;
+        END;
+    </delete>
+
+    <delete id="delNodeByPrgtype">
+        DELETE from M_NODE_THREE
+        <where>
+            <if test="prgType != null">
+                PRG_TYPE = #{prgType}
+            </if>
+            <if test="prgType == null">
+                PRG_TYPE = -1
+            </if>
+        </where>
+    </delete>
+
+    <insert id="insertNodeList" parameterType="com.synway.datarelation.pojo.datawork.v3.NodeEntity">
+        insert into M_NODE_THREE(APP_ID,BASELINE_ID,BIZ_ID,CREATE_TIME,CREATE_USER,CRON_EXPRESS,CYC_TYPE,DEPENDENT_TYPE,
+        DEPLOY_DATE,DESCRIPTION,DQC_TYPE,ENDEFFECT_DATE,ENV_TYPE,EXEC_NAME,EXECUTE_TYPE,FILE_ID,FILE_VERSION,FLOW_ID,
+        MODIFY_TIME,MODIFY_USER,MULTIINST_CHECKTYPE,MULTIKILL_TYPE,NODE_FROM,NODE_ID,NODE_NAME,NODE_TYPE,
+        ODPSPROJECT_NAME,OWNER,PRG_TYPE,PRIORITY,PROD_MODIFY_TIME,RERUN_ABLE,RESGROUP_ID,SOURCE,START_EFFECT_DATE,
+        RELATED_FLOW_ID)
+        select * from (
+        <foreach collection="list" item="record" separator="union all">
+            select #{record.appId,jdbcType=VARCHAR},#{record.baseLineId,jdbcType=VARCHAR},#{record.bizId,jdbcType=INTEGER},
+            #{record.createTime,jdbcType=TIMESTAMP},
+            #{record.createUser,jdbcType=VARCHAR},#{record.cronExpress,jdbcType=VARCHAR},#{record.cycType,jdbcType=INTEGER},
+            #{record.dependentType,jdbcType=INTEGER},#{record.deployDate,jdbcType=TIMESTAMP},#{record.description,jdbcType=VARCHAR},
+            #{record.dqcType,jdbcType=INTEGER},#{record.endEffectDate,jdbcType=TIMESTAMP},#{record.envType,jdbcType=INTEGER},
+            #{record.execName,jdbcType=VARCHAR},#{record.executeType,jdbcType=INTEGER},#{record.fileId,jdbcType=VARCHAR},
+            #{record.fileVersion,jdbcType=INTEGER},#{record.flowId,jdbcType=VARCHAR},#{record.modifyTime,jdbcType=TIMESTAMP},
+            #{record.modifyUser,jdbcType=VARCHAR},#{record.multiInstCheckType,jdbcType=INTEGER},#{record.multiKillType,jdbcType=INTEGER},
+            #{record.nodeFrom,jdbcType=VARCHAR},#{record.nodeId,jdbcType=VARCHAR},#{record.nodeName,jdbcType=VARCHAR},
+            #{record.nodeType,jdbcType=INTEGER},#{record.odpsProjectName,jdbcType=VARCHAR},#{record.owner,jdbcType=VARCHAR},
+            #{record.prgType,jdbcType=INTEGER},#{record.priority,jdbcType=INTEGER},#{record.prodModifyTime,jdbcType=TIMESTAMP},
+            #{record.rerunAble,javaType = Boolean ,jdbcType=INTEGER},#{record.resGroupId,jdbcType=VARCHAR},#{record.source,jdbcType=VARCHAR},
+            #{record.startEffectDate,jdbcType=TIMESTAMP},#{record.relatedFlowId,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <!--<insert id="insertNodeList" parameterType="com.synway.dataRelation.pojo.dataWorksTaskDefinitionInstance.versionThree.NodeEntity">-->
+     <!--insert all-->
+     <!--<foreach  collection="list" item="record" index="index">-->
+         <!--into  M_NODE_THREE(APP_ID,BASELINE_ID,BIZ_ID,CREATE_TIME,CREATE_USER,CRON_EXPRESS,CYC_TYPE,DEPENDENT_TYPE,-->
+         <!--DEPLOY_DATE,DESCRIPTION,DQC_TYPE,ENDEFFECT_DATE,ENV_TYPE,EXEC_NAME,EXECUTE_TYPE,FILE_ID,FILE_VERSION,FLOW_ID,-->
+         <!--MODIFY_TIME,MODIFY_USER,MULTIINST_CHECKTYPE,MULTIKILL_TYPE,NODE_FROM,NODE_ID,NODE_NAME,NODE_TYPE,-->
+         <!--ODPSPROJECT_NAME,OWNER,PRG_TYPE,PRIORITY,PROD_MODIFY_TIME,RERUN_ABLE,RESGROUP_ID,SOURCE,START_EFFECT_DATE)-->
+         <!--values( #{record.appId,jdbcType=VARCHAR},#{record.baseLineId,jdbcType=VARCHAR},#{record.bizId,jdbcType=INTEGER},-->
+         <!--#{record.createTime,jdbcType=TIMESTAMP},-->
+         <!--#{record.createUser,jdbcType=VARCHAR},#{record.cronExpress,jdbcType=VARCHAR},#{record.cycType,jdbcType=INTEGER},-->
+         <!--#{record.dependentType,jdbcType=INTEGER},#{record.deployDate,jdbcType=TIMESTAMP},#{record.description,jdbcType=VARCHAR},-->
+         <!--#{record.dqcType,jdbcType=INTEGER},#{record.endEffectDate,jdbcType=TIMESTAMP},#{record.envType,jdbcType=INTEGER},-->
+         <!--#{record.execName,jdbcType=VARCHAR},#{record.executeType,jdbcType=INTEGER},#{record.fileId,jdbcType=VARCHAR},-->
+         <!--#{record.fileVersion,jdbcType=INTEGER},#{record.flowId,jdbcType=VARCHAR},#{record.modifyTime,jdbcType=TIMESTAMP},-->
+         <!--#{record.modifyUser,jdbcType=VARCHAR},#{record.multiInstCheckType,jdbcType=INTEGER},#{record.multiKillType,jdbcType=INTEGER},-->
+         <!--#{record.nodeFrom,jdbcType=VARCHAR},#{record.nodeId,jdbcType=VARCHAR},#{record.nodeName,jdbcType=VARCHAR},-->
+         <!--#{record.nodeType,jdbcType=INTEGER},#{record.odpsProjectName,jdbcType=VARCHAR},#{record.owner,jdbcType=VARCHAR},-->
+         <!--#{record.prgType,jdbcType=INTEGER},#{record.priority,jdbcType=INTEGER},#{record.prodModifyTime,jdbcType=TIMESTAMP},-->
+         <!--#{record.rerunAble,javaType = Boolean ,jdbcType=INTEGER},#{record.resGroupId,jdbcType=VARCHAR},#{record.source,jdbcType=VARCHAR},-->
+         <!--#{record.startEffectDate,jdbcType=TIMESTAMP})-->
+     <!--</foreach>-->
+     <!--select 1 from dual-->
+    <!--</insert>-->
+
+    <insert id="insertDfWorkTaskList" parameterType="com.synway.datarelation.pojo.modelmonitor.DfWorkModelNodeInsInfo">
+        insert INTO  m_flow_three(TASK_ID,NODE_ID,DAG_ID,STATUS,OWNER,BIZ_DATE,PRG_TYPE,ODPS_PROJECT_NAME
+        ,BEGIN_RUNNING_TIME,FINISH_TIME,CREATE_TIME,NODE_NAME,CYC_TYPE)
+        select * from (
+        <foreach collection="list" item="record" separator="union all">
+            select
+            #{record.flowId,jdbcType=VARCHAR},#{record.dagId,jdbcType=VARCHAR},#{record.dagId,jdbcType=VARCHAR},
+            #{record.status,jdbcType=INTEGER},#{record.createUser,jdbcType=VARCHAR},#{record.bizTimeDate,jdbcType=TIMESTAMP},
+            #{record.prgType,jdbcType=VARCHAR},#{record.projectName,jdbcType=VARCHAR},#{record.bizBeginHourDate,jdbcType=TIMESTAMP},
+            #{record.bizEndHourDate,jdbcType=TIMESTAMP},#{record.createTimeDate,jdbcType=TIMESTAMP},#{record.flowName,jdbcType=VARCHAR},
+            #{record.schedulerType,jdbcType=INTEGER}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <!--<insert id="insertDfWorkTaskList" parameterType="com.synway.dataRelation.pojo.modelMonitor.DfWorkModelNodeInsInfo">-->
+        <!--insert all-->
+        <!--<foreach collection="list" item="record" index="index">-->
+            <!--INTO m_flow_three(TASK_ID,NODE_ID,DAG_ID,STATUS,OWNER,BIZ_DATE,PRG_TYPE,ODPS_PROJECT_NAME-->
+            <!--,BEGIN_RUNNING_TIME,FINISH_TIME,CREATE_TIME,NODE_NAME,CYC_TYPE)-->
+            <!--values(-->
+            <!--#{record.flowId,jdbcType=VARCHAR},#{record.dagId,jdbcType=VARCHAR},#{record.dagId,jdbcType=VARCHAR},-->
+            <!--#{record.status,jdbcType=INTEGER},#{record.createUser,jdbcType=VARCHAR},#{record.bizTimeDate,jdbcType=TIMESTAMP},-->
+            <!--#{record.prgType,jdbcType=VARCHAR},#{record.projectName,jdbcType=VARCHAR},#{record.bizBeginHourDate,jdbcType=TIMESTAMP},-->
+            <!--#{record.bizEndHourDate,jdbcType=TIMESTAMP},#{record.createTimeDate,jdbcType=TIMESTAMP},#{record.flowName,jdbcType=VARCHAR},-->
+            <!--#{record.schedulerType,jdbcType=INTEGER}-->
+            <!--)-->
+        <!--</foreach>-->
+        <!--select 1 from dual-->
+    <!--</insert>-->
+
+    <select id="getDfWorkModelFlowIns" resultType="java.lang.Integer">
+        select count(*) from m_flow_three  where  to_char(INSERT_TIME,'yyyyMMdd') = to_char(sysdate,'yyyyMMdd')
+    </select>
+
+<!--    <delete id="deleteDfWorkModelFlowIns" >-->
+<!--        delete from m_flow_three-->
+<!--    </delete>-->
+
+    <insert id="insertNodeWithChildNodes">
+        insert all
+        <foreach collection="list" item="record" index="index">
+            INTO M_NODE_RELATION(NODE_ID,NODE_NAME,FILE_VERSION,NEXT_NODE_ID,NEXT_NODE_NAME,INSERT_TIME)
+            values(
+            #{record.nodeId,jdbcType=VARCHAR},#{record.nodeName,jdbcType=VARCHAR},#{record.fileVersion,jdbcType=INTEGER},
+            #{record.nextNodeId,jdbcType=VARCHAR},#{record.nextNodeName,jdbcType=VARCHAR},SYSDATE
+            )
+        </foreach>
+        select 1 from dual
+    </insert>
+<!--    delete from m_flow_three  where  to_char(INSERT_TIME,'yyyyMMdd') = to_char(sysdate,'yyyyMMdd')-->
+
+    <select id="getNodeIdList" resultType="java.lang.Long">
+        SELECT DISTINCT node_id  FROM m_node_three  WHERE PRG_TYPE=#{prgType,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getLogIsParsing" resultType="java.lang.String">
+        SELECT count(*) FROM m_flow_three
+        WHERE (CPU_CONSUMPTION IS NOT NULL OR MEMORY_CONSUMPTION IS NOT NULL OR LAST_OUT_RECORDS IS NOT NULL OR OUT_TABLE_NUM IS NOT NULL)
+        AND #{taskId,jdbcType=VARCHAR}=TASK_ID
+    </select>
+
+    <!--prg_type为98的是旧工作流的属性，不是实际意义的节点，所以无日志-->
+    <select id="getTaskEntity" resultType="com.synway.datarelation.pojo.datawork.v3.TaskEntity">
+            SELECT id,task_id as taskid,status,prg_type as prgtype FROM M_FLOW_THREE
+            WHERE INSERT_TIME>=TRUNC(SYSDATE) and prg_type !=98
+    </select>
+</mapper>

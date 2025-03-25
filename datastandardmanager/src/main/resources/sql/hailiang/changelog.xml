@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="3.6.0.20240813.01" author="nbj" >
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="STANDARDIZE_INPUTOBJECT" />
+            </not>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DSM_TABLE.sql"/>
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DSM_VIEW.sql"/>
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DSM_INIT.sql" />
+    </changeSet>
+
+</databaseChangeLog>

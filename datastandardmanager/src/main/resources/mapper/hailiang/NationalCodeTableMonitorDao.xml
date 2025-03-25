@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.dao.master.NationalCodeTableMonitorDao">
+
+    <select id="codeTextQuery" resultType="map">
+        select distinct c.codetext, c.codeid
+          from synlte.fieldcode c
+        where c.codeid in (select distinct c.codeid from synlte.fieldcode c where  deleted = 0  or deleted is null)
+        <if test="codeText!=null and codeText!=''">
+            and c.codetext like '%${codeText}%'
+        </if>
+    </select>
+
+
+    <select id="codeTextsQuery" resultType="string">
+        select distinct c.codetext
+        from synlte.fieldcode c
+        <where>
+            (deleted = 0  or deleted is null)
+            <if test="codeText!=null and codeText!=''">
+                and c.codetext like '%${codeText}%'
+            </if>
+        </where>
+
+    </select>
+
+    <select id="fieldCodeTableQuery" resultType="com.synway.datastandardmanager.pojo.Fieldcode">
+           select c.codeid    codeId,
+                   c.codename  codeName,
+                   c.codetext  codeText,
+                   c.memo      memo,
+                   c.parcodeid parcodeId
+          from synlte.fieldcode c
+          <if test="codeId!=null and codeId!=''">
+              where c.codeid = #{codeId}
+          </if>
+    </select>
+
+
+    <select id="fieldCodeValTable" resultType="com.synway.datastandardmanager.pojo.FieldCodeVal">
+        select v.codevalid, v.codeid, v.valtext, v.valvalue, v.memo, v.valtexttitle
+          from synlte.fieldcodeval v
+         where v.codeid = #{codeId}
+        <if test="valText!=null and valText!=''">
+            and v.valtext like '%${valText}%'
+        </if>
+    </select>
+
+    <select id="valTextQuery" resultType="string">
+        select distinct v.valtext
+          from synlte.fieldcodeval v
+        where v.codeid = #{codeId}
+        <if test="valText!=null and valText!=''">
+            and v.valtext like '%${valText}%'
+        </if>
+    </select>
+
+
+
+</mapper>

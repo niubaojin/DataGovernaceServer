@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataProcessDao">
+
+    <sql id="queryWhereConditions">
+
+        (
+        <if test="tableNameEn!=null and tableNameEn !=''">
+            ( upper(TABLE_NAME_EN) = upper(#{tableNameEn})
+            and upper(DATA_BASE_TYPE) = upper(#{dataBaseType})
+            )
+        </if>
+        <if test="tableNameEn ==null or tableNameEn ==''">
+            1 != 1
+        </if>
+        <if test="tableId!=null and tableId !=''">
+            or upper(TABLE_ID) = upper(#{tableId})
+        </if>
+        )
+        <if test="startTime!=null and startTime !=''">
+            and to_date(OPERATE_TIME, 'yyyy-MM-dd HH24:mi:ss') >= to_date(#{startTime}, 'yyyy-MM-dd HH24:mi:ss')
+        </if>
+        <if test="endTime!=null and endTime !=''">
+            and to_date(OPERATE_TIME, 'yyyy-MM-dd HH24:mi:ss') <![CDATA[<= ]]> to_date(#{endTime}, 'yyyy-MM-dd HH24:mi:ss')
+        </if>
+
+    </sql>
+
+    <insert id="saveDataProcess" parameterType="com.synway.property.pojo.DataProcess.DataProcess">
+        insert into DATAPROCESS(AREA_ID,DEPT,OPERATOR,POLICENO,APP_ID,MODULE_ID,OPERATE_TIME,
+        IP,LOG_TYPE,DIGEST,DATA_BASE_TYPE,TABLE_NAME_EN,TABLE_ID,id)
+        values(#{areaId},#{dept},#{operator},#{policeno},#{appId},#{moduleId},#{operateTime},#{ip},
+        #{logType},#{digest},#{dataBaseType},#{tableNameEn},#{tableId},#{id})
+    </insert>
+
+
+    <select id="searchDataProcess" parameterType="com.synway.property.pojo.DataProcess.DataProcessRequest"
+            resultType="com.synway.property.pojo.DataProcess.ProcessPageShow">
+        select ID , operateTime,dept,operator, moduleIdStr as logTypeName, logTypeStr as accessType ,taskName ,digest, moduleId
+        , dataBaseType , appId as dataId
+        from(
+        select id , AREA_ID as areaId ,DEPT as dept,OPERATOR as operator,POLICENO as policeno, APP_ID as appId,
+        MODULE_ID as moduleId, OPERATE_TIME as operateTime, task_name as taskName,
+        IP as ip ,LOG_TYPE as logType,DIGEST as digest ,DATA_BASE_TYPE as dataBaseType,
+        TABLE_NAME_EN as tableNameEn,TABLE_ID as tableId,t2.code_value as moduleIdStr ,t3.code_value as logTypeStr
+        from (
+        select * from DATAPROCESS
+        <where>
+            <include refid="queryWhereConditions"/>
+            <if test="searchValue != null and searchValue !='' ">
+                and (upper(OPERATOR) like upper('${searchValue}%') OR
+                    upper(TASK_NAME) like upper('${searchValue}%') OR
+                    upper(DIGEST) like upper('${searchValue}%') )
+            </if>
+        </where>
+        ) t1 left join DATA_PROCESS_TYPE t2 on  upper(t2.code_id) = upper(t1.MODULE_ID)
+        left join DATA_PROCESS_TYPE t3 on upper(t3.code_id) = upper(t1.LOG_TYPE)
+        )
+    </select>
+
+
+    <select id="getAllModuleId" resultType="com.synway.property.pojo.DataProcess.ModuleIdSelect">
+        select  code_id  as codeId, code_value as codeValue from DATA_PROCESS_TYPE where code_type = 1
+    </select>
+
+
+
+
+    <select id="searchValuePrompt" parameterType="com.synway.property.pojo.DataProcess.DataProcessRequest"
+            resultType="com.synway.property.pojo.DataProcess.PromptValue">
+        select text_name  as textVlaue , moduleId from (
+        select OPERATOR  as text_name, MODULE_ID as moduleId from DATAPROCESS
+        <where>
+            <include refid="queryWhereConditions"/>
+        </where>
+        UNION ALL
+        select TASK_NAME as text_name , MODULE_ID as moduleId from DATAPROCESS
+        <where>
+            <include refid="queryWhereConditions"/>
+        </where>
+        UNION ALL
+        select DIGEST as text_name , MODULE_ID as moduleId from DATAPROCESS
+        <where>
+            <include refid="queryWhereConditions"/>
+        </where>
+        )
+        where text_name is not null and upper(text_name) like upper('${searchValue}%')
+    </select>
+
+
+    <select id="getInputSourceIdByTableId" resultType="java.lang.String">
+      select distinct inputobjengname from(
+        SELECT inputobjengname FROM (
+        SELECT f4.sys_id as inputSysId, f4.OBJ_ENGNAME as inputObjEngName ,
+        f4.data_id as dataId, f4.table_id as tableId,
+        f4.OBJ_CHINAME as inputObjChiName ,f4.IOBJ_SOURCE as inputIobjSource ,
+        f1.IOR_STATUS as iorStatus,f7.sys_id AS outSysId , f7.OBJ_ENGNAME AS outObjEngName ,
+        f7.OBJ_CHINAME AS outObjChiName ,
+        f7.OOBJ_SOURCE AS outOobjSource,
+        f8.tablename as tableRealName,
+        f8.objectname as objectname
+        FROM STANDARDIZE_INPUTOBJECTRELATE  f1
+        inner join  (select sys_id, OBJ_ENGNAME, data_id, table_id, OBJ_CHINAME,  IOBJ_SOURCE, IOBJ_GUID
+         from STANDARDIZE_INPUTOBJECT f2 inner join STANDARDIZE_OBJECT f3 on f3.OBJ_GUID = f2.obj_guid
+        where f2.iobj_status = 1) f4 on upper(f1.IOBJ_GUID) = upper(f4.IOBJ_GUID)
+        inner join  (select sys_id, OBJ_ENGNAME, OBJ_CHINAME,  OOBJ_SOURCE,oobj_guid
+          from STANDARDIZE_OUTPUTOBJECT f5 inner join STANDARDIZE_OBJECT f6 on f5.OBJ_GUID = f6.obj_guid
+        where f5.OOBJ_STATUS = 1) f7 on upper(f1.OOBJ_GUID) = upper(f7.oobj_guid)
+        inner join (select tablename ,tableid ,objectname from synlte.OBJECT where deleted = 0 and relate_tablename = 'OBJECTFIELD' ) f8 on upper(f8.tableid) = upper(f7.OBJ_ENGNAME)
+          )where iorStatus = 1 and upper(outobjengname) = upper(#{tableId}) ) t1
+    </select>
+
+</mapper>

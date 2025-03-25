@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.standard.TableOrganizationDao">
+
+   <insert id="insertInfo" parameterType="com.synway.datastandardmanager.entity.BuildTableInfoVo">
+       insert into TABLE_ORGANIZATION_ASSETS (SJXJBM,TABLE_NAME_EN,TABLE_PROJECT,TABLE_TYPE,STATISTICS_TIME,OBJECT_ID,NAME,
+       PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,PARTITION_MESSAGE,
+       TABLE_ALL_COUNT,TABLE_SIZE,LIFE_CYCLE,YESTERDAY_COUNT,AVERAGE_DAILY_VOLUME,VALUE_RATE,NULL_RATE,FREQUENCY,THREE_ORGANIZATION_CH,OBJECT_STATE,REGISTER_STATE) values
+       (#{buildTableInfoVo.tableId},#{buildTableInfoVo.tableName},#{buildTableInfoVo.schema},#{buildTableInfoVo.dsType},sysdate,
+       #{buildTableInfoVo.objectId},#{buildTableInfoVo.tableNameCH},#{buildTableInfoVo.primaryDatasourceCh},#{buildTableInfoVo.secondaryDatasourceCh},
+       #{buildTableInfoVo.primaryOrganizationCh},#{buildTableInfoVo.secondaryOrganizationCh},'0','0','0',#{buildTableInfoVo.lifeCycle},'0','0','0','0','0/0','未知',0,-1)
+   </insert>
+    <insert id="insertInfoTemp" parameterType="com.synway.datastandardmanager.entity.BuildTableInfoVo">
+         insert into TABLE_ORGANIZATION_ASSETS_TEMP (SJXJBM,TABLE_NAME_EN,TABLE_PROJECT,TABLE_TYPE,STATISTICS_TIME,OBJECT_ID,NAME,
+        PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,PARTITION_MESSAGE,
+        TABLE_ALL_COUNT,TABLE_SIZE,LIFE_CYCLE,YESTERDAY_COUNT,AVERAGE_DAILY_VOLUME,VALUE_RATE,NULL_RATE,FREQUENCY,THREE_ORGANIZATION_CH,OBJECT_STATE,REGISTER_STATE) values
+       (#{buildTableInfoVo.tableId},#{buildTableInfoVo.tableName},#{buildTableInfoVo.schema},#{buildTableInfoVo.dsType},sysdate,
+       #{buildTableInfoVo.objectId},#{buildTableInfoVo.tableNameCH},#{buildTableInfoVo.primaryDatasourceCh},#{buildTableInfoVo.secondaryDatasourceCh},
+       #{buildTableInfoVo.primaryOrganizationCh},#{buildTableInfoVo.secondaryOrganizationCh},'0','0','0',#{buildTableInfoVo.lifeCycle},
+       '0','0','0','0','0/0',#{buildTableInfoVo.threeOrganizationCh},0,-1)
+    </insert>
+
+    <insert id="insertCreatedMessage">
+        INSERT into STANDARD_TABLE_CREATED(TABLE_NAME,TABLE_PROJECT,TABLE_BASE,OBJECT_ID,ID,TABLE_NAME_CH
+              ,DATA_CENTER_NAME,DATA_RESOURCE_NAME,DATA_ID)
+        values(#{tableName},#{tableProject},#{tableBase},#{objectId},#{id},#{tableNameCh}
+               ,#{dataCenterName},#{dataResourceName},#{dataId})
+    </insert>
+
+    <delete id="deleteCreatedTable">
+        delete from STANDARD_TABLE_CREATED where TABLE_NAME=#{tableName}
+        and TABLE_PROJECT=#{tableProject} and TABLE_BASE=#{tableBase} and OBJECT_ID=#{objectId}
+    </delete>
+
+    <select id="getAllStandardTableCreatedList" resultType="com.synway.datastandardmanager.pojo.StandardTableCreated">
+        select  lower(l.TABLE_NAME) as tableName,lower(l.TABLE_PROJECT) as tableProject,
+        lower(l.TABLE_PROJECT)||'.'||lower(l.TABLE_NAME) as tableNameEn,
+        lower(l.TABLE_BASE) as tableBase,l.OBJECT_ID as objectId,l.TABLE_NAME_CH as tableNameCh,
+        to_char(l.create_time,'yyyy-mm-dd hh24:mi:ss') as createTime,l.DATA_ID  as dataId,
+        r.IMPORT_FLAG as importFlag
+        from STANDARD_TABLE_CREATED  l left join synlte.object_store_info r
+        on upper(l.table_project||'.'||l.table_name) = upper(r.project_name||'.'||r.tablename)
+         where upper(l.TABLE_NAME) = upper(#{tableName})
+    </select>
+
+<!--    <select id="getCreatedUserByTableName" resultType="java.lang.String">-->
+<!--       select distinct OPERATOR  from dataprocess where upper(table_name_en) = upper(#{tableName})-->
+<!--          and upper(log_type) = 'BZGL001' and OPERATOR is not null-->
+<!--    </select>-->
+
+    <select id="getCreatedUserByTableName" resultType="java.lang.String">
+       select distinct creater from synlte.object_store_info  where upper(project_name||'.'||tablename) = upper(#{tableName})
+          and rownum = 1 and creater is not null
+    </select>
+
+    <select id="getCreatedTableListByTableId" resultType="com.synway.datastandardmanager.pojo.StandardTableCreated">
+        select tableid as tableId,
+               lower(tablename) as tableName,
+               lower(project_name) || '.' || lower(tablename) as tableNameEn,
+               objectname as tableNameCh,
+               lower(project_name) as tableProject,
+               store_type as tableBase,
+               creater as createUser,
+               dataid as dataId,
+               case
+                 when table_create_time is null then '' else to_char(table_create_time, 'yyyy-MM-dd')
+               end as createTime,
+               import_flag as importFlag
+          from synlte.object_store_info
+         where upper(tableid) = upper(#{tableId}) order by tablebase
+    </select>
+
+    <select id="getcreatedTimeStrByTableName" resultType="java.lang.String">
+        select distinct table_create_time from synlte.object_store_info  where upper(project_name||'.'||tablename) = upper(#{tableName})
+          and rownum = 1 and  table_create_time is not null
+    </select>
+
+</mapper>

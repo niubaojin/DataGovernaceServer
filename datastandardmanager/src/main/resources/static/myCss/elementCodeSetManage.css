@@ -1,0 +1,222 @@
+html {
+    height: 97%;
+}
+ body{
+	height:100%;
+	width: 100%;
+	/*text-align: center;*/
+	background-color: white;
+}
+table{
+    width: 100%;
+    font-size: 12px;
+    font-family: MicrosoftYaHei;
+    color:#333333;
+    table-layout: fixed;
+    word-break: break-all;
+}
+th{
+	background-color: #e4edf8;
+	font-size: 14px;
+	text-align: center;
+	/* height:52px; */
+	border-right-color: #e0e0e0;
+	text-align: center; 
+	vertical-align: middle; 
+}
+td{
+   font-size: 12px;
+   text-align: center;
+   /* height:52px; */
+   border-right-color: #e0e0e0;
+   text-align: center; 
+   vertical-align: middle; 
+}
+div.codediv{
+  padding: 15px;
+  height: 100%;
+}
+div.codeLeftdiv{
+  float: left;
+  margin-left: 10px;
+}
+div.codeRightdiv{
+  float: left;
+  margin-bottom: 10px;
+}
+div.codeBottomdiv{
+    height: calc(100% - 38px);
+}
+
+div.codeValdiv{
+  border-radius:3px;
+  border: 1px solid #eee;
+  box-shadow:0 1px 10px #ccc;
+  margin-top: 18px;
+  margin-left: 10px;
+  margin-right: 10px;
+  /*width: calc( 100% - 25px );*/
+}
+div.codeValLeftdiv{
+  float: left;
+  margin-top: 12px;
+  margin-left: 10px;
+}
+div.codeValRightdiv{
+  float: right;
+  margin-top: 8px;
+  margin-right: 10px;
+}
+div.codeValBottomdiv{
+   margin-left: 10px;
+   margin-right: 10px;
+    margin-top: -10px;
+}
+
+.leftdiv img{
+   margin-right: 5px;
+   vertical-align: middle;
+}
+.leftdiv font{
+   color: #3333333;
+   font-size: 14px;
+   vertical-align: middle;
+}
+
+hr{
+   margin-top: 46px;
+   margin-bottom: 10px;
+   margin-left: 0px;
+   margin-right: 0px;
+}
+.querybtn {
+    /*border-color: #3582ef;*/
+    /*width: 70px;*/
+    /*height: 30px;*/
+    /*border-radius:2px;*/
+    /*color: #3582ef;*/
+    /*line-height: 1;*/
+    /*white-space: nowrap;*/
+    /*background-color: white;*/
+    width: 70px;
+    height: 30px;
+    line-height: 28px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--main-color);
+    border: solid 1px var(--main-color);
+    cursor: pointer;
+}
+ .querybtn:hover{
+     background-image: var(--main-color)!important;
+     color: #fff!important;
+ }
+.codeValRightdiv input {
+	width: 140px;
+	height: 30px;
+	display: inline;
+	vertical-align: bottom;
+}
+.codeRightdiv input {
+	width: 140px;
+	height: 32px;
+	display: inline;
+	vertical-align: middle;
+}
+
+.delete :hover{
+    color: #761c19;
+}
+.table-condensed {
+    color: var(--font-color);
+}
+.table-condensed .table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td {
+    border-top:1px solid #f1f1f1;
+}
+.jhover {
+    background: var(--main-color)!important;
+}
+.spanDiv{
+    position: absolute;
+    margin-left: 10px;
+    font-weight: bold;
+    font-size: 15px;
+    margin-top: 10px;
+}
+ .sourceLabel{
+     text-align: right;
+     height: 32px;
+     margin-top: 8px;
+     /*font-weight: bold;*/
+     margin-left: -40px;
+ }
+.codeValButton{
+    position: relative;
+    float: left;
+    margin-top: 15px;
+}
+ .table-condensed>tbody>tr>td{
+     white-space: nowrap;
+     text-overflow: ellipsis;
+     overflow: hidden;
+ }
+ .headerTool{
+     /*position: absolute;*/
+     margin-top: 5px;
+     margin-bottom: 5px;
+     width: 450px;
+ }
+ .headerFont{
+     /*position:absolute;*/
+     margin-left: 20px;
+     margin-top: 10px;
+     font-weight: bold;
+     font-size: 14px;
+ }
+ .pageAddress{
+     position: absolute;
+     margin-left: 70px;
+     margin-top: -30px;;
+     color: blue;
+ }
+ .pageAddressTwo{
+     position: absolute;
+     margin-left: 145px;
+     margin-top: -30px;;
+     color: blue;
+ }
+ .pageAddressThree{
+     position: absolute;
+     margin-left: 250px;
+     margin-top: -30px;;
+     color: blue;
+     display: none;
+ }
+ .pageAddressTwo:hover{
+     cursor: pointer;
+ }
+ .pageAddressThree:hover{
+     cursor: pointer;
+ }
+
+ .resourceButton{
+     float: right;
+     height: 30px;
+ }
+
+
+.buttonVue{
+    border-image-source: var(--main-gradient-color);
+    border-image-slice: 1;
+    color: var(--main-color);
+    width: 60px;
+    height: 32px;
+
+}
+.buttonVue:hover{
+    background-image: var(--main-gradient-color);
+    background-blend-mode: normal, normal;
+    color: #fff;
+    width: 60px;
+    height: 32px;
+}

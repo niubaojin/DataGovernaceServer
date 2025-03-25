@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="V3.6.0.20240813.01" author="nbj" >
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="DO_EVENT_TYPE" />
+            </not>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DO_TABLE.sql" />
+    </changeSet>
+
+    <changeSet id="V3.6.0.20241012.02" author="nbj" >
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) AS cnt from all_tables
+                    where owner = 'SHPTSTATISTICS'
+                    and table_name = 'SJGC_DATA_TASK';
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.6.0.20241012.02_DO_TABLE.sql" />
+    </changeSet>
+
+</databaseChangeLog>

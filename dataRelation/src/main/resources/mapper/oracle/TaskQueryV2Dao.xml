@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datarelation.dao.taskinstance.TaskQueryV2Dao">
+    <sql id="commonQuery_where_if">
+        <if test="sourceTableNameInput!=null and  sourceTableNameInput!=''">
+            and upper(SOURCE_TABLE_NAME) like upper('%${sourceTableNameInput}%')
+        </if>
+        <if test="targetTableNameInput!=null and  targetTableNameInput!=''">
+            and upper(TARGET_TABLE_NAME) like upper('%${targetTableNameInput}%')
+        </if>
+        <if test="sourceTypeFilterList!=null">
+            and(
+            <foreach collection="sourceTypeFilterList" item="item" separator="or">
+                <if test="item == null or item == ''">
+                    upper(SOURCE_TYPE) is null
+                </if>
+                <if test="item != null and item != ''">
+                    upper(SOURCE_TYPE) = #{item}
+                </if>
+            </foreach>
+            )
+        </if>
+        <if test="sourceTableProjectFilterList!=null">
+            and(
+            <foreach collection="sourceTableProjectFilterList" item="item" separator="or">
+                <if test="item == null or item == ''">
+                    upper(SOURCE_TABLE_PROJECT) is null
+                </if>
+                <if test="item != null and item != ''">
+                    upper(SOURCE_TABLE_PROJECT) = #{item}
+                </if>
+            </foreach>
+            )
+        </if>
+        <if test="targetTypeFilterList!=null">
+            and(
+            <foreach collection="targetTypeFilterList" item="item" separator="or">
+                <if test="item == null or item == ''">
+                    upper(TARGET_TYPE) is null
+                </if>
+                <if test="item != null and item != ''">
+                    upper(TARGET_TYPE) = #{item}
+                </if>
+            </foreach>
+            )
+        </if>
+        <if test="targetTableProjectFilterList!=null">
+            and(
+            <foreach collection="targetTableProjectFilterList" item="item" separator="or">
+                <if test="item == null or item == ''">
+                    upper(TARGET_TABLE_PROJECT) is null
+                </if>
+                <if test="item != null and item != ''">
+                    upper(TARGET_TABLE_PROJECT) = #{item}
+                </if>
+            </foreach>
+            )
+        </if>
+    </sql>
+
+    <sql id="commonQuery_where_date_one">
+        <if test="taskOpenDate !=null and taskOpenDate !='' ">
+            and to_date(TASK_START_TIME,'yyyy-mm-dd HH24:mi:ss')  <![CDATA[>= ]]> to_date(#{taskOpenDate},'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        <if test="taskEndDate !=null and taskEndDate !='' ">
+            and to_date(TASK_END_TIME,'yyyy-mm-dd HH24:mi:ss') <![CDATA[<= ]]> to_date(#{taskEndDate},'yyyy-mm-dd HH24:mi:ss')
+        </if>
+    </sql>
+
+    <sql id="nodeTypeSelect">
+        <if test="synchronizationStatusFilterList!=null">
+            and (
+            <foreach collection="synchronizationStatusFilterList" item="item" separator="or">
+                <if test=" item != null and item != '' ">
+                    synchronizationStatus = #{item}
+                </if>
+            </foreach>
+            )
+        </if>
+    </sql>
+
+    <delete id="deleteFlow">
+        delete from m_flow where node_type = #{type}
+          and to_char(CREATE_TIME,'yyyy-MM-dd') = substr(#{createTime},0,10)
+    </delete>
+
+    <insert id="insertFlow">
+        insert into M_FLOW
+        (HISTORY_ID,
+        INSTANCE_ID,
+        DAG_ID,
+        INSTANCE_TYPE,
+        DAG_TYPE,
+        STATUS,
+        OP_SEQ,
+        OP_CODE,
+        OWNER,
+        BIZ_DATE,
+        GMT_DATE,
+        NODE_TYPE,
+        PRIORITY,
+        PARA_VALUE,
+        PROJECT_NAME,
+        PROJECT_ID,
+        RELATED_DAG_ID,
+        FINISH_TIME,
+        BEGIN_WAITTIME_TIME,
+        BEGIN_WAITRES_TIME,
+        BEGIN_RUN_TIME,
+        CREATE_TIME,
+        CREATE_USER,
+        MODIFY_TIME,
+        MODIFY_USER,
+        CYCLE_TYPE,
+        CYCLE_TIME,
+        DEPENDENT_TYPE,
+        NODE_NAME,
+        FLOW_NAME,
+        IN_GROUP_ID,
+        RESOURCE_GROUP_IDENTIFIER,
+        BASE_LINE_ID
+        )
+        <foreach collection="list" item="obj" separator="union all">
+            (select
+            #{obj.historyId,jdbcType=NUMERIC},
+            #{obj.instanceId,jdbcType=NUMERIC},
+            #{obj.dagId,jdbcType=NUMERIC},
+            #{obj.instanceType,jdbcType=NUMERIC},
+            #{obj.dagType,jdbcType=NUMERIC},
+            #{obj.status,jdbcType=NUMERIC},
+            #{obj.opSeq,jdbcType=NUMERIC},
+            #{obj.opCode,jdbcType=NUMERIC},
+            #{obj.owner,jdbcType=NUMERIC},
+            to_date(#{obj.bizdate,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.gmtdate,jdbcType=DATE},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.nodeType,jdbcType=NUMERIC},
+            #{obj.priority,jdbcType=NUMERIC},
+            #{obj.paraValue,jdbcType=VARCHAR},
+            #{obj.projectName,jdbcType=VARCHAR},
+            #{obj.projectId,jdbcType=NUMERIC},
+            #{obj.relatedDagId,jdbcType=NUMERIC},
+            to_date(#{obj.finishTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.beginWaitTimeTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.beginWaitResTime,jdbcType=NUMERIC},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.beginRunningTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            to_date(#{obj.createTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.createUser,jdbcType=VARCHAR},
+            to_date(#{obj.modifyTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.modifyUser,jdbcType=VARCHAR},
+            #{obj.cycleType,jdbcType=NUMERIC},
+            to_date(#{obj.cycleTime,jdbcType=NUMERIC},'yyyy-MM-dd HH24:mi;ss'),
+            #{obj.dependentType,jdbcType=NUMERIC},
+            #{obj.nodeName,jdbcType=VARCHAR},
+            #{obj.flowName,jdbcType=VARCHAR},
+            #{obj.inGroupId,jdbcType=NUMERIC},
+            #{obj.resourceGroupIdentifier,jdbcType=VARCHAR},
+            #{obj.baselineId,jdbcType=NUMERIC}
+            from dual)
+        </foreach>
+    </insert>
+
+
+    <select id="getDataSynchronizationReportTwo" parameterType="com.synway.datarelation.pojo.datawork.DataSynchronizationReportPageParams"
+            resultType="com.synway.datarelation.pojo.datawork.DataReportPageReturn">
+        select * from (
+        select distinct INSTANCE_ID as taskId,HISTORY_ID as id, -1 as nodeId,nodeName,cronExpress,
+        source_type as sourceType,source_table_name as sourceTableName,
+        source_table_project as sourceTableProject,target_type as targetType,target_table_name as targetTableName,
+        target_table_project as targetTableProject,to_char(CREATE_TIME_node ,'yyyy-mm-dd HH24:mi:ss') as
+        createTime,to_char(BEGIN_RUN_TIME,'yyyy-mm-dd HH24:mi:ss') as beginRunningTime,
+        to_char(finish_time,'yyyy-mm-dd HH24:mi:ss') as finishTime,task_total_time as taskTotalTime,TASK_AVERAGE_TRAFFIC
+        as taskAverageTraffic,
+        RECORD_WRITING_SPEED as recordWritingSpeed ,READ_RECORDS as readRecords ,READ_FAILURE_RECORDS as
+        readFailureRecords,
+        (READ_RECORDS - READ_FAILURE_RECORDS) as writeRecords,
+        case when status is null then 1 else status end as synchronizationStatus
+        from(
+        select mne.*,mn.*,t2.* from(
+        select * from(
+        select distinct node_name as nodeName,NODE_TYPE,CRON_EXPRESS as cronExpress,CREATE_TIME as CREATE_TIME_node
+        ,ROW_NUMBER() over(partition by node_name order by CREATE_TIME desc) as num
+        from m_node mne
+            where NODE_TYPE = 23
+            <if test="nodeNameInput!=null and  nodeNameInput!=''">
+                and upper(NODE_NAME) like upper('%${nodeNameInput}%')
+            </if>
+        ) where num =1
+        ) mne  left join
+          (
+        select m1.*,ROW_NUMBER() over(partition by INSTANCE_ID||HISTORY_ID order by BEGIN_RUN_TIME desc) as num from m_flow m1
+        where
+            BEGIN_RUN_TIME <![CDATA[>=]]>
+            TO_DATE(#{taskOpenDate}, 'yyyy-mm-dd HH24:mi:ss')
+            and
+            FINISH_TIME <![CDATA[<=]]>
+            TO_DATE(#{taskEndDate}, 'yyyy-mm-dd HH24:mi:ss')
+            and
+            node_type =23
+         ) mn on  mne.nodeName = mn.node_name
+        left join (select *
+            from (select t1.*,
+            ROW_NUMBER() over(partition by TASK_ID order by MESSGAE_INSERT_TIME desc) as num
+            from task_run_analyze t1
+        )
+        where num = 1 union all
+            select *
+            from (select t1.*,
+            ROW_NUMBER() over(partition by id order by MESSGAE_INSERT_TIME desc) as num
+            from task_run_analyze t1
+            where id is not null
+            )
+        where num = 1
+        ) t2 on mn.INSTANCE_ID ||mn.HISTORY_ID = t2.task_id||t2.id
+        <where>
+            1 = 1
+            <include refid="commonQuery_where_if"/>
+        </where>
+        ))
+        <where>
+            <include refid="nodeTypeSelect"/>
+        </where>
+    </select>
+</mapper>

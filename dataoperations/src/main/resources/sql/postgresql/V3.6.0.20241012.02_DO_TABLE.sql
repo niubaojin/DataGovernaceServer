@@ -1,0 +1,132 @@
+-- Create table 任务状态表
+create table SHPTSTATISTICS.SJGC_DATA_TASK
+(
+  SERIAL_NUMERIC    VARCHAR(64),
+  TASK_ID           VARCHAR(64),
+  INSTANCE_ID       VARCHAR(64),
+  TASK_NAME         VARCHAR(256),
+  TASK_CLASS        VARCHAR(256),
+  TASK_SUBCLASS     VARCHAR(256),
+  IN_SOURCE_NAME    VARCHAR(256),
+  IN_CN_NAME        VARCHAR(256),
+  IN_PROTOCOL       VARCHAR(256),
+  OUT_SOURCE_NAME   VARCHAR(256),
+  TASK_STATUS       VARCHAR(64),
+  NODE_IP           VARCHAR(64),
+  NODE_PORT         VARCHAR(64),
+  SOURCE_FILETYPE   VARCHAR(256),
+  TASK_START_TIME   DATE,
+  TASK_END_TIME     DATE,
+  TASK_RUNNING_TIME NUMERIC,
+  CREATE_TIME       DATE
+);
+-- Add comments to the table
+comment on table SHPTSTATISTICS.SJGC_DATA_TASK
+  is '任务状态表';
+-- Add comments to the columns
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.SERIAL_NUMERIC
+  is '记录序列号';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_ID
+  is '任务ID';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.INSTANCE_ID
+  is '实例ID';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_NAME
+  is '任务名称';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_CLASS
+  is '大类';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_SUBCLASS
+  is '小类';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.IN_SOURCE_NAME
+  is '输入数据源名称';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.IN_CN_NAME
+  is '输入数据名称';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.IN_PROTOCOL
+  is '输入数据协议名';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.OUT_SOURCE_NAME
+  is '输出数据源名称';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_STATUS
+  is '任务状态';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.NODE_IP
+  is '节点IP';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.NODE_PORT
+  is '节点端口';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.SOURCE_FILETYPE
+  is '来源文件类型';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_START_TIME
+  is '任务开始时间';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_END_TIME
+  is '任务结束时间';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.TASK_RUNNING_TIME
+  is '任务运行时长';
+comment on column SHPTSTATISTICS.SJGC_DATA_TASK.CREATE_TIME
+  is '入表时间';
+
+
+-- Create table 接入处理入库数据汇总表
+create table SHPTSTATISTICS.SJGC_DATA_SUMMARY
+(
+  SERIAL_NUMERIC   VARCHAR(64),
+  INSTANCE_ID     VARCHAR(64),
+  DATA_TYPE       VARCHAR(64),
+  NODE_IP         VARCHAR(64),
+  NODE_PORT       VARCHAR(64),
+  IN_CN_NAME      VARCHAR(256),
+  IN_PROTOCOL     VARCHAR(256),
+  IN_SUCCESS_NUM  NUMERIC,
+  IN_SUCCESS_SIZE NUMERIC,
+  OUT_CN_NAME     VARCHAR(256),
+  OUT_EN_NAME     VARCHAR(256),
+  OUT_PROTOCOL    VARCHAR(256),
+  OUT_SUCCESS_NUM NUMERIC,
+  OUT_ERROR_NUM   NUMERIC,
+  OUT_BIDDING_NUM NUMERIC,
+  STORE_TYPE      VARCHAR(256),
+  PROJECT_NAME    VARCHAR(256),
+  PUSH_DATE       DATE,
+  PUSH_HOUR       NUMERIC,
+  CREATE_TIME     DATE
+);
+-- Add comments to the table
+comment on table SHPTSTATISTICS.SJGC_DATA_SUMMARY
+  is '接入处理入库数据汇总表';
+-- Add comments to the columns
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.SERIAL_NUMERIC
+  is '记录序列号';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.INSTANCE_ID
+  is '实例ID';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.DATA_TYPE
+  is '标识';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.NODE_IP
+  is '节点IP';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.NODE_PORT
+  is '节点端口';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.IN_CN_NAME
+  is '输入数据名称';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.IN_PROTOCOL
+  is '输入数据协议名';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.IN_SUCCESS_NUM
+  is '输入数据条数';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.IN_SUCCESS_SIZE
+  is '输入数据大小';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.OUT_CN_NAME
+  is '输出数据名称';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.OUT_EN_NAME
+  is '输出数据英文表名';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.OUT_PROTOCOL
+  is '输出数据协议名';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.OUT_SUCCESS_NUM
+  is '输出成功条数';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.OUT_ERROR_NUM
+  is '输出异常条数';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.OUT_BIDDING_NUM
+  is '输出中标条数';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.STORE_TYPE
+  is '输出平台';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.PROJECT_NAME
+  is '输出平台项目空间';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.PUSH_DATE
+  is '推送日期';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.PUSH_HOUR
+  is '数据时点';
+comment on column SHPTSTATISTICS.SJGC_DATA_SUMMARY.CREATE_TIME
+  is '入表时间';

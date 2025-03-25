@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+
+	<id>${version}</id>
+	<formats>
+<!--		<format>tar.gz</format>&lt;!&ndash; 生成的压缩包后缀名 &ndash;&gt;-->
+		<format>zip</format><!-- 生成的压缩包后缀名 -->
+	</formats>
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<fileSets>
+		<!-- 将项目的配置文件放在/config/目录下 -->
+		<fileSet>
+			<directory>${project.basedir}/src/main/resources</directory>
+			<includes>
+				<include>*.properties</include>
+				<!--<include>*.xml</include>-->
+			</includes>
+			<outputDirectory>config</outputDirectory>
+		</fileSet>
+		<!-- 将项目的启动脚本（如果有的话）放在/目录下， -->
+		<fileSet>
+			<directory>${project.basedir}/src/main/resources/bin</directory>
+			<includes>
+				<include>**.sh</include>
+			</includes>
+			<outputDirectory>${file.separator}</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/src/main/resources/sql</directory>
+			<includes>
+				<include>**/*.*</include>
+			</includes>
+			<outputDirectory>sql</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}\src\main\resources</directory>
+			<includes>
+				<include>package_config.xml</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<!--添加模板文件打包-->
+		<fileSet>
+			<directory>${project.basedir}/src/main/resources</directory>
+			<includes>
+				<include>static/tempfile/</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<!-- 将依赖的jar放入压缩文件的/目录下 -->
+		<fileSet>
+			<directory>${project.basedir}/target</directory>
+			<includes>
+				<include>*.jar</include>
+			</includes>
+            <outputDirectory>${file.separator}</outputDirectory>
+		 </fileSet>
+	</fileSets>
+	<dependencySets>
+		<dependencySet>
+			<useProjectArtifact>true</useProjectArtifact>
+			<outputDirectory>lib</outputDirectory>
+			<scope>runtime</scope>
+		</dependencySet>
+	</dependencySets>
+</assembly>

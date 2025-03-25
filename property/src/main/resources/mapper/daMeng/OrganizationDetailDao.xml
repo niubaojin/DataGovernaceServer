@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.OrganizationDetailDao">
+
+    <select id="getDataCountStatistics" resultType="com.synway.property.pojo.organizationdetail.DataStatistics">
+        select to_char(to_date(d.statistics_time,'yyyy-MM-dd'),'yyyy-MM-dd')
+                dataTime,nvl(t.tableNameEn,'') tableNameEn,
+                nvl(t.tableAllCount,0) totalCount,
+                nvl(yesterdayCount,0) incrementCount,
+                nvl(t.tableAllSize,0) as tableAllSize from(
+        select TABLE_NAME_EN tableNameEn ,
+        TRUNC(TABLE_ALL_COUNT/ 10000, 2) tableAllCount,
+        TRUNC(YESTERDAY_COUNT/10000, 2) yesterdayCount,
+        TRUNC(TABLE_SIZE / (1024 * 1024 * 1024), 2) tableAllSize,
+        to_char(statistics_time, 'yyyy-MM-dd') statistics_time
+        from table_organization_assets
+        where upper(TABLE_PROJECT) = upper(#{tableProject}) and upper(TABLE_NAME_EN)=upper(#{tableNameEn})
+        and upper(TABLE_TYPE) = upper(#{tableType})
+        and statistics_time >= TO_DATE(#{beginTime},'yyyy-MM-dd hh24:mi:ss') - 8
+        and statistics_time <![CDATA[<]]> TO_DATE(#{endTime},'yyyy-MM-dd hh24:mi:ss')
+        )t
+        right join (
+        select to_char(to_date(#{beginTime},'yyyy-MM-dd') - 8 + ROWNUM - 1,'yyyy-MM-dd') statistics_time from dual
+        connect by ROWNUM<![CDATA[<=]]>to_date(#{endTime},'yyyy-MM-dd') - (to_date(#{beginTime},'yyyy-MM-dd') - 8)
+        ) d on t.statistics_time = d.statistics_time order by d.statistics_time
+    </select>
+    <select id="getDataNum" resultType="com.synway.property.pojo.organizationdetail.DataNum">
+        select case
+                 when table_size = '0' then '0G'
+                 when to_char(table_size / 1073741824, 'fm999999999990.00') = '0.00' then '0G'
+                 else to_char(table_size / 1073741824, 'fm999999999990.00') || 'G'
+               end as tableAllSize,
+               case
+                 when table_all_count = '0' then '0条'
+                 when to_char(table_all_count / 10000, 'fm999999999990.00') = '0.00' then '0条'
+                 else to_char(table_all_count / 10000, 'fm999999999990.00') || '万条'
+               end as tableAllCount,
+               case
+                 when average_daily_volume = '0' then '0条'
+                 when to_char(average_daily_volume / 10000, 'fm999999999990.00') = '0.00' then '0条'
+                 else to_char(average_daily_volume / 10000, 'fm999999999990.00') || '万条'
+               end as averageDailyCount,
+               case
+                 when average_daily_size = '0' then '0G'
+                 when to_char(average_daily_size / 1073741824, 'fm999999999990.00') = '0.00' then '0G'
+                 else to_char(average_daily_size / 1073741824, 'fm999999999990.00') || 'G'
+               end as averageDailySize
+          from (select TABLE_TYPE,
+                       TABLE_NAME_EN,
+                       TABLE_PROJECT,
+                       table_size,
+                       table_all_count,
+                       average_daily_volume,
+                       average_daily_size
+                  from (SELECT j.TABLE_TYPE,
+                               j.TABLE_NAME_EN,
+                               j.TABLE_PROJECT,
+                               j.table_size,
+                               j.table_all_count,
+                               j.average_daily_volume,
+                               j.average_daily_size,
+                               row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
+                          FROM table_organization_assets j
+                         where STATISTICS_TIME >= trunc(sysdate)) h
+                 WHERE h.rnn = 1)
+         where upper(TABLE_TYPE) = upper(#{tableType,jdbcType=VARCHAR})
+           and upper(TABLE_NAME_EN) = upper(#{tableNameEn,jdbcType=VARCHAR})
+           and upper(TABLE_PROJECT) = upper(#{tableProject,jdbcType=VARCHAR})
+    </select>
+    <select id="getResourceId" resultType="java.lang.String">
+        select resourceid
+          from (select distinct resourceid, rownum as rn
+                  from table_organization_assets
+                 where upper(table_name_en) = upper(#{tableNameEn,jdbcType=VARCHAR})
+                   and upper(table_project) = upper(#{tableProject,jdbcType=VARCHAR})
+                   and upper(table_type) = upper(#{tableType,jdbcType=VARCHAR})
+                   and resourceid is not null
+                   and rownum = 1) t
+    </select>
+    <select id="getRecentDataCountAndSize" resultType="com.synway.property.pojo.organizationdetail.DataNum">
+        select
+        case when PARTITIONSIZE = '0' then '0'
+        when to_char(PARTITIONSIZE/1073741824,'fm999999999990.00')='0.00' then '0'
+        else
+        to_char(PARTITIONSIZE/1073741824,'fm999999999990.00') end as averageDailySize,
+        case when PARTITIONCOUNT = '0' then '0'
+        when to_char(PARTITIONCOUNT/10000,'fm999999999990.00')='0.00' then '0'
+        else
+        to_char(PARTITIONCOUNT/10000,'fm999999999990.00') end as averageDailyCount
+        from SYNLTE.SYNDMG_TABLE_ALL
+        where partitiondate<![CDATA[<]]>to_char(sysdate,'yyyyMMdd')
+        and  partitiondate>to_char(sysdate-11,'yyyyMMdd')
+        and TABLETYPE = #{tableType,jdbcType=VARCHAR}
+        and upper(TABLENAME) = upper(#{tableNameEn,jdbcType=VARCHAR})
+        and upper(TABLEPROJECT) = upper(#{tableProject,jdbcType=VARCHAR})
+    </select>
+    <select id="getRegisterTableNameChByEn" resultType="java.lang.String">
+        select TABLE_NAME_CH from SYNLTE.table_register_info where upper(table_name) = #{tableNameEn,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getTableOrganizationInfo" resultType="com.synway.property.pojo.DetailedTableByClassify">
+        select PRIMARY_ORGANIZATION_CH||'->'||SECONDARY_ORGANIZATION_CH as organizationClassifyCh,
+        UPDATE_DATE as updateDate,LIFE_CYCLE as lifeCycle from
+         (SELECT
+            j.PRIMARY_ORGANIZATION_CH,
+            case when j.PRIMARY_ORGANIZATION_CH = '原始库' then j.THREELEVEL_ORGANIZATION_CH else j.SECONDARY_ORGANIZATION_CH end as SECONDARY_ORGANIZATION_CH,
+            j.TABLE_TYPE,
+            j.TABLE_NAME_EN,
+            j.TABLE_PROJECT,
+            j.UPDATE_DATE,
+            j.LIFE_CYCLE,
+            row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME
+            DESC ) AS rnn
+            FROM
+            table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate)
+            ) h
+            WHERE
+            h.rnn = 1 and upper(TABLE_TYPE) = upper(#{tableType,jdbcType=VARCHAR})
+      and upper(TABLE_NAME_EN) = upper(#{tableNameEn,jdbcType=VARCHAR})
+      and upper(TABLE_PROJECT) = upper(#{tableProject,jdbcType=VARCHAR})
+    </select>
+</mapper>

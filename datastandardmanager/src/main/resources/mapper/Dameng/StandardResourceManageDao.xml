@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.master.StandardResourceManageDao">
+
+    <select id="getAllInputObject" resultType="com.synway.datastandardmanager.pojo.InputObjectCreate">
+        select f6.sys_id AS outSysId ,f6.SYS_SOURCE AS outOobjSource from STANDARDIZE_OUTPUTOBJECT f5 inner join STANDARDIZE_OBJECT f6 on f5.OBJ_GUID = f6.obj_guid
+        <where>
+            f5.OOBJ_STATUS = 1
+            <if test="tableId!= null and tableId != ''">
+                and UPPER(obj_engname) = UPPER(#{tableId})
+            </if>
+        </where>
+    </select>
+    <!--STANDARDIZE_OBJECT_web-->
+    <select id="getAllInputObjectRelation" resultType="com.synway.datastandardmanager.pojo.InputObjectCreate">
+        select inputSysId,
+               inputObjEngName,
+               sourceTableName,
+               dataId,
+               tableId,
+               centerId,
+               inputObjChiName,
+               inputIobjSource,
+               iorStatus,
+               outSysId,
+               outObjEngName,
+               outObjChiName,
+               outOobjSource,
+               insertDate,
+               tableRealName
+          from (select f4.sys_id as inputSysId,
+                       f4.obj_engname as inputObjEngName,
+                       f4.obj_chiname as sourceTableName,
+                       f4.data_id as dataId,
+                       f4.table_id as tableId,
+                       f4.center_Id as centerId,
+                       case
+                         when f4.obj_memo is not null then f4.obj_memo else f4.OBJ_CHINAME
+                       end as inputObjChiName,
+                       f4.iobj_source as inputIobjSource,
+                       f1.IOR_STATUS as iorStatus,
+                       f7.sys_id AS outSysId,
+                       f7.obj_engname AS outObjEngName,
+                       f7.obj_chiname AS outObjChiName,
+                       f7.oobj_source AS outOobjSource,
+                       f4.insert_date as insertDate,
+                       case
+                         when f4.data_id is not null then f4.table_id else f8.tablename
+                       end as tableRealName
+                  from standardize_inputobjectrelate f1
+                 inner join (select sys_id,
+                                   OBJ_ENGNAME,
+                                   data_id,
+                                   table_id,
+                                   OBJ_CHINAME,
+                                   iobj_source,
+                                   iobj_guid,
+                                   insert_date,
+                                   obj_memo,
+                                   center_Id
+                              from standardize_inputobject f2
+                             inner join standardize_object f3 on f3.obj_guid =
+                                                                 f2.obj_guid
+                             where f2.iobj_status = 1) f4 on f1.iobj_guid = f4.iobj_guid
+                 inner join (select oobj_guid,
+                                   sys_id,
+                                   OBJ_ENGNAME,
+                                   OBJ_CHINAME,
+                                   oobj_source
+                              from standardize_outputobject f5
+                             inner join standardize_object f6 on f5.OBJ_GUID = f6.obj_guid
+                             where f5.OOBJ_STATUS = 1) f7 on f1.OOBJ_GUID =
+                                                             f7.oobj_guid
+                  left join (select tablename, tableid from synlte."OBJECT") f8 on f8.tableid = f4.OBJ_ENGNAME)
+        <where>
+            iorStatus = 1
+            <if test="tableId!= null and tableId != ''">
+                and UPPER(outObjEngName) = UPPER(#{tableId})
+            </if>
+        </where>
+        order by insertDate desc
+    </select>
+
+    <select id="getSourceRelationByTableName" resultType="com.synway.datastandardmanager.pojo.InputObjectCreate" parameterType="java.lang.String">
+        select obj_chiname as inputObjChiName,
+               t.tablename as tableRealName,
+               sys_id      as inputSysId,
+               sys_source  as inputIobjSource,
+               obj_engname as inputObjEngName,
+               iobj_guid   as objGuid
+          from (select obj_chiname, sys_id, sys_source, obj_engname, iobj_guid
+                  from standardize_inputobject f2
+                 inner join standardize_object f3 on f3.obj_guid = f2.obj_guid
+                 where f2.iobj_status = 1) so
+         right join (select sourceid, tablename
+                       from (select sourceid, tablename
+                               from synlte."object"
+                              where deleted = 0
+                                and upper(relate_tablename) = 'OBJECTFIELD'
+                              order by sourceid desc) x
+                      where upper(tablename) = upper(#{tableName,jdbcType=VARCHAR})
+                        and rownum = 1
+                        and sourceid is not null) t on upper(t.sourceid) = upper(so.obj_engname)
+    </select>
+
+    <select id="getOutputGuidbYId" resultType="java.lang.String">
+        select f1.oobj_guid from STANDARDIZE_OUTPUTOBJECT f1 inner join STANDARDIZE_OBJECT f2 on  f1.obj_guid = f2.obj_guid
+        where UPPER(f2.OBJ_ENGNAME) = UPPER(#{outputTableId})
+        and  f2.SYS_ID=#{sysId} and f2.SYS_SOURCE=#{ownerFactoryNum}
+    </select>
+
+    <insert id="insertInputObjectRelate" >
+        insert into STANDARDIZE_INPUTOBJECTRELATE(
+            IOBJ_GUID,
+            OOBJ_GUID,
+            IOR_MEMO,
+            IOR_STATUS,
+            IOR_SOURCE
+        ) values (
+           #{inputObjGuid},
+           #{outputObjGuid},
+           '',
+           1,
+           #{inputIobjSource}
+        )
+    </insert>
+
+
+    <select id="getInputGuidById" resultType="java.lang.String">
+    select f1.IOBJ_GUID from STANDARDIZE_INPUTOBJECT f1 inner join STANDARDIZE_OBJECT f2
+        on  f1.obj_guid = f2.obj_guid
+        where UPPER(f2.OBJ_ENGNAME) = UPPER(#{inputDataId})
+           and f2.sys_id = #{inputSourceCode}
+           and f1.IOBJ_SOURCE=#{inputSourceFirm,jdbcType=INTEGER}
+    </select>
+
+    <delete id="updateInputObjectRelateDao">
+      delete from STANDARDIZE_INPUTOBJECTRELATE
+         where IOBJ_GUID = #{inputGuid} and OOBJ_GUID = #{outputGuid}
+    </delete>
+    <!--update STANDARDIZE_INPUTOBJECTRELATE set IOR_STATUS = 0-->
+
+    <select id="selectDataIsExist" resultType="java.util.Map">
+     select max(decode(typeName, 'used', oneCount, 0)) as usedCount,
+        max(decode(typeName, 'disableUsed', oneCount, 0)) as disableUsedCount from(
+        select 'used'  as typeName, count(*) as oneCount from STANDARDIZE_INPUTOBJECTRELATE
+        where IOBJ_GUID = #{inputGuid}
+         and OOBJ_GUID = #{outputGuid}
+         and  IOR_SOURCE=#{inputIobjSource} and IOR_STATUS = 1
+        union ALL
+        select 'disableUsed'  as typeName, count(*) as oneCount from STANDARDIZE_INPUTOBJECTRELATE
+        where IOBJ_GUID = #{inputGuid}
+         and OOBJ_GUID = #{outputGuid}
+         and  IOR_SOURCE= #{inputIobjSource} and IOR_STATUS = 0
+        )
+    </select>
+
+    <update id="updateInputObjectRelate">
+        update STANDARDIZE_INPUTOBJECTRELATE set IOR_STATUS = 1
+        where IOBJ_GUID = #{inputObjGuid} and OOBJ_GUID= #{outputObjGuid} and IOR_SOURCE=#{inputIobjSource}
+    </update>
+
+
+    <select id="getObjGuidByTableId" resultType="java.lang.String">
+        select OBJ_GUID from STANDARDIZE_object where UPPER(OBJ_ENGNAME) = UPPER(#{tableId}) and rownum = 1
+    </select>
+
+    <insert id="insertObjectDao" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+        insert into STANDARDIZE_object(SYS_ID , OBJ_ENGNAME , OBJ_CHINAME , SYS_SOURCE,DATA_ID,CENTER_ID,obj_memo) VALUES(
+          #{codeTextTd} ,#{tableId} , #{dataSourceName} ,#{ownerFactory},#{dataId},#{centerId},#{objMemo}
+        )
+    </insert>
+
+    <insert id="insertOutputObject">
+        INSERT into STANDARDIZE_OUTPUTOBJECT(OBJ_GUID , OOBJ_RESERVENAME_XML , OOBJ_TYPE , OOBJ_STATUS ,OOBJ_SOURCE)
+        values(#{objGuid} , #{xml} , #{oobjType} , #{oobjStatus} ,#{oobjSource})
+    </insert>
+
+
+    <!--select max(OBJECTID) from STANDARDIZE_OBJECT_web-->
+    <select id="getMaxObjectId" resultType="java.lang.String">
+        select max(OBJECTID) from synlte."OBJECT"
+    </select>
+
+    <!--STANDARDIZE_OBJECT_web-->
+    <insert id="addObjectMessageDao" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+        INSERT into synlte."OBJECT" (OBJECTID,OBJECTNAME,OBJECTSTATE,TABLEID,TABLENAME,STORETYPE,
+            DATA_SOURCE,DBSOURCE,sourceid,OBJECTMEMO,OBJECTFLAG,HD_DBSOURCE,HIVETABLENAME,DATATYPE,relate_tablename,
+            ISACTIVETABLE,UPDATETIME,CREATOR,UPDATER,CREATETIME,VERSION,"VERSIONS",SECRETLEVEL,SJZYBQ1,SJZYBQ2,SJZYBQ3,SJZYBQ4,SJZYBQ5,SJZYBQ6,
+            SJZZYJFLVALLUE,SJZZEJFLVALUE,SJZYLYLXVALUE,STANDARD_TYPE,DELETED)
+        VALUES(#{objectId} ,#{dataSourceName}, #{storageTableStatus},upper(#{tableId}) ,#{realTablename} ,#{storageDataMode,jdbcType=VARCHAR},
+        #{codeTextTd},'JZ_RESOURCE', #{sourceId},#{objectMemo,jdbcType=VARCHAR},1,'JZ_RESOURCE',#{realTablename},#{dataType,jdbcType=VARCHAR}
+          ,'OBJECTFIELD',#{isActiveTable},#{updateTimeRel,jdbcType=TIMESTAMP},#{creator,jdbcType=VARCHAR},#{updater,jdbcType=VARCHAR},#{createTimeRel,jdbcType=TIMESTAMP},
+          #{version},#{versions},#{dataLevel,jdbcType=VARCHAR},#{sjzybq1,jdbcType=VARCHAR},#{sjzybq2,jdbcType=VARCHAR},
+          #{sjzybq3,jdbcType=VARCHAR},#{sjzybq4,jdbcType=VARCHAR},#{sjzybq5,jdbcType=VARCHAR},#{sjzybq6,jdbcType=VARCHAR},#{SJZZYJFLVALLUE,jdbcType=VARCHAR},
+          #{SJZZEJFLVALUE,jdbcType=VARCHAR},#{SJZYLYLXVALUE,jdbcType=VARCHAR},#{standardType},0
+          )
+    </insert>
+
+    <!--STANDARDIZE_OBJECT_web-->
+    <update id="updateObjectMessageDao" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+          update synlte."OBJECT" set OBJECTNAME = #{dataSourceName} , OBJECTSTATE =#{storageTableStatus}
+            , TABLENAME =#{realTablename} , STORETYPE =#{storageDataMode,jdbcType=VARCHAR} ,DATA_SOURCE=#{codeTextTd}
+            , sourceid = #{sourceId} , OBJECTMEMO = #{objectMemo,jdbcType=VARCHAR} ,HIVETABLENAME=#{realTablename},
+            DATATYPE = #{dataType,jdbcType=INTEGER}, OBJECTFLAG = 1, HD_DBSOURCE = 'JZ_RESOURCE',DBSOURCE = 'JZ_RESOURCE',
+            ISACTIVETABLE = #{isActiveTable},UPDATETIME = sysdate,
+            UPDATER = #{updater},CREATOR = #{creator},VERSION=#{version},SECRETLEVEL=#{dataLevel},SJZYBQ1=#{sjzybq1,jdbcType=VARCHAR},
+            SJZYBQ2=#{sjzybq2,jdbcType=VARCHAR},SJZYBQ3=#{sjzybq3,jdbcType=VARCHAR},SJZYBQ4=#{sjzybq4,jdbcType=VARCHAR},
+            SJZYBQ5=#{sjzybq5,jdbcType=VARCHAR},SJZYBQ6=#{sjzybq6,jdbcType=VARCHAR},STANDARD_TYPE=#{standardType,jdbcType=INTEGER},SJZZYJFLVALLUE=#{SJZZYJFLVALLUE,jdbcType=VARCHAR},
+            SJZZEJFLVALUE=#{SJZZEJFLVALUE,jdbcType=VARCHAR},SJZYLYLXVALUE=#{SJZYLYLXVALUE,jdbcType=VARCHAR}
+        where UPPER(OBJECTID)=UPPER(#{objectId})
+    </update>
+
+    <!--STANDARDIZE_OBJECT_web-->
+    <update id="updateObjectMessageByTableId" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+        <if test="realTablename !=null and realTablename != ''">
+            update synlte."OBJECT" set OBJECTNAME = #{dataSourceName} , OBJECTSTATE =#{storageTableStatus}, OBJECTMEMO = #{objectMemo,jdbcType=VARCHAR}
+            , sourceid = #{sourceId},TABLENAME =#{realTablename} , STORETYPE =#{storageDataMode} , DATA_SOURCE=#{codeTextTd},
+            ISACTIVETABLE = #{isActiveTable},SJZYBQ1=#{sjzybq1,jdbcType=VARCHAR},SJZYBQ2=#{sjzybq2,jdbcType=VARCHAR},
+            SJZYBQ3=#{sjzybq3,jdbcType=VARCHAR},SJZYBQ4=#{sjzybq4,jdbcType=VARCHAR},SJZYBQ5=#{sjzybq5,jdbcType=VARCHAR},SJZYBQ6=#{sjzybq6,jdbcType=VARCHAR}
+            SJZZYJFLVALLUE=#{SJZZYJFLVALLUE,jdbcType=VARCHAR},SJZZEJFLVALUE=#{SJZZEJFLVALUE,jdbcType=VARCHAR},SJZYLYLXVALUE=#{SJZYLYLXVALUE,jdbcType=VARCHAR},
+            STANDARD_TYPE=#{standardType} where upper(TABLEID)=upper(#{tableId})
+        </if>
+        <if test="realTablename == null or realTablename == ''">
+            update synlte."OBJECT" set OBJECTNAME = #{dataSourceName} , OBJECTSTATE =#{storageTableStatus},OBJECTMEMO = #{objectMemo,jdbcType=VARCHAR}
+            , sourceid = #{sourceId} , STORETYPE =#{storageDataMode},
+            ISACTIVETABLE = #{isActiveTable} where upper(TABLEID)=upper(#{tableId})
+        </if>
+    </update>
+
+    <update id="updateObjectDao" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+        update  STANDARDIZE_object set SYS_ID = #{codeTextTd} , OBJ_CHINAME=#{dataSourceName}
+         , SYS_SOURCE =#{ownerFactory}  where UPPER(OBJ_GUID) = UPPER(#{oobjGuidStr})
+    </update>
+
+    <select id="getObjGuidByTreeParam" resultType="java.lang.String">
+        select d.obj_guid from (
+        select f1.obj_guid from STANDARDIZE_OBJECT  f1
+                   where UPPER(OBJ_ENGNAME) = UPPER(#{sourceProtocol})
+                   and SYS_ID = #{sourceSystem}
+                   and SYS_SOURCE = #{sourceFirm}) d
+                   where d.obj_guid  not  in(
+                   select f2.OBJ_GUID  from STANDARDIZE_OBJECT f2 inner join STANDARDIZE_OUTPUTOBJECT f3
+                   on f2.obj_guid = f3.obj_guid ) and rownum = 1
+    </select>
+
+
+    <insert id="insertStandardizeObjectDao">
+        insert into STANDARDIZE_OBJECT(SYS_ID , OBJ_ENGNAME , OBJ_CHINAME,SYS_SOURCE,DATA_ID,TABLE_ID,center_id,obj_memo) values(
+          #{sourceSystem},#{sourceProtocol},#{tableName},#{sourceFirm},#{dataId},#{tableId},#{centerId},#{objMemo}
+        )
+    </insert>
+
+
+    <insert id="insertInputObjectDao">
+        INSERT into STANDARDIZE_INPUTOBJECT(OBJ_GUID , IOBJ_TYPE ,IOBJ_STATUS ,IOBJ_SOURCE) values(
+          #{objGuid},#{objType},#{objStatus},#{objSource}
+        )
+    </insert>
+
+    <select id="getCountSourceRelationByInpuObject" resultType="java.lang.Integer">
+        select COUNT(*) from STANDARDIZE_INPUTOBJECTRELATE F4
+          INNER join (select * from STANDARDIZE_OUTPUTOBJECT F1  inner join STANDARDIZE_OBJECT F2 ON F1.OBJ_GUID = F2.OBJ_GUID
+          WHERE upper(F2.OBJ_ENGNAME) = upper(#{tableId})) F3
+          ON F3.OOBJ_GUID = F4.OOBJ_GUID where f4.iobj_guid =#{inputObjGuid}
+    </select>
+
+    <select id="getOObjGuidByTableId" resultType="java.lang.String">
+      select oobj_guid from STANDARDIZE_OUTPUTOBJECT F1
+        inner join STANDARDIZE_OBJECT F2 ON F1.OBJ_GUID = F2.OBJ_GUID
+        WHERE upper(F2.OBJ_ENGNAME) = upper(#{tableId}) and rownum = 1
+    </select>
+
+    <select id="getTableIdByNameClassify" resultType="java.lang.String">
+      select SJXJBM from (
+        select SJXJBM  from CLASSIFY_INTERFACE_ALL_DATE where UPPER(SJXJZWMC) = UPPER(#{tableName}) and SJXJBM is not null
+        UNION all
+        select SJXJBM from CLASSIFY_INTERFACE_ALL_DATE where UPPER(TABLENAME) = UPPER(#{tableName}) and SJXJBM is not null
+        )
+         where rownum = 1
+    </select>
+
+    <!--   STANDARDIZE_OBJECT_web  -->
+    <select id="getCountObjectByTableId" resultType="java.lang.Integer">
+        select count(*) from synlte."OBJECT" where upper(TABLEID) = upper(#{tableId})
+    </select>
+
+    <select id="getTableIdByObjectId" resultType="java.lang.String">
+        select tableid from synlte."OBJECT" where objectid=#{objectId}
+    </select>
+
+    <select id="getObjectCountByObjectId" resultType="java.lang.Integer">
+        SELECT count(*) from synlte."OBJECT" where upper(OBJECTID) = upper(#{objectId})
+    </select>
+
+    <update id="updateObjectTableId">
+        UPDATE synlte."OBJECT" set TABLEID =upper(#{newTableId}) where upper(TABLEID) =upper(#{oldTableId})
+    </update>
+
+    <select id="getOutPutObjGuidByTableId" resultType="java.lang.String">
+        select F2.OBJ_GUID from STANDARDIZE_OUTPUTOBJECT F1
+        inner join STANDARDIZE_OBJECT F2 ON F1.OBJ_GUID = F2.OBJ_GUID
+        WHERE upper(F2.OBJ_ENGNAME) = upper(#{tableId})
+        and f2.SYS_ID=#{sysId} and f2.SYS_SOURCE=#{ownerFactoryNum} and rownum = 1
+    </select>
+
+    <update id="updateStandardizeObjectByGuid">
+        UPDATE STANDARDIZE_OBJECT set OBJ_ENGNAME = upper(#{newTableId}) where OBJ_GUID=#{objGuid}
+    </update>
+
+    <select id="selectCountStandardizeCount"  resultType="java.lang.Integer">
+        select count(d.obj_guid) from (
+        select f1.obj_guid from STANDARDIZE_OBJECT  f1 INNER join Standardize_Outputobject f3 on f1.obj_guid = f3.obj_guid
+                   where UPPER(f1.OBJ_ENGNAME) = UPPER(#{tableId})) d
+                   where d.obj_guid  not  in(
+                  select f2.obj_GUID from Standardize_Inputobject f1
+       inner join STANDARDIZE_OBJECT f2 on  f1.obj_guid = f2.obj_guid )
+    </select>
+
+    <select id="getOutputGuidbYTableId" resultType="java.lang.String">
+      select f1.oobj_guid from STANDARDIZE_OUTPUTOBJECT f1
+       inner join STANDARDIZE_OBJECT f2 on  f1.obj_guid = f2.obj_guid
+        where UPPER(f2.OBJ_ENGNAME) = UPPER(#{tableId}) and rownum = 1
+    </select>
+
+
+    <select id="getOutputGuidNotInInput" resultType="java.lang.String">
+    select d.obj_guid from (
+    select f1.obj_guid from STANDARDIZE_OBJECT  f1 left join Standardize_Outputobject f3 on f1.obj_guid = f3.obj_guid
+               where UPPER(OBJ_ENGNAME) = UPPER(#{tableId})) d
+               where d.obj_guid  not  in(
+              select f2.obj_GUID from Standardize_Inputobject f1
+           inner join STANDARDIZE_OBJECT f2 on  f1.obj_guid = f2.obj_guid ) and rownum = 1
+    </select>
+
+    <delete id="deleteStandardInputObjectDao">
+        delete from standardize_inputobject where IOBJ_GUID = #{inputGuid}
+    </delete>
+
+    <select id="getObjGuidByObject" resultType="java.lang.String">
+        select obj_guid from standardize_object f3
+            where f3.obj_guid  not  in(
+                              select f2.obj_GUID from Standardize_Inputobject f1
+                   inner join STANDARDIZE_OBJECT f2 on  f1.obj_guid = f2.obj_guid)
+                   and upper(f3.obj_engname) = upper(#{tableId}) and f3.sys_id = #{sysId}
+    </select>
+
+
+    <select id="getCountObjectByIdName">
+        select count(*) from synlte."OBJECT" where upper(TABLEID) = upper(#{tableId})
+           and upper(TABLENAME) = upper(#{tableName})
+    </select>
+
+    <select id="getOldTableNameByObjectIdDao" resultType="java.lang.String">
+        select tablename from synlte."OBJECT" where objectid =#{objectId}
+    </select>
+
+    <select id="getStandardOutTableIdBySourceIdDao" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select distinct outobjengname as value ,objectname as label from(
+        SELECT outobjengname, objectname FROM (
+        SELECT f4.sys_id as inputSysId, f4.OBJ_ENGNAME as inputObjEngName ,
+        f4.data_id as dataId, f4.table_id as tableId,
+        f4.OBJ_CHINAME as inputObjChiName ,f4.IOBJ_SOURCE as inputIobjSource ,
+        f1.IOR_STATUS as iorStatus,f7.sys_id AS outSysId , f7.OBJ_ENGNAME AS outObjEngName ,
+        f7.OBJ_CHINAME AS outObjChiName ,
+        f7.OOBJ_SOURCE AS outOobjSource,
+        f8.tablename as tableRealName,
+				f8.objectname as objectname
+        FROM STANDARDIZE_INPUTOBJECTRELATE  f1
+        inner join  (select sys_id, OBJ_ENGNAME, data_id, table_id, OBJ_CHINAME,  IOBJ_SOURCE, IOBJ_GUID
+         from STANDARDIZE_INPUTOBJECT f2 inner join STANDARDIZE_OBJECT f3 on f3.OBJ_GUID = f2.obj_guid
+        where f2.iobj_status = 1) f4 on upper(f1.IOBJ_GUID) = upper(f4.IOBJ_GUID)
+        inner join  (select sys_id, OBJ_ENGNAME, OBJ_CHINAME,  OOBJ_SOURCE,oobj_guid
+          from STANDARDIZE_OUTPUTOBJECT f5 inner join STANDARDIZE_OBJECT f6 on f5.OBJ_GUID = f6.obj_guid
+        where f5.OOBJ_STATUS = 1) f7 on upper(f1.OOBJ_GUID) = upper(f7.oobj_guid)
+        inner join (select tablename ,tableid ,objectname from synlte."OBJECT" where deleted = 0 and relate_tablename = 'OBJECTFIELD' and upper(sourceid) = upper(#{sourceId,jdbcType=VARCHAR}) ) f8 on upper(f8.tableid) = upper(f7.OBJ_ENGNAME)
+          )where iorStatus = 1
+			) t1
+    </select>
+
+    <select id="findStandByDataIdDao" resultType="java.lang.Integer">
+       select count(distinct outobjengname) as value  from(SELECT outobjengname FROM (
+        SELECT f4.sys_id as inputSysId, f4.OBJ_ENGNAME as inputObjEngName ,
+        f4.data_id as dataId, f4.table_id as tableId,
+        f4.OBJ_CHINAME as inputObjChiName ,f4.IOBJ_SOURCE as inputIobjSource ,
+        f1.IOR_STATUS as iorStatus,f7.sys_id AS outSysId , f7.OBJ_ENGNAME AS outObjEngName ,
+        f7.OBJ_CHINAME AS outObjChiName ,
+        f7.OOBJ_SOURCE AS outOobjSource,
+        f8.tablename as tableRealName,
+				f8.objectname as objectname
+        FROM STANDARDIZE_INPUTOBJECTRELATE  f1
+        inner join  (select sys_id, OBJ_ENGNAME, data_id, table_id, OBJ_CHINAME, IOBJ_SOURCE ,IOBJ_GUID
+         from STANDARDIZE_INPUTOBJECT f2 inner join STANDARDIZE_OBJECT f3 on f3.OBJ_GUID = f2.obj_guid
+        where f2.iobj_status = 1) f4 on upper(f1.IOBJ_GUID) = upper(f4.IOBJ_GUID)
+        inner join  (select oobj_guid, sys_id, OBJ_ENGNAME, OBJ_CHINAME, OOBJ_SOURCE
+         from STANDARDIZE_OUTPUTOBJECT f5 inner join STANDARDIZE_OBJECT f6 on f5.OBJ_GUID = f6.obj_guid
+        where f5.OOBJ_STATUS = 1) f7 on upper(f1.OOBJ_GUID) = upper(f7.oobj_guid)
+        inner join (select tablename ,tableid ,objectname from synlte."OBJECT" where deleted = 0 and relate_tablename = 'OBJECTFIELD' ) f8 on upper(f8.tableid) = upper(f7.OBJ_ENGNAME)
+          )where iorStatus = 1 and upper(dataId) = upper(#{dataId}) ) t1
+    </select>
+
+    <select id="checkIsUpdate" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable" resultType="java.lang.Integer">
+        <if test="objectMemo != null and objectMemo != ''">
+            select count(0)
+            from synlte."OBJECT"
+            where OBJECTNAME = #{dataSourceName} and DATATYPE = #{dataType} and tablename=#{realTablename} and ISACTIVETABLE = #{isActiveTable,jdbcType=INTEGER}
+            and objectstate = #{storageTableStatus} and objectmemo= #{objectMemo,jdbcType=VARCHAR} and SECRETLEVEL = #{dataLevel} and SJZYBQ1 =#{sjzybq1,jdbcType=VARCHAR}
+            and SJZYBQ2 =#{sjzybq2,jdbcType=VARCHAR} and SJZYBQ3 =#{sjzybq3,jdbcType=VARCHAR} and SJZYBQ4 =#{sjzybq4,jdbcType=VARCHAR}
+            and SJZYBQ5 =#{sjzybq5,jdbcType=VARCHAR} and SJZYBQ6 =#{sjzybq6,jdbcType=VARCHAR}
+        </if>
+        <if test="objectMemo == null or objectMemo == ''">
+            select count(0)
+            from synlte."OBJECT"
+            where OBJECTNAME = #{dataSourceName} and DATATYPE = #{dataType} and tablename=#{realTablename} and ISACTIVETABLE = #{isActiveTable,jdbcType=INTEGER}
+            and objectstate = #{storageTableStatus} and SECRETLEVEL = #{dataLevel} and SJZYBQ1 =#{sjzybq1,jdbcType=VARCHAR}
+            and SJZYBQ2 =#{sjzybq2,jdbcType=VARCHAR} and SJZYBQ3 =#{sjzybq3,jdbcType=VARCHAR} and SJZYBQ4 =#{sjzybq4,jdbcType=VARCHAR}
+            and SJZYBQ5 =#{sjzybq5,jdbcType=VARCHAR} and SJZYBQ6 =#{sjzybq6,jdbcType=VARCHAR} and objectmemo is null
+        </if>
+
+    </select>
+
+    <select id="searchOneData" resultType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+        select (case when UPDATETIME is null then '' else to_char(UPDATETIME,'yyyy-mm-dd HH24:mi:ss') end ) as updateTime ,
+        OBJECTNAME as dataSourceName,DATATYPE as dataType,OBJECTSTATE as storageTableStatus,OBJECTID as objectId,
+                HIVETABLENAME as realTablename,STORETYPE as storageDataMode,DATA_SOURCE as codeTextTd,sourceid as sourceId,
+                ISACTIVETABLE as isActiveTable,UPDATER as updater,VERSION as version,
+                objectstate as storageTableStatus,objectmemo as objectMemo,s."VERSIONS" as "versions",TABLEID as tableId,
+                SECRETLEVEL as dataLevel,SJZYBQ1 as sjzybq1,SJZYBQ2 as sjzybq2,SJZYBQ3 as sjzybq3,SJZYBQ4 as sjzybq4,
+                SJZYBQ5 as sjzybq5,SJZYBQ6 as sjzybq1,SJZZYJFLVALLUE as SJZZYJFLVALLUE,SJZZEJFLVALUE as SJZZEJFLVALUE,
+                SJZYLYLXVALUE as SJZYLYLXVALUE
+        from synlte."OBJECT" s
+        where objectid = #{objectId}
+    </select>
+
+    <insert id="saveOneDataVersion" parameterType="com.synway.datastandardmanager.pojo.ObjectVersion">
+        insert into SYNLTE.OBJECTE_VERSION(OBJECTID_VERSION,OBJECTID,TABLENAME,MEMO,VERSION,"VERSIONS",UPDATETIME,AUTHOR)
+        values(#{objectVersion,jdbcType=VARCHAR},#{objectId},#{tableName},#{memo},#{version},#{versions},sysdate,#{author})
+    </insert>
+
+
+    <insert id="saveOldData" parameterType="com.synway.datastandardmanager.pojo.ObjectPojoTable">
+         INSERT into synlte.OBJECT_HISTORY(OBJECTID_VERSION,OBJECTID,OBJECTNAME,OBJECTSTATE,TABLEID,TABLENAME,STORETYPE,
+            DATA_SOURCE,DBSOURCE,sourceid,OBJECTMEMO,OBJECTFLAG,HIVETABLENAME,DATATYPE,relate_tablename
+            ,ISACTIVETABLE,UPDATETIME,CREATOR,UPDATER,VERSION,"VERSIONS",SECRETLEVEL,STANDARD_TYPE,
+            SJZYBQ1,SJZYBQ2,SJZYBQ3,SJZYBQ4,SJZYBQ5,SJZYBQ6,SJZZYJFLVALLUE,SJZZEJFLVALUE,SJZYLYLXVALUE)
+        VALUES(#{objectVersion,jdbcType=VARCHAR},#{objectId,jdbcType=VARCHAR} ,#{dataSourceName}, #{storageTableStatus},#{tableId}
+            ,#{realTablename} ,#{storageDataMode},
+        #{codeTextTd,jdbcType=VARCHAR},'JZ_RESOURCE', #{sourceId},#{objectMemo,jdbcType=VARCHAR},1,#{realTablename},#{dataType}
+        ,'OBJECTFIELD',#{isActiveTable,jdbcType=INTEGER},to_date(#{updateTime,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),#{creator,jdbcType=VARCHAR},#{updater,jdbcType=VARCHAR}
+        , #{version},#{versions,jdbcType=VARCHAR},#{dataLevel,jdbcType=VARCHAR},#{standardType},#{sjzybq1,jdbcType=VARCHAR},#{sjzybq2,jdbcType=VARCHAR},
+        #{sjzybq3,jdbcType=VARCHAR},#{sjzybq4,jdbcType=VARCHAR},#{sjzybq5,jdbcType=VARCHAR},#{sjzybq6,jdbcType=VARCHAR},#{SJZZYJFLVALLUE,jdbcType=VARCHAR},
+        #{SJZZEJFLVALUE,jdbcType=VARCHAR},#{SJZYLYLXVALUE,jdbcType=VARCHAR}
+        )
+    </insert>
+
+</mapper>

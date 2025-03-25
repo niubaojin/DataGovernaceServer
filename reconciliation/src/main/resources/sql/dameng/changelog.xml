@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!-- 3.5.1建表语句 -->
+    <changeSet id="3.5.1.20240813.01" author="ckw" >
+        <preConditions onFail="MARK_RAN" >
+            <not>
+                <tableExists tableName="DAC_RELATE_TAG"/>
+            </not>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.5.1.20240813.01__DAC_TABLE.sql"/>
+    </changeSet>
+
+    <!-- 3.5.1初始化数据 -->
+    <changeSet id="3.5.1.20240813.02" author="ckw" >
+        <preConditions onFail="MARK_RAN" >
+            <tableIsEmpty tableName="DAC_CITY_DIVISION_CODE"/>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.5.1.20240813.01__DAC_INIT_DATA.sql"/>
+    </changeSet>
+
+
+
+</databaseChangeLog>

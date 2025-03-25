@@ -1,0 +1,10 @@
+门户sdk不兼容：
+        <dependency>
+            <groupId>com.synway</groupId>
+            <artifactId>OrganUserService</artifactId>
+            <version>3.8.2</version>
+        </dependency>
+
+影响类：
+1、DubboConfig
+2、AlarmCenterServiceImpl

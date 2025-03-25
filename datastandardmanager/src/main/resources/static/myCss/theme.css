@@ -1,0 +1,26 @@
+/** 颜色定义  */
+
+:root {
+    --main-color: #409eff;
+    /* 主色*/
+    --main-gradient-color: linear-gradient(-90deg, #5c88f7 0%, #0eb0f4 100%), linear-gradient(#1698f3, #1698f3);
+    /* 主色渐变*/
+    --white: #fff;
+    /* 白色*/
+    --font-color: #606266;
+    /* 文字颜色*/
+    --from-font-color: #c0c4cc;
+    /* radio等禁用颜色*/
+    --input-border: #dcdfe6;
+    /* radio等边框颜色 */
+    --table-header: #edf4f7;
+    /*表格头部背景色 */
+    --btn-hover-color: #66b1ff;
+    /*弹窗里按钮悬浮背景色 */
+    --dialog-cancel-btn-focus: #c6e2ff;
+    /*弹窗里取消按钮悬浮文字颜色 */
+    --dialog-cancel-btn-background-focus: #ecf5ff;
+    /*弹窗里取消按钮悬浮背景色 */
+    --page-list-font-color: #303133;
+    /*分页字体颜色 */
+}

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.standard.ResourceManageAddColumnDao">
+
+    <!--   STANDARDIZE_OBJECTFIELD_web  -->
+    <select id="getMaxClustRecno" resultType="java.lang.String">
+        select max(CLUST_RECNO) from synlte.OBJECTFIELD
+          where objectid = #{objectId} and CLUST_RECNO is not null
+    </select>
+    <select id="getMaxClustRecnoByColumn" resultType="java.lang.String">
+        select max(CLUST_RECNO) from synlte.OBJECTFIELD
+          where objectid = #{objectId} and CLUST_RECNO is not null and COLUMNNAME =#{columnName}
+    </select>
+
+    <select id="getMaxPkRecno" resultType="java.lang.String">
+        select max(PK_RECNO) from synlte.OBJECTFIELD
+           where objectid = #{objectId} and PK_RECNO is not null
+    </select>
+    <select id="getMaxPkRecnoByColumn" resultType="java.lang.String">
+        select max(PK_RECNO) from synlte.OBJECTFIELD
+        where objectid = #{objectId} and COLUMNNAME = #{columnName}  and PK_RECNO is not null
+    </select>
+
+    <select id="getMaxMd5Index" resultType="java.lang.String">
+        select max(MD5_INDEX) from synlte.OBJECTFIELD
+          where objectid = #{objectId} and MD5_INDEX is not null
+    </select>
+    <select id="getMaxMd5IndexByColumn" resultType="java.lang.String">
+        select max(MD5_INDEX) from synlte.OBJECTFIELD
+        where objectid = #{objectId} and COLUMNNAME = #{columnName} and MD5_INDEX is not null
+    </select>
+
+    <select id="getMaxRecno" resultType="java.lang.String">
+        select case when max(RECNO) is null then 0 else max(RECNO) end  from synlte.OBJECTFIELD
+          where objectid = #{objectId}
+    </select>
+
+    <insert id="addObjectField" parameterType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+        insert into synlte.OBJECTFIELD
+            (OBJECTID,RECNO,FIELDID,FIELDNAME,FIELDCHINEENAME,ZDFL,ZDMGDFLDM,FIELDDESCRIBE,FIELDTYPE,FIELDLEN,DEFAULTVALUE,
+            INDEXTYPE,ISINDEX,NEEDVALUE,ISCONTORL,COLUMNNAME,MEMO,TABLEINDEX,ISQUERY,COLUMNNAME_STATE,MD5_INDEX,
+            VERSION,VERSION_0,ISPRIVATE,STANDARD_RECNO,PK_RECNO,PARTITION_RECNO,CLUST_RECNO,ORA_SHOW,
+            ODPS_PATTITION,PRO_TYPE,FIELDSOURCETYPE,DETERMINERID,GADSJ_FIELDID,DELETED,SJLYGCFL,RECONCILIATIONTYPE)
+        values (#{objectId},#{recno},#{fieldId},#{fieldName},#{fieldChineseName},#{fieldClassId,jdbcType=VARCHAR},
+            #{securityLevel,jdbcType=VARCHAR},#{fieldDescribe,jdbcType=VARCHAR},
+            #{fieldType},#{fieldLen},#{defaultValue,jdbcType=VARCHAR},#{indexType,jdbcType=NUMERIC},#{isIndex,jdbcType=NUMERIC},
+            #{needValue},#{isContorl,jdbcType=INTEGER},#{columnName},#{memo,jdbcType=VARCHAR},
+            #{tableIndex,jdbcType=NUMERIC},#{isQuery,jdbcType=INTEGER},#{columnNameState},#{md5Index},#{version},#{version0},#{isPrivate},#{recno},
+            #{pkRecno},#{partitionRecno,jdbcType=NUMERIC},#{clustRecno},#{oraShow,jdbcType=NUMERIC},
+            #{odpsPattition,jdbcType=VARCHAR},#{proType,jdbcType=VARCHAR},#{fieldSourceType,jdbcType=VARCHAR},
+            #{determinerId,jdbcType=VARCHAR},#{gadsjFieldId,jdbcType=VARCHAR},0,#{sjlygcfl,jdbcType=INTEGER},
+            #{reconciliationType,jdbcType=INTEGER})
+    </insert>
+
+    <select id="getcolumnCountByFieldId" resultType="java.lang.Integer">
+       select count(0) from synlte.OBJECTFIELD
+       where objectid =#{objectId}
+       and COLUMNNAME = #{columnName}
+--         and deleted = 0
+    </select>
+
+    <select id="searchObjectFieldByFieldAndColumnName" resultType="java.lang.Integer">
+       select count(0) from synlte.OBJECTFIELD
+       where FIELDID =#{fieldId}
+       and COLUMNNAME = #{columnName}
+       and objectid = #{objectId}
+--         and deleted = 0
+    </select>
+
+    <select id="searchFieldCount"  resultType="java.lang.Integer">
+        select count(0) from synlte.OBJECTFIELD
+        where FIELDID=#{gadsj_fieldId}
+        and OBJECTID = #{objectId}
+--         and deleted = 0
+    </select>
+
+    <select id="searchFieldIdCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(0) from synlte.OBJECTFIELD
+        where FIELDID = #{fieldId}
+--         and deleted = 0
+    </select>
+
+    <update id="deleteObjectField">
+        UPDATE synlte.OBJECTFIELD set deleted = 1 , FIELDID = FIELDID||'-'||#{randomStr} ,
+         COLUMNNAME = COLUMNNAME||'-'||#{randomStr} , recno = -1 ,STANDARD_RECNO = -1
+        where objectid =#{objectId} and COLUMNNAME = #{columnName} and deleted = 0
+    </update>
+
+
+    <update id="updateObjectField" parameterType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+        UPDATE synlte.OBJECTFIELD set INDEXTYPE=#{indexType,jdbcType=INTEGER},ISINDEX=#{isIndex,jdbcType=INTEGER},
+        NEEDVALUE=#{needValue},ISCONTORL=#{isContorl,jdbcType=INTEGER}, MEMO=#{memo,jdbcType=VARCHAR},
+        TABLEINDEX=#{tableIndex,jdbcType=INTEGER},ISQUERY=#{isQuery,jdbcType=INTEGER},COLUMNNAME_STATE=#{columnNameState},
+        VERSION=#{version},ISPRIVATE=#{isPrivate},PARTITION_RECNO=#{partitionRecno,jdbcType=INTEGER},ORA_SHOW=#{oraShow,jdbcType=INTEGER},
+        ODPS_PATTITION=#{odpsPattition},PRO_TYPE=#{proType},FIELDID=#{fieldId},FIELDCHINEENAME=#{fieldChineseName},
+        FIELDTYPE=#{fieldType},FIELDLEN=#{fieldLen},DEFAULTVALUE=#{defaultValue,jdbcType=VARCHAR},
+        FIELDDESCRIBE=#{fieldDescribe,jdbcType=VARCHAR},FIELDNAME =#{fieldName},FIELDSOURCETYPE=#{fieldSourceType,jdbcType=VARCHAR},
+        recno=#{recno},STANDARD_RECNO=#{recno},CLUST_RECNO=#{clustRecno},PK_RECNO = #{pkRecno},MD5_INDEX = #{md5Index},
+        DETERMINERID=#{determinerId,jdbcType=VARCHAR},ZDMGDFLDM=#{securityLevel,jdbcType=VARCHAR},
+        GADSJ_FIELDID=#{gadsjFieldId,jdbcType=VARCHAR},DELETED=0,ZDFL=#{fieldClassId,jdbcType=VARCHAR},SJLYGCFL=#{sjlygcfl,jdbcType=INTEGER},
+        RECONCILIATIONTYPE=#{reconciliationType,jdbcType=INTEGER}
+        where OBJECTID =#{objectId} and COLUMNNAME=#{columnName}
+    </update>
+
+    <update id="updateObjectFieldClustRecno" parameterType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+        UPDATE synlte.OBJECTFIELD set CLUST_RECNO = #{clustRecno} where OBJECTID =#{objectId} and COLUMNNAME = #{columnName}
+    </update>
+    <update id="updateObjectFieldPkRecno" parameterType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+        UPDATE synlte.OBJECTFIELD set PK_RECNO = #{pkRecno} where OBJECTID =#{objectId} and COLUMNNAME = #{columnName}
+    </update>
+    <update id="updateObjectFieldMd5Index" parameterType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+        UPDATE synlte.OBJECTFIELD set MD5_INDEX = #{md5Index} where OBJECTID =#{objectId} and COLUMNNAME = #{columnName}
+    </update>
+
+    <!--<select id="selectCountStandardizeCount"  resultType="java.lang.Integer">-->
+    <!--select count(*) from STANDARDIZE_OBJECT f1 INNER join STANDARDIZE_OUTPUTOBJECT f2-->
+    <!--on f1.OBJ_GUID = f2.OBJ_GUID-->
+    <!--where SYS_ID=#{sysId} and OBJ_ENGNAME=#{tableId}-->
+    <!--and SYS_SOURCE=#{ownerFactoryNum}-->
+    <!--</select>-->
+
+    <select id="getCommonColumnByListDao" resultType="com.synway.datastandardmanager.pojo.ObjectFieldStandard">
+     select FIELDID as fieldId , FIELDNAME as fieldName , fieldchinesename as fieldChineseName,fieldtype as fieldType,
+      FIELDLEN as fieldLen,columnname as columnName ,fieldchinesename as memo, 1 as needValue ,0 as isContorl,0 as tableIndex0 , 0 as deleted,1 as isQuery,1 as columnNameState ,
+      0 as version,'0' as isPrivate, 0 as standardRecno, 0 as oraShow,GADSJ_FIELDID as gadsj_fieldId
+      from synlte.synltefield where upper(fieldId) = #{fieldId}
+    </select>
+
+    <insert id="saveOldObjectField" parameterType="com.synway.datastandardmanager.pojo.ObjectField">
+        insert into synlte.objectfield_history
+        (OBJECTID_VERSION,OBJECTID,RECNO,FIELDID,FIELDNAME,FIELDCHINEENAME,FIELDDESCRIBE,FIELDTYPE,FIELDLEN,DEFAULTVALUE,
+        INDEXTYPE,ISINDEX,NEEDVALUE,ISCONTORL,COLUMNNAME,MEMO,TABLEINDEX,ISQUERY,COLUMNNAME_STATE,MD5_INDEX,
+        version_0,ISPRIVATE,STANDARD_RECNO,PK_RECNO,PARTITION_RECNO,CLUST_RECNO,ORA_SHOW,
+        ODPS_PATTITION,PRO_TYPE,FIELDSOURCETYPE,UPDATETIME,CREATETIME,VERSION,CREATOR,UPDATER,GADSJ_FIELDID)
+      values (#{objectIdVersion},#{objectId},#{recno},#{fieldId},#{fieldName},#{fieldChineseName},#{fieldDescribe},
+        #{fieldType},#{fieldLen},#{defaultValue},#{indexType,jdbcType=INTEGER},#{isIndex,jdbcType=INTEGER},#{needValue},#{isContorl,jdbcType=INTEGER},#{columnName},#{memo},
+        #{tableIndex,jdbcType=INTEGER},#{isQuery,jdbcType=INTEGER},#{columnNameState},#{md5Index},#{version0,jdbcType=VARCHAR},#{isPrivate},#{recno},
+        #{pkRecno},#{partitionRecno,jdbcType=INTEGER},#{clustRecno},#{oraShow,jdbcType=INTEGER},#{odpsPattition},#{proType},#{FieldSourceType},CURRENT_DATE,CURRENT_DATE,#{versions},
+        #{creator},#{updater},#{gadsjFieldId})
+    </insert>
+
+</mapper>

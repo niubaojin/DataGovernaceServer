@@ -1,0 +1,138 @@
+html {
+	height: 97%;
+}
+
+ body{
+	height:100%;
+	width: 100%;
+	/*text-align: center;*/
+	background-color: white;
+}
+table{
+    width: 100%;
+    font-size: 12px;
+    font-family: MicrosoftYaHei;
+    color:#333333;
+}
+
+th{
+	text-align: center; 
+	vertical-align: middle; 
+}
+td{
+   text-align: center; 
+   vertical-align: middle; 
+}
+ div.outerdiv{
+	 padding: 15px;
+	 height: 100%;
+}
+div.leftdiv{
+  float: left;
+  margin-left: 10px;
+}
+div.rightdiv{
+	width: 100%;
+  	float: right;
+  	margin-bottom: 10px;
+}
+hr{
+   margin-top: 46px;
+   margin-bottom: 10px;
+   margin-left: 0px;
+   margin-right: 0px;
+}
+ div.bottomdiv{
+   /*margin-left: 10px;*/
+   /*margin-right: 10px;*/
+	 height: calc(100% - 38px);
+}
+.leftdiv img{
+   margin-right: 5px;
+   vertical-align: middle;
+}
+.leftdiv font{
+   /*color: #3333333;*/
+   font-size: 14px;
+   vertical-align: middle;
+}
+font.datetime {
+	font-family: MicrosoftYaHei;
+	color: #3333333;
+	font-size: 13px;
+	vertical-align: middle;
+}
+
+input.datetime {
+	width: 140px;
+	height: 30px;
+	vertical-align: middle;
+	display: inline;
+	margin-right: 2px;
+	background: url('../../img/icon_time.png') no-repeat 0 0;
+	background-position: 110px 8px;
+}
+
+ .querybtn{
+	 width: 60px;
+	 height: 30px;
+	 line-height: 28px;
+	 text-align: center;
+	 font-size: 12px;
+	 color: var(--main-color);
+	 border: solid 1px var(--main-color);
+	 cursor: pointer;
+ }
+ button.exportbtn{
+	 border-color: var(--main-color);
+	 width: 70px;
+	 height: 30px;
+	 border-radius:2px;
+	 color: var(--main-color);
+	 line-height: 1;
+ }
+ .exportbtn font{
+	 font-family:MicrosoftYaHei;
+	 color: var(--main-color);
+	 font-size: 12px;
+ }
+ .exportbtn img{
+	 margin-top:-3px;
+ }
+
+
+.rightdiv select {
+	width: 140px;
+	height: 32px;
+	display: inline;
+	vertical-align: middle;
+}
+.rightdiv input {
+	width: 140px;
+	height: 30px;
+	display: inline;
+	vertical-align: middle;
+}
+.northDiv input {
+	width: 140px;
+	height: 31px;
+	display: inline;
+}
+
+ .querybtn:hover{
+	 background-image: var(--main-gradient-color);
+	 background-blend-mode: normal, normal;
+	 color: #fff;
+	 border-radius: 2px;
+ }
+#fieldCodeValModal .fixed-table-container,
+#viewTable .fixed-table-container{
+	padding-bottom: 38px!important;
+}
+
+.my-box-right{
+	float: right;
+}
+.my-box-left{
+	float: left;
+}

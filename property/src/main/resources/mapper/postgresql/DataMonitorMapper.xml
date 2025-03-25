@@ -1,0 +1,892 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataMonitorDao">
+
+    <select id="getAllNeedRealTimeTable" resultType="com.synway.property.pojo.datastoragemonitor.NeedAddRealTimeTable">
+		select database_type as  dataBaseType ,project_name  as projectName, tablename_en as tableNameEN,
+		tablename_ch as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_ID as dataSourceId from DATA_STORAGE_ADD_TABLE
+		where ISDELETE = '0' and ISADDMONITOR = '已控'
+	</select>
+
+    <select id="getAllRealTimeTableFullMessage"
+            resultType="com.synway.property.pojo.datastoragemonitor.RealTimeTableFullMessage">
+        select t1.database_type as dataBaseType , t1.tablename_en as tableNameEN,t1.tablename_ch as tableNameCH ,'0' as tableTodaySum
+         , case when t2.tableallcount is null then 0 else t2.tableallcount end as tableAllSum ,
+         to_char(NOW(), 'YYYYMMDDHH24MISS') as statisticDay , t1.project_name as tableProject ,
+         sys_guid()||trunc(dbms_random.value(0,100000000)) as statisticId from DATA_STORAGE_ADD_TABLE t1
+         left join (select tableproject ,tablename, tableallcount from (select row_number() over(partition by tableproject||tablename  order by INSERTEDDATATIME desc) rn ,
+         tableproject ,tablename , ispartition ,INSERTEDDATATIME , tableallcount from SYNLTE.SYNDMG_TABLE_ALL) where rn =1 )t2
+         on t1.project_name||t1.tablename_en = t2.tableproject||t2.tablename
+    </select>
+
+    <delete id="deleteTodayDataStorageTable">
+        delete from DATA_STORAGE_TABLE_full where substr(STATISTIC_DAY ,0,8)= #{dt}
+    </delete>
+
+    <insert id="insertIntoAllRealTimeMessage"
+            parameterType="com.synway.property.pojo.datastoragemonitor.RealTimeTableFullMessage"
+            useGeneratedKeys="false">
+        INSERT INTO DATA_STORAGE_TABLE_full (TABLE_NAME_EN , TABLE_NAME_CH , TABLE_TODAY_SUM ,
+            TABLE_ALL_SUM,STATISTIC_DAY,TABLE_PROJECT,STATISTIC_ID ,DATABASE_TYPE)
+        SELECT * FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.tableNameEN,jdbcType=VARCHAR},
+            #{item.tableNameCH,jdbcType=VARCHAR},#{item.tableTodaySum,jdbcType=VARCHAR},
+            #{item.tableAllSum,jdbcType=VARCHAR},#{item.statisticDay,jdbcType=VARCHAR}
+            ,#{item.tableProject,jdbcType=VARCHAR} ,sys_guid()||trunc(dbms_random.value(0,100000000))
+            ,#{item.dataBaseType,jdbcType=VARCHAR}
+        </foreach>
+        ) AS subquery;
+    </insert>
+
+    <!--获取表组织资产的相关数据-->
+    <select id="getAllOrganizationData" parameterType="com.synway.property.pojo.alarmsetting.OrganizationAlarmSetting"
+            resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        SELECT
+        t4.* ,
+        CASE
+        WHEN t5.frequency IS NULL THEN
+        '0/0' ELSE t5.frequency
+        END AS frequency,
+        CASE
+        WHEN t5.TABLEUSECOUNTOFMONTH = '0' THEN
+        'NONLIVING'
+        WHEN t5.TABLEUSECOUNTOFMONTH IS NULL THEN
+        'NONLIVING' ELSE 'LIVING'
+        END AS liveType,
+        t5.TABLEUSECOUNTOFMONTH as tableUseCountOfmonth
+        FROM
+        (
+            SELECT
+            t1.* ,
+            CASE
+            WHEN t2.partitioncount IS NULL THEN
+            0 ELSE t2.partitioncount
+            END AS yesterdayCount,                                  -- 昨日分区数据量
+            CASE
+            WHEN t3.averageSum IS NULL THEN
+            0 ELSE t3.averageSum
+            END AS averageDailyVolume,                              -- 近几天分区的平均数据量（告警设置）
+            CASE
+            WHEN t3.averageSize IS NULL THEN
+            0 ELSE t3.averageSize
+            END AS averageDailySize                                 -- 近几天分区的平均数据大小（告警设置）
+            FROM
+            (
+                SELECT
+                sjxjbm,                                                 --表协议名
+                CASE
+                WHEN c.name IS NULL THEN
+                tableAll.TABLECOMMENT ELSE c.name
+                END AS name,                                            --表中文名
+                CASE
+                WHEN c.tablename IS NULL THEN
+                upper( tableAll.tablename ) ELSE upper( c.tablename )
+                END AS tableNameEn,                                     --表英文名
+                c.PRIMARYDATASOURCECH AS primaryDatasourceCh,           -- 一级数据来源中文名
+                c.SECONDARYDATASOURCECH AS secondaryDatasourceCh,       -- 二级数据来源中文名
+                c.PRIMARYORGANIZATIONCH AS primaryOrganizationCh,       -- 数据组织一级分类中文名
+                c.SECONDARYORGANIZATIONCH AS secondaryOrganizationCh,   -- 数据组织二级分类中文名
+                -- c.THREEORGANIZATIONCH as threeOrganizationCh,        -- 数据组织三级分类 @add 20200218
+                -- c.FACTORONENAME as factorOneName ,                   -- 数据资源要素一级分类中文名
+                -- c.FACTORTWONAME as factorTwoName,                    -- 数据资源要素二级分类中文名
+                -- c.FACTORDETAILEDNAME as factorDetailedName ,         -- 数据资源要素细目分类代码名称
+                -- c.FACTORATTRIBUTESNAME as factorAttributesName,      -- 数据资源属性分类代码名称
+                tableAll.TABLECREATEDTIME AS tableCreatedTime,          -- 表创建时间
+                CASE
+                WHEN tableAll.TABLEALLCOUNT IS NULL THEN
+                0 ELSE tableAll.TABLEALLCOUNT
+                END AS tableAllCount,                                   -- 表数据总行数 到昨天分区
+                CASE
+                WHEN tableAll.tablesize IS NULL THEN
+                0 ELSE tableAll.tablesize
+                END AS tableSize,                                       -- 表数据总大小 到昨天分区 byte
+                tableAll.TABLEPROJECT AS tableProject,                  -- 表的项目名
+                CASE
+                WHEN tableAll.ISPARTITION != 0 THEN
+                ''
+                WHEN tableAll.LIFECYCLE = - 1 THEN
+                '永久' ELSE to_char( tableAll.LIFECYCLE )
+                END AS lifeCycle,                                       -- 表的生命周期
+                CASE
+                WHEN tableAll.ISPARTITION IS NULL THEN
+                '-1' ELSE to_char( tableAll.ISPARTITION )
+                END AS partitionMessage,                                -- 分区标识
+                CASE
+                WHEN tableAll.TABLETYPE = 1 THEN
+                'ODPS'
+                WHEN tableAll.TABLETYPE = 2 THEN
+                'ADS'
+                WHEN tableAll.TABLETYPE = 3 THEN
+                'ADS'
+                WHEN tableAll.TABLETYPE = 4 THEN
+                'HBASE'
+                WHEN tableAll.TABLETYPE = 5 THEN
+                'HIVE'
+                WHEN tableAll.TABLETYPE = 7 THEN
+                'CLICKHOUSE'
+                ELSE ''
+                END AS tableType,                                       -- 表类型 odps/ads/HBASE/HIVE
+                CASE
+                WHEN sjxjbm IS NULL THEN
+                '' ELSE '-1'
+                END AS registerState                                    -- 注册状态
+                -- ,LABELS
+                FROM
+                ( SELECT * FROM classify_interface_all_Date WHERE tablename IS NOT NULL ) c
+                full join
+                (
+                    SELECT
+                    TABLEPROJECT,
+                    tablename,
+                    TABLECOMMENT,
+                    TABLEALLCOUNT,
+                    TABLETYPE,
+                    tablesize,
+                    LIFECYCLE,
+                    ISPARTITION,
+                    TABLECREATEDTIME,
+                    CASE
+                    WHEN length( PARTITIONDATE ) = 6 THEN
+                    to_char( to_date( t.INSERTEDDATATIME, 'yyyy-MM-dd hh24:mi:ss' ) - 1, 'yyyyMMdd' ) ELSE PARTITIONDATE
+                    END AS PARTITIONDATE
+                    FROM
+                    (
+                        SELECT
+                        TABLEPROJECT,
+                        tablename,
+                        TABLECOMMENT,
+                        TABLEALLCOUNT,
+                        TABLETYPE,
+                        tablesize,
+                        LIFECYCLE,
+                        ISPARTITION,
+                        INSERTEDDATATIME,
+                        PARTITIONDATE,
+                        TABLECREATEDTIME,
+                        ROW_NUMBER () over ( partition BY concat( TABLEPROJECT, tablename ) ORDER BY PARTITIONDATE DESC ) AS num
+                        FROM
+                        SYNLTE.SYNDMG_TABLE_ALL
+                        WHERE
+                        substr( PARTITIONDATE, 0, 1 ) = '2'
+                        AND ( length( PARTITIONDATE ) = 6 OR length( PARTITIONDATE ) = 8 )
+                    ) t
+                        WHERE
+                        t.num = 1
+                        AND TO_TIMESTAMP(t.INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS') > (CURRENT_TIMESTAMP - INTERVAL '8 days')
+                ) tableAll ON upper( c.tablename ) = upper( tableAll.tablename )
+            ) t1
+            left join (
+                SELECT
+                partitioncount,
+                tablename,
+                tableproject
+                FROM
+                SYNLTE.SYNDMG_TABLE_ALL
+                WHERE
+                partitiondate = TO_CHAR(CURRENT_DATE - INTERVAL '1 day', 'YYYYMMDD')
+            ) t2
+            ON upper( t1.tableNameEn ) = upper( t2.tablename )
+            AND upper( t1.tableProject ) = upper( t2.tableproject )
+            left join (
+                SELECT
+                tableNewName,
+                ceil(
+                sum( partitioncount ) / count( tableNewName )) AS averageSum,
+                ceil(
+                sum( partitionsize ) / count( tableNewName )) AS averageSize
+                FROM
+                (
+                    SELECT
+                    tableproject || tablename AS tableNewName,
+                    partitioncount,
+                    partitionsize,
+                    PARTITIONDATE,
+                    ROW_NUMBER () over ( partition BY concat( TABLEPROJECT, tablename ) ORDER BY PARTITIONDATE DESC ) AS num
+                    FROM
+                    SYNLTE.SYNDMG_TABLE_ALL
+                ) t5
+                WHERE
+                t5.num <![CDATA[< ]]>
+                <if test="setting!=null">
+                    <if test="setting.fluctuateDays!=null and setting.fluctuateCheck==true">
+                        #{setting.fluctuateDays,jdbcType=VARCHAR}
+                    </if>
+                    <if test="setting.fluctuateCheck==false or setting.fluctuateCheck==null">
+                        8
+                    </if>
+                </if>
+                <if test="setting==null">
+                    8
+                </if>
+                GROUP BY
+                tableNewName
+            ) t3 ON upper( t3.tableNewName ) = upper( t1.tableProject || t1.tableNameEn )
+        ) t4
+        left join (
+            SELECT DISTINCT
+            TABLENAMEEN,
+            CASE
+            WHEN TABLETYPE = 1 THEN
+            'ODPS'
+            WHEN TABLETYPE = 2 THEN
+            'ADS'
+            WHEN TABLETYPE = 3 THEN
+            'ADS'
+            WHEN TABLETYPE = 4 THEN
+            'HBASE'
+            WHEN TABLETYPE = 5 THEN
+            'HIVE'
+            WHEN TABLETYPE = 7 THEN
+            'CLICKHOUSE'
+            ELSE ''
+            END AS tableType,
+            TABLEUSECOUNTOFMONTH || '/' || TABLEUSECOUNT AS frequency,
+            TABLEUSECOUNTOFMONTH
+            FROM
+            storecycleanduseheat
+        ) t5
+        ON upper( t5.TABLENAMEEN ) = upper( t4.tableproject || '.' || t4.tableNameEn )
+        AND upper( t5.TABLETYPE ) = upper( t4.tableType )
+        WHERE tableproject IS NOT NULL
+    </select>
+
+    <!--删除表组织资产的相关数据-->
+    <delete id="deleteAllOrganizationData">
+        delete from table_organization_assets where STATISTICS_TIME > DATE_TRUNC('day', CURRENT_DATE)
+    </delete>
+
+    <!--删除权限表的相关数据-->
+    <delete id="deleteAllUserAuthorityData">
+        delete from USER_AUTHORITY where create_time > DATE_TRUNC('day', CURRENT_DATE) and modulecode = 'ZCGL'
+    </delete>
+
+    <insert id="insertAllOrganizationData" parameterType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        insert into TABLE_ORGANIZATION_ASSETS (SJXJBM,NAME,TABLE_NAME_EN,PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,PRIMARY_ORGANIZATION_CH,
+            SECONDARY_ORGANIZATION_CH,FACTOR_ONE_NAME,FACTOR_TWO_NAME,FACTOR_DETAILED_NAME,FACTOR_ATTRIBUTES_NAME,TABLE_ALL_COUNT,
+            TABLE_SIZE,TABLE_PROJECT,LIFE_CYCLE,TABLE_TYPE,YESTERDAY_COUNT,PARTITION_MESSAGE,AVERAGE_DAILY_VOLUME,VALUE_RATE,NULL_RATE,
+            TABLE_STATE, UPDATE_TYPE , STATISTICS_TIME
+            ,FREQUENCY,LIVETYPE,REGISTER_STATE,OBJECT_ID,AVERAGE_DAILY_SIZE,OBJECT_STATE,
+            EXCEPTION_MESSAGE,LIFE_CYCLE_STATUS,TABLECREATEDTIME,UPDATE_DATE,UPDATE_PERIOD,DATARESOURCE_CODE,LASTDATAMODIFIEDTIME,
+            PARTITION_NUM,RESOURCEID,THREELEVEL_ORGANIZATION_CH,ORGANIZATION_ID_LAST_LEVEL,DATASOURCE_LAST_LEVEL,RES_NAME,ISSTANDARD,ALARM_LEVEL
+            )
+        SELECT * FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.sjxjbm,jdbcType=VARCHAR}, #{item.name,jdbcType=VARCHAR},#{item.tableNameEn,jdbcType=VARCHAR},
+            #{item.primaryDatasourceCh,jdbcType=VARCHAR},#{item.secondaryDatasourceCh,jdbcType=VARCHAR},#{item.primaryOrganizationCh,jdbcType=VARCHAR},
+            #{item.secondaryOrganizationCh,jdbcType=VARCHAR},#{item.factorOneName,jdbcType=VARCHAR},#{item.factorTwoName,jdbcType=VARCHAR},
+            #{item.factorDetailedName,jdbcType=VARCHAR},#{item.factorAttributesName,jdbcType=VARCHAR},#{item.tableAllCount,jdbcType=NUMERIC},
+            #{item.tableSize,jdbcType=NUMERIC},#{item.tableProject,jdbcType=VARCHAR},#{item.lifeCycle,jdbcType=VARCHAR},
+            #{item.tableType,jdbcType=VARCHAR},#{item.yesterdayCount,jdbcType=NUMERIC},#{item.partitionMessage,jdbcType=VARCHAR},
+            #{item.averageDailyVolume,jdbcType=NUMERIC},#{item.valueRate,jdbcType=NUMERIC},#{item.nullRate,jdbcType=NUMERIC},
+            #{item.tableState,jdbcType=VARCHAR},#{item.updateType,jdbcType=VARCHAR},CURRENT_DATE,
+            #{item.frequency,jdbcType=VARCHAR},#{item.liveType,jdbcType=VARCHAR},#{item.registerState,jdbcType=VARCHAR},
+            #{item.objectId,jdbcType=VARCHAR},#{item.averageDailySize,jdbcType=NUMERIC},#{item.objectState,jdbcType=VARCHAR},
+            #{item.exceptionMessage,jdbcType=VARCHAR},#{item.lifeCycleStatus,jdbcType=VARCHAR},
+            #{item.tableCreatedTime,jdbcType=VARCHAR},#{item.updateDate,jdbcType=VARCHAR},#{item.updatePeriod,jdbcType=VARCHAR},
+            #{item.belongSystemCode,jdbcType=VARCHAR},#{item.lastDataModifiedTime,jdbcType=VARCHAR},
+            #{item.partitionNum,jdbcType=VARCHAR},#{item.resourceId,jdbcType=VARCHAR},
+            #{item.threeLevelOrganizationCh,jdbcType=VARCHAR},#{item.organizationIdLastLevel,jdbcType=VARCHAR},#{item.dataresourceIdLastLevel,jdbcType=VARCHAR},
+            #{item.resName,jdbcType=VARCHAR},#{item.isStandard,jdbcType=VARCHAR},#{item.alarmLevel,jdbcType=VARCHAR}
+        </foreach>
+        ) AS subquery
+    </insert>
+
+    <insert id="insertAllUserAuthorityData" parameterType="com.synway.property.pojo.datastoragemonitor.UserAuthorityData">
+        INSERT INTO USER_AUTHORITY
+            (id,cmn_memo,modulecode,modulename,iscreater,username,cmn_name,userid,create_time)
+        SELECT * FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.id,jdbcType=VARCHAR},
+            #{item.cmnMemo,jdbcType=VARCHAR},
+            #{item.moduleCode,jdbcType=VARCHAR},
+            #{item.moduleName,jdbcType=VARCHAR},
+            #{item.isCreate,jdbcType=VARCHAR},
+            #{item.userName,jdbcType=VARCHAR},
+            #{item.cnmName,jdbcType=VARCHAR},
+            #{item.userId,jdbcType=VARCHAR},
+            #{item.createTime,jdbcType=VARCHAR}
+        </foreach>
+        ) AS subquery
+    </insert>
+
+    <select id="getRegisterApprovals" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        select upper(SJXJBM) as sjxjbm,upper(TABLE_NAME_EN) as tableNameEn,APPROVAL_STATUS as registerState from DATA_REGISTER
+        where APPROVAL_STATUS ='2' and APPROVAL_TYPE = 'register'
+    </select>
+
+    <select id="getObjectList" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        <!--            列名太长，不允许-->
+        <!--            select upper(objectid) as objectId,upper(tableid) as sjxjbm,upper(tablename) as tableNameEn from SYNLTE.OBJECT-->
+        <!--            where-->
+        <!--                upper(tablename) in-->
+        <!--            <foreach collection="list" item="item" separator="," open="(" close=")">-->
+        <!--                    upper(#{item.tableNameEn,jdbcType=VARCHAR})-->
+        <!--            </foreach>-->
+        <!--                or upper(tableid) in-->
+        <!--            <foreach collection="list" item="item" separator="," open="(" close=")">-->
+        <!--                    upper(tableid) = upper(#{item.sjxjbm,jdbcType=VARCHAR})-->
+        <!--            </foreach>-->
+
+        select distinct OBJECTID as objectId,upper(TABLEID) as SJXJBM,upper(TABLENAME) as tableNameEn,OBJECTSTATE as objectState
+        from SYNLTE.OBJECT
+        where RELATE_TABLENAME = 'OBJECTFIELD'
+<!--        <foreach collection="list" item="item" separator="or">-->
+<!--            and upper(TABLENAME) = upper(#{item.tableNameEn,jdbcType=VARCHAR})-->
+<!--        </foreach>-->
+    </select>
+
+    <select id="getOdpsAdsTableInfo" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        select a.SJXJBM as sjxjbm,
+               upper(a.TABLE_NAME_EN) as tableNameEn,
+               upper(a.TABLE_PROJECT) as tableProject,
+               a.TABLE_TYPE as tableType,
+               a.STATISTICS_TIME as statisticsTime,
+               a.OBJECT_ID as objectId,
+               a.name,
+               a.PRIMARY_DATASOURCE_CH as primaryDatasourceCh,
+               a.SECONDARY_DATASOURCE_CH as secondaryDatasourceCh,
+               a.PRIMARY_ORGANIZATION_CH as primaryOrganizationCh,
+               a.SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh,
+               a.PARTITION_MESSAGE as partitionMessage,
+               a.TABLE_ALL_COUNT as tableAllCount,
+               a.TABLE_SIZE as tableSize,
+               a.LIFE_CYCLE as lifeCycle,
+               a.YESTERDAY_COUNT as yesterdayCount,
+               a.AVERAGE_DAILY_VOLUME as averageDailyVolume,
+               a.VALUE_RATE as valueRate,
+               a.NULL_RATE as nullRate,
+               a.FREQUENCY as frequency,
+               a.AVERAGE_DAILY_SIZE as averageDailySize,
+               --         LABELS as labels,
+               a.REGISTER_STATE as registerState,
+               a.object_state as objectState,
+               b.SJZZFLCODEID as organizationIdLastLevel,
+               b.SJLYFLCODEID as dataresourceIdLastLevel
+          from TABLE_ORGANIZATION_ASSETS_TEMP a
+          left join (SELECT DISTINCT SJXJBM,TABLENAME,
+                            case when SJYJFLCODENAME is null or SJYJFLCODENAME = '' then 'null' else 'JZCODEGASJZZFL' || SJYJFLCODENAME || SJEJFLCODENAME || SJSJFLCODENAME end as SJZZFLCODEID,
+                            case when SJLYYJCODENAME is null or SJLYYJCODENAME = '' then 'null' else 'GACODE000404' || SJLYYJCODENAME || SJLYEJCODENAME end as SJLYFLCODEID
+                       FROM CLASSIFY_INTERFACE_ALL_DATE) b on upper(a.table_name_en) = b.TABLENAME
+    </select>
+
+    <delete id="deleteOdpsAdsTableInfo">
+        delete from TABLE_ORGANIZATION_ASSETS_TEMP where
+        <foreach collection="list" item="item" index="index" separator="or">
+            TABLE_NAME_EN = #{item.tableNameEn}
+        </foreach>
+    </delete>
+
+    <update id="addHbaseData">
+        MERGE INTO SYNLTE.SYNDMG_TABLE_ALL a
+        USING (SELECT '4' AS TABLETYPE,
+                      #{hbaseParam.TABLEPROJECT} AS TABLEPROJECT,
+                      #{hbaseParam.TABLENAME, jdbcType = VARCHAR} as TABLENAME,
+                      to_char(CURRENT_DATE, 'YYYYMMDD') AS PARTITIONDATE
+               ) b
+        ON (a.PARTITIONDATE = b.PARTITIONDATE AND
+            a.TABLENAME = b.TABLENAME AND
+            a.TABLETYPE = b.TABLETYPE AND
+            a.TABLEPROJECT = b.TABLEPROJECT)
+        WHEN MATCHED THEN
+            UPDATE
+            SET TABLECOMMENT     = #{hbaseParam.TABLECOMMENT, jdbcType = VARCHAR},
+                LIFECYCLE        = #{hbaseParam.LIFECYCL, jdbcType = VARCHAR},
+                ISPARTITION      = #{hbaseParam.ISPARTITION, jdbcType = VARCHAR},
+                PARTITIONCOUNT   = #{hbaseParam.PARTITIONCOUNT, jdbcType = VARCHAR},
+                PARTITIONSIZE    = #{hbaseParam.PARTITIONSIZE, jdbcType = VARCHAR},
+                TABLEALLCOUNT    = #{hbaseParam.TABLEALLCOUNT, jdbcType = VARCHAR},
+                TABLESIZE        = #{hbaseParam.TABLESIZE, jdbcType = VARCHAR},
+                INSERTEDDATATIME = to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS')
+        WHEN NOT MATCHED THEN
+            INSERT
+            (TABLECOMMENT,
+             TABLEPROJECT,
+             TABLENAME,
+             LIFECYCLE,
+             ISPARTITION,
+             PARTITIONDATE,
+             PARTITIONCOUNT,
+             PARTITIONSIZE,
+             TABLEALLCOUNT,
+             TABLESIZE,
+             INSERTEDDATATIME,
+             TABLETYPE)
+            VALUES
+                (#{hbaseParam.TABLECOMMENT, jdbcType = VARCHAR},
+                 #{hbaseParam.TABLEPROJECT, jdbcType = VARCHAR},
+                 #{hbaseParam.TABLENAME, jdbcType = VARCHAR},
+                 #{hbaseParam.LIFECYCL, jdbcType = VARCHAR},
+                 #{hbaseParam.ISPARTITION, jdbcType = VARCHAR},
+                 to_char(CURRENT_DATE, 'YYYYMMDD'),
+                 #{hbaseParam.PARTITIONCOUNT, jdbcType = VARCHAR},
+                 #{hbaseParam.PARTITIONSIZE, jdbcType = VARCHAR},
+                 #{hbaseParam.TABLEALLCOUNT, jdbcType = VARCHAR},
+                 #{hbaseParam.TABLESIZE, jdbcType = VARCHAR},
+                 to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),
+                 '4')
+    </update>
+    <insert id="addHbaseDataPatch" parameterType="com.synway.property.pojo.formorganizationindex.SYDMGParam">
+        INSERT INTO SYNLTE.SYNDMG_TABLE_ALL
+            (TABLECOMMENT,
+            TABLEPROJECT,
+            TABLENAME,
+            LIFECYCLE,
+            ISPARTITION,
+            PARTITIONDATE,
+            PARTITIONCOUNT,
+            PARTITIONSIZE,
+            TABLEALLCOUNT,
+            TABLESIZE,
+            INSERTEDDATATIME,
+            TABLETYPE,DATAID)
+        SELECT * FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            SELECT
+            #{item.TABLECOMMENT, jdbcType = VARCHAR},
+            #{item.TABLEPROJECT, jdbcType = VARCHAR},
+            #{item.TABLENAME, jdbcType = VARCHAR},
+            #{item.LIFECYCL, jdbcType = VARCHAR},
+            #{item.ISPARTITION, jdbcType = VARCHAR},
+            to_char(CURRENT_DATE, 'YYYYMMDD'),
+            #{item.PARTITIONCOUNT, jdbcType = VARCHAR},
+            #{item.PARTITIONSIZE, jdbcType = VARCHAR},
+            #{item.TABLEALLCOUNT, jdbcType = VARCHAR},
+            #{item.TABLESIZE, jdbcType = VARCHAR},
+            to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),'4',
+            #{item.DATAID, jdbcType = VARCHAR}
+        </foreach>
+        ) AS subquery
+    </insert>
+
+    <update id="addHiveData">
+            merge into SYNLTE.SYNDMG_TABLE_ALL a
+            USING (select
+               to_char(CURRENT_DATE, 'YYYYMMDD')
+            as PARTITIONDATE,#{hiveParam.TABLENAME,jdbcType=VARCHAR}as TABLENAME,
+            5 as TABLETYPE,#{hiveParam.TABLEPROJECT,jdbcType=VARCHAR} as TABLEPROJECT) b
+            on (
+            a.PARTITIONDATE = b.PARTITIONDATE and a.TABLENAME = b.TABLENAME and a.TABLETYPE = b.TABLETYPE and
+            a.TABLEPROJECT = b.TABLEPROJECT)
+            when matched then
+            update
+            set
+            TABLECOMMENT = #{hiveParam.TABLECOMMENT,jdbcType=VARCHAR},
+            LIFECYCLE = #{hiveParam.LIFECYCLE,jdbcType=VARCHAR},
+            TABLESIZE = #{hiveParam.TABLESIZE,jdbcType=VARCHAR},
+            TABLELASTDATAMODIFIEDTIME = #{hiveParam.TABLELASTDATAMODIFIEDTIME,jdbcType=VARCHAR},
+            PARTITIONCOUNT = #{hiveParam.PARTITIONCOUNT,jdbcType=VARCHAR},
+            ISPARTITION = #{hiveParam.ISPARTITION,jdbcType=VARCHAR},
+            TABLELASTMETAMODIFIEDTIME = #{hiveParam.TABLELASTMETAMODIFIEDTIME,jdbcType=VARCHAR},
+            TABLECREATEDTIME = #{hiveParam.TABLECREATEDTIME,jdbcType=VARCHAR},
+            INSERTEDDATATIME = to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),
+            TABLEALLCOUNT = #{hiveParam.TABLEALLCOUNT,jdbcType=VARCHAR},
+            PARTITIONSIZE = #{hiveParam.PARTITIONSIZE,jdbcType=VARCHAR}
+            when not matched then
+            insert (TABLENAME,TABLEPROJECT,TABLECOMMENT,TABLETYPE,LIFECYCLE,TABLESIZE,
+            TABLELASTDATAMODIFIEDTIME,PARTITIONDATE,PARTITIONCOUNT,ISPARTITION,
+            TABLELASTMETAMODIFIEDTIME,TABLECREATEDTIME,INSERTEDDATATIME,TABLEALLCOUNT,
+            PARTITIONSIZE
+            ) values
+            (#{hiveParam.TABLENAME,jdbcType=VARCHAR},#{hiveParam.TABLEPROJECT,jdbcType=VARCHAR},
+            #{hiveParam.TABLECOMMENT,jdbcType=VARCHAR},5,
+            #{hiveParam.LIFECYCLE,jdbcType=VARCHAR},
+            #{hiveParam.TABLESIZE,jdbcType=VARCHAR},
+            #{hiveParam.TABLELASTDATAMODIFIEDTIME,jdbcType=VARCHAR},
+                to_char(CURRENT_DATE, 'YYYYMMDD'),
+            #{hiveParam.PARTITIONCOUNT,jdbcType=VARCHAR},#{hiveParam.ISPARTITION,jdbcType=VARCHAR},
+            #{hiveParam.TABLELASTMETAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{hiveParam.TABLECREATEDTIME,jdbcType=VARCHAR},to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),
+            #{hiveParam.TABLEALLCOUNT,jdbcType=VARCHAR},#{hiveParam.PARTITIONSIZE,jdbcType=VARCHAR}
+            )
+    </update>
+    <insert id="addHiveDataPatch" parameterType="com.synway.property.pojo.formorganizationindex.SYDMGParam">
+        INSERT INTO SYNLTE.SYNDMG_TABLE_ALL
+            (TABLENAME,TABLEPROJECT,TABLECOMMENT,TABLETYPE,LIFECYCLE,TABLESIZE,
+            TABLELASTDATAMODIFIEDTIME,PARTITIONDATE,PARTITIONCOUNT,ISPARTITION,
+            TABLELASTMETAMODIFIEDTIME,TABLECREATEDTIME,INSERTEDDATATIME,TABLEALLCOUNT,
+            PARTITIONSIZE,DATAID
+            )
+        SELECT * FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.TABLENAME,jdbcType=VARCHAR},
+            #{item.TABLEPROJECT,jdbcType=VARCHAR},
+            #{item.TABLECOMMENT,jdbcType=VARCHAR},
+            #{item.TABLETYPE,jdbcType=VARCHAR},
+            #{item.LIFECYCLE,jdbcType=VARCHAR},
+            #{item.TABLESIZE,jdbcType=VARCHAR},
+            #{item.TABLELASTDATAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{item.PARTITIONDATE,jdbcType=VARCHAR},
+            #{item.PARTITIONCOUNT,jdbcType=VARCHAR},
+            #{item.ISPARTITION,jdbcType=VARCHAR},
+            #{item.TABLELASTMETAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{item.TABLECREATEDTIME,jdbcType=VARCHAR},
+            to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),
+            #{item.TABLEALLCOUNT,jdbcType=VARCHAR},
+            #{item.PARTITIONSIZE,jdbcType=VARCHAR},
+            #{item.DATAID,jdbcType=VARCHAR}
+        </foreach>
+        ) AS subquery
+    </insert>
+    <update id="addClickHouseData">
+        merge into SYNLTE.SYNDMG_TABLE_ALL a
+            USING (select
+                to_char(CURRENT_DATE, 'YYYYMMDD') as INSERTEDDATATIME,
+                #{clickhouseParam.TABLENAME,jdbcType=VARCHAR} as TABLENAME,
+                7 as TABLETYPE,
+                #{clickhouseParam.TABLEPROJECT,jdbcType=VARCHAR} as TABLEPROJECT ) b
+            on (
+                to_char(to_date(a.INSERTEDDATATIME, 'yyyy-MM-dd HH24:mi:ss'), 'yyyyMMdd') = b.INSERTEDDATATIME and
+                lower(a.TABLENAME) = lower(b.TABLENAME) and
+                a.TABLETYPE = b.TABLETYPE and
+                lower(a.TABLEPROJECT) = lower(b.TABLEPROJECT))
+            when matched then
+            update
+            set
+                TABLECOMMENT = #{clickhouseParam.TABLECOMMENT,jdbcType=VARCHAR},
+                LIFECYCLE = #{clickhouseParam.LIFECYCL,jdbcType=VARCHAR},
+                TABLESIZE = #{clickhouseParam.TABLESIZE,jdbcType=VARCHAR},
+                TABLELASTDATAMODIFIEDTIME = #{clickhouseParam.TABLELASTDATAMODIFIEDTIME,jdbcType=VARCHAR},
+                PARTITIONCOUNT = #{clickhouseParam.PARTITIONCOUNT,jdbcType=VARCHAR},
+                ISPARTITION = #{clickhouseParam.ISPARTITION,jdbcType=VARCHAR},
+                TABLELASTMETAMODIFIEDTIME = #{clickhouseParam.TABLELASTMETAMODIFIEDTIME,jdbcType=VARCHAR},
+                TABLECREATEDTIME = #{clickhouseParam.TABLECREATEDTIME,jdbcType=VARCHAR},
+                PARTITIONDATE = #{clickhouseParam.PARTITIONDATE,jdbcType=VARCHAR},
+                TABLEALLCOUNT = #{clickhouseParam.TABLEALLCOUNT,jdbcType=VARCHAR},
+                PARTITIONSIZE = #{clickhouseParam.PARTITIONSIZE,jdbcType=VARCHAR}
+            when not matched then
+            insert (TABLENAME,TABLEPROJECT,TABLECOMMENT,TABLETYPE,LIFECYCLE,TABLESIZE,
+            TABLELASTDATAMODIFIEDTIME,PARTITIONDATE,PARTITIONCOUNT,ISPARTITION,
+            TABLELASTMETAMODIFIEDTIME,TABLECREATEDTIME,INSERTEDDATATIME,TABLEALLCOUNT,
+            PARTITIONSIZE
+            ) values
+            (
+            lower(#{clickhouseParam.TABLENAME,jdbcType=VARCHAR}),
+            lower(#{clickhouseParam.TABLEPROJECT,jdbcType=VARCHAR}),
+            #{clickhouseParam.TABLECOMMENT,jdbcType=VARCHAR},7,
+            #{clickhouseParam.LIFECYCL,jdbcType=VARCHAR},
+            #{clickhouseParam.TABLESIZE,jdbcType=VARCHAR},
+            #{clickhouseParam.TABLELASTDATAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{clickhouseParam.PARTITIONDATE,jdbcType=VARCHAR},
+            #{clickhouseParam.PARTITIONCOUNT,jdbcType=VARCHAR},#{clickhouseParam.ISPARTITION,jdbcType=VARCHAR},
+            #{clickhouseParam.TABLELASTMETAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{clickhouseParam.TABLECREATEDTIME,jdbcType=VARCHAR},to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),
+            #{clickhouseParam.TABLEALLCOUNT,jdbcType=VARCHAR},#{clickhouseParam.PARTITIONSIZE,jdbcType=VARCHAR}
+            )
+    </update>
+
+    <delete id="delSyndmgTableAllDataByType">
+        delete from SYNLTE.SYNDMG_TABLE_ALL where TABLETYPE = #{tableType,jdbcType=VARCHAR} and TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') = to_char(CURRENT_DATE, 'YYYYMMDD')
+    </delete>
+
+    <insert id="addClickHouseDataPatch" parameterType="com.synway.property.pojo.formorganizationindex.SYDMGParam">
+        INSERT INTO SYNLTE.SYNDMG_TABLE_ALL (TABLENAME,TABLEPROJECT,TABLECOMMENT,TABLETYPE,LIFECYCLE,TABLESIZE,
+            TABLELASTDATAMODIFIEDTIME,PARTITIONDATE,PARTITIONCOUNT,ISPARTITION,
+            TABLELASTMETAMODIFIEDTIME,TABLECREATEDTIME,INSERTEDDATATIME,TABLEALLCOUNT,
+            DATAID,PARTITIONSIZE)
+        SELECT * FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            lower(#{item.TABLENAME,jdbcType=VARCHAR}),
+            lower(#{item.TABLEPROJECT,jdbcType=VARCHAR}),
+            #{item.TABLECOMMENT,jdbcType=VARCHAR},
+            7,
+            #{item.LIFECYCL,jdbcType=VARCHAR},
+            #{item.TABLESIZE,jdbcType=VARCHAR},
+            #{item.TABLELASTDATAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{item.PARTITIONDATE,jdbcType=VARCHAR},
+            #{item.PARTITIONCOUNT,jdbcType=VARCHAR},
+            #{item.ISPARTITION,jdbcType=VARCHAR},
+            #{item.TABLELASTMETAMODIFIEDTIME,jdbcType=VARCHAR},
+            #{item.TABLECREATEDTIME,jdbcType=VARCHAR},
+            to_char(CURRENT_DATE, 'YYYY-MM-DD HH24:MI:SS'),
+            #{item.TABLEALLCOUNT,jdbcType=VARCHAR},
+            #{item.DATAID,jdbcType=VARCHAR},
+            #{item.PARTITIONSIZE,jdbcType=VARCHAR}
+        </foreach>
+        ) AS subquery
+    </insert>
+
+    <update id="updateDataResourceInfo">
+        BEGIN
+        <foreach collection="list" item="item">
+            <if test="item.tableName != null and item.organization!=null and item.projectName!=null">
+                <if test="item.updateDate!=null or item.updatePeriod!=null or item.belongSystemCode!=null or item.lastDataModifiedTime!=null">
+                    update TABLE_ORGANIZATION_ASSETS
+                    set update_date = #{item.updateDate,jdbcType=VARCHAR},
+                    update_period = #{item.updatePeriod,jdbcType=VARCHAR},
+                    DATARESOURCE_CODE = #{item.belongSystemCode,jdbcType=VARCHAR},
+                    LASTDATAMODIFIEDTIME = #{item.lastDataModifiedTime,jdbcType=VARCHAR}
+                    where
+                    upper(TABLE_NAME_EN) = upper(#{item.tableName,jdbcType=VARCHAR}) and
+                    upper(TABLE_TYPE) = upper(#{item.organization,jdbcType=VARCHAR}) and
+                    upper(TABLE_PROJECT) = upper(#{item.projectName,jdbcType=VARCHAR}) and
+                    STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE)
+                    ;
+                </if>
+            </if>
+        </foreach>
+        END;
+    </update>
+
+
+    <select id="getOrganizationAlarmSetting" resultType="java.lang.String">
+         select THRESHOLD_VALUE from DGN_COMMON_SETTING  where upper(PARENT_ID) = upper('dataProperty') and IS_ACTIVE = '1' and TREE_TYPE = '3'
+    </select>
+
+    <select id="getApprovalsByType" resultType="com.synway.property.pojo.approvalinfo.DataApproval">
+        select SJXJBM as tableId,TABLE_NAME_EN as tableNameEn,OBJECT_ID as objectId,APPROVAL_ID as approvalId,
+        APPROVAL_STATUS as approvalStatus,APPROVAL_CREATE_TIME as approvalCreateTime,
+        APPROVAL_UPDATE_TIME as approvalUpdateTime,APPROVAL_TYPE as approvalType,
+        TABLE_PROJECT as tableProject from DATA_REGISTER
+        where
+        APPROVAL_STATUS ='2' and APPROVAL_TYPE = #{approvalType,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getSyndmgTableAllDataByDate" resultType="com.synway.property.pojo.datastoragemonitor.DataResourceTable">
+        SELECT
+            upper(TABLENAME) AS tableName,
+            upper(TABLEPROJECT) AS projectName,
+        CASE
+            WHEN TABLETYPE = 1 THEN
+            'ODPS'
+            WHEN TABLETYPE = 2 THEN
+            'ADS'
+            WHEN TABLETYPE = 3 THEN
+            'ADS'
+            WHEN TABLETYPE = 4 THEN
+            'HBASE'
+            WHEN TABLETYPE = 5 THEN
+            'Hive-HUAWEI'
+            WHEN TABLETYPE = 12 THEN
+            'Hive-CDH'
+            WHEN TABLETYPE = 7 THEN
+            'CLICKHOUSE'
+            ELSE ''
+            END AS tableType,
+            TABLESIZE AS totalSize,
+            PARTITIONCOUNT AS partionCount,
+            TABLEALLCOUNT AS totalCount,
+            PARTITIONSIZE AS partionSize,
+            ISPARTITION AS isPartitionTable,
+            LIFECYCLE AS tableLife,
+            TABLECREATEDTIME as tableCreatedTime,
+            tableLastMetaModifiedTime as lastDataModifiedTime,
+            partitionnum as partitionNum
+        FROM
+            SYNLTE.SYNDMG_TABLE_ALL
+        WHERE
+            TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') = to_char(CURRENT_DATE, 'YYYYMMDD') and TABLETYPE != 7
+    </select>
+
+    <select id="getSyndmgTableAllCKData" resultType="com.synway.property.pojo.datastoragemonitor.DataResourceTable">
+        SELECT
+              upper(TABLENAME) AS tableName,
+              upper(TABLEPROJECT) AS projectName,
+          CASE
+              WHEN TABLETYPE = 7 THEN
+              'CLICKHOUSE'
+              ELSE ''
+              END AS tableType,
+              TABLESIZE AS totalSize,
+              PARTITIONCOUNT AS partionCount,
+              TABLEALLCOUNT AS totalCount,
+              PARTITIONSIZE AS partionSize,
+              ISPARTITION AS isPartitionTable,
+              LIFECYCLE AS tableLife,
+              TABLECREATEDTIME as tableCreatedTime,
+              tableLastMetaModifiedTime as lastDataModifiedTime,
+              partitionnum as partitionNum,
+              partitiondate as partionDate,
+              TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') as insertDataTime
+          FROM
+              SYNLTE.SYNDMG_TABLE_ALL
+          WHERE
+              TABLETYPE = 7 and TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') >= to_char(CURRENT_DATE, 'YYYYMMDD')
+    </select>
+
+    <select id="getClassifyInfo" resultType="java.util.Map">
+    /*刘新鹏修改的CLASSIFY_INTERFACE_ALL_DATE表，FIRSTORGANIZATIONCH为二级组织分类，SECONDARYORGANIZATIONCH为三级组织分类*/
+        SELECT DISTINCT
+            SJXJBM,
+            upper(TABLENAME) as TABLENAME,
+            NAME,
+            PRIMARYORGANIZATIONCH,
+            FIRSTORGANIZATIONCH,
+            SECONDARYORGANIZATIONCH,
+            PRIMARYDATASOURCECH,
+            SECONDARYDATASOURCECH,
+            OBJECTID,
+            OBJECTSTATE,
+            case when SJYJFLCODENAME is null or SJYJFLCODENAME = '' then 'null' else 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME||SJSJFLCODENAME end as SJZZFLCODEID,
+            case when SJLYYJCODENAME is null or SJLYYJCODENAME = '' then 'null' else 'GACODE000404'||SJLYYJCODENAME||SJLYEJCODENAME end as SJLYFLCODEID
+        FROM
+            CLASSIFY_INTERFACE_ALL_DATE
+    </select>
+
+    <select id="getSyndmgTableAverageData" resultType="com.synway.property.pojo.datastoragemonitor.DataResourceTable">
+        SELECT t3.*,
+               CASE
+                 WHEN t3.averageSum IS NULL THEN 0
+                 ELSE t3.averageSum
+               END AS averageDailyVolume, -- 近几天分区的平均数据量（告警设置）
+               CASE
+                 WHEN t3.averageSize IS NULL THEN 0
+                 ELSE t3.averageSize
+               END AS averageDailySize -- 近几天分区的平均数据大小（告警设置）
+          FROM (SELECT tableproject as projectName,
+                       tablename as tableName,
+                       tableType,
+                       ceil(sum(partitioncount) / count(tableproject || tablename || tableType)) AS averageSum,
+                       ceil(sum(partitionsize) / count(tableproject || tablename || tableType)) AS averageSize
+                  FROM (SELECT tableproject,
+                               tablename,
+                               CASE
+                                 WHEN TABLETYPE = 1 THEN 'ODPS'
+                                 WHEN TABLETYPE = 2 THEN 'ADS'
+                                 WHEN TABLETYPE = 3 THEN 'ADS'
+                                 WHEN TABLETYPE = 4 THEN 'HBASE'
+                                 WHEN TABLETYPE = 5 THEN 'HIVE-HUAWEI'
+                                 WHEN TABLETYPE = 12 THEN 'HIVE-CDH'
+                                 WHEN TABLETYPE = 7 THEN 'CLICKHOUSE'
+                                 ELSE ''
+                               END AS tableType,
+                               partitioncount,
+                               partitionsize,
+                               partitiondate,
+                               row_number() over(PARTITION BY concat(TABLEPROJECT, tableproject || tablename || tableType) ORDER BY PARTITIONDATE DESC) AS num
+                          FROM SYNLTE.SYNDMG_TABLE_ALL) t5
+                 WHERE t5.num &lt; 8
+                 GROUP BY tablename, tableproject, tableType) t3
+    </select>
+
+    <select id="getHeatTableData"  resultType="com.synway.property.pojo.datastoragemonitor.DataResourceTable">
+        SELECT
+            substr( TABLENAMEEN, 1, instr( TABLENAMEEN, '.' ) - 1 ) AS projectName,
+            substr( TABLENAMEEN, instr( TABLENAMEEN, '.' ) + 1 ) AS tableName,
+            tableType,
+        CASE
+            WHEN frequency IS NULL THEN
+            '0/0' ELSE frequency
+            END AS frequency,
+        CASE
+            WHEN TABLEUSECOUNTOFMONTH = '0' THEN
+            'NONLIVING'
+            WHEN TABLEUSECOUNTOFMONTH IS NULL THEN
+            'NONLIVING' ELSE 'LIVING'
+            END AS liveType,
+            TABLEUSECOUNTOFMONTH as tableUseCountOfmonth
+        FROM
+            (
+                SELECT DISTINCT
+                    TABLENAMEEN,
+                CASE
+                    WHEN TABLETYPE = 1 THEN
+                    'ODPS'
+                    WHEN TABLETYPE = 2 THEN
+                    'ADS'
+                    WHEN TABLETYPE = 3 THEN
+                    'ADS'
+                    WHEN TABLETYPE = 4 THEN
+                    'HBASE'
+                    WHEN TABLETYPE = 5 THEN
+                    'HIVE'
+                    WHEN TABLETYPE = 7 THEN
+                    'CLICKHOUSE'
+                    ELSE ''
+                    END AS tableType,
+                    TABLEUSECOUNTOFMONTH || '/' || TABLEUSECOUNT AS frequency,
+                    TABLEUSECOUNTOFMONTH
+                FROM
+                    storecycleanduseheat
+            )
+    </select>
+
+    <delete id="deleteOverTimeAssets" >
+        delete from TABLE_ORGANIZATION_ASSETS where (CURRENT_DATE - INTERVAL '#{item} days') > STATISTICS_TIME
+    </delete>
+
+    <select id="getStandardBillNum" resultType="java.lang.String">
+        select INSIDE_ACCEPT from DAC_STANDARD_BILL_STATISTICS
+        where data_time > (CURRENT_DATE - INTERVAL '#{i} days') and table_name_en = #{tableName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getBillDatas" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        select
+            resource_id as sjxjbm,
+            storage_acceptor as tableAllCount,
+            to_char(data_time,'yyyyMMdd') as updateDate
+        from
+            dac_bill_link_statistic
+        where
+            data_time > (CURRENT_DATE - INTERVAL '#{i} days')
+    </select>
+
+    <select id="getAccessBillNum" resultType="java.lang.String">
+        select INSIDE_ACCEPT from DAC_ACCESS_BILL_STATISTICS
+        where data_time > (CURRENT_DATE - INTERVAL '#{i} days') and table_name_en = #{tableName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPreviousTableAllCount" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        select tabletype || '.' || sjxjbm as sjxjbm, tableAllCount, updateDate
+          from (select distinct case
+                                  when tabletype = '1' then 'odps'
+                                  when tabletype = '2' or tabletype = '3' then 'ads'
+                                  when tabletype = '4' then 'hbase'
+                                  when tabletype = '5' or tabletype = '12' then 'hive'
+                                  when tabletype = '7' then 'clickhouse'
+                                  else '123'
+                                end as tabletype,
+                                lower(tableproject) || '.' || lower(tablename) as sjxjbm,
+                                tableallcount as tableAllCount,
+                                partitiondate as updateDate
+                  from synlte.syndmg_table_all
+                 where TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') >= TO_CHAR(CURRENT_DATE - INTERVAL '${i} day', 'YYYYMMDD')
+                   and TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') &lt;= to_char(CURRENT_DATE, 'YYYYMMDD')
+                   and tableallcount is not null) x
+<!--        select TABLEALLCOUNT from SYNLTE.SYNDMG_TABLE_ALL-->
+<!--        where to_date(PARTITIONDATE,'yyyymmdd') >= (CURRENT_DATE - INTERVAL '#{i} days')-->
+<!--        and to_date(PARTITIONDATE,'yyyymmdd') <![CDATA[< ]]> DATE_TRUNC('day', CURRENT_DATE)-->
+<!--        and upper(TABLENAME) = upper(#{t.tableNameEn,jdbcType=VARCHAR})-->
+<!--        and upper(TABLEPROJECT) = upper(#{t.tableProject,jdbcType=VARCHAR})-->
+<!--        and regexp_like(PARTITIONDATE,'^\d{8}$')-->
+<!--        <if test="t.tabletype=='ADS'">-->
+<!--            and TABLETYPE in('2','3')-->
+<!--        </if>-->
+<!--        <if test="t.tabletype=='ODPS'">-->
+<!--            and TABLETYPE = '1'-->
+<!--        </if>-->
+<!--        order by partitiondate desc-->
+    </select>
+
+    <select id="getClassInfo" resultType="com.synway.property.pojo.formorganizationindex.ClassifyInfo">
+        select codeid as codeId,codename as codeName,codetext as codeText, parcodeid as codeIdPar from v_classify_info t
+        <if test="classCode != null or classCode != ''">
+            where upper(t.codeid) like upper('%${classCode}%')
+        </if>
+    </select>
+
+    <select id="getPublicDataInfo" resultType="com.synway.property.pojo.formorganizationindex.PublicDataInfo">
+        select distinct TABLENAME as tableName,
+                SJXJBM as tableId,
+                PROJECT_NAME as projectName,
+                case when sjzzyjfl is null then 'null' else sjzzyjfl end as sjzzyjfl,
+                case when sjzzejfl is null then 'null' else sjzzejfl end as sjzzejfl
+        from synlte.public_data_info
+    </select>
+
+    <select id="getObjectTableNames" resultType="java.lang.String">
+        select TABLENAME from synlte.object
+    </select>
+    <select id="getObjectStoreInfos" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
+        select tablename as tableNameEn, project_name as tableProject, store_type as tableType from synlte.object_store_info
+    </select>
+
+</mapper>

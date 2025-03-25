@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.ProcessDao">
+
+	<select id="findApprovalById" resultType="com.synway.governace.pojo.process.ApprovalInfo">
+		select approval_id approvalId,module_name moduleName,operation_name operationName,application_info applicationInfo,
+		callback_data callbackData,callback_url callbackUrl,status status,module_id moduleId,task_id taskId,operator_id operatorId,
+		view_url viewUrl from DGN_APPROVAL where 1 = 1
+		<if test="approvalId != null  and approvalId !=''">
+			and approval_id = #{approvalId}
+		</if>
+	</select>
+
+	<insert id="insertApprovalInfo" parameterType="com.synway.governace.pojo.process.ApprovalInfo">
+        INSERT INTO DGN_APPROVAL(APPROVAL_ID,MODULE_NAME,OPERATION_NAME,APPLICATION_INFO,CALLBACK_DATA,CALLBACK_URL,CREATE_TIME,STATUS,MODULE_ID,TASK_ID,OPERATOR_ID,VIEW_URL)
+        VALUES (#{approvalId,jdbcType=VARCHAR},#{moduleName,jdbcType=VARCHAR},#{operationName,jdbcType=VARCHAR},#{applicationInfo,jdbcType=VARCHAR},
+        #{callbackData,jdbcType=VARCHAR},#{callbackUrl,jdbcType=VARCHAR},CURRENT_DATE,#{status,jdbcType=VARCHAR},#{moduleId,jdbcType=VARCHAR},
+        #{taskId,jdbcType=VARCHAR},#{operatorId,jdbcType=VARCHAR},#{viewUrl,jdbcType=VARCHAR})
+    </insert>
+
+	<update id="updateApprovalInfo" parameterType="com.synway.governace.pojo.process.ApprovalInfo">
+        UPDATE DGN_APPROVAL SET MODULE_NAME=#{moduleName,jdbcType=VARCHAR},OPERATION_NAME=#{operationName,jdbcType=VARCHAR},
+        APPLICATION_INFO=#{applicationInfo,jdbcType=VARCHAR},TASK_ID=#{taskId,jdbcType=VARCHAR},
+        OPERATOR_ID=#{operatorId,jdbcType=VARCHAR},CALLBACK_DATA=#{callbackData,jdbcType=VARCHAR},
+        PROCESSINSTANCEID=#{processinstanceid,jdbcType=VARCHAR}
+        WHERE APPROVAL_ID =#{approvalId}
+    </update>
+
+	<update id="updateApprovalStatus" parameterType="java.lang.String">
+        UPDATE DGN_APPROVAL SET STATUS=#{status} WHERE APPROVAL_ID =#{approvalId}
+    </update>
+
+	<delete id="deleteApprovalInfo" parameterType="java.lang.String">
+		DELETE FROM DGN_APPROVAL WHERE APPROVAL_ID = #{approvalId}
+	</delete>
+
+	<select id="queryApprovalInfoForModule" resultType="com.synway.governace.pojo.process.ApprovalInfo">
+		select approval_id approvalId,module_name moduleName,operation_name operationName,application_info applicationInfo,
+		callback_data callbackData,callback_url callbackUrl,task_id taskId,operator_id operatorId,view_url viewUrl
+		from DGN_APPROVAL
+		<where>
+			<if test="moduleId != null  and moduleId !=''">
+				and module_id = #{moduleId}
+			</if>
+			<if test="status != null  and status !='' and status != 1">
+				and status = #{status}
+			</if>
+			<if test="status != null  and status !='' and status == 1">
+				and (status = '1' or status = '0')
+			</if>
+		</where>
+	</select>
+
+	<select id="getOperationTypeData" resultType="java.lang.String">
+		select operation_name from DGN_APPROVAL
+		group by operation_name
+		order by operation_name
+	</select>
+
+	<update id="saveExecuteResult" parameterType="java.lang.String">
+        UPDATE DGN_APPROVAL SET EXECUTE_RESULT=#{executeResult} WHERE APPROVAL_ID =#{approvalId}
+    </update>
+
+	<select id="getExecuteErrorInfo" resultType="com.synway.governace.pojo.process.ApprovalInfo">
+		select processinstanceid, execute_result executeResult from DGN_APPROVAL where execute_result is not null and processinstanceid is not null
+	</select>
+
+</mapper>

@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.master.ObjectStoreInfoDao">
+
+    <insert id="saveObjectStoreInfo" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        merge into synlte.OBJECT_STORE_INFO a
+        using (select
+        #{item.tableId,jdbcType=VARCHAR} as tableId ,
+        #{item.tableName,jdbcType=VARCHAR} as tableName,
+        #{item.storeType,jdbcType=INTEGER} as storeType,
+        #{item.projectName,jdbcType=VARCHAR} as projectName
+        from dual) b
+        on (
+        upper(a.TABLEID) = upper(b.tableId)
+        and upper(a.TABLENAME) = upper(b.tableName)
+        and a.STORE_TYPE = b.storeType
+        and upper(a.PROJECT_NAME) = upper(b.projectName))
+        when matched then
+        update
+        set
+        OBJECTNAME = #{item.objectName,jdbcType=VARCHAR},
+        TABLE_MOD_TIME = sysdate,
+        <if test="flag == 1">
+            MEMO = #{item.memo,jdbcType=VARCHAR},
+        </if>
+        <if test="item.creater !='' and item.creater != null">
+            CREATER = #{item.creater,jdbcType=VARCHAR},
+        </if>
+        <if test="item.createrId !='' and item.createrId != null">
+            CREATER_ID = #{item.createrId,jdbcType=VARCHAR},
+        </if>
+        <if test="item.tableCreateTime !='' and item.tableCreateTime != null">
+            TABLE_CREATE_TIME = to_date(#{item.tableCreateTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+        </if>
+        <!--            <if test="item.tableModTime !='' and item.tableModTime != null">-->
+        <!--                -->
+        <!--            </if>-->
+        <if test="flag == 1">
+            IMPORT_FLAG = #{item.importFlag,jdbcType=INTEGER},
+        </if>
+        <if test="item.isActiveTable !='' and item.isActiveTable != null">
+            ISACTIVETABLE = #{item.isActiveTable,jdbcType=INTEGER},
+        </if>
+        <!--            <if test="item.isPartition != '' and item.isPartition != null">-->
+        <!--                -->
+        <!--            </if>-->
+        <if test="item.lifeCycle != '' and item.lifeCycle != null">
+            LIFECYCLE = #{item.lifeCycle,jdbcType=INTEGER},
+        </if>
+        <if test="item.dataId != '' and item.dataId != null">
+            DATAID = #{item.dataId,jdbcType=VARCHAR},
+        </if>
+        <!--            <if test="item.partitionType != '' and item.partitionType != null">-->
+        <!--                -->
+        <!--            </if>-->
+        <if test="item.partitionCount != '' and item.partitionCount != null">
+            PARTITIONCOUNT = #{item.partitionCount,jdbcType=INTEGER},
+        </if>
+        <if test="item.searchFlag != '' and item.searchFlag != null">
+            SEARCHFLAG = #{item.searchFlag,jdbcType=INTEGER},
+        </if>
+        ISPARTITION = #{item.isPartition,jdbcType=INTEGER},
+        PARTITIONTYPE=#{item.partitionType,jdbcType=INTEGER},
+        PROJECT_NAME_CN = #{item.projectNameCh,jdbcType=VARCHAR}
+        when not matched then
+        insert (tableInfoId, TABLEID,TABLENAME,OBJECTNAME,STORE_TYPE,PROJECT_NAME,PROJECT_NAME_CN,MEMO,
+        CREATER,CREATER_ID,TABLE_CREATE_TIME,TABLE_MOD_TIME,IMPORT_FLAG,ISACTIVETABLE,
+        ISPARTITION,LIFECYCLE,DATAID,SEARCHFLAG,PARTITIONTYPE,PARTITIONCOUNT
+        )
+        values(
+        #{item.tableInfoId,jdbcType=VARCHAR},
+        #{item.tableId,jdbcType=VARCHAR},#{item.tableName,jdbcType=VARCHAR},
+        #{item.objectName,jdbcType=VARCHAR},#{item.storeType,jdbcType=INTEGER},
+        #{item.projectName,jdbcType=VARCHAR},#{item.projectNameCh,jdbcType=VARCHAR},
+        #{item.memo,jdbcType=VARCHAR}, #{item.creater,jdbcType=VARCHAR},
+        #{item.createrId,jdbcType=VARCHAR},to_date(#{item.tableCreateTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+        <if test="item.tableModTime !='' and item.tableModTime != null">
+            to_date(#{item.tableModTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+        </if>
+        <if test="item.tableModTime =='' or item.tableModTime == null">
+            null,
+        </if>
+        #{item.importFlag,jdbcType=INTEGER},#{item.isActiveTable,jdbcType=INTEGER},
+        #{item.isPartition,jdbcType=INTEGER},#{item.lifeCycle,jdbcType=INTEGER},
+        #{item.dataId,jdbcType=VARCHAR},#{item.searchFlag,jdbcType=INTEGER},
+        #{item.partitionType,jdbcType=INTEGER},#{item.partitionCount,jdbcType=INTEGER}
+        )
+    </insert>
+    <update id="updateObjectStoreInfo" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        update synlte.OBJECT_STORE_INFO
+           set TABLEID        = #{item.tableId, jdbcType=VARCHAR},
+               OBJECTNAME     = #{item.objectName, jdbcType=VARCHAR},
+               IMPORT_FLAG    = #{item.importFlag, jdbcType=INTEGER},
+               ISPARTITION    = #{item.isPartition, jdbcType=INTEGER},
+               <if test="item.partitionType != '' and item.partitionType != null">
+                   PARTITIONTYPE = #{item.partitionType,jdbcType=INTEGER},
+               </if>
+               <if test="item.partitionCount != '' and item.partitionCount != null">
+                   PARTITIONCOUNT = #{item.partitionCount,jdbcType=INTEGER},
+               </if>
+               LIFECYCLE      = #{item.lifeCycle, jdbcType=INTEGER},
+               TABLE_MOD_TIME = sysdate
+         where upper(TABLENAME)    = upper(#{item.tableName, jdbcType=VARCHAR})
+           and upper(PROJECT_NAME) = upper(#{item.projectName, jdbcType=VARCHAR})
+           and upper(DATAID)       = upper(#{item.dataId, jdbcType=VARCHAR})
+           and upper(TABLEINFOID)  = upper(#{item.tableInfoId, jdbcType=VARCHAR})
+    </update>
+
+    <!--批量插入-->
+    <insert id="saveObjectStoreInfos" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        <foreach collection="objectStoreInfos" item="item" index="index" open="begin" close=";end;" separator=";">
+            merge into synlte.OBJECT_STORE_INFO a
+            using (select
+            #{item.tableId,jdbcType=VARCHAR} as tableId ,
+            #{item.tableName,jdbcType=VARCHAR} as tableName,
+            #{item.storeType,jdbcType=INTEGER} as storeType,
+            #{item.projectName,jdbcType=VARCHAR} as projectName
+            from dual) b
+            on (
+            upper(a.TABLEID) = upper(b.tableId)
+            and upper(a.TABLENAME) = upper(b.tableName)
+            and a.STORE_TYPE = b.storeType
+            and upper(a.PROJECT_NAME) = upper(b.projectName))
+            when matched then
+            update
+            set
+            OBJECTNAME = #{item.objectName,jdbcType=VARCHAR},
+            TABLE_MOD_TIME = sysdate,
+            <!--                <if test="flag == 1">-->
+            <!--                    MEMO = #{item.memo,jdbcType=VARCHAR},-->
+            <!--                </if>-->
+            <if test="item.creater !='' and item.creater != null">
+                CREATER = #{item.creater,jdbcType=VARCHAR},
+            </if>
+            <if test="item.createrId !='' and item.createrId != null">
+                CREATER_ID = #{item.createrId,jdbcType=VARCHAR},
+            </if>
+            <if test="item.tableCreateTime !='' and item.tableCreateTime != null">
+                TABLE_CREATE_TIME = to_date(#{item.tableCreateTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+            </if>
+            <!--                <if test="flag == 1">-->
+            <!--                    IMPORT_FLAG = #{item.importFlag,jdbcType=INTEGER},-->
+            <!--                </if>-->
+            <if test="item.isActiveTable !='' and item.isActiveTable != null">
+                ISACTIVETABLE = #{item.isActiveTable,jdbcType=INTEGER},
+            </if>
+            <if test="item.lifeCycle != '' and item.lifeCycle != null">
+                LIFECYCLE = #{item.lifeCycle,jdbcType=INTEGER},
+            </if>
+            <if test="item.dataId != '' and item.dataId != null">
+                DATAID = #{item.dataId,jdbcType=VARCHAR},
+            </if>
+            <if test="item.partitionCount != '' and item.partitionCount != null">
+                PARTITIONCOUNT = #{item.partitionCount,jdbcType=INTEGER}
+            </if>
+            <if test="item.searchFlag != '' and item.searchFlag != null">
+                SEARCHFLAG = #{item.searchFlag,jdbcType=INTEGER},
+            </if>
+            ISPARTITION = #{item.isPartition,jdbcType=INTEGER},
+            PARTITIONTYPE=#{item.partitionType,jdbcType=INTEGER},
+            PROJECT_NAME_CN = #{item.projectNameCh,jdbcType=VARCHAR}
+            when not matched then
+            insert (tableInfoId, TABLEID,TABLENAME,OBJECTNAME,STORE_TYPE,PROJECT_NAME,PROJECT_NAME_CN,MEMO,
+            CREATER,CREATER_ID,TABLE_CREATE_TIME,TABLE_MOD_TIME,IMPORT_FLAG,ISACTIVETABLE,
+            ISPARTITION,LIFECYCLE,DATAID,SEARCHFLAG,PARTITIONTYPE,PARTITIONCOUNT
+            )
+            values(
+            #{item.tableInfoId,jdbcType=VARCHAR},
+            #{item.tableId,jdbcType=VARCHAR},#{item.tableName,jdbcType=VARCHAR},
+            #{item.objectName,jdbcType=VARCHAR},#{item.storeType,jdbcType=INTEGER},
+            #{item.projectName,jdbcType=VARCHAR},#{item.projectNameCh,jdbcType=VARCHAR},
+            #{item.memo,jdbcType=VARCHAR}, #{item.creater,jdbcType=VARCHAR},
+            #{item.createrId,jdbcType=VARCHAR},to_date(#{item.tableCreateTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+            <if test="item.tableModTime !='' and item.tableModTime != null">
+                to_date(#{item.tableModTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+            </if>
+            <if test="item.tableModTime =='' or item.tableModTime == null">
+                null,
+            </if>
+            #{item.importFlag,jdbcType=INTEGER},#{item.isActiveTable,jdbcType=INTEGER},
+            #{item.isPartition,jdbcType=INTEGER},#{item.lifeCycle,jdbcType=INTEGER},
+            #{item.dataId,jdbcType=VARCHAR},#{item.searchFlag,jdbcType=INTEGER},
+            #{item.partitionType,jdbcType=INTEGER},#{item.partitionCount,jdbcType=INTEGER}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="updateObjectStoreInfoTime" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        merge into synlte.OBJECT_STORE_INFO a
+            using (select
+                 #{item.tableId,jdbcType=VARCHAR} as tableId , #{item.tableName,jdbcType=VARCHAR} as tableName,
+                 #{item.storeType,jdbcType=INTEGER} as storeType,  #{item.projectName,jdbcType=VARCHAR} as projectName,
+                 #{item.dataid,jdbcType=VARCHAR} as dataid
+                 from dual) b
+            on (
+            upper(a.TABLEID) = upper(b.tableId) and upper(a.TABLENAME) = upper(b.tableName) and a.STORE_TYPE = b.storeType and
+            upper(a.PROJECT_NAME) = upper(b.projectName) and upper(a.dataid) = upper(b.dataid))
+            when matched then
+            update
+            set
+            TABLE_MOD_TIME = to_date(#{item.tableModTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+            <if test="flag == 2">
+                , IMPORT_FLAG = #{item.importFlag,jdbcType=INTEGER}
+            </if>
+            when not matched then
+                insert (TABLEID,TABLENAME,OBJECTNAME,STORE_TYPE,PROJECT_NAME,PROJECT_NAME_CN,MEMO,
+                CREATER,CREATER_ID,TABLE_CREATE_TIME,TABLE_MOD_TIME,IMPORT_FLAG,DATAID,TABLEINFOID,
+                ISPARTITION,SEARCHFLAG
+                )
+                values(
+                #{item.tableId,jdbcType=VARCHAR},#{item.tableName,jdbcType=VARCHAR},
+                #{item.objectName,jdbcType=VARCHAR},#{item.storeType,jdbcType=INTEGER},
+                #{item.projectName,jdbcType=VARCHAR},#{item.projectNameCh,jdbcType=VARCHAR},
+                #{item.memo,jdbcType=VARCHAR}, #{item.creater,jdbcType=VARCHAR},
+                #{item.createrId,jdbcType=VARCHAR},to_date(#{item.tableCreateTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+                to_date(#{item.tableModTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss'),
+                #{item.importFlag,jdbcType=INTEGER},#{item.dataid,jdbcType=VARCHAR},#{item.tableInfoId,jdbcType=VARCHAR},
+                #{item.isPartition,jdbcType=VARCHAR},#{item.searchFlag,jdbcType=VARCHAR}
+                )
+    </insert>
+
+    <select id="getAllTableNameByObject" resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectInfo">
+        select tablename  as tableName, objectname as objectName,  tableid as tableId from synlte."OBJECT" where upper(relate_tablename) = 'OBJECTFIELD' and OBJECTSTATE = 1
+    </select>
+
+    <select id="getOldTableName" resultType="java.lang.String">
+        select distinct upper(PROJECT_NAME||'.'||TABLENAME) from synlte.OBJECT_STORE_INFO
+        <if test="tableName != null and tableName != ''">
+            where upper(TABLENAME) = upper(#{tableName})
+        </if>
+
+    </select>
+
+
+    <delete id="deleteOldTableName">
+        delete synlte.OBJECT_STORE_INFO
+        where upper(PROJECT_NAME||'.'||TABLENAME) = upper(#{tableName})
+    </delete>
+
+    <select id="queryCountByTableName" resultType="java.lang.Integer">
+       select count(0) from synlte.OBJECT_STORE_INFO where STORE_TYPE = #{storeType} and
+        upper(TABLENAME) = upper(#{tableName})
+        and IMPORT_FLAG = 1
+    </select>
+
+    <update id="updateImportFlagByName">
+        update synlte.OBJECT_STORE_INFO set IMPORT_FLAG = #{importFlag}
+        where STORE_TYPE = #{storeType} and
+        upper(TABLENAME) = upper(#{tableName})
+        and upper(dataid) = upper(#{dataId})
+    </update>
+
+    <select id="getImportFlagByTableName" resultType="java.lang.Integer">
+        select IMPORT_FLAG  from  synlte.OBJECT_STORE_INFO
+        where STORE_TYPE = #{storeType}
+        and upper(TABLENAME) = upper(#{tableName})
+        and upper(PROJECT_NAME) = upper(#{tableProject})
+        and upper(DATAID) = upper(#{dataId})
+        and rownum =1
+    </select>
+
+    <insert id="saveObjectStoreFieldInfo">
+        insert into synlte.OBJECT_STORE_FIELDINFO(ID,TABLEINFOID,FIELDID,COLUMNNAME,FIELDCHINEENAME,FIELDTYPE,FIELDLEN,
+        DEFAULTVALUE,TABLEINDEX,INDEXTYPE,NEEDVALUE,RECNO,PARTITION_RECNO,CLUST_RECNO,COLUMNFIELDTYPE,COLUMNFIELDLEN)
+        select * from(
+        <foreach collection="list" item="item" separator="union all" open ="(" close = ")">
+            select #{item.id},#{item.tableInfoId},#{item.fieldId,jdbcType=VARCHAR},
+            #{item.columnName},#{item.fieldChineeName,jdbcType=VARCHAR},
+            #{item.fieldType,jdbcType=INTEGER},#{item.fieldLen,jdbcType=INTEGER},#{item.defaultValue,jdbcType=VARCHAR},
+            #{item.tableIndex,jdbcType=INTEGER},#{item.indexType,jdbcType=INTEGER},
+            #{item.needValue,jdbcType=INTEGER},#{item.recno,jdbcType=INTEGER},#{item.partitionRecno,jdbcType=INTEGER},
+            #{item.clustRecno,jdbcType=INTEGER},
+            #{item.columnFieldType,jdbcType=INTEGER},
+            #{item.columnFieldLen,jdbcType=INTEGER}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <select id="getObjectStoreInfo" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        select TABLEID        as tableId,
+               ISPARTITION    as isPartition,
+               LIFECYCLE      as lifeCycle,
+               PARTITIONTYPE  as partitionType,
+               PARTITIONCOUNT as partitionCount,
+               IMPORT_FLAG    as importFlag
+          from synlte.object_store_info where upper(TABLEINFOID) = upper(#{tableInfoId})
+    </select>
+    <select id="getObjectStoreFieldInfo" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreFieldInfo">
+        select ID as id,
+               TABLEINFOID as tableInfoId,
+               FIELDID as fieldId,
+               COLUMNNAME as columnName,
+               FIELDCHINEENAME as fieldChineeName,
+               FIELDTYPE as fieldType,
+               FIELDLEN as fieldLen,
+               DEFAULTVALUE as defaultValue,
+               TABLEINDEX as tableIndex,
+               INDEXTYPE as indexType,
+               NEEDVALUE as needValue,
+               RECNO as recno,
+               PARTITION_RECNO as partitionRecno,
+               CLUST_RECNO as clustRecno,
+               COLUMNFIELDTYPE as columnFieldType,
+               COLUMNFIELDLEN as columnFieldLen
+          from synlte.object_store_fieldinfo where upper(TABLEINFOID) = upper(#{tableInfoId})
+    </select>
+
+    <select id="searchObjectStoreInfoId" parameterType="java.lang.String" resultType="java.lang.String">
+        select distinct TABLEINFOID from synlte.OBJECT_STORE_INFO
+        where upper(TABLENAME)=upper(#{tableName}) and upper(PROJECT_NAME)=upper(#{projectName}) and DATAID=#{dataId} and rownum = 1
+    </select>
+
+    <select id="searchObjectStoreInfoIdByTableId" parameterType="java.lang.String" resultType="java.lang.String">
+        select distinct TABLEINFOID from synlte.OBJECT_STORE_INFO
+        where upper(TABLENAME)=upper(#{tableName}) and upper(TABLEID)=upper(#{tableId}) and DATAID=#{dataId} and rownum = 1
+    </select>
+
+    <select id="searchAllData" resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        select TABLEINFOID as tableInfoId,TABLEID as tableId,TABLENAME as tableName,OBJECTNAME as objectName,STORE_TYPE as storeType,
+               PROJECT_NAME as projectName,PROJECT_NAME_CN as projectNameCh,MEMO as memo,CREATER as creater,CREATER_ID as createrId,
+               TABLE_CREATE_TIME as tableCreateTime,TABLE_MOD_TIME as tableModTime,IMPORT_FLAG as importFlag,SEARCHFLAG as searchFlag,
+               ISPARTITION as isPartition,ISACTIVETABLE as isActiveTable,DATAID as dataId,LIFECYCLE as lifeCycle
+        from synlte.object_store_info
+    </select>
+    <select id="getFieldInfoTableInfoId" resultType="java.lang.String">
+        select distinct tableinfoid from synlte.object_store_fieldinfo
+    </select>
+
+    <select id="searchObjectStoreInfoList" resultType="com.synway.datastandardmanager.pojo.ExternalInterfce.RegisterTableInfo">
+        select tableInfoId,tableName as tableNameEn,PROJECT_NAME as projectName, DATAID as resourceId from synlte.OBJECT_STORE_INFO where
+        <foreach collection="list" item="item" separator="or" open ="(" close = ")">
+            upper(TABLENAME) = upper(#{item.tableNameEn})
+            and upper(PROJECT_NAME) = upper(#{item.projectName})
+            <if test="item.resourceId != null and item.resourceId != ''">
+                and upper(DATAID) = upper(#{item.resourceId})
+            </if>
+            <if test="item.resourceId == null or item.resourceId == ''">
+                and upper(store_type) = upper(#{item.tableType})
+            </if>
+        </foreach>
+    </select>
+
+    <delete id="deleteObjectStoreFieldInfo" parameterType="java.lang.String">
+        delete from synlte.OBJECT_STORE_FIELDINFO where upper(TABLEINFOID) = upper(#{tableInfoId})
+    </delete>
+    <!--    <delete id="deleteObjectStoreFieldInfos" parameterType="java.lang.String">-->
+    <!--        delete from synlte.OBJECT_STORE_FIELDINFO where upper(TABLEINFOID) in (-->
+    <!--        <foreach collection="tableInfoIds" item="tableInfoId" separator="union all" open ="(" close = ")">-->
+    <!--            select upper(#{tableInfoId}) from dual-->
+    <!--        </foreach>-->
+    <!--        )-->
+    <!--    </delete>-->
+    <delete id="deleteObjectStoreFieldInfos" parameterType="java.lang.String">
+        delete synlte.object_store_fieldinfo a
+         where a.tableinfoid not in
+               (select tableinfoid from synlte.object_store_info)
+    </delete>
+
+    <select id="searchTableInfo" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfoParameter"
+            resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        select O.TABLEINFOID as tableInfoId,
+        o2.objectname as objectName,
+        o2.tableName as tableName,
+        o.TABLEID as tableId,
+        o2.SJZZYJFLVALLUE as organizationClassificationId,
+        o.store_type as storeType,
+        PROJECT_NAME as projectName,
+        o.import_flag as importFlag,
+        o.partitiontype as partitionType,
+        o.lifecycle as lifeCycle,
+        o2.tablename as standTableName,
+        v.CENTER_NAME as centerName,
+        v.res_name as resName,
+        v.res_id as resId,
+        o.TABLENAME as realTableName,
+        CASE
+        WHEN n.REGISTERCOUNT IS NULL THEN
+        0
+        ELSE
+        n.REGISTERCOUNT
+        end as registerCount,
+        TABLE_CREATE_TIME as tableCreateTime,
+        O.CREATER as creater
+        from SYNLTE.OBJECT_STORE_INFO O
+        left join (select  ds.RES_ID, ds.RES_NAME, dc.CENTER_NAME from SYNDG.DS_DATA_RESOURCE ds left join syndg.ds_data_center dc
+        on ds.CENTER_ID = dc.CENTER_ID) v on o.dataid = v.RES_ID
+        left join (select TABLEINFOID, count(TABLEINFOID) AS REGISTERCOUNT
+        from synlte.public_data_info
+        GROUP BY TABLEINFOID) n on o.TABLEINFOID = n.TABLEINFOID
+        left join synlte."OBJECT" o2 on o2.tableid = o.tableid
+        <where>
+            <if test="searchType != null and searchType == 'objectName' and searchText != null">
+                (upper(o.OBJECTNAME) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+
+            <if test="searchType != null and searchType == 'standTableName' and searchText != null">
+                (upper(o2.tablename) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+
+            <if test="searchType != null and searchType == 'tableId' and searchText != null">
+                (upper(o.TABLEID) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+
+            <if test="searchType != null and searchType == 'realTableName' and searchText != null">
+                (upper(o.TABLENAME) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+
+            <if test="searchType != null and searchType == 'all' and searchText != null">
+                (upper(o.OBJECTNAME) like upper(concat('%',concat(#{searchText},'%')))) or
+                (upper(o2.tablename) like upper(concat('%',concat(#{searchText},'%')))) or
+                (upper(o.TABLEID) like upper(concat('%',concat(#{searchText},'%')))) or
+                (upper(o.TABLENAME) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+
+            <if test="storeTypeList != null and storeTypeList.size()>0">
+                and o.store_type in (
+                <foreach collection="storeTypeList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+
+            <if test="dataIdList != null and dataIdList.size()>0">
+                and v.res_id in (
+                <foreach collection="dataIdList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+
+            <if test="projectNameList != null and projectNameList.size()>0">
+                and PROJECT_NAME in (
+                <foreach collection="projectNameList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+
+            <if test="creatorList != null and creatorList.size()>0">
+                and O.CREATER in (
+                <foreach collection="creatorList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+        </where>
+
+        <if test="sort !=null and sort != ''">
+            order by ${sort} ${sortOrder}
+        </if>
+    </select>
+
+    <select id="searchObjectStoreInfoIdByName" resultType="java.lang.String" parameterType="java.lang.String">
+        select TABLEINFOID from synlte.OBJECT_STORE_INFO where TABLENAME=#{tableName} and rownum = 1
+    </select>
+
+    <select id="searchAllTableId" resultType="java.lang.String">
+        select TABLEID from synlte.object_store_info where dataid in (select res_id from ds_data_resource)
+    </select>
+
+    <select id="searchDataResourceTable" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(0) from ds_project_table where upper(table_name_en)=upper(#{tableName})
+        and  project_name=#{projectName}
+        and  RES_ID= #{resId}
+    </select>
+
+    <select id="getFilterInfo" resultType="com.synway.datastandardmanager.pojo.FilterObject">
+        select value, text
+        from (select distinct to_char(store_type) as value, 'storeType' as text
+          from synlte.object_store_info
+         where store_type is not null
+         order by 'store_type' asc)
+            UNION all
+        select value, text
+        from (select distinct project_name AS value, 'projectName' as text
+          from synlte.object_store_info
+         where project_name is not null
+         order by project_name ASC)
+        UNION ALL
+        SELECT VALUE, TEXT
+        FROM (SELECT DISTINCT CREATER AS VALUE, 'CREATER' as text
+          from synlte.object_store_info
+         where CREATER IS NOT NULL
+         order by CREATER ASC)
+        UNION ALL
+        SELECT VALUE, TEXT
+        FROM (SELECT DISTINCT dataid AS VALUE, 'dataid' as text
+          from synlte.object_store_info
+         where dataid IS NOT NULL
+         order by dataid ASC)
+
+    </select>
+
+    <update id="updateImportFlag" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        update synlte.object_store_info set import_flag = #{objectStoreInfo.importFlag,jdbcType=INTEGER} where tableInfoId = #{objectStoreInfo.tableInfoId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getStandardDataSet" resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectInfo">
+        select distinct objectid as objectId,
+               objectname as objectName,
+               tablename as tableName,
+               tableid as tableId,
+               sjzzyjflvallue as organizationClassificationId
+          from synlte."OBJECT"
+         where OBJECTSTATE = 1
+           and objectname is not null
+           and relate_tablename = 'OBJECTFIELD'
+    </select>
+
+    <select id="getStandardDataItem" resultType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreFieldInfo">
+        select recno as recno,
+               fieldid as fieldId,
+               fieldchineename as fieldChineeName,
+               columnname as columnName,
+               fieldtype as fieldType,
+               fieldlen as fieldLen,
+               isindex as tableIndex,
+               needvalue as needValue,
+               defaultvalue as defaultValue,
+               odps_pattition as odpsPattition,
+               case
+                 when partition_recno is null then 0
+                 else partition_recno
+               end as partitionRecno
+          from synlte.objectfield
+         where objectid = #{objectId} and deleted = 0
+         order by recno
+    </select>
+
+    <select id="getCreateTableCount" resultType="java.lang.Integer">
+        select count(*) as cnt
+          from synlte.object_store_info
+         where upper(tableid) = upper(#{tableId})
+           and upper(tablename) = upper(#{tableName})
+    </select>
+
+    <update id="updateBuildTableShowField">
+        merge into ZC_CONFIG_FIELD_CONTROL a
+            using (select 'TABLE_BUILDTABLE' as NAME, #{userName,jdbcType=VARCHAR} as USERNAME FROM dual) b
+            on (a.name = b.name and a.USERNAME = b.USERNAME)
+            when matched then
+            update
+            set
+            SHOW_FIELD_LIST = #{showField,jdbcType=VARCHAR} where NAME = 'TABLE_BUILDTABLE' and USERNAME = #{userName,jdbcType=VARCHAR}
+            when not matched then
+            insert values('TABLE_BUILDTABLE',90,#{showField,jdbcType=VARCHAR},#{userName,jdbcType=VARCHAR})
+    </update>
+
+    <select id="getBuildTableShowField" resultType="java.lang.String">
+        select SHOW_FIELD_LIST from ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_BUILDTABLE' and USERNAME = #{userName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getStoreTypeList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select code_value as value, code_text as label, memo as memo
+          from all_code_data
+         where upper(code_id) = upper('store_type')
+    </select>
+
+    <select id="getSjzybsfList" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo" resultType="java.lang.String">
+        select sjzybsf
+          from synlte.public_data_info
+         where tableinfoid = #{objectStoreInfo.tableInfoId,jdbcType=VARCHAR}
+           and zyzt != '2'
+    </select>
+    <delete id="delObjectStoreInfoByTableInfoId" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        delete synlte.object_store_info where tableinfoid = #{objectStoreInfo.tableInfoId,jdbcType=VARCHAR}
+    </delete>
+    <delete id="delObjectStoreFieldInfoByTableInfoId" parameterType="com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo">
+        delete synlte.object_store_fieldinfo where tableinfoid = #{objectStoreInfo.tableInfoId,jdbcType=VARCHAR}
+    </delete>
+    <select id="getOldOSFInfoSum" resultType="java.lang.Integer">
+        select count(*) from synlte.object_store_fieldinfo where tableinfoid = #{tableInfoId,jdbcType=VARCHAR}
+    </select>
+
+</mapper>

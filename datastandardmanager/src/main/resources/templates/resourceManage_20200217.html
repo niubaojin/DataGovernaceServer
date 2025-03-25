@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns="http://java.sun.com/jsf/html">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-table.css">
+	<link rel="stylesheet" href="myCss/bootstrap-tablePage.css">
+	<link rel="stylesheet" href="bootstrap/css/toastr.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-treeview.css">
+	<link href="simple-hint/simple-hint.css" rel="stylesheet" />
+	<link rel="stylesheet" href="myCss/resourceManage.css">
+	<script  src="bootstrap/jQuery/jquery-3.0.0.js"></script>
+	<script  src="bootstrap/jQuery/jquery.min.js"></script>
+	<script  src="bootstrap/jQuery/jquery.serializejson.js"></script>
+	<script  src="bootstrap/js/bootstrap.min.js"></script>
+	<script  src="bootstrap/js/bootstrap-table.js"></script>
+	<script src="bootstrap/js/bootstrap-table-zh-CN.js"></script>
+	<script  src="bootstrap/js/toastr.min.js"></script>
+	<script  src="myJs/commons.js"></script>
+	<script  src="myJs/resourceManage.js"></script>
+	<script  src="myJs/clipboard.min.js"></script>
+	<script  src="bootstrap/js/bootbox.js"></script>
+	<!--ztree-->
+	<link rel="stylesheet" href="ztree/css/demo.css" type="text/css">
+	<link rel="stylesheet" href="ztree/css/zTreeStyle/zTreeStyle.css" type="text/css">
+	<script type="text/javascript" src="ztree/js/jquery.ztree.core.js"></script>
+	<script type="text/javascript" src="ztree/js/jquery.ztree.excheck.js"></script>
+	<script type="text/javascript" src="ztree/js/jquery.ztree.exedit.js"></script>
+	<!-- toastr -->
+	<script type="text/javascript" src="bootstrap/js/toastr.min.js"></script>
+	<link rel="stylesheet" href="bootstrap/css/toastr.css">
+	<link rel="stylesheet" href="myCss/tree.css">
+	<!-- layui -->
+	<link rel="stylesheet" href="layui/css/layui.css" media="all">
+	<link rel="stylesheet" href="myCss/cascader.css" media="all">
+	<!--<link rel="stylesheet" href="../perfect-scrollbar/perfect-scrollbar.css">-->
+	<!--<script type="text/javascript" src="../perfect-scrollbar/perfect-scrollbar.js"></script>-->
+
+	<script src="layui/layui.js"></script>
+	<script src="bootstrap/js/jquery.blockUI.js" type="text/javascript" charset="utf-8"></script>
+	<link href="simple-hint/simple-hint.css" rel="stylesheet" />
+	<script type="text/javascript" src="bootstrap/js/bootstrap-editable.js"></script>
+	<script type="text/javascript" src="bootstrap/js/bootstrap-table-editable.js"></script>
+
+</head>
+<body>
+<div class="headerTool">
+    <!--<div class="headerColor"></div>-->
+    <p class="headerFont">当前页: </p>
+    <p class="pageAddress"> 首页>数据定义 </p>
+</div>
+<div class="treeDiv">
+	<div class="searchTree">
+		<input id="dataCenterName"  class="dataCenterNameInput form-control pull-left" type="text"
+			   placeholder="请输入内容" autocomplete="off"/>
+		<div class="pull-left search">
+			<button id="queryBtn" type="button" class="btn btn-sm querybtn" onclick="createTree()">搜索</button>
+		</div>
+	</div>
+	<div class="dataTypeTab">
+		<table>
+			<tr>
+				<td width="20%" style="font-weight: bold;" class="active" onclick="switchTab(1)">组织</td>
+				<td width="20%" style="font-weight: bold;" onclick="switchTab(2)">来源</td>
+				<td width="20%" style="font-weight: bold;" onclick="switchTab(3)">资源</td>
+				<td width="20%" style="font-weight: bold;" id="addTab">
+					<span class="glyphicon glyphicon-plus" aria-hidden="true" style="margin-left: 8px" onclick="addResourceManageObject()" ></span>
+				</td>
+				<td width="20%" style="font-weight: bold;">
+					<span class="glyphicon glyphicon-refresh" aria-hidden="true" onclick="treeRefresh()" ></span>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div class="dsList">
+		<ul id="dszTree" class="ztree">
+
+		</ul>
+	</div>
+</div>
+<div class="TableDiv" style="overflow: auto;height: 95%" >
+	<div class="resourceManageObjectDetailDiv">
+		<div class="leftdiv" >
+			<img src="img/icon2.png"/>
+			<font>数据信息</font>
+			<button id="flowComplete" hidden="true" type="button" class="btn btn-sm querybtn" style="width:80px;float: right;display:none; " >定义完成</button>
+			<button id="editResource" type="button" class="btn btn-sm querybtn resourceButton"
+					 onclick="editResourceManageTable()">
+				编辑
+			</button>
+			<button id="saveResource" type="button" class="btn btn-sm querybtn resourceButton"
+					 style="display: none" onclick="saveResourceManageTable()">
+				保存
+			</button>
+		</div>
+		<table width="100%" class="table table-hover" cellspacing="1"
+			   cellpadding="5" border="1" style="border:1px solid #ccc;margin-bottom: 0px;" id="table-object">
+				<tr>
+					<td width="11%" style="font-weight: bold;">源表ID</td>
+					<td style="font-size: 5px;" width="22%" id="sourceId"></td>
+					<td style="font-size: 5px;display: none" width="22%" id="objectIdManage" ></td>
+					<td style="font-weight: bold;" width="11%">数据名</td>
+					<td style="font-size: 5px;" id='dataSourceName'></td>
+					<td style="font-weight: bold;" width="11%">真实表名</td>
+					<td style="font-size: 5px;" width="22%" id="realTableName"></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;" width="11%">协议厂商</td>
+					<td style="font-size: 5px;" width="22%" id="sourceFirm"></td>
+					<td width="11%" style="font-weight: bold;">系统名称</td>
+					<td style="font-size: 5px; " width="22%" id="objectName"></td>
+					<td style="font-weight: bold;" width="11%">表协议</td>
+					<td style="font-size: 5px;" id='tableId'></td>
+				</tr>
+				<tr>
+					<td width="11%" style="font-weight: bold;">存储表状态</td>
+					<td style="font-size: 5px;" width="22%" id="storageTableStatus"></td>
+					<td style="font-weight: bold;" width="11%">存储方式</td>
+					<td style="font-size: 5px;" id='storageMode'></td>
+					<td style="font-weight: bold;" width="11%">存储数据源</td>
+					<td style="font-size: 5px;" width="22%" id="storageDataSourceName"></td>
+				</tr>
+				<tr>
+					<td width="11%" style="font-weight: bold;">数据组织</td>
+					<td style="font-size: 5px;" width="22%" id="organizationClassify">
+
+					</td>
+					<td style="font-weight: bold;" width="11%">数据来源</td>
+					<td style="font-size: 5px;" id='sourceClassify'>
+                    </td>
+                    <td style="font-weight: bold;" width="11%"></td>
+                    <td style="font-size: 5px;" width="22%"></td>
+				</tr>
+                <tr>
+                    <td width="11%" style="font-weight: bold;">描述</td>
+                    <td style="font-size: 5px;" width="88%" id="objectMemo">
+                    </td>
+                </tr>
+		</table>
+</div>
+
+
+<div class="rightSouthDiv">
+	<div class="leftdiv" >
+		<ul class="nav nav-tabs">
+			<li>
+				<a href="#resourceManageObjectFieldTab" data-toggle="tab">
+					字段定义
+				</a>
+			</li>
+			<li class="active">
+				<a href="#sourceRelationShipTab" data-toggle="tab" onclick="sourceRelationClick()">
+					来源关系
+				</a>
+			</li>
+
+		</ul>
+	</div>
+	<div class="rightDiv tab-content">
+		<div id="resourceManageObjectFieldTab" class="tab-pane ">
+            <select id="needValueSelect" class="form-control" style="width: 90px;" >
+                <option value="all"  selected="selected">全列</option>
+                <option value="fieldId" >元素编码</option>
+                <option value="columnName" >建表字段名</option>
+                <option value="fieldName" >标准字段名</option>
+                <option value="fieldChineeName" >字段中文名</option>
+            </select>
+            <input id="searchInputContext" type='text' class="form-control"
+                   style="width: 180px;margin-left: 5px;margin-right: 5px;margin-bottom: 5px;"
+                   placeholder="查询内容"/>
+            <div class="pull-left search">
+                <button id="fieldQueryBtn" type="button" class="btn gray-btn"
+                        style="height: 30px; width: 5px;background-color: rgb(255, 255, 255);position: absolute;
+                        margin-left: 279px;" onclick="objectFieldQuery()">
+                    <img src="img/搜索.png" style="margin-bottom: 5px;margin-left: -7px;">
+                </button>
+            </div>
+            <div class="allButtonDiv">
+                <button id="addOrUpdateObjectField" type="button" class="oneButtonClass btn gray-btn"
+                        onclick="addOrUpdateObjectField('add')"
+                        style="margin-left:8px;">
+                    <span data-hint="增加字段" class="hint-bottom-right-s-small-t-info"
+                          style="position: relative;">
+                        <img src="img/新建.png" style="margin-bottom: 5px;margin-left: -10px;">
+                    </span>
+                </button>
+                <button id="UpdateObjectField" type="button" class="oneButtonClass btn gray-btn"
+                        onclick="addOrUpdateObjectField('update')">
+					<span data-hint="编辑字段" class="hint-bottom-right-s-small-t-info"
+						  style="position: relative;">
+                        <img src="img/编辑.png" style="margin-bottom: 5px;margin-left: -10px;">
+                    </span>
+                </button>
+                <button id="deleteObjectField" type="button" class="oneButtonClass btn gray-btn"
+                        onclick="deleteObjectField()">
+                    <span data-hint="删除字段" class="hint-bottom-right-s-small-t-info"
+                          style="position: relative;">
+                        <img src="img/删除.png" style="margin-bottom: 5px;margin-left: -10px;">
+                    </span>
+                </button>
+                <button id="createTable" type="button" class="oneButtonClass btn gray-btn"
+                        onclick="createTable()">
+                    <span data-hint="建表" class="hint-bottom-right-s-small-t-info"
+                          style="position: relative;">
+                        <img src="img/table.png" style="margin-bottom: 5px;margin-left: -10px;">
+                    </span>
+                </button>
+                <button id="addColumn" type="button" class="oneButtonClass btn gray-btn"
+                        onclick="addCommonColumn()">
+                    <span data-hint="添加公共字段" class="hint-bottom-right-s-small-t-info"
+                          style="position: relative;">
+                        <img src="img/添加.PNG" style="margin-bottom: 5px;margin-left: -10px;">
+                    </span>
+                </button>
+                <div class="dropdown" style="float: left;left: 5px;">
+                    <button class="oneButtonClass btn gray-btn dropdown-toggle " type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span data-hint="页面跳转" class="hint-bottom-right-s-small-t-info"
+                              style="position: relative;">
+                            <span class="glyphicon glyphicon-menu-down buttonArrow"  aria-hidden="true"></span>
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                        <li onclick="jumpOrthePage(2)"><a href="#">数据处理</a></li>
+                        <li onclick="jumpOrthePage(3)"><a href="#">数据接入</a></li>
+                    </ul>
+                </div>
+            </div>
+
+			<!--<button id="addOrUpdateObjectField" type="button" class="btn btn-sm querybtn" style="width:80px;" onclick="addOrUpdateObjectField('add')">增加字段</button>-->
+			<!--<button id="UpdateObjectField" type="button" class="btn btn-sm querybtn" style="width:80px;" onclick="addOrUpdateObjectField('update')">编辑字段</button>-->
+			<!--<button id="deleteObjectField" type="button" class="btn btn-sm querybtn" style="width:80px;" onclick="deleteObjectField()">删除字段</button>-->
+			<!--<button id="createTable" type="button" class="btn btn-sm querybtn" style="width:80px;" onclick="createTable()">建表</button>-->
+			<!--<button id="createSQL" type="button" class="btn btn-sm querybtn" style="width:80px;" onclick="createSQL()">SQL脚本</button>-->
+            <!--<button id="addColumn" type="button" class="btn btn-sm querybtn" style="width:100px;" onclick="addCommonColumn()">添加公共字段</button>-->
+
+			<div class="resourceManageObjectFieldDiv" >
+				<table id="resourceManageObjectField" class="table table-hover" cellspacing="1"
+					   cellpadding="5" border="1" style="border:1px solid #e0e0e0;">
+				</table>
+			</div>
+		</div>
+		<div id="sourceRelationShipTab" class="tab-pane active">
+			<button id="addSourceRelationClick" type="button" class="btn btn-sm querybtn" style="width:60px;margin-bottom: 5px" onclick="addSourceRelationClick()">增加</button>
+			<button id="" type="button" class="btn btn-sm querybtn" style="width:60px;margin-bottom: 5px" onclick="deleteSourceRelation()">删除</button>
+			<table id="sourceRelationShip" class="table table-hover" cellspacing="1"
+				   cellpadding="5" border="1" style="border:1px solid #e0e0e0;">
+			</table>
+		</div>
+
+	</div>
+
+</div>
+
+
+<div class="modal fade" id="addSourceRelationModal" tabindex="-1" role="dialog"
+	 aria-labelledby="myModalLabel" data-backdrop='static'>
+	<div class="modal-dialog" role="document">
+		<div class="modal-content" style="width: 700px;">
+			<div class="modal-header">
+				<p>增加来源关系</p>
+			</div>
+			<div class="modal-body" id="addSourceRelationModalContent">
+				<div class="container">
+                    <div class="form-group row" >
+                        <label  class="col-sm-2 control-label sourceLabel">获取方式：</label>
+                        <div class="col-sm-10">
+                            <select id="sourceRelationSelectModal" class="form-control"
+									onchange="sourceRelationModalChange()" >
+                                <option value="organizational" selected>组织资产</option>
+                                <option value="database">数据仓库</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row organizational">
+                        <label  class="col-sm-2 control-label sourceLabel">大类：</label>
+                        <div class="col-sm-10">
+                            <select class="form-control"  onchange="mainClassChange()" id="mainClassMode">
+                                <option value="1" selected>数据组织</option>
+                                <option value="2">数据来源</option>
+								<option value="3">数据资源</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div  class="form-group row organizational">
+                        <label  class="col-sm-2 control-label sourceLabel">一级分类：</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="firstClassMode" onchange="firstClassChange()">
+
+                            </select>
+                        </div>
+                    </div>
+                    <div  class="form-group row organizational">
+                        <label  class="col-sm-2 control-label sourceLabel">二级分类：</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="secondaryClass" onchange="createNewSuggest()">
+
+                            </select>
+                        </div>
+                    </div>
+					<!--  输入搜索框可以通过输入提示来选择表名   -->
+                    <div  class="form-group row organizational">
+                        <label  class="col-sm-2 control-label sourceLabel">表名：</label>
+                        <div class="col-sm-10">
+                            <div class=" input-group">
+                                <input id="addTableMode" type="text" placeholder="请输入表名" class="form-control no-padding"
+                                       style="width: 220px;height:32px;"  >
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-right" role="menu"
+										></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div  class="form-group row organizational">
+                        <label  class="col-sm-2 control-label sourceLabel">来源系统：</label>
+                        <div class="col-sm-10">
+							<select class="form-control" id="sourceSystemModeOrganizational">
+							</select>
+                            <!--<input id="sourceSystemModeOrganizational" type="text" placeholder="" class="form-control no-padding"-->
+                                   <!--style="width: 220px;height:32px;" >-->
+                        </div>
+                    </div>
+                    <div  class="form-group row organizational">
+                        <label  class="col-sm-2 control-label sourceLabel">来源厂商：</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="sourceFirmModeOrganizational">
+                                <option value=0>全部</option>
+                                <option value=1>普天</option>
+                                <option value=2>汇智</option>
+                                <option value=3>三所</option>
+                                <option value=4>烽火</option>
+                                <option value=5>三汇</option>
+                                <option value=6>锐安</option>
+                                <option value=7>部中心</option>
+                                <option value=8>部中心mq</option>
+                                <option value=9>海康</option>
+                            </select>
+                            <!--<input id="sourceFirmModeOrganizational" type="text" placeholder="请输入中文厂商名称" class="form-control no-padding"-->
+                                   <!--style="width: 220px;height:32px;" >-->
+                        </div>
+                    </div>
+
+					<!--从数据仓库里面获取对应的表信息-->
+					<div id="dataBaseNameDiv" class="form-group row database" style="display: none">
+						<label  class="col-sm-2 control-label sourceLabel">仓库名：</label>
+						<div class="col-sm-10">
+							<select class="form-control" id="dataBaseNameMode" onchange="getAllTableNameByDataBaseId()" >
+
+							</select>
+						</div>
+					</div>
+					<div  class="form-group row database" style="display: none">
+						<label  class="col-sm-2 control-label sourceLabel" >表名：</label>
+						<div class="col-sm-10">
+							<select class="form-control" id="tableNameMode" onchange="etlTableNameChange()">
+
+							</select>
+						</div>
+					</div>
+                    <div  class="form-group row database" style="display: none">
+                        <label  class="col-sm-2 control-label sourceLabel">来源数据协议：</label>
+                        <div class="col-sm-10">
+                            <input id="sourceProtocolMode" type="text" placeholder="" class="form-control no-padding"
+                                   style="width: 220px;height:32px;" >
+                        </div>
+                    </div>
+                    <div  class="form-group row database" style="display: none">
+                        <label  class="col-sm-2 control-label sourceLabel">来源系统：</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="sourceSystemMode">
+                            </select>
+                            <!--<input id="sourceSystemMode" type="text" placeholder="" class="form-control no-padding"-->
+                                   <!--style="width: 220px;height:32px;" >-->
+                        </div>
+                    </div>
+                    <div  class="form-group row database" style="display: none">
+                        <label  class="col-sm-2 control-label sourceLabel">来源厂商：</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="sourceFirmMode">
+                                <option value=0>全部</option>
+                                <option value=1>普天</option>
+                                <option value=2>汇智</option>
+                                <option value=3>三所</option>
+                                <option value=4>烽火</option>
+                                <option value=5>三汇</option>
+                                <option value=6>锐安</option>
+                                <option value=7>部中心</option>
+                                <option value=8>部中心mq</option>
+                                <option value=9>海康</option>
+                            </select>
+                            <!--<input id="sourceFirmMode" type="text" placeholder="" class="form-control no-padding"-->
+                                   <!--style="width: 220px;height:32px;" >-->
+                        </div>
+                    </div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" onclick="addSourceRelationButton()">添加</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal" name="cancel">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div class="modal fade" id="showSQL" tabindex="-1" role="dialog"
+	 aria-labelledby="myModalLabel" data-backdrop='static'>
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				SQL语句
+			</div>
+			<div class="modal-body" id="showSQLContent">
+
+			</div>
+			<div class="modal-footer">
+				<button id="copyBtn" type="button" class="btn btn-default" data-dismiss="modal" onClick="copySQLContent();" data-clipboard-action="copy" data-clipboard-target="#showSQLContent">复制</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal" name="cancel">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div class="modal fade" id="showObjectField" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				ObjectField详细信息
+			</div>
+			<div class="modal-body" id="showSQLContent">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-3">表对象ID:</div>
+						<div class="col-md-9" id="objectId"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">表中字段顺序:</div>
+						<div class="col-md-9" id="recno"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">元素编码:</div>
+						<div class="col-md-9" id="fieldId"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">表中的字段名称:</div>
+						<div class="col-md-9" id="column_name"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">标准中数据项英文描述:</div>
+						<div class="col-md-9" id="columnName"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">标准中的字段中文名称:</div>
+						<div class="col-md-9" id="fieldChineeName"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">标准中的字段描述:</div>
+						<div class="col-md-9" id="fieldDescribe"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">字段类型:</div>
+						<div class="col-md-9" id="fieldType"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">字段长度:</div>
+						<div class="col-md-9" id="fieldLen"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">字段默认值:</div>
+						<div class="col-md-9" id="defaultValue"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">表索引:</div>
+						<div class="col-md-9" id="tableIndex"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">是否索引:</div>
+						<div class="col-md-9" id="isIndex"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">索引类型:</div>
+						<div class="col-md-9" id="indexType"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">是否必填:</div>
+						<div class="col-md-9" id="needValue"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">是否布控:</div>
+						<div class="col-md-9" id="isContorl"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">是否可查询:</div>
+						<div class="col-md-9" id="isQuery"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">备注:</div>
+						<div class="col-md-9" id="memo"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">是否可用:</div>
+						<div class="col-md-9" id="columnNameState"></div>
+					</div>
+					<div class="row">
+						<div class="col-md-3">字段敏感级:</div>
+						<div class="col-md-9" id="secretLevel"></div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal" name="cancel">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!--fieldcodeval模态框 -->
+<div class="modal fade" id="fieldCodeValModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" >fieldCodeVal查看</h4>
+			</div>
+			<div class="modal-body">
+				<div class="northDiv">
+					<font class="valText">代码值名:</font>
+					<input id="valTextInput" type='text' class="form-control" />
+					<font class="valValue">代码值:</font>
+					<input id="valValueInput" type='text' class="form-control" />
+					<button id="findDataModal" type="button" class="btn btn-sm querybtn" onclick="selectDataModal(this)">查询</button>
+				</div>
+				<div class="southDiv">
+					<table id="fieldCodeValModalTable" class="table table-hover" cellspacing="1"
+						   cellpadding="5" border="1" style="border:1px solid #e0e0e0;">
+						<tr>
+							<th >代码值名称</th>
+							<th >集的代码值</th>
+							<th >顺序</th>
+							<th >英文简写</th>
+							<th >备注</th>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default"
+						data-dismiss="modal"  onclick="closeImport">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="createTableContent" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+    <div class="modal-dialog" role="document" style="width: 900px;">
+        <div class="modal-content">
+            <div class="modal-header" >
+                <div>建表(默认全字段建表)
+				</div>
+            </div>
+            <div class="modal-body" id="addTableContent">
+                <div class="container">
+                    <div id="createTableConfig">
+                        <div class="row" style="margin-bottom: 15px">
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px;"><font style="color: red">*</font>数据中心名：</label>
+                                <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="dataCentName" onchange="loadDataResourceName()">
+                                    <option selected="selected" value="selected">请选择</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px;"><font style="color: red">*</font>数据源类型：</label>
+                                <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="dataResourceType" onchange="loadDataResourceName()">
+                                    <option selected="selected" value="ODPS">ODPS</option>
+                                    <option value="ADS">ADS</option>
+									<option value="HIVE">HIVE</option>
+									<option value="HBASE">HBASE</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row aliDataBase" style="margin-bottom: 15px">
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>一级分区字段：</label>
+                                <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="partitionFirst" readonly="true" onchange="loadPartitionSecond()">
+                                </select>
+
+                                <span data-hint="若无一级分区字段，需去字段编辑页面设置分区列标示。其中ads选择主键，odps选择日期字段, hive一般默认为dt" class="hint-right-s-small-t-info"
+                                      style="margin-left: 10px;margin-top: 15px;position: absolute;z-index: 1">
+                                    <img src="img/icon-显示.png">
+                                </span>
+                            </div>
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px">二级分区字段：</label>
+                                <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="partitionSecond" readonly="true">
+                                </select>
+								<span data-hint="ads选择日期字段，odps一般不选,hive一般不选" class="hint-right-s-small-t-info"
+									  style="margin-left: 10px;margin-top: 15px;position: absolute;z-index: 1">
+                                    <img src="img/icon-显示.png">
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-bottom: 15px">
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>数据源名称：</label>
+                                <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="dataResourceName" onchange="loadProjectName()">
+                                    <option selected="selected"  value="selected">请选择</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>项目名：</label>
+                                <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="projectName">
+                                    <option selected="selected" value="selected">请选择</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="prestoDataBase">
+                            <div class="row" style="margin-bottom: 15px">
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>
+                                        HBASE分区类型  <span id="HbaseType" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="regionType" onchange="regionTypeChange()">
+                                        <option  selected="selected" value=3>多天一个分区</option>
+                                        <option   value=0>每天一个分区</option>
+                                        <option   value=2>一天多个分区</option>
+                                        <option   value=-1>无效分区</option>
+                                        <option  value=1>固定分区</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" id="regionCountLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>
+                                        HBASE分区天数  <span id="regionCountSpan" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <input class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="regionCount" >
+                                    </input>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 15px">
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>
+                                        ES索引类型  <span id ="EsType" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="esSplitType" onchange="esSplitTypeChange()">
+                                        <option  selected="selected"  value=3>多天一个索引</option>
+                                        <option    value=0>每天一个索引</option>
+                                        <option   value=-1>无效索引</option>
+                                        <option   value=1>总共一个索引</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>
+                                        ES单索引天数  <span id ="esSplitCountSpan" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <input class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="esSplitCount" >
+                                    </input>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 15px">
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>
+                                        ES单索引分片数  <span id ="esShardsSpan" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <input class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="esShards">
+                                    </input>
+                                </div>
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>
+                                        Geohash是否冗余  <span id="geoRedundantSpan" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <select class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="geoRedundant" disabled>
+                                        <option    value="true">是</option>
+                                        <option  selected="selected"   value="false">否</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 15px">
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>生命周期(天)
+                                        <span id= "recentDays" class="glyphicon glyphicon-info-sign imgGlyphicon" aria-hidden="true"></span></label>
+                                    <input class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="lifecycle">
+                                    </input>
+                                </div>
+                                <div>
+                                    <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px">备注：</label>
+                                    <input class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" id="prestoMemo" >
+                                    </input>
+                                </div>
+                            </div>
+						</div>
+
+
+                        <div class="row" style="margin-bottom: 15px">
+                            <div>
+                                <label  class="col-sm-3 col-md-3 control-label sourceLabel" style="margin-top: 13px;width: 180px"><font style="color: red">*</font>表名：</label>
+                                <input  class="col-sm-3 col-md-3" style="height: 32px;margin-top: 8px;width: 220px" type="text" id="tableName" readonly="true">
+                                <!--							<input  class="col-sm-3" style="height: 32px;margin-top: 8px;" type="text" id="tableName" onkeyup="this.value=this.value.replace(/\s+/g,'')" placeholder="请填写">-->
+                            </div>
+                        </div>
+						<div class="row" style="margin-bottom: 15px">
+							<div>
+                                <p style="color: blue;margin-left: 10px;">已建表:</p>
+								<textarea style="position: relative;overflow-y: auto;border-width: 1px;
+                                  height: 150px;width: 830px;margin-left: 10px;" readonly class="ps ps--active-y" id="createdTable">
+                                </textarea>
+							</div>
+						</div>
+                    </div>
+
+                    <div class="row" style="margin-bottom: 15px; display: none" id="createTableColumn">
+                        <div class="col-sm-9 col-md-9">
+                            <button type="button" class="btn btn-default"  onclick="showCreateTableSql()"
+                                    style="margin-top: -20px;width: 80px;position: relative;float: right;margin-bottom: 5px;">
+                                生成SQL
+                            </button>
+                            <button type="button" class="btn btn-default"  onclick="columnCorrespondClick()"
+                                    style="margin-top: -20px;width: 100px;position: relative;float: right;margin-bottom: 5px;right: 5px;">
+                                字段类型匹配
+                            </button>
+                            <table id="updateColumnCreateTable" class="table table-hover" cellspacing="1"
+                                   cellpadding="5" border="1" style="border:1px solid #e0e0e0;">
+                            </table>
+                            <!--<div style="position: absolute;margin-top: -20px">-->
+                                <p style="color: blue;">SQL生成结果展示页面:</p>
+                                <textarea style="position: relative;overflow-y: auto;border-width: 1px;
+                                  height: 150px;width: 100%;resize:none" readonly class="ps ps--active-y" id="createSqlTextarea">
+                                </textarea>
+                            <!--</div>-->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: -25px">
+                <button type="button" class="btn btn-default" onclick="createTableNextStep()" id="createTableNextStep">高级</button>
+                <button type="button" class="btn btn-default" onclick="createTablePreviousStep()" id="createTablePreviousStep" style="display: none">保存</button>
+                <button type="button" class="btn btn-default" onclick="saveTable()"  id="saveTable">建表</button>
+                <button type="button" class="btn btn-default" onclick="closemodal()" name="cancel">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 来源关系导入模态框 -->
+<div class="modal fade" id="importSrcFieldModal" tabindex="-1" role="dialog"
+	 aria-labelledby="myModalLabel" data-backdrop='static'>
+	<div class="modal-dialog" role="document">
+		<div class="modal-content" style="width: 700px;">
+			<div class="modal-header">
+				<p>导入源字段</p>
+			</div>
+			<div class="modal-body">
+				<table id="sourceFieldTable" class="table table-hover" cellspacing="1" cellpadding="5" border="1"
+					   style="border:1px solid #e0e0e0;"></table>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" id="saveSrcFieldsBut" >添加</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal" name="cancel">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div class="modal fade" id="saveObjectField" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+	<div class="modal-dialog" role="document" style="width: 1000px;">
+		<div class="modal-content">
+			<div class="modal-header" >
+				<div id="headContent"></div>
+			</div>
+			<div class="modal-body" id="addContent">
+				<div class="container">
+                    <div>
+                        <div class="headerColor2"></div>
+                        <p>基本信息</p>
+                    </div>
+					<div class="row">
+						<div>
+							<label  class="col-sm-2 col-md-2 control-label sourceLabel"><font style="color: red">*</font>建表字段：</label>
+							<input class="col-sm-3 col-md-3 addColumnInput" type="text" id="columnNameAddModel" readonly>
+						</div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">元素编码：</label>
+                            <div class="col-sm-3 col-md-3">
+                                <div class=" input-group">
+                                    <input id="fieldIdAddModel" type="text" placeholder="请输入元素编码信息" class="form-control no-padding"
+                                           style="width: 220px;height:32px;"  >
+                                    <div class="input-group-btn">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right" role="menu"
+                                        ></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+					<div class="row">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel" >标准列名：</label>
+                            <div class="col-sm-3 col-md-3">
+                                <div class=" input-group">
+                                    <input id="fieldNameAddModel" type="text" placeholder="请输入标准列名" class="form-control no-padding"
+                                           style="width: 220px;height:32px;"  >
+                                    <div class="input-group-btn">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right" role="menu"
+                                        ></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel" style="margin-left: -60px;">字段中文名称：</label>
+                            <input  class="col-sm-3 col-md-3 addColumnInput" type="text" id="fieldChineNameAddModel" readonly>
+                        </div>
+					</div>
+                    <div class="row">
+                        <div>
+                            <label  class="col-sm-2  col-md-2 control-label sourceLabel">字段类型：</label>
+                            <!--<input class="col-sm-3 col-md-3 addColumnInput" type="text" id="fieldTypeAddModel" readonly>-->
+                            <select id="fieldTypeAddModel" class="col-sm-3 col-md-3" readonly>
+                                <option value="-1"></option>
+                                <option value="0">integer</option>
+                                <option value="1">float</option>
+                                <option value="2">string</option>
+                                <option value="3">date</option>
+                                <option value="4">datetime</option>
+                                <option value="6">long</option>
+                                <option value="7">double</option>
+                            </select>
+						</div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">字段长度：</label>
+                            <input  class="col-sm-3 col-md-3 addColumnInput" type="text" id="fieldLenAddModel" readonly>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">字段描述：</label>
+                            <input class="col-sm-3 col-md-3 addColumnInput" type="text" id="fieldDescribeAddModel" readonly>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">字段默认值：</label>
+                            <input  class="col-sm-3 col-md-3 addColumnInput" type="text" id="defaultValueAddModel" readonly>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="headerColor2"></div>
+                        <p>其它信息</p>
+                    </div>
+                    <span class="glyphicon glyphicon-menu-down downArrow" aria-hidden="true" onclick="downArrowClick()"></span>
+                    <span class="glyphicon glyphicon-menu-up downArrow" aria-hidden="true" style="display: none"
+						  onclick="downUpClick()"></span>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2  col-md-2 control-label sourceLabel">创建索引：</label>
+                            <select class="col-sm-3 col-md-3 " id="tableIndexAddModel">
+                                <option selected="selected"  value=0>不建立</option>
+                                <option value=1>建立索引可以通过HBASE查询</option>
+                                <option value=2>建立索引不建议查询</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2  col-md-2 control-label sourceLabel">存在索引：</label>
+                            <select class="col-sm-3 col-md-3" id="isIndexAddModel">
+                                <option selected="selected" value=0>不存在</option>
+                                <option value=1>存在</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">索引类型：</label>
+                            <select class="col-sm-3 col-md-3" id="indexTypeAddModel">
+                                <option selected="selected"  value=0>不建立索引</option>
+                                <option value=1>建立分词索引</option>
+                                <option value=2>建立非分词索引</option>
+                                <option value=3>为位图索引</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">必填：</label>
+                            <select class="col-sm-3 col-md-3" id="needValueAddModel">
+                                <option selected="selected" value=0>否</option>
+                                <option value=1>是</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">布控条件：</label>
+                            <select class="col-sm-3 col-md-3" id="isContorlAddModel">
+                                <option selected="selected" value=0>否</option>
+                                <option value=1>是</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">查询条件：</label>
+                            <select class="col-sm-3 col-md-3" id="isQueryAddModel">
+                                <option selected="selected" value=0>不可以作为查询条件</option>
+                                <option value=1>可以作为查询条件</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">备注：</label>
+                            <input  class="col-md-3 addColumnInput" type="text" id="memoAddModel">
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">表字段是否可用：</label>
+                            <select class="col-sm-3 col-md-3" id="columnNameStateAddModel">
+                                <option selected="selected" value=1>可用</option>
+                                <option  value=0>不可用</option>
+                                <option value=2>临时可用</option>
+                                <option value=3>ads可用odps不可用</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">参加MD5值计算：</label>
+                            <select class="col-sm-3 col-md-3" id="md5IndexAddModel">
+                                <option  selected="selected" value="false">否</option>
+                                <option  value="true">是</option>
+
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">协议类型：</label>
+                            <select class="col-sm-3 col-md-3" id="isPrivateAddModel">
+                                <option selected="selected" value="1">私有协议</option>
+                                <option  value="0">公有协议</option>
+                                <option  value="">标准协议</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">主键：</label>
+                            <select class="col-sm-3 col-md-3" id="pkRecnoAddModel">
+                                <option  selected="selected" value="false">否</option>
+                                <option  value="true">是</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">分区列标示：</label>
+                            <select class="col-sm-3 col-md-3" id="partitionRecnoAddModel">
+                                <option  selected="selected" value="">非分区列</option>
+                                <option  value="1">一级分区列</option>
+                                <option  value="2" disabled="true">二级分区列</option>
+                            </select>
+							<span data-hint="只有建表字段为DT时，才能选择二级分区列" class="hint-right-s-small-t-info"
+								  style="margin-left: 10px;margin-top: 5px;position: absolute;z-index: 1">
+                                    <img src="img/icon-显示.png">
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">聚集列：</label>
+                            <select class="col-sm-3 col-md-3" id="clustRecnoAddModel">
+                                <option  selected="selected" value="false">否</option>
+                                <option  value="true">是</option>
+
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">近线显示：</label>
+                            <select class="col-sm-3 col-md-3" id="oraShowAddModel">
+                                <option selected="selected" value=0>不显示</option>
+                                <option  value=1>显示</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row downUpArrow">
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">ODPS的分区列：</label>
+                            <select class="col-sm-3 col-md-3" id="odpsPattitionAddModel">
+                                <option  selected="selected" value="">非分区列</option>
+                                <option  value=1>一级分区列</option>
+                                <option  value=2>二级分区列</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label  class="col-sm-2 col-md-2 control-label sourceLabel">属性类型：</label>
+                            <select class="col-sm-3 col-md-3" id="proTypeAddModel">
+                                <option selected="selected" value="1">属性值</option>
+                                <option  value="2">统计值</option>
+                                <option  value="3">标签值</option>
+                                <option  value="4">关联集合</option>
+                                <option  value=""></option>
+                            </select>
+                        </div>
+                    </div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" onclick="saveObjectField()">保存</button>
+				<button type="button" class="btn btn-default" onclick="closeModal()" name="cancel">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+</div>
+
+
+
+<div class="modal fade" id="jumpRelationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+	<div class="modal-dialog" role="document" style="width: 600px;">
+		<div class="modal-content">
+			<div class="modal-header" >
+				<div>选择来源关系</div>
+			</div>
+			<div class="modal-body">
+				<div class="container">
+                    <div>
+                        <label  class="col-sm-2 col-md-2 control-label sourceLabel">来源数据名：</label>
+                        <select class="col-sm-3 col-md-3" id="relationSelect" style=" width: 220px;height: 32px;">
+
+                        </select>
+                    </div>
+				</div>
+			</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" onclick="addRelationJump()">确定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" name="cancel">关闭</button>
+            </div>
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

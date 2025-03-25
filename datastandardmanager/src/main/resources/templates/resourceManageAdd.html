@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html  lang="zh">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-table.css">
+	<link rel="stylesheet" href="myCss/bootstrap-tablePage.css">
+	<link rel="stylesheet" href="bootstrap/css/toastr.css">
+	<link rel="stylesheet" href="bootstrap/css/bootstrap-treeview.css">
+	<link rel="stylesheet" href="myCss/resourceManage.css">
+	<script  src="bootstrap/jQuery/jquery-3.0.0.js"></script>
+	<script  src="bootstrap/jQuery/jquery.min.js"></script>
+	<script  src="bootstrap/jQuery/jquery.serializejson.js"></script>
+	<script  src="bootstrap/js/bootstrap.min.js"></script>
+	<script  src="bootstrap/js/bootstrap-table.js"></script>
+	<script src="bootstrap/js/bootstrap-table-zh-CN.js"></script>
+	<script  src="bootstrap/js/toastr.min.js"></script>
+	<script  src="myJs/commons.js"></script>
+	<script  src="myJs/resourceManageAdd.js"></script>
+	<script  src="myJs/clipboard.min.js"></script>
+	<script  src="bootstrap/js/bootbox.js"></script>
+	<script  src="bootstrap/js/bootstrap-treeview.js"></script>
+	<!--步骤流程图的相关插件-->
+	<script type="text/javascript" src="step/validator.js"></script>
+	<script type="text/javascript" src="step/js/jquery.smartWizard.js"></script>
+	<link href="step/css/smart_wizard.css" rel="stylesheet" type="text/css" />
+	<link href="step/css/smart_wizard_theme_circles.css" rel="stylesheet" type="text/css" />
+	<link href="step/css/smart_wizard_theme_arrows.css" rel="stylesheet" type="text/css" />
+	<link href="step/css/smart_wizard_theme_dots.css" rel="stylesheet" type="text/css" />
+	<!-- toastr -->
+	<script type="text/javascript" src="bootstrap/js/toastr.min.js"></script>
+	<link rel="stylesheet" href="bootstrap/css/toastr.css">
+	<link rel="stylesheet" href="myCss/resourceManageAdd.css">
+</head>
+<body>
+<div style="width:100%;height: 100%;overflow: auto;" >
+
+	<div class="modal fade" id="importSrcFieldModal" tabindex="-1" role="dialog"
+		 aria-labelledby="myModalLabel" data-backdrop='static'>
+		<div class="modal-dialog" role="document">
+			<div class="modal-content" style="width: 700px;">
+				<div class="modal-header">
+					<p>导入源字段</p>
+				</div>
+				<div class="modal-body">
+					<table id="sourceFieldTable" class="table table-hover" cellspacing="1" cellpadding="5" border="1"
+						   style="border:1px solid #e0e0e0;"></table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" id="save" >添加</button>
+					<button type="button" class="btn btn-default" data-dismiss="modal" name="cancel">关闭</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+		<!-- 添加框 -->
+		<!-- 源字段信息罗列:left -->
+	<!--<div id="addFieldCodeDiv" style="display:block;text-align: center;width:98%;float: left;margin-left:15px;margin-top: 15px;">-->
+		<!--<span id="sourceFieldTableTitle" style="font-size: 16px;" >${sourceID}源字段表</span>-->
+		<!--<table id="sourceFieldTable" class="table table-hover" cellspacing="1" cellpadding="5" border="1"-->
+			   <!--style="border:1px solid #e0e0e0;"></table>-->
+	<!--</div>-->
+		<!-- 标准字段罗列表:right -->
+		<!--<div id="standarFieldDiv" style="display:block; width:47%; margin-left: 20px;float: left;margin-top: 15px;text-align: center;">-->
+			<!--<span id="standardFieldTableTitle" style="font-size: 16px;" >${tableID}标准字段表</span>-->
+			<!--<table id="standardFieldTable" class="table table-hover" cellspacing="1" cellpadding="5" border="1" style="border:1px solid #e0e0e0;"></table>-->
+		<!--</div>-->
+		<!-- 关联关系表:bottom -->
+		<!--<div style="display:block; width:98%; margin-left: 20px;float: left;margin-top: 15px;text-align: center;">-->
+			<!--<span>${tableID}关联信息</span>-->
+			<!--<table id="relationFieldTable" class="table table-hover" cellspacing="1" cellpadding="5" border="1" style="border:1px solid #e0e0e0;"></table>-->
+		<!--</div>-->
+	<!--<input type="button" id="cancel" style="width: 100px;float: right;margin-left: 20px;" class="btn btn-sm querybtn" value="取消" />-->
+	<!--<input type="button" id="save" style="width: 100px;float: right;" class="btn btn-sm querybtn" value="导入" />-->
+</div>
+
+</body>
+</html>

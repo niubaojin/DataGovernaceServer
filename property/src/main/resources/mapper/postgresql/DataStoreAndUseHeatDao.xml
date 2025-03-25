@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataStoreAndUseHeatDao">
+
+	<sql id="baseColumn"> lastDate,TABLETYPE,tableNameEN,tableNameZH,LIFECYCLE,TABLEALLCOUNT,TABLESIZE,SUBCLASS,CLASSNAME,tableusecount,tableUseCountOfDay,tableUseCountOfWeek,tableUseCountOfMonth </sql>
+
+	<sql id="useHeatBaseQuery">
+		SELECT
+			a.tableproject,
+			a.lastDate,
+			a.TABLETYPE,
+			a.tableNameEN,
+			a.tableNameZH,
+			a.LIFECYCLE,
+			a.TABLEALLCOUNT,
+			a.TABLESIZE,
+			a.tableusecount,
+			a.tableUseCountOfDay,
+			a.tableUseCountOfWeek,
+			a.tableUseCountOfMonth
+		FROM (
+			SELECT
+				s.tableproject,
+				s.PARTITIONDATE AS lastDate,
+				s.TABLETYPE,
+				s.tableproject || '.' || s.TABLENAME AS tableNameEN,
+				s.TABLECOMMENT AS tableNameZH,
+				s.LIFECYCLE,
+				s.TABLEALLCOUNT,
+				s.TABLESIZE,
+				u.tableUseCountOfDay,
+				u.tableUseCountOfWeek,
+				u.tableUseCountOfMonth,
+				u.tableUseCount
+			FROM
+				SYNLTE.SYNDMG_TABLE_ALL s
+			LEFT JOIN (
+				SELECT
+					t0.tablename,
+					t0.project,
+					t3.tableUseCountOfMonth,
+					t2.tableUseCountOfWeek,
+					t1.tableUseCountOfDay,
+					t0.tableUseCount
+				FROM (
+					SELECT
+						SUM(table_Use_Count) AS tableUseCount,
+						tablename,
+						project
+					FROM UT_ODPSSQLCOUNT t
+					GROUP BY tablename, project
+				) t0
+				LEFT JOIN (
+					SELECT
+						SUM(table_Use_Count) AS tableUseCountOfMonth,
+						tablename,
+						project
+					FROM UT_ODPSSQLCOUNT t
+					WHERE dt BETWEEN to_char(CURRENT_DATE - INTERVAL '31 days', 'yyyy-MM-dd') AND to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyy-MM-dd')
+					GROUP BY tablename, project
+				) t3 ON (t0.tablename = t3.tablename AND t0.project = t3.project)
+				LEFT JOIN (
+					SELECT
+						SUM(table_Use_Count) AS tableUseCountOfWeek,
+						tablename,
+						project
+					FROM UT_ODPSSQLCOUNT t
+					WHERE dt BETWEEN to_char(CURRENT_DATE - INTERVAL '7 days', 'yyyy-MM-dd') AND to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyy-MM-dd')
+					GROUP BY tablename, project
+				) t2 ON (t0.tablename = t2.tablename AND t0.project = t2.project)
+				LEFT JOIN (
+					SELECT
+						SUM(table_Use_Count) AS tableUseCountOfDay,
+						tablename,
+						project
+					FROM UT_ODPSSQLCOUNT t
+					WHERE dt = to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyy-MM-dd')
+					GROUP BY tablename, project
+				) t1 ON (t0.tablename = t1.tablename AND t0.project = t1.project)
+			) u ON (UPPER(u.tablename) = UPPER(s.tablename) AND UPPER(s.tableproject) = UPPER(u.project))
+		) a
+		WHERE lastDate = to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyyMMdd');
+	</sql>
+
+	<select id="findUseHeatByTableNameList" parameterType="java.util.HashMap" resultType="java.lang.Long">
+		select sum(table_use_count) from
+		<foreach collection="map.keys" item="key" open="(" close=")" separator=" union ">
+			select sum(table_use_count) as table_use_count from ut_odpssqlcount where tablename = #{key} and project = #{map[${key}]}
+		</foreach>
+	</select>
+
+
+	<select id="findAll" resultType="com.synway.property.pojo.DataStoreAndUseHeat">
+		<include refid="useHeatBaseQuery"></include>
+	</select>
+
+	<delete id="deleteAll" >
+		delete from storecycleanduseheat
+	</delete>
+
+	<insert id="insertIntoStoreCycleAndUseHeat" parameterType="java.util.List" useGeneratedKeys="false">
+		insert into StoreCycleAndUseHeat (
+		<include refid="baseColumn"></include>
+		)
+		SELECT * FROM (
+		<foreach collection="list" index="index" item="item" separator="union all">
+			SELECT
+			#{item.lastDate,jdbcType=VARCHAR},
+			#{item.tableType,jdbcType=VARCHAR},
+			#{item.tableNameEN,jdbcType=VARCHAR},
+			#{item.tableNameZH,jdbcType=VARCHAR},
+			#{item.lifeCycle,jdbcType=INTEGER},
+			#{item.tableAllCount,jdbcType=NUMERIC},
+			#{item.tableSize,jdbcType=NUMERIC},
+			#{item.subclass,jdbcType=VARCHAR},
+			#{item.className,jdbcType=VARCHAR},
+			#{item.tableUseCount,jdbcType=NUMERIC},
+			#{item.tableUseCountOfDay,jdbcType=NUMERIC},
+			#{item.tableUseCountOfWeek,jdbcType=NUMERIC},
+			#{item.tableUseCountOfMonth,jdbcType=NUMERIC}
+		</foreach>
+		) AS subquery
+	</insert>
+
+	<select id="findObjectExtend" resultType="com.synway.property.pojo.DataStoreAndUseHeat">
+		  select b.partitiondate,a.tablename as tableNameEN,a.tabletype,a.TABLECREATEDTIME,a.TABLELASTMETAMODIFIEDTIME,a.PARTITIONCOUNT,a.TABLELASTDATAMODIFIEDTIME,a.tableProject,a.tableSize from SYNLTE.SYNDMG_TABLE_ALL a
+		  right join
+			   (select a.tablename,max(a.partitiondate) as partitiondate from SYNLTE.SYNDMG_TABLE_ALL a group by a.tablename) b
+		  on
+			   (a.tablename=b.tablename and a.partitiondate =  b.partitiondate)
+	</select>
+
+
+</mapper>

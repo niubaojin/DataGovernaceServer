@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="GBK"?>
+<Maps>
+  <Map  srcName="侦控中心" goalName="侦控中心1"/>
+  <Map  srcName="平台门户" goalName="平台门户1"/>
+  <Map  srcName="信息化案管" goalName="信息化案管1"/>
+</Maps>
+
+

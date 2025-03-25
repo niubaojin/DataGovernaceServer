@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataOrganizationDao">
+
+
+    <select id="getPageSecondaryClassify" resultType="com.synway.property.pojo.PageSelectOneValue">
+        select
+            case when a.value is null then 'null' else a.value end as value,
+            case
+            when a.label is null then '未知(0)'
+            when b.label is null then a.label||'(0)'
+            else b.label end
+            as label from (
+            select distinct c.CODETEXT as value ,c.CODETEXT as label,d.primaryLabel,c.CODENAME from V_CLASSIFY_INFO c
+            right join
+            (select distinct CODEID, CODETEXT as primaryLabel from V_CLASSIFY_INFO
+            where CODETEXT = #{dataOrganizationType}
+            and PARCODEID is not null
+            )d
+            on c.PARCODEID = d.CODEID) a
+            left join
+            (
+            SELECT
+                SECONDARYORGANIZATIONCH||'('||count(1)||')' as label,SECONDARYORGANIZATIONCH as value,
+                PRIMARYORGANIZATIONCH as primaryLabel from CLASSIFY_INTERFACE_ALL_DATE where SJXJBM is not null
+            group by
+                SECONDARYORGANIZATIONCH,PRIMARYORGANIZATIONCH
+            ) b
+            on a.label = b.value and a.primaryLabel = b.primaryLabel
+            order by CODENAME
+    </select>
+
+    <select id="getCIAD" resultType="com.synway.property.pojo.formorganizationindex.PublicDataInfo">
+        SELECT case when PRIMARYORGANIZATIONCH = '业务要素索引库' then '业务要素索引库' when SECONDARYORGANIZATIONCH is null then 'null' else SECONDARYORGANIZATIONCH end as sjzzsjfl,
+               case when PRIMARYORGANIZATIONCH = '业务要素索引库' then '业务要素索引库' when FIRSTORGANIZATIONCH is null then 'null' else FIRSTORGANIZATIONCH end as sjzzejfl,
+               case when PRIMARYORGANIZATIONCH is null then 'null' else PRIMARYORGANIZATIONCH end as sjzzyjfl
+          from CLASSIFY_INTERFACE_ALL_DATE where objectstate = 1
+    </select>
+
+    <select id="getAllManufacturers" resultType="java.lang.String">
+        select DISTINCT YYYXTJSGS from synlte.PUBLIC_DATA_INFO where YYYXTJSGS is not null
+    </select>
+    <select id="getAuthorities" resultType="java.lang.String">
+        select DISTINCT SJZYSQDWMC from synlte.PUBLIC_DATA_INFO where SJZYSQDWMC is not null
+    </select>
+    <select id="getDataOrganizationTable" resultType="com.synway.property.pojo.dataOrganization.DataOrganization">
+        SELECT OBJECTID as objectId, NAME as tableNameCh,TABLENAME as tableNameEn,SJXJBM as resourceIdentify from
+        CLASSIFY_INTERFACE_ALL_DATE
+        where SJXJBM is not null and PRIMARYORGANIZATIONCH = #{primaryClassifyCh} and objectstate = 1
+        <if test="secondaryClassifyCh!='' and secondaryClassifyCh!=null and primaryClassifyCh!='原始库' and primaryClassifyCh!='主题库'">
+            and SECONDARYORGANIZATIONCH = #{secondaryClassifyCh}
+        </if>
+        <if test="classifyid!='' and classifyid!=null and (primaryClassifyCh=='原始库' or primaryClassifyCh=='主题库') and classifyid.length == 20">
+            and 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME = #{classifyid}
+        </if>
+        <if test="classifyid!='' and classifyid!=null and (primaryClassifyCh=='原始库' or primaryClassifyCh=='主题库') and classifyid.length > 20">
+            and 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME||SJSJFLCODENAME = #{classifyid}
+        </if>
+        <if test="search!='' and search!=null">
+            and
+            (upper(NAME) like upper('%' || #{search} || '%') or
+            upper(TABLENAME) like upper('%' || #{search} || '%') or
+            upper(SJXJBM) like upper('%' || #{search} || '%')
+            )
+        </if>
+    </select>
+    <select id="getObjectInfos" resultType="com.synway.property.pojo.dataOrganization.DataOrganization">
+        <if test="level == 1">
+            select objectname as tableNameCh,
+                   upper(TABLENAME)  as tableNameEn,
+                   tableId    as resourceIdentify
+              from synlte.object_store_info
+             where tableid in
+                   (select tableid from synlte.object where upper(sjzzyjflvallue) like upper('%' || #{levelCode} || '%'))
+                    <if test="search!='' and search!=null">
+                        and
+                        (upper(objectname) like upper('%' || #{search} || '%') or
+                        upper(TABLENAME) like upper('%' || #{search} || '%') or
+                        upper(tableId) like upper('%' || #{search} || '%')
+                        )
+                    </if>
+        </if>
+        <if test="level == 2">
+            select objectname as tableNameCh,
+                   upper(TABLENAME)  as tableNameEn,
+                   tableId    as resourceIdentify
+              from synlte.object_store_info
+             where tableid in
+                   (select tableid from synlte.object where upper(sjzzejflvalue) like upper('%' || #{levelCode} || '%'))
+                    <if test="search!='' and search!=null">
+                        and
+                        (upper(objectname) like upper('%' || #{search} || '%') or
+                        upper(TABLENAME) like upper('%' || #{search} || '%') or
+                        upper(tableId) like upper('%' || #{search} || '%')
+                        )
+                    </if>
+        </if>
+        <if test="level == 3">
+            select objectname as tableNameCh,
+                   upper(TABLENAME)  as tableNameEn,
+                   tableId    as resourceIdentify
+              from synlte.object_store_info
+             where tableid in
+                   (select tableid from synlte.object where upper(sjzzejflvalue) = upper(#{levelCode}))
+                    <if test="search!='' and search!=null">
+                        and
+                        (upper(objectname) like upper('%' || #{search} || '%') or
+                        upper(TABLENAME) like upper('%' || #{search} || '%') or
+                        upper(tableId) like upper('%' || #{search} || '%')
+                        )
+                    </if>
+        </if>
+    </select>
+    <select id="getDataInfoTable" resultType="com.synway.property.pojo.dataOrganization.DataOrganization">
+        select SJXJBM as resourceIdentify,YYYXTJSGS as manufacturer,SJZYSQDWMC as authority from SYNLTE.PUBLIC_DATA_INFO where
+        SJXJBM is not null
+        and (YYYXTJSGS is not null or SJZYSQDWMC is not null)
+        <if test="manufacturer!='' and manufacturer!=null">
+            and YYYXTJSGS = #{manufacturer}
+        </if>
+        <if test="authority!='' and authority!=null">
+            and SJZYSQDWMC = #{authority}
+        </if>
+    </select>
+
+    <select id="getOrganizationAssetsTable" resultType="com.synway.property.pojo.dataOrganization.DataOrganization">
+        SELECT
+            SJXJBM as resourceIdentify ,TABLE_TYPE||'.'||TABLE_PROJECT as storageLocation,TABLE_ALL_COUNT as dataNum, register_state as registerState, resourceId
+        FROM
+            (
+        SELECT
+            j.SJXJBM,j.TABLE_TYPE,j.TABLE_PROJECT,j.TABLE_ALL_COUNT,j.register_state,resourceId,
+            row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME DESC ) AS rnn
+        FROM
+            table_organization_assets j left join synlte.object_store_info h on upper(j.table_name_en)=upper(h.tablename) and upper(j.table_project)=upper(h.project_name)
+        WHERE
+            PRIMARY_ORGANIZATION_CH = #{primaryClassifyCh}
+        <if test="secondaryClassifyCh!='' and secondaryClassifyCh!=null">
+            <if test="dataOrgLevel == 1 or dataOrgLevel == 2">
+                and SECONDARY_ORGANIZATION_CH = #{secondaryClassifyCh}
+            </if>
+            <if test="dataOrgLevel == 3">
+                and THREELEVEL_ORGANIZATION_CH = #{secondaryClassifyCh}
+            </if>
+        </if>
+            and upper(TABLE_TYPE) in ('ODPS','HIVE')
+            and STATISTICS_TIME >= trunc (sysdate - #{daysAgo}) and h.import_flag=1
+            ) h
+        WHERE
+            h.rnn =1
+    </select>
+<!--    <select id="getOrganizationAssetsTable" resultType="com.synway.property.pojo.dataOrganization.DataOrganization">-->
+<!--        SELECT-->
+<!--        SJXJBM as resourceIdentify ,TABLE_TYPE||'.'||TABLE_PROJECT as storageLocation,TABLE_ALL_COUNT as dataNum, resourceId-->
+<!--        FROM-->
+<!--        (-->
+<!--        SELECT-->
+<!--        j.SJXJBM,j.TABLE_TYPE,j.TABLE_PROJECT,j.TABLE_ALL_COUNT,resourceId,-->
+<!--        row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME DESC ) AS rnn-->
+<!--        FROM-->
+<!--        table_organization_assets j-->
+<!--        WHERE-->
+<!--        PRIMARY_ORGANIZATION_CH = #{primaryClassifyCh}-->
+<!--        <if test="secondaryClassifyCh!='' and secondaryClassifyCh!=null">-->
+<!--            and SECONDARY_ORGANIZATION_CH = #{secondaryClassifyCh}-->
+<!--        </if>-->
+<!--        and upper(TABLE_PROJECT) = upper(#{tableProject})-->
+<!--        and upper(TABLE_TYPE) = upper(#{tableType})-->
+<!--        and STATISTICS_TIME >= trunc (sysdate)-->
+<!--        ) h-->
+<!--        WHERE-->
+<!--        h.rnn =1-->
+<!--    </select>-->
+
+</mapper>

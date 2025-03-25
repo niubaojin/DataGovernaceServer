@@ -1,0 +1,49 @@
+server:
+  address: ${spring.cloud.client.ip-address}
+#  address: 192.168.61.135
+  port: 8222
+  max-http-request-header-size: 30000000
+
+nacosServer:
+#  namespace: SH_SHUHUI360
+  namespace: SH_SHUHUI_PostgreSQL
+  serverAddr: 10.1.15.132:8848
+  username: nacos
+  password: nacos
+
+spring:
+  main:
+    allow-circular-references: true
+  application:
+    name: property
+  profiles:
+    active: prod
+  cloud:
+    nacos:
+      discovery:
+        register-enabled: true
+        server-addr: ${nacosServer.serverAddr}
+        namespace: ${nacosServer.namespace}
+        group: SH_DATAFACTORY
+        username: ${nacosServer.username}
+        password: ${nacosServer.password}
+      config:
+        server-addr: ${nacosServer.serverAddr}
+        file-extension: yaml
+        namespace: ${nacosServer.namespace}
+        group: SH_DATAFACTORY
+        extension-configs[0]:
+          data-id: datafactory-common.yaml
+          group: SH_DATAFACTORY
+          refresh: true
+        username: ${nacosServer.username}
+        password: ${nacosServer.password}
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.synway.property.dao: debug
+    com.synway.property.service: info
+
+pagehelper:
+  reasonable: true
+  helper-dialect: oracle

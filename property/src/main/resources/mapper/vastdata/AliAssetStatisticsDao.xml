@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.AliAssetStatisticsDao">
+    <!--插入synlte.table_syndmg_table数据-->
+    <insert id="insertTableInfo" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        INSERT INTO synlte.syndmg_table_all(TABLENAME,TABLEPROJECT,TABLECOMMENT,TABLETYPE,LIFECYCLE,TABLESIZE,
+            TABLELASTDATAMODIFIEDTIME,PARTITIONDATE,PARTITIONCOUNT,ISPARTITION,TABLELASTMETAMODIFIEDTIME,TABLECREATEDTIME,
+            INSERTEDDATATIME,TABLEALLCOUNT,PARTITIONSIZE,PARTITIONNUM,DATAID)
+        <foreach  collection="list" item="syndmgTableAll" index="index" separator="union all">
+            SELECT
+            #{syndmgTableAll.tableName,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableProject,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableComment,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableType,jdbcType=VARCHAR},
+            #{syndmgTableAll.lifeCycle,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableSize,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableLastDataModifiedTime,jdbcType=VARCHAR},
+            #{syndmgTableAll.partitionData,jdbcType=VARCHAR},
+            #{syndmgTableAll.partitionCount,jdbcType=VARCHAR},
+            #{syndmgTableAll.isPartition,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableLastMetaModifiedTime,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableCreatedTime,jdbcType=VARCHAR},
+            #{syndmgTableAll.insertDataTime,jdbcType=VARCHAR},
+            #{syndmgTableAll.tableAllCount,jdbcType=VARCHAR},
+            #{syndmgTableAll.partitionSize,jdbcType=VARCHAR},
+            #{syndmgTableAll.partitionNum,jdbcType=VARCHAR},
+            #{syndmgTableAll.dataId,jdbcType=VARCHAR}
+            FROM dual
+        </foreach>
+    </insert>
+
+    <!--删除synlte.table_syndmg_table当天数据-->
+    <delete id="delTodayData" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        delete from synlte.syndmg_table_all
+            where tablename=#{syndmgTableAll.tableName,jdbcType=VARCHAR}
+            and tableproject=#{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+            and partitionDate=#{syndmgTableAll.partitionData,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delTodayDataAll" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        delete from synlte.syndmg_table_all
+            where tableproject=#{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+            and partitionDate=#{syndmgTableAll.partitionData,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delTodayDataAllByOdps" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        delete from synlte.syndmg_table_all
+            where tabletype=#{syndmgTableAll.tableType,jdbcType=VARCHAR}
+            and partitionDate=#{syndmgTableAll.partitionData,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delHisData" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        delete from synlte.syndmg_table_all
+            where tablename=#{syndmgTableAll.tableName,jdbcType=VARCHAR}
+            and tableproject=#{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+            and partitionDate &lt; #{minDelDate,jdbcType=VARCHAR}
+    </delete>
+
+    <update id="updateSyndmgTableAll" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        update synlte.syndmg_table_all set tableallcount = #{syndmgTableAll.tableAllCount,jdbcType=VARCHAR}
+            where tablename = #{syndmgTableAll.tableName,jdbcType=VARCHAR}
+            and tableproject = #{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+            and partitiondate = #{syndmgTableAll.partitionData,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getTableAllCount" parameterType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll" resultType="com.synway.property.pojo.aliAssetStatistics.SyndmgTableAll">
+        <if test="syndmgTableAll.getIsPartition()==0">
+            <if test="syndmgTableAll.getLifeCycle() == -1 or syndmgTableAll.getLifeCycle() == 0">
+                select sum(partitioncount) as partitionCount from synlte.syndmg_table_all
+                where tableproject = #{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+                and tablename = #{syndmgTableAll.tableName,jdbcType=VARCHAR}
+                and tabletype = #{syndmgTableAll.tableType,jdbcType=VARCHAR}
+                order by partitiondate desc
+            </if>
+            <if test="syndmgTableAll.getLifeCycle() != -1 and syndmgTableAll.getLifeCycle() != 0">
+                select sum(t.partitioncount) as partitionCount from
+                (select partitioncount from synlte.syndmg_table_all
+                where tableproject = #{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+                and tablename = #{syndmgTableAll.tableName,jdbcType=VARCHAR}
+                and tabletype = #{syndmgTableAll.tableType,jdbcType=VARCHAR}
+                order by partitiondate desc) t
+                where rownum &lt;= #{syndmgTableAll.lifeCycle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test="syndmgTableAll.getIsPartition() == 1">
+            select partitioncount as partitionCount from synlte.syndmg_table_all
+            where tableproject = #{syndmgTableAll.tableProject,jdbcType=VARCHAR}
+            and tablename = #{syndmgTableAll.tableName,jdbcType=VARCHAR}
+            and tabletype = #{syndmgTableAll.tableType,jdbcType=VARCHAR}
+            and partitiondate = #{dBefore,jdbcType=VARCHAR}
+        </if>
+
+    </select>
+
+</mapper>

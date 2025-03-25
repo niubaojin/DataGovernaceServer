@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.dao.master.PublicDataManageDao">
+
+    <resultMap id="publicDataPojoResult" type="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataPojo">
+        <result property="id" column="ID"/>
+        <result property="groupName" column="group_name"/>
+        <result property="creator" column="creator"/>
+        <result property="createTime" column="create_time"/>
+        <result property="memo" column="memo"/>
+    </resultMap>
+
+    <resultMap id="publicDataFieldResult" type="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataField">
+        <result property="id" column="ID"/>
+        <result property="groupId" column="GROUP_ID"/>
+        <result property="recno" column="RECNO"/>
+        <result property="fieldChineseName" column="FIELD_CHINESE_NAME"/>
+        <result property="fieldId" column="FIELD_ID"/>
+        <result property="fieldName" column="FIELD_NAME"/>
+        <result property="determinerId" column="DETERMINER_ID"/>
+        <result property="determinerName" column="DETERMINER_NAME"/>
+        <result property="isQuery" column="IS_QUERY"/>
+        <result property="isContorl" column="IS_CONTORL"/>
+        <result property="needValue" column="NEED_VALUE"/>
+        <result property="memo" column="MEMO"/>
+        <result property="headMemo" column="HEAD_MEMO"/>
+        <result property="md5Index" column="ISMD5"/>
+        <result property="columnName" column="COLUMNNAME"/>
+        <result property="fieldChineseName" column="FIELDCHINESENAME"/>
+        <result property="fieldType" column="FIELDTYPE"/>
+        <result property="fieldLen" column="FIELDLEN"/>
+        <result property="gadsjFieldId" column="GADSJ_FIELDID"/>
+    </resultMap>
+
+    <insert id="addOnePublicDataGroup" parameterType="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataPojo">
+        insert into SYNLTE.STANDARDIZE_PUBLIC_DATA(ID,GROUP_NAME,CREATOR,CREATE_TIME,MEMO)
+        VALUES (#{id},#{groupName},#{creator},sysdate,#{memo})
+    </insert>
+
+    <delete id="deletePublicDataGroupById" parameterType="java.lang.String">
+        delete from SYNLTE.STANDARDIZE_PUBLIC_DATA WHERE id = #{id} and group_name = #{groupName}
+    </delete>
+
+    <update id="updatePublicDataGroup" parameterType="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataPojo">
+        update SYNLTE.STANDARDIZE_PUBLIC_DATA set group_name=#{groupName},creator=#{creator},memo=#{memo,jdbcType=VARCHAR},update_time=sysdate where id=#{id}
+    </update>
+
+    <insert id="insertPublicDataFieldList" >
+        insert into SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD(id,group_id,recno,field_chinese_name,field_id,field_name,determiner_id,determiner_name,
+                    is_query,is_contorl,need_value,memo,head_memo,ismd5)
+        select * from(
+        <foreach collection="publicDataFieldList" item="item" separator="union all" open="(" close=")">
+            select #{item.id},#{item.groupId},#{item.recno},#{item.fieldChineseName},#{item.fieldId},#{item.fieldName},
+            #{item.determinerId,jdbcType=VARCHAR},#{item.determinerName,jdbcType=VARCHAR},#{item.isQuery,jdbcType=VARCHAR},
+            #{item.isContorl,jdbcType=VARCHAR},#{item.needValue,jdbcType=VARCHAR},
+            #{item.memo,jdbcType=VARCHAR},#{item.headMemo,jdbcType=VARCHAR},#{item.md5Index,jdbcType=INTEGER} from dual
+        </foreach>
+        )
+    </insert>
+
+    <delete id="deletedPublicDataFieldByIdAndFieldId" parameterType="java.lang.String">
+        delete from SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD where id=#{id} and field_id=#{fieldId}
+    </delete>
+
+    <update id="updatePublicDataField" parameterType="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataField">
+        update SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD set recno=#{recno},field_chinese_name=#{fieldChineseName},determiner_id=#{determinerId},
+        determiner_name=#{determinerName},is_query=#{isQuery},is_contorl=#{isContorl},need_value=#{needValue},memo=#{memo},
+        head_memo=#{headMemo},ismd5=#{md5Index,jdbcType=INTEGER} where id=#{id} and field_id=#{fieldId}
+    </update>
+
+    <select id="searchFieldChineseList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue" parameterType="java.lang.String">
+        select FIELDCHINESENAME as label,FIELDID as value,fieldname as memo from synlte.synltefield
+        <where>
+            FIELDID is not null and GADSJ_FIELDID is not null and  upper(substr(FIELDID,0,3)) !='WBZ' AND STATUS = '05' and field_standard != '99'
+            <if test="searchText != null">
+                and ( (upper(FIELDCHINESENAME) like upper(concat('%',concat(#{searchText},'%')))) or (upper(fieldId) like upper(concat('%',concat(#{searchText},'%')))) )
+            </if>
+        </where>
+    </select>
+
+    <select id="searchPublicDataGroupName" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(0) from SYNLTE.STANDARDIZE_PUBLIC_DATA where group_name=#{groupName}
+    </select>
+
+    <select id="searchPublicDataByName" resultType="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataPojo"
+                                        resultMap="publicDataPojoResult">
+        select ID,group_name,creator,create_time,memo from SYNLTE.STANDARDIZE_PUBLIC_DATA where group_name=#{groupName}
+    </select>
+
+    <select id="searchPublicDataFieldById" parameterType="java.lang.String"
+            resultType="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataField" resultMap="publicDataFieldResult">
+        select ID,
+               GROUP_ID,
+               RECNO,
+               FIELD_CHINESE_NAME,
+               FIELD_ID,
+               FIELD_NAME,
+               DETERMINER_ID,
+               DETERMINER_NAME,
+               IS_QUERY,
+               IS_CONTORL,
+               NEED_VALUE,
+               MEMO,
+               HEAD_MEMO,
+               ISMD5,
+               s.COLUMNNAME,
+               s.FIELDCHINESENAME,
+               s.FIELDTYPE,
+               s.FIELDLEN,
+               s.GADSJ_FIELDID
+        from (select *
+              from SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD
+              where group_id = #{groupId}) spd
+                 left join (select COLUMNNAME,
+                                   FIELDCHINESENAME,
+                                   FIELDTYPE,
+                                   FIELDLEN,
+                                   GADSJ_FIELDID,
+                                   FIELDID
+                            from synlte.SYNLTEFIELD) s on s.FIELDID = spd.field_id
+        order by recno
+    </select>
+
+    <delete id="deletePublicDataFieldById" parameterType="java.lang.String">
+        delete from SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD where group_id=#{id}
+    </delete>
+
+    <select id="searchPublicDataById" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(0) from SYNLTE.STANDARDIZE_PUBLIC_DATA where id=#{id}
+    </select>
+
+    <insert id="insertPublicDataField" parameterType="com.synway.datastandardmanager.pojo.publicDataManage.PublicDataField">
+        insert into SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD(id,group_id,recno,field_chinese_name,field_id,field_name,determiner_id,determiner_name,
+                    is_query,is_contorl,need_value,memo,head_memo,ismd5) values(#{id,jdbcType=VARCHAR},#{groupId},#{recno},
+                    #{fieldChineseName,jdbcType=VARCHAR},#{fieldId,jdbcType=VARCHAR},#{fieldName,jdbcType=VARCHAR},
+                    #{determinerId,jdbcType=VARCHAR},#{determinerName,jdbcType=VARCHAR},#{isQuery},#{isContorl},#{needValue},
+                    #{memo,jdbcType=VARCHAR},#{headMemo,jdbcType=VARCHAR},#{md5Index,jdbcType=INTEGER})
+    </insert>
+
+    <select id="searchGroupNameList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select id as value,group_name as label from SYNLTE.STANDARDIZE_PUBLIC_DATA order by label
+    </select>
+
+</mapper>

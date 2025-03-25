@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.LifeCycleDao">
+    <sql id="getLifeCyCle">
+        select b.NAME1 as name,b.TABLE_NAME_EN as tableNameEn,b.TABLE_TYPE as platformType,
+        b.TABLE_PROJECT as projectName,b.PARTITION_NUM as partitionNum,b.LASTDATAMODIFIEDTIME as lastDataModifiedTime,
+        b.LASTVISITEDTIME as lastVisitedTime,b.TABLEUSECOUNTOFMONTH as useCountOfMonth,
+        case when a.VAL_DENSITY = '0' then '0'
+        when a.VAL_DENSITY is null then '0'
+        when to_char(a.VAL_DENSITY ,'fm999999999990.00')='0.00' then '0'
+        else
+        to_char(a.VAL_DENSITY,'fm999999999990.00') end as valDensity,
+        b.PRIMARY_ORGANIZATION_CH as organizationClassify,
+        b.SECONDARY_ORGANIZATION_CH as secOrganizationClassify,
+        case when b.PARTITION_MESSAGE = 0 then '增量' when b.PARTITION_MESSAGE = 1 then '全量' else '其它' END as updateType,
+        case when b.PARTITION_MESSAGE = 0 then '是' when b.PARTITION_MESSAGE = 1 then '否' else '' END as "partition",
+        case when b.AVERAGE_DAILY_SIZE = '0' then '0'
+        when to_char(b.AVERAGE_DAILY_SIZE/1073741824,'fm999999999990.00')='0.00' then '0'
+        else
+        to_char(b.AVERAGE_DAILY_SIZE/1073741824,'fm999999999990.00') end as averageDailySize,
+        case when b.TABLE_SIZE = '0' then '0'
+        when to_char(b.TABLE_SIZE/1073741824,'fm999999999990.00')='0.00' then '0'
+        else
+        to_char(b.TABLE_SIZE/1073741824,'fm999999999990.00') end as storageSize,
+        case when b.PARTITION_MESSAGE = 1 then '未分区'
+        else b.LIFE_CYCLE
+        END as lifeCycle,b.LIFE_CYCLE_STATUS as lifeCycleStatus,
+        a.update_val_density_status as updateValDensityStatus,b.resourceId as resourceId,b.res_name as resName
+        from
+        (select NAME as NAME1,TABLE_NAME_EN,PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,TABLE_SIZE,TABLE_PROJECT,
+        LIFE_CYCLE,TABLE_TYPE,PARTITION_MESSAGE,LIFE_CYCLE_STATUS,AVERAGE_DAILY_SIZE,LASTDATAMODIFIEDTIME,
+        PARTITION_NUM,LASTVISITEDTIME,TABLEUSECOUNTOFMONTH,resourceId,res_name from TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME>
+        trunc(sysdate - #{daysAgo})) b
+        left join
+        table_organization_val_density a
+        on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME_EN) and upper(a.TABLE_TYPE)= upper(b.TABLE_TYPE)
+        and upper(a.TABLE_PROJECT) = upper(b.TABLE_PROJECT)
+        <where>
+            1=1
+            <if test="queryParams.input!=null">
+                and (b.name1 like '%${queryParams.input}%' or b.TABLE_NAME_EN like '%${queryParams.input}%')
+            </if>
+            <if test="queryParams.lastModifiedTimeBegin!=null and queryParams.lastModifiedTimeBegin!=''">
+                and b.LASTDATAMODIFIEDTIME >= #{queryParams.lastModifiedTimeBegin,jdbcType=VARCHAR}
+            </if>
+            <if test="queryParams.lastModifiedTimeEnd!=null and queryParams.lastModifiedTimeEnd!=''">
+                and b.LASTDATAMODIFIEDTIME <![CDATA[ <= ]]>  #{queryParams.lastModifiedTimeEnd,jdbcType=VARCHAR}
+            </if>
+            <if test="queryParams.lastVisitedTimeBegin!=null and queryParams.lastVisitedTimeBegin!=''">
+                and b.LASTVISITEDTIME >= #{queryParams.lastVisitedTimeBegin,jdbcType=VARCHAR}
+            </if>
+            <if test="queryParams.lastVisitedTimeEnd!=null and queryParams.lastVisitedTimeEnd!=''">
+                and b.LASTVISITEDTIME <![CDATA[ <= ]]>  #{queryParams.lastVisitedTimeEnd,jdbcType=VARCHAR}
+            </if>
+            <if test="queryParams.storgaeSizeBegin!=null and queryParams.storgaeSizeBegin!=''">
+                and b.TABLE_SIZE >= #{queryParams.storgaeSizeBegin,jdbcType=VARCHAR}*1073741824
+            </if>
+            <if test="queryParams.storgaeSizeEnd!=null and queryParams.storgaeSizeEnd!=''">
+                and b.TABLE_SIZE <![CDATA[ <= ]]>  #{queryParams.storgaeSizeEnd,jdbcType=VARCHAR}*1073741824
+            </if>
+            <if test="queryParams.valDensityBegin!=null and queryParams.valDensityBegin!=''">
+                and to_number(a.VAL_DENSITY) >= #{queryParams.valDensityBegin,jdbcType=NUMERIC}
+            </if>
+            <if test="queryParams.valDensityEnd!=null and queryParams.valDensityEnd!=''">
+                and to_number(a.VAL_DENSITY) <![CDATA[ <= ]]>  #{queryParams.valDensityEnd,jdbcType=NUMERIC}
+            </if>
+            <if test="queryParams.useConutOfMonthBegin!=null and queryParams.useConutOfMonthBegin!=''">
+                and to_number(b.TABLEUSECOUNTOFMONTH) >= #{queryParams.useConutOfMonthBegin,jdbcType=NUMERIC}
+            </if>
+            <if test="queryParams.useConutOfMonthEnd!=null and queryParams.useConutOfMonthEnd!=''">
+                and to_number(b.TABLEUSECOUNTOFMONTH) <![CDATA[ <= ]]>  #{queryParams.useConutOfMonthEnd,jdbcType=NUMERIC}
+            </if>
+        </where>
+    </sql>
+
+
+    <select id="getLifeCycleInfo" resultType="com.synway.property.pojo.lifecycle.LifeCycleInfo">
+        select * from (
+        <include refid="getLifeCyCle"></include>
+        )
+        <where>
+            <if test="queryParams.organizationClassifyFilterList!=null and queryParams.organizationClassifyFilterList.size>0">
+                and organizationClassify in
+                <foreach collection="queryParams.organizationClassifyFilterList" item="item" open="(" close=")"
+                         separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="queryParams.platformTypeFilterList!=null and queryParams.platformTypeFilterList.size>0">
+                and platformType in
+                <foreach collection="queryParams.platformTypeFilterList" item="item1" open="(" close=")" separator=",">
+                    #{item1}
+                </foreach>
+            </if>
+            <if test="queryParams.projectNameFilterList!=null and queryParams.projectNameFilterList.size>0">
+                and projectName in
+                <foreach collection="queryParams.projectNameFilterList" item="item1" open="(" close=")" separator=",">
+                    #{item1}
+                </foreach>
+            </if>
+            <if test="queryParams.updateTypeFilterList!=null and queryParams.updateTypeFilterList.size>0">
+                and updateType in
+                <foreach collection="queryParams.updateTypeFilterList" item="item1" open="(" close=")" separator=",">
+                    #{item1}
+                </foreach>
+            </if>
+            <if test="queryParams.partitionFilterList!=null and queryParams.partitionFilterList.size>0">
+                and "partition" in
+                <foreach collection="queryParams.partitionFilterList" item="item1" open="(" close=")" separator=",">
+                    #{item1}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getLifeCycleInfoFilter" resultType="java.util.Map">
+        select * from (
+        (select
+        distinct a.organizationClassify as typeValue,'organizationClassify' as type,b.codeid as sortValue
+        from
+        (<include refid="getLifeCyCle"/>) a
+        left join
+        v_classify_info b
+        on a.organizationClassify = b.codetext
+        )
+        union all
+        select
+        distinct platformType as typeValue,'platformType' as type ,platformType as sortValue
+        from
+        (<include refid="getLifeCyCle"/>)
+        union all
+        select
+        distinct projectName as typeValue,'projectName' as type,projectName as sortValue
+        from
+        (<include refid="getLifeCyCle"/>)
+        union all
+        select
+        distinct updateType as typeValue,'updateType' as type,updateType as sortValue
+        from
+        (<include refid="getLifeCyCle"/>)
+        union all
+        select
+        distinct "partition" as typeValue,'partition' as type,"partition" as sortValue
+        from
+        (<include refid="getLifeCyCle"/>)
+        ) order by sortValue
+    </select>
+    <select id="getOldValDensity" resultType="com.synway.property.pojo.lifecycle.ValDensity">
+        select UNSTRUCTED_DATA as unstructedData,TWOHANDLE as twoHandle,TEXTHANDLE as textHandle,
+	    WORKFLOW_USED as workflowUsed,APPLICATION_USED as applicationUsed,ZHUTIKU_USED as zhutikuUsed,
+	    ZIYUANKU_USED as ziyuankuUsed,YAOSUKU_USED as yaosukuUsed,TAG_USED as tagUsed,
+	    VAL_DENSITY as valDensity from table_organization_val_density
+	    where upper(TABLE_NAME_EN) = upper(#{queryParams.tableNameEn,jdbcType=VARCHAR})
+	    and upper(TABLE_TYPE) = upper(#{queryParams.platformType,jdbcType=VARCHAR})
+	    and upper(TABLE_PROJECT) = upper(#{queryParams.tableProject,jdbcType=VARCHAR})
+    </select>
+
+    <update id="updateValDensity">
+        update table_organization_val_density
+        set
+            UNSTRUCTED_DATA = #{density.unstructedData,jdbcType=VARCHAR},
+            TWOHANDLE = #{density.twoHandle,jdbcType=VARCHAR},
+            textHandle = #{density.textHandle,jdbcType=VARCHAR},
+            WORKFLOW_USED = #{density.workflowUsed,jdbcType=VARCHAR},
+            APPLICATION_USED = #{density.applicationUsed,jdbcType=VARCHAR},
+            ZHUTIKU_USED = #{density.zhutikuUsed,jdbcType=VARCHAR},
+            ZIYUANKU_USED = #{density.ziyuankuUsed,jdbcType=VARCHAR},
+            YAOSUKU_USED = #{density.yaosukuUsed,jdbcType=VARCHAR},
+            TAG_USED = #{density.tagUsed,jdbcType=VARCHAR},
+            VAL_DENSITY = #{density.valDensity,jdbcType=VARCHAR},
+            UPDATE_VAL_DENSITY_STATUS = 1
+        where
+            upper(TABLE_NAME_EN) = upper(#{queryParams.tableNameEn,jdbcType=VARCHAR}) and
+            upper(TABLE_TYPE) = upper(#{queryParams.platformType,jdbcType=VARCHAR}) and
+            upper(TABLE_PROJECT) = upper(#{queryParams.tableProject,jdbcType=VARCHAR})
+    </update>
+
+
+    <insert id="insertValDensity">
+        insert into table_organization_val_density
+        (TABLE_NAME_EN,TABLE_TYPE,TABLE_PROJECT,UNSTRUCTED_DATA,TWOHANDLE,TEXTHANDLE,WORKFLOW_USED,
+	    APPLICATION_USED,ZHUTIKU_USED,ZIYUANKU_USED,YAOSUKU_USED,TAG_USED,VAL_DENSITY,UPDATE_VAL_DENSITY_STATUS)
+	    values
+	    (#{queryParams.tableNameEn,jdbcType=VARCHAR},#{queryParams.platformType,jdbcType=VARCHAR},
+	    #{queryParams.tableProject,jdbcType=VARCHAR},#{density.unstructedData,jdbcType=VARCHAR},
+        #{density.twoHandle,jdbcType=VARCHAR},#{density.textHandle,jdbcType=VARCHAR},
+        #{density.workflowUsed,jdbcType=VARCHAR},#{density.applicationUsed,jdbcType=VARCHAR},
+        #{density.zhutikuUsed,jdbcType=VARCHAR},#{density.ziyuankuUsed,jdbcType=VARCHAR},
+        #{density.yaosukuUsed,jdbcType=VARCHAR},#{density.tagUsed,jdbcType=VARCHAR},
+        #{density.valDensity,jdbcType=VARCHAR},1)
+    </insert>
+
+
+    <select id="getClassifyNum" resultType="java.util.Map">
+        select count(1) as num,PRIMARY_ORGANIZATION_CH as classify
+        from TABLE_ORGANIZATION_ASSETS where
+        STATISTICS_TIME> trunc(sysdate) and
+        PRIMARY_ORGANIZATION_CH in ('主题库','资源库','业务要素索引库')
+        <if test="tables.size>0">
+            and
+            <foreach collection="tables" item="item" separator="or" open="(" close=")">
+                (upper(table_name_en) = upper(#{item.tableNameEn,jdbcType=VARCHAR}) and
+                upper(table_project) = upper(#{item.tableProject,jdbcType=VARCHAR}))
+            </foreach>
+        </if>
+        group by PRIMARY_ORGANIZATION_CH
+    </select>
+    <select id="getAssets" resultType="com.synway.property.pojo.DetailedTableByClassify">
+        select TABLE_NAME_EN as tableNameEn,TABLE_TYPE as tableType,
+        TABLE_PROJECT as tableProject, PRIMARY_ORGANIZATION_CH as primaryOrganizationCh,
+        SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh
+        from TABLE_ORGANIZATION_ASSETS where
+        STATISTICS_TIME > trunc(sysdate)
+    </select>
+    <select id="getOrganizationClassify" resultType="java.util.Map">
+        select PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH from TABLE_ORGANIZATION_ASSETS
+	    where STATISTICS_TIME > trunc(sysdate)
+	    and upper(TABLE_NAME_EN) = upper(#{queryParams.tableNameEn,jdbcType=VARCHAR})
+	    and upper(TABLE_TYPE) = upper(#{queryParams.platformType,jdbcType=VARCHAR})
+	    and upper(TABLE_PROJECT) = upper(#{queryParams.tableProject,jdbcType=VARCHAR})
+    </select>
+
+    <update id="changeValDensityStatus">
+        update table_organization_val_density set UPDATE_VAL_DENSITY_STATUS = '0'
+    </update>
+
+    <select id="getCount" resultType="java.lang.Integer">
+        select count(1) from table_organization_val_density
+    </select>
+
+    <update id="updateLifeCycleShowField">
+        merge into ZC_CONFIG_FIELD_CONTROL a
+            using (select 'TABLE_LIFECYCLE' as name1, #{userName,jdbcType=VARCHAR} as USERNAME1 FROM dual) b
+            on (a.name = b.name1 and a.USERNAME = b.USERNAME1)
+            when matched then
+            update
+            set
+            SHOW_FIELD_LIST = #{lifeCycleShowFields,jdbcType=VARCHAR} where "NAME" = 'TABLE_LIFECYCLE' and USERNAME = #{userName,jdbcType=VARCHAR}
+            when not matched then
+            insert values('TABLE_LIFECYCLE',90,#{lifeCycleShowFields,jdbcType=VARCHAR},#{userName,jdbcType=VARCHAR})
+    </update>
+
+    <select id="getLifeCycleShowField" resultType="java.lang.String">
+        select SHOW_FIELD_LIST from ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_LIFECYCLE' and USERNAME = #{userName,jdbcType=VARCHAR}
+    </select>
+
+</mapper>

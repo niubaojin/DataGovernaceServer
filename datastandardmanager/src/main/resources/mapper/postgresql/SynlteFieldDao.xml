@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.datastandardmanager.dao.master.SynlteFieldDao">
+
+    <select id="searchAllFilterTable" resultType="com.synway.datastandardmanager.pojo.FilterObject">
+        select value, text from(select distinct STATUS as value,
+        'status' as text from synlte.SYNLTEFIELD where status is not null order by STATUS asc)
+		UNION all
+		select value,text from (select distinct FIELD_CLASS AS VALUE,
+		'fieldClass' as text from synlte.SYNLTEFIELD where FIELD_CLASS is not null order by FIELD_CLASS ASC)
+		UNION ALL
+		SELECT VALUE,TEXT FROM (SELECT DISTINCT SECRET_CLASS AS VALUE,
+		'securityLevel' as text from synlte.SYNLTEFIELD where SECRET_CLASS IS NOT NULL order by SECRET_CLASS ASC)
+    </select>
+
+
+    <select id="searchAllTable" resultType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject"
+        parameterType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldParameter">
+        select  s.FIELDID as fieldId,COLUMNNAME as columnName, FIELDNAME as fieldName, FIELDCHINESENAME as fieldChineseName,
+        FIELDDESCRIBE as fieldDescribe, FIELDTYPE as fieldType, FIELDLEN as fieldLen, DEFAULTVALUE as defaultValue,
+        MEMO as memo,s.codeid as codeId, SAMEID as sameId, IS530NEW as is530New,VERSIONS as versions, Releasedate as releaseDate,
+        FULL_CHINSEE as fullChinese,SIM_CHINESE as simChinese,SYNONY_NAME as synonyName, OBJECT_TYPE as objectType ,
+        EXPRESSION_WORD as expressionWord,
+        CODEID_DETAIL as codeIdDetail,ISNORMAL as isNorMal,RELATE as relate,UNIT as unit, FUSE_TYPE as fuseType,
+        FUSE_FIELDID as fuseFieldId,STATUS as statusNum,
+        SUB_ORG as subOrg, SUB_AUTHOR as subAuthor,ON_DATE as onDate,
+        REG_ORG as regOrg,FIELD_CLASS as fieldClass,SECRET_CLASS as secretClass,FIELD_STANDARD as fieldStandard,
+        FACTURER as facturer, f.CODETEXT as codeIdStr , case when o.relatedTablesCount is null then 0 else o.relatedTablesCount
+        end as relatedTablesCount,context,"constraint",CREATETIME as createTime,UPDATETIME as updateTime,CREATOR as creator,
+            UPDATER as updater,GADSJ_FIELDID as gadsjFieldId,FIELD_RELATES as fieldRelates,s.ATTRIBUTE_WORD as attributeWord
+         from synlte.SYNLTEFIELD s
+        LEFT JOIN (SELECT DISTINCT CODEID,CODETEXT FROM synlte.FIELDCODE) F ON UPPER(S.CODEID) = UPPER(F.CODEID)
+        left join (select fieldid,count(distinct objectid) as relatedTablesCount from
+            ( select o1.objectid,o2.fieldid   from synlte.OBJECT o1   inner join synlte.objectfield o2 on o1.objectid = o2.objectid
+        where   upper(o1.relate_tablename) = 'OBJECTFIELD' and o2.deleted = 0)
+            group by fieldid) o on upper(s.FIELDID) = upper(o.fieldid)
+        <where>
+            GADSJ_FIELDID is not null and  S.FIELDID NOT LIKE 'WBZ%'  and field_standard != '99'
+            <if test="searchName !=null">
+              and  (
+                  upper(s.FIELDID) like upper(concat('%',concat(#{searchName},'%')))
+                   or
+                  upper(FIELDNAME) like upper(concat('%',concat(#{searchName},'%')))
+                  or
+                  upper(FIELDCHINESENAME) like upper(concat('%',concat(#{searchName},'%')))
+                )
+            </if>
+            <if test="fieldClassList !=null and fieldClassList.size()>0 and fieldClassIsNull == false">
+                and  FIELD_CLASS in (
+                    <foreach collection="fieldClassList" item="item" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                )
+            </if>
+            <if test="fieldClassList !=null and fieldClassList.size() > 0 and fieldClassIsNull == true">
+                and  (FIELD_CLASS in (
+                <foreach collection="fieldClassList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                )
+                or FIELD_CLASS is null
+                )
+            </if>
+            <if test="secretClassList !=null and secretClassList.size()>0 and secretClassIsNull == false">
+                and SECRET_CLASS in (
+                <foreach collection="secretClassList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="secretClassList !=null and secretClassList.size()>0 and secretClassIsNull == true">
+                and (SECRET_CLASS in (
+                <foreach collection="secretClassList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                )
+                 or SECRET_CLASS is null
+                )
+            </if>
+            <if test="statusFilterList !=null and statusFilterList.size() > 0 and statusIsNull == false">
+                and STATUS in (
+                <foreach collection="statusFilterList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="statusFilterList !=null and statusFilterList.size() > 0 and statusIsNull == true">
+                and (STATUS in (
+                <foreach collection="statusFilterList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                )
+                or STATUS is null
+                )
+            </if>
+<!--            <if test="versionsFilterList !=null and  versionsFilterList.size()> 0 and versionsIsNull == false">-->
+<!--                and VERSIONS in (-->
+<!--                <foreach collection="versionsFilterList" item="item" separator="union all" open ="(" close = ")" >-->
+<!--                    select #{item} from dual-->
+<!--                </foreach>-->
+<!--                )-->
+<!--            </if>-->
+<!--            <if test="versionsFilterList !=null and versionsFilterList.size()> 0 and versionsIsNull == true">-->
+<!--                and (VERSIONS in (-->
+<!--                <foreach collection="versionsFilterList" item="item" separator="union all" open ="(" close = ")" >-->
+<!--                    select #{item} from dual-->
+<!--                </foreach>-->
+<!--                )-->
+<!--                or VERSIONS is null-->
+<!--                )-->
+<!--            </if>-->
+        </where>
+        <if test="sort !=null and sort != ''">
+            order by ${sort} ${sortOrder} nulls last
+        </if>
+
+    </select>
+
+
+    <select id="getSearchNameSuggest" resultType="java.lang.String">
+        select distinct name from(
+                select distinct FIELDCHINESENAME as name from synlte.SYNLTEFIELD
+                <if test="searchName !=''">
+                    where upper(FIELDCHINESENAME) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+            union all
+                select distinct FIELDNAME as name from synlte.SYNLTEFIELD
+                <if test="searchName !=''">
+                    where upper(FIELDNAME) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+            union all
+                select distinct SIM_CHINESE as name from synlte.SYNLTEFIELD
+                <if test="searchName !=''">
+                    where upper(SIM_CHINESE) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+            union all
+                select distinct FIELDID as name from synlte.SYNLTEFIELD
+                <if test="searchName !=''">
+                    where upper(FIELDID) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+       )
+    </select>
+
+
+<!--    <update id="deleteObjectByFieldId">-->
+<!--        update synlte.SYNLTEFIELD set deleted = 1, status = '07', FIELDID = concat(FIELDID,'_1'),-->
+<!--         COLUMNNAME = concat(COLUMNNAME,'_1')-->
+<!--         where upper(FIELDID) = upper(#{fieldId})-->
+<!--    </update>-->
+
+
+    <update id="updateSynlteFieldStatus">
+        update synlte.SYNLTEFIELD set status = #{status},ON_DATE = #{onDate}
+        where upper(FIELDID) in (
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+    <select id="getObjectCountById" resultType="java.lang.Integer">
+        select count(0) from synlte.SYNLTEFIELD where upper(FIELDID) = upper(#{fieldId}) and (deleted =0 or deleted is null)
+    </select>
+
+
+    <select id="getReleaseDateCountById" resultType="java.lang.Integer">
+        select  Releasedate from synlte.SYNLTEFIELD where upper(FIELDID) = upper(#{fieldId})
+    </select>
+
+    <select id="getUpdateDateCountById" resultType="java.lang.String">
+        select to_char(UPDATETIME,'yyyy-MM-dd  HH:mm:ss') from synlte.SYNLTEFIELD where upper(FIELDID) = upper(#{fieldId}) and (deleted =0 or deleted is null)
+    </select>
+    <select id="getSameWordList" resultType="com.synway.datastandardmanager.pojo.FilterObject">
+        select distinct sameid as value, wordname as text from synlte.sameword where deleted =0 and sameid is not null
+        and wordname is not null
+        <if test ="searchName != null">
+            and ( upper(sameid) like upper(concat(#{searchName},'%'))
+              or  upper(wordname) like upper(concat(#{searchName},'%'))
+            )
+        </if>
+    </select>
+
+    <select id="findSimChineseList" resultType="java.lang.String">
+        select distinct SIM_CHINESE  from synlte.SYNLTEFIELD  where upper(SIM_CHINESE) like upper(concat(#{name},'%'))
+    </select>
+
+    <select id="checkSameId" resultType="java.lang.Integer">
+        select count(0) from synlte.sameword where upper(sameid) = upper(#{sameId})
+    </select>
+
+    <select id="checkCodeIdExits" resultType="java.lang.Integer">
+        select count(0) from synlte.FIELDCODE  where upper(codeid) = upper(#{codeId})
+    </select>
+
+    <select id="checkColumnExits" resultType="java.lang.Integer">
+        select count(0) from synlte.SYNLTEFIELD  where upper(COLUMNNAME) = upper(#{column})
+    </select>
+
+
+    <update id="updateObject" parameterType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject">
+        update synlte.SYNLTEFIELD set
+        COLUMNNAME = upper(#{columnName}), FIELDNAME = upper(#{fieldName}), FIELDCHINESENAME  = #{fieldChineseName},
+        FIELDDESCRIBE  = #{fieldDescribe}, FIELDTYPE = #{fieldType}, FIELDLEN = #{fieldLen}, DEFAULTVALUE = #{defaultValue},
+        MEMO = #{memo,jdbcType=VARCHAR}, CODEID = #{codeId},SAMEID = #{sameId}, VERSIONS = #{versions}, Releasedate = #{releaseDate,jdbcType=INTEGER},
+         FULL_CHINSEE = #{fullChinese},SIM_CHINESE = #{simChinese}, SYNONY_NAME = #{synonyName}, OBJECT_TYPE = #{objectType},
+         EXPRESSION_WORD = #{expressionWord},CODEID_DETAIL = #{codeIdDetail}, ISNORMAL = #{isNorMal}, RELATE = #{relate}, UNIT = #{unit}, FUSE_TYPE = #{fuseType},
+        FUSE_FIELDID = #{fuseFieldId}, STATUS = #{statusNum}, SUB_ORG = #{subOrg}, SUB_AUTHOR = #{subAuthor},
+        ON_DATE = #{onDate}, REG_ORG = #{regOrg}, FIELD_CLASS = #{fieldClass},
+         SECRET_CLASS = #{secretClass}, FIELD_STANDARD = #{fieldStandard}, ATTRIBUTE_WORD=#{attributeWord,jdbcType=VARCHAR},
+         FACTURER = #{facturer},context=#{context},"constraint" = #{constraint},UPDATETIME=CURRENT_DATE,
+        UPDATER=#{updater},FIELD_RELATES=#{fieldRelates,jdbcType=VARCHAR}
+        where upper(FIELDID) = upper(#{fieldId})
+<!--        <if test="updateTime != null">-->
+<!--            and  UPDATETIME = #{updateTime,jdbcType=DATE}-->
+<!--        </if>-->
+        <if test="releaseDate == null">
+            and  Releasedate is null
+        </if>
+    </update>
+
+    <insert id="insertObject" parameterType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject">
+        insert into synlte.SYNLTEFIELD(FIELDID,FIELDNAME,FIELDCHINESENAME,FIELDDESCRIBE,FIELDTYPE,FIELDLEN,DEFAULTVALUE,
+            MEMO,COLUMNNAME,CODEID,SAMEID,VERSIONS,Releasedate,FULL_CHINSEE,SIM_CHINESE,SYNONY_NAME,OBJECT_TYPE,
+            EXPRESSION_WORD,CODEID_DETAIL,ISNORMAL,RELATE,UNIT,FUSE_TYPE,FUSE_FIELDID,STATUS,SUB_ORG,SUB_AUTHOR,ON_DATE,
+            REG_ORG,FIELD_CLASS,SECRET_CLASS,FIELD_STANDARD,FACTURER,context,"constraint",CREATETIME,UPDATETIME,CREATOR,UPDATER,
+            ATTRIBUTE_WORD,GADSJ_FIELDID,FIELD_RELATES)
+        select
+        upper(#{fieldId}), upper(#{fieldName}),#{fieldChineseName},#{fieldDescribe,jdbcType=VARCHAR},#{fieldType},#{fieldLen},
+        #{defaultValue,jdbcType=VARCHAR},#{memo,jdbcType=VARCHAR},upper(#{columnName}), #{codeId,jdbcType=VARCHAR},#{sameId,jdbcType=VARCHAR},
+        #{versions,jdbcType=VARCHAR},#{releaseDate,jdbcType=INTEGER}, #{fullChinese,jdbcType=VARCHAR},#{simChinese,jdbcType=VARCHAR},
+        #{synonyName,jdbcType=VARCHAR},#{objectType,jdbcType=VARCHAR}, #{expressionWord,jdbcType=VARCHAR},#{codeIdDetail,jdbcType=VARCHAR},
+        #{isNorMal,jdbcType=INTEGER}, #{relate,jdbcType=VARCHAR}, #{unit,jdbcType=VARCHAR}, #{fuseType,jdbcType=VARCHAR},#{fuseFieldId,jdbcType=VARCHAR},
+        #{statusNum,jdbcType=VARCHAR},#{subOrg,jdbcType=VARCHAR},#{subAuthor,jdbcType=VARCHAR}, #{onDate},#{regOrg,jdbcType=VARCHAR},
+        #{fieldClass,jdbcType=VARCHAR}, #{secretClass,jdbcType=VARCHAR}, #{fieldStandard,jdbcType=VARCHAR},#{facturer,jdbcType=VARCHAR},
+        #{context,jdbcType=VARCHAR},#{constraint,jdbcType=VARCHAR},CURRENT_DATE,CURRENT_DATE,#{creator,jdbcType=VARCHAR},#{updater,jdbcType=VARCHAR},
+        #{attributeWord,jdbcType=VARCHAR},#{gadsjFieldId},#{fieldRelates,jdbcType=VARCHAR}
+        from generate_series(1, 1)
+        where not exists(select 1 from synlte.SYNLTEFIELD where upper(FIELDID) = upper(#{fieldId}) or
+         upper(COLUMNNAME) = upper(#{columnName}) )
+    </insert>
+
+
+
+    <select id="getSelectObjectByName" resultType="com.synway.datastandardmanager.pojo.FilterObject">
+         select code_value as value,code_text as text  from all_code_data
+         where upper(CODE_ID) = upper(#{name})
+    </select>
+
+<!--    <update id="updateNullSimChinese">-->
+<!--        update synlte.SYNLTEFIELD set SIM_CHINESE =#{simChinese} where upper(FIELDID) = upper(#{fieldId})-->
+<!--    </update>-->
+
+    <select id="searchSynlteFieldById" resultType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject">
+        select s.FIELDID as fieldId,COLUMNNAME as columnName, FIELDNAME as fieldName, FIELDCHINESENAME as fieldChineseName,
+        FIELDDESCRIBE as fieldDescribe, FIELDTYPE as fieldType, FIELDLEN as fieldLen, DEFAULTVALUE as defaultValue,
+        MEMO as memo,s.CODEID as codeId, SAMEID as sameId, IS530NEW as is530New,VERSIONS as versions, Releasedate as releaseDate,
+        FULL_CHINSEE as fullChinese,SIM_CHINESE as simChinese,SYNONY_NAME as synonyName, OBJECT_TYPE as objectType ,
+        EXPRESSION_WORD as expressionWord,
+        CODEID_DETAIL as codeIdDetail,ISNORMAL as isNorMal,RELATE as relate,UNIT as unit, FUSE_TYPE as fuseType,
+        FUSE_FIELDID as fuseFieldId,STATUS as statusNum,
+        SUB_ORG as subOrg, SUB_AUTHOR as subAuthor,ON_DATE as onDate,
+        REG_ORG as regOrg,FIELD_CLASS as fieldClass,SECRET_CLASS as secretClass,FIELD_STANDARD as fieldStandard,
+        FACTURER as facturer,  s.context as context,s.constraint as constraint, CREATETIME as createTime,
+        UPDATETIME as updateTime,CREATOR as creator,UPDATER as updater,GADSJ_FIELDID as gadsjFieldId
+        from synlte.SYNLTEFIELD s
+        where upper(FIELDID) = upper(#{fieldId})
+    </select>
+
+    <insert id="saveSynlteFieldVersion" parameterType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldVersion">
+        insert into synlte.synltefield_version(FIELDID_VERSION,FIEDID,COLUMNNAME,MEMO,VERSION,VERSIONS,UPDATETIME,AUTHOR)
+        values(#{fieldIdVersion,jdbcType=VARCHAR},#{fieldId},#{columnName},#{memo,jdbcType=VARCHAR},#{version},#{versions},#{updateTime},#{author})
+    </insert>
+
+    <insert id="saveOneOldData" parameterType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject">
+        insert into synlte.SYNLTEFIELD_history(FIELDID,FIELDNAME,FIELDCHINESENAME,FIELDDESCRIBE,FIELDTYPE,FIELDLEN,DEFAULTVALUE,
+            MEMO,COLUMNNAME,CODEID,SAMEID,IS530NEW,VERSIONS,Releasedate,FULL_CHINSEE,SIM_CHINESE,SYNONY_NAME,OBJECT_TYPE,
+            EXPRESSION_WORD,CODEID_DETAIL,ISNORMAL,RELATE,UNIT,FUSE_TYPE,FUSE_FIELDID,STATUS,SUB_ORG,SUB_AUTHOR,ON_DATE,
+            REG_ORG,FIELD_CLASS,SECRET_CLASS,FIELD_STANDARD,FACTURER,context,"constraint",CREATETIME,UPDATETIME,CREATOR,UPDATER,
+            FIELDID_VERSION)
+        select
+        upper(#{fieldId,jdbcType=VARCHAR}), upper(#{fieldName,jdbcType=VARCHAR}),#{fieldChineseName,jdbcType=VARCHAR},#{fieldDescribe,jdbcType=VARCHAR},#{fieldType,jdbcType=VARCHAR},#{fieldLen,jdbcType=VARCHAR}, #{defaultValue,jdbcType=VARCHAR},#{memo,jdbcType=VARCHAR},
+        upper(#{columnName,jdbcType=VARCHAR}), #{codeId,jdbcType=VARCHAR},#{sameId,jdbcType=VARCHAR},#{is530New,jdbcType=VARCHAR} , #{versions,jdbcType=VARCHAR}, #{releaseDate,jdbcType=VARCHAR}, #{fullChinese,jdbcType=VARCHAR},#{simChinese,jdbcType=VARCHAR},
+        #{synonyName,jdbcType=VARCHAR},#{objectType,jdbcType=VARCHAR}, #{expressionWord,jdbcType=VARCHAR},#{codeIdDetail,jdbcType=VARCHAR}, #{isNorMal,jdbcType=VARCHAR}, #{relate,jdbcType=VARCHAR}, #{unit,jdbcType=VARCHAR}, #{fuseType,jdbcType=VARCHAR},#{fuseFieldId,jdbcType=VARCHAR},
+        #{statusNum,jdbcType=VARCHAR},#{subOrg,jdbcType=VARCHAR},#{subAuthor,jdbcType=VARCHAR}, #{onDate,jdbcType=VARCHAR},#{regOrg,jdbcType=VARCHAR},#{fieldClass,jdbcType=VARCHAR}, #{secretClass,jdbcType=VARCHAR}, #{fieldStandard,jdbcType=VARCHAR},
+        #{facturer,jdbcType=VARCHAR},#{context,jdbcType=VARCHAR},#{constraint,jdbcType=VARCHAR},CURRENT_DATE,#{updateTime,jdbcType=VARCHAR},#{creator,jdbcType=VARCHAR},#{updater,jdbcType=VARCHAR},
+        #{fieldIdVersion,jdbcType=VARCHAR}
+        from generate_series(1, 1)
+    </insert>
+
+    <select id="searchObjectIdByFieldId" resultType="java.lang.String">
+        select objectid from synlte.objectfield where fieldid = #{fieldId}
+    </select>
+
+    <select id="searchDataSecurityLevelList" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select valtext as label,valvalue as value,memo as memo from synlte.fieldcodeval where codeid='GACODE000415'
+    </select>
+
+    <select id="getGadsjFieldByText" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select fieldid as value ,fieldchinesename as label,gadsj_fieldId as memo
+        from synlte.SYNLTEFIELD
+        <where>
+            GADSJ_FIELDID is not null and  upper(substr(FIELDID,0,3)) !='WBZ' and STATUS='05' and field_standard != '99'
+            <if test="fieldId != null and fieldId != ''">
+                and fieldid =#{fieldId}
+            </if>
+            <if test="fieldType != null and fieldType == '02'">
+                and field_standard = '2'
+            </if>
+            <if test="fieldType != null and fieldType == '03'">
+                and field_standard = '3'
+            </if>
+
+            <if test="searchText != null">
+              and ( (upper(fieldchinesename) like upper(concat('%',concat(#{searchText},'%'))))
+                 or (upper(FIELDID) like upper(concat('%',concat(#{searchText},'%'))))
+                 or (upper(fieldname) like upper(concat('%',concat(#{searchText},'%')))) )
+            </if>
+
+        </where>
+    </select>
+
+    <select id="searchSynlteFieldCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(*) from synlte.SYNLTEFIELD
+        where fieldid = #{fieldId} and columnName = #{columnName}
+    </select>
+
+    <select id="searchAllSynlteField" resultType="com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject">
+        select FIELDID as fieldId,FIELDNAME as fieldName,FIELDCHINESENAME as fieldChineseName,FIELDDESCRIBE as fieldDescribe,
+        FIELDTYPE as fieldType,FIELDLEN as fieldLen,DEFAULTVALUE as defaultValue,MEMO as memo,COLUMNNAME as columnName,
+        CODEID as codeId,SAMEID as sameId,IS530NEW as is530New,FIELD_CLASS as fieldClass,SECRET_CLASS as secretClass,
+        SIM_CHINESE as simChinese,VERSIONS as versions,RELEASEDATE as releaseDate,SYNONY_NAME as synonyName,
+        OBJECT_TYPE as objectType,EXPRESSION_WORD as expressionWord,CODEID_DETAIL as codeIdDetail,ISNORMAL as isNorMal,
+        RELATE as relate,UNIT as unit,FUSE_TYPE as fuseType,FUSE_FIELDID as fuseFieldId,SUB_ORG as subOrg,SUB_AUTHOR as subAuthor,
+        ON_DATE as onDate,REG_ORG as regOrg,FIELD_STANDARD as fieldStandard,FACTURER as facturer,CONTEXT as context,
+        CONSTRAINT as constraint,CREATETIME as createTime,UPDATETIME as updateTime,CREATOR as creator,UPDATER as updater,
+        STATUS as statusNum,FULL_CHINSEE as fullChinese,ATTRIBUTE_WORD as attributeWord,GADSJ_FIELDID as gadsjFieldId,
+        FIELD_RELATES as fieldRelates from synlte.SYNLTEFIELD where status = '05'
+    </select>
+
+    <select id="getAllTableNameByFieldId" resultType="com.synway.datastandardmanager.pojo.relationTableInfo"
+            parameterType="java.lang.String">
+	        select tableid,tablename ,objectname as tableNameCh
+  	        from synlte.object o
+            left join synlte.objectfield f on o.objectid = f.objectid
+            <where>
+                UPPER(f.fieldid) = UPPER(#{fieldId}) and
+                upper(o.relate_tablename) = 'OBJECTFIELD'
+                <if test="searchName !=null">
+                    and  ( upper(tablename) like upper(concat('%',concat(#{searchName},'%')))
+                    or
+                    upper(objectname) like upper(concat('%',concat(#{searchName},'%')))
+                    )
+                </if>
+            </where>
+ 	        group by tableid,tablename,objectname
+    </select>
+
+</mapper>

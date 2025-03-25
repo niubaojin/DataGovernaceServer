@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.LargeScreenDao">
+
+	<select id="standardStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.object  where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD'
+	</select>
+
+	<select id="standardUpdateStatistics" resultType="java.math.BigDecimal">
+		select count(0) from standardize_object o1
+		inner join standardize_outputobject o2  on o1.obj_guid = o2.obj_guid
+		where to_char(o1.insert_date,'yyyy-mm-dd')=  to_char(CURRENT_DATE,'YYYY-MM-DD')
+	</select>
+
+	<select id="metadataStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.SYNLTEFIELD
+	</select>
+
+	<select id="semanticStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.SAMEWORD
+	</select>
+
+	<select id="nationalCodeStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.FIELDCODE
+	</select>
+
+	<select id="queryLargeScreenData" resultType="com.synway.governace.pojo.largeScreen.LargeScreenData">
+		select data_info dataInfo from DGN_DATA_LARGE_SCREEN
+		<where>
+			<if test="moduleId != null  and moduleId !=''">
+				and module_id=#{moduleId}
+			</if>
+			<if test="createTime != null and createTime !=''">
+				and to_char(create_time, 'yyyyMMdd')=#{createTime}
+			</if>
+		</where>
+	</select>
+
+	<insert id="saveLargeScreenData" parameterType="com.synway.governace.pojo.largeScreen.LargeScreenData">
+        insert into DGN_DATA_LARGE_SCREEN(module_id, module_name, data_info, create_time)
+        VALUES (#{moduleId,jdbcType=VARCHAR},#{moduleName,jdbcType=VARCHAR},#{dataInfo,jdbcType=CLOB},CURRENT_DATE - INTERVAL '1 day')
+    </insert>
+
+	<delete id="deleteLargeScreenData">
+		delete from DGN_DATA_LARGE_SCREEN
+		<where>
+			<if test="moduleId != null and moduleId !=''">
+				and module_id = #{moduleId}
+			</if>
+			<if test="createTime != null and createTime !=''">
+				and to_char(create_time, 'yyyyMMdd') <![CDATA[<]]> #{createTime}
+			</if>
+		</where>
+	</delete>
+
+	<select id="getQualityGovernStatistics" resultType="com.synway.governace.pojo.largeScreen.DataGovernanceEffect">
+		select nvl(sum(errorNumber), 0) errorNumber, nvl(sum(governanceFinish), 0) finishedNumber
+		from DQC_HistoryExceptionTrack where createTime between #{startTime} and #{endTime}
+	</select>
+
+	<select id="getHandleNodeStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		SELECT SERVICE_IP dataName, count(distinct RESOURCE_ID) typeCount, nvl(TRUNC(sum(DATA_COUNT)/100000000,2), 0) dataCount
+		FROM DAC_STANDARD_PROVIDER_BILL
+		WHERE to_char(DATA_SEND_TIME,'yyyyMMdd') = to_char(CURRENT_DATE,'yyyyMMdd')
+		GROUP BY SERVICE_IP
+	</select>
+
+	<select id="getPrimaryClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select v.CODEID dataId, v.CODETEXT dataName, nvl(TRUNC(t.dataCount/100000000,2), 0) dataCount, nvl(v.tablecount, 0) typeCount
+    from ( select * from v_classify_info l
+                left join
+                (select PRIMARYORGANIZATIONCH as name ,count(distinct SJXJBM) as tableCount from classify_interface_all_date
+                group by PRIMARYORGANIZATIONCH) r
+                on l.codeText = r.name
+                where l.parcodeid = 'JZCODEGASJZZFL') v
+      left join (
+        select  PRIMARY_ORGANIZATION_CH as primaryClassifyCh,
+        sum(table_all_count) as dataCount,
+        count(distinct table_name_en) as typeCount from
+        (SELECT PRIMARY_ORGANIZATION_CH,table_all_count,table_name_en FROM ( SELECT j.PRIMARY_ORGANIZATION_CH,j.table_all_count,
+        j.table_name_en, row_number() over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where j.STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE)
+        ) h
+        WHERE h.rnn = 1) group by PRIMARY_ORGANIZATION_CH ) t
+      on t.primaryClassifyCh = v.CODETEXT
+	</select>
+
+	<select id="getSecondClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select v.CODEID dataId, v.CODETEXT dataName, nvl(TRUNC(tableAllSum/100000000,2),0) dataCount, nvl(t.tableNumberSum,0) typeCount, nvl(TRUNC(yesterdayAllSum/100000000,2),0) todayUpdateCount
+		from v_classify_info v
+			left join (
+				select	PRIMARY_ORGANIZATION_CH as primaryClassifyCh ,
+				SECONDARY_ORGANIZATION_CH as secondaryClassifyCh,
+				sum(table_all_count) as tableAllSum ,
+				count(distinct table_name_en) as tableNumberSum,
+				sum(YESTERDAY_COUNT) as yesterdayAllSum from
+				(SELECT PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,table_all_count,table_name_en,YESTERDAY_COUNT FROM
+				( SELECT  j.PRIMARY_ORGANIZATION_CH,j.SECONDARY_ORGANIZATION_CH,j.table_all_count,j.table_name_en,j.YESTERDAY_COUNT,
+				row_number() over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+				STATISTICS_TIME DESC ) as rnn from table_organization_assets j where j.STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE)) h
+				WHERE h.rnn = 1) group by PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH ) t
+			on t.secondaryClassifyCh = v.CODETEXT
+ 			where level = 3
+ 			<if test="dataId != null and dataId !=''">
+				and parcodeid = #{dataId}
+			</if>
+            start with codeid = 'JZCODEGASJZZFL' connect by prior codeid = parcodeid
+	</select>
+
+	<select id="getThirdClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select v.CODEID dataId, v.CODETEXT dataName, nvl(t.tableNumberSum,0) typeCount
+		from v_classify_info v
+		left join (
+		select	PRIMARY_DATASOURCE_CH as primaryClassifyCh ,
+		SECONDARY_DATASOURCE_CH as secondaryClassifyCh,
+		count(distinct table_name_en) as tableNumberSum from
+		(SELECT PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,table_name_en
+		FROM ( SELECT j.PRIMARY_DATASOURCE_CH,j.SECONDARY_DATASOURCE_CH,j.table_name_en, row_number() over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+		STATISTICS_TIME DESC ) as rnn from table_organization_assets j where j.STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE)) h
+		WHERE h.rnn = 1) group by PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH ) t
+		on t.secondaryClassifyCh = v.CODETEXT
+		where level = 4
+		<if test="dataId != null and dataId !=''">
+			and parcodeid = #{dataId}
+		</if>
+		start with codeid = 'JZCODEGASJZZFL' connect by prior codeid = parcodeid
+	</select>
+
+	<select id="getInceptDataStatistics" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		select r.nodeinstanceid nodeInstanceId,to_char(r.endtime,'yyyy-MM-dd') dataTime,
+		r.statisticstr statisticStr, j.extrainfostr extraInfoStr, s.jobdataxjson jobDataxJson
+		from jobexecuterecord r left join job j on r.jobid = j.id
+		left join subjob s on s.jobid=j.id
+		where r.status = 1 and r.endtime between #{startTime} and #{endTime}
+	</select>
+
+	<select id="getDistributeDataStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select nvl(sum(totalcount), 0) dataCount, count(distinct name) typeCount from DGN_NOSTD_DISTRIBUTE_STATISTIC
+		where totalcount > 0 and partitiontime >= #{startTime} and partitiontime <![CDATA[<=]]> #{endTime}
+	</select>
+
+	<select id="getUpdateDataStatistics" resultType="com.synway.governace.pojo.largeScreen.DataAssetsInfo">
+        select lower(TABLE_PROJECT) tableProject,
+               upper(TABLE_NAME_EN) tableName,
+               case
+                  when PARTITION_MESSAGE = '1' then
+                   (case
+                  when count(distinct table_all_count) > 1 then
+                   1
+                  else
+                   0
+                end) else(case
+                 when sum(table_all_count) > 0 then
+                  1
+                 else
+                  0
+               end) end isUpdating
+          from table_organization_assets
+        where STATISTICS_TIME between #{startTime} and #{endTime}
+        group by lower(TABLE_PROJECT), upper(TABLE_NAME_EN), PARTITION_MESSAGE
+	</select>
+
+    <select id="getStandardDataStatistics" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+        select resource_id as sourceId, data_count as dataCount, service_ip as nodeInstanceId, to_char(data_arrive_time,'yyyy-MM-dd') as dataTime
+		from DAC_STANDARD_ACCEPTOR_BILL
+		where data_arrive_time between #{startTime} and #{endTime}
+    </select>
+
+	<select id="getHandleDataStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select days.dataTime, round(nvl(sum(m.dataCount), 0)/100000000, 2) dataCount
+		from (select to_char(CURRENT_DATE + INTERVAL '1 days' - INTERVAL '#{LEVEL} days', 'yyyy-MM-dd') dataTime from dual connect by LEVEL <![CDATA[<=]]> 7) days
+		left join (select to_char(data_send_time, 'yyyy-MM-dd') dataTime, nvl(data_count, 0) dataCount from DAC_STANDARD_PROVIDER_BILL) m
+		on days.dataTime = m.dataTime
+		group by days.dataTime order by days.dataTime
+	</select>
+
+	<select id="getSourceDataStatistics" resultType="java.math.BigDecimal">
+		SELECT count(distinct resource_id) from DAC_STORAGE_ACCEPTOR_BILL
+		WHERE data_arrive_time between #{startTime} and #{endTime}
+	</select>
+
+	<select id="getHandleDataStorageStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		SELECT count(distinct RESOURCE_ID) typeCount, nvl(trunc(sum(DATA_COUNT)/100000000,2), 0) dataCount FROM DAC_STORAGE_ACCEPTOR_BILL
+		WHERE DATA_ARRIVE_TIME between #{startTime} and #{endTime}
+	</select>
+
+	<select id="queryRecentDataCount" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		select days.dataTime, nvl(sum(m.dataCount), 0) dataCount
+		from (select to_char(CURRENT_DATE + INTERVAL '1 days' - INTERVAL '#{LEVEL} days', 'yyyy-MM-dd') dataTime from dual connect by LEVEL <![CDATA[<=]]> 7) days
+		left join (select to_char(data_arrive_time, 'yyyy-MM-dd') dataTime, nvl(data_count, 0) dataCount from DAC_STANDARD_ACCEPTOR_BILL) m
+		on days.dataTime = m.dataTime
+		group by days.dataTime order by days.dataTime
+	</select>
+
+	<select id="queryStandardResourceId" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		select days.dataTime, m.sourceId
+		from (select to_char(CURRENT_DATE + INTERVAL '1 days' - INTERVAL '#{LEVEL} days', 'yyyy-MM-dd') dataTime from dual connect by LEVEL <![CDATA[<=]]> 2) days
+		left join (select to_char(data_arrive_time, 'yyyy-MM-dd') dataTime, resource_id sourceId from DAC_STANDARD_ACCEPTOR_BILL) m
+		on days.dataTime = m.dataTime
+		group by days.dataTime,m.sourceId order by days.dataTime
+	</select>
+
+	<select id="queryStandardNodeInstanceId" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+     	select service_ip nodeInstanceId, resource_id sourceId, sum(nvl(data_count, 0)) dataCount
+		from DAC_STANDARD_ACCEPTOR_BILL
+		where data_arrive_time between #{startTime} and #{endTime}
+		group by service_ip,resource_id
+	</select>
+
+</mapper>

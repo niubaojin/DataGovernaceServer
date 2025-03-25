@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.reconciliation.dao.AlarmSettingDao">
+    <select id="getReconciliationAlarmList" resultType="com.synway.reconciliation.pojo.BillAlarmStatistics">
+        SELECT
+            NVL(B.NAME, S.RESOURCE_ID) resourceName,
+            S.RESOURCE_ID resourceId,
+            S.TACHE tache,
+            S.SAME_PERIOD_INPUT samePeriodInput,
+            S.SAME_PERIOD_OUTPUT samePeriodOutput,
+            S.SAME_PERIOD_ERROR samePeriodError,
+            S.CHAIN_RATIO_ONE chainRatioOne,
+            S.CHAIN_RATIO_TWO chainRatioTwo,
+            S.CHAIN_RATIO_ERROR chainRatioError,
+            S.DATA_TIME dataTime,
+            S.ALARM_TYPE alarmType
+        FROM
+            DAC_BILL_ALARM_STATISTICS S LEFT JOIN ( SELECT DISTINCT SJXJBM, NAME FROM CLASSIFY_INTERFACE_ALL_DATE) B ON S.RESOURCE_ID = B.SJXJBM
+        where 1=1
+        <if test="tache !=null and tache != 0">
+            and S.TACHE = #{tache}
+        </if>
+        <if test="dataName !=null and dataName !=''">
+            and NVL(B.NAME, S.RESOURCE_ID) like '%'||#{dataName}||'%'
+        </if>
+        <if test="startTime !=null and startTime !=''">
+            and S.DATA_TIME >= to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss')
+        </if>
+        <if test="endTime !=null and endTime !=''">
+            and S.DATA_TIME <![CDATA[<= ]]> to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        </if>
+        order by S.CREATE_TIME desc,S.DATA_TIME DESC,S.TACHE,S.RESOURCE_ID
+    </select>
+
+    <select id="getReconciliationAlarmSettingByParentId" resultType="com.synway.reconciliation.pojo.ThresholdConfig">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+         FROM DGN_COMMON_SETTING where 1=1
+        <if test="parentId !=null and parentId !=''">
+            and PARENT_ID = #{parentId}
+        </if>
+    </select>
+
+    <select id="getReconciliationAlarmSetting" resultType="com.synway.reconciliation.pojo.ThresholdConfig">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+        FROM DGN_COMMON_SETTING where 1=1
+        <if test="parentId !=null and parentId !=''">
+            and PARENT_ID = #{parentId}
+        </if>
+        <if test="name !=null and name !=''">
+            and NAME = #{name}
+        </if>
+        <if test="isActive !=null and isActive !=''">
+            and IS_ACTIVE = #{isActive}
+        </if>
+    </select>
+
+    <select id="getReconciliationAlarmSettingByName" resultType="com.synway.reconciliation.pojo.ThresholdConfig">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+        FROM DGN_COMMON_SETTING
+        <where>
+            <foreach collection="array" item="name" open="name in(" close=")" separator=",">
+                #{name}
+            </foreach>
+            and parent_id in(select id from DGN_COMMON_SETTING where tree_type='2')
+        </where>
+    </select>
+
+    <insert id="insertReconciliationAlarmSetting" parameterType="com.synway.reconciliation.pojo.ThresholdConfig">
+        insert into DGN_COMMON_SETTING(ID,PARENT_ID,NAME,LOGICAL_JUDGMENT,THRESHOLD_VALUE,TREE_TYPE,IS_ACTIVE)
+        VALUES (#{id,jdbcType=VARCHAR},#{parentId,jdbcType=VARCHAR},#{name,jdbcType=VARCHAR},#{logicalJudgment,jdbcType=VARCHAR},#{thresholdValue,jdbcType=VARCHAR},#{treeType},#{isActive,jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="deleteReconciliationAlarmSetting" parameterType="java.lang.String">
+        DELETE FROM DGN_COMMON_SETTING WHERE PARENT_ID = #{parentId}
+    </delete>
+
+    <select id="getAlarmPhoneNumberList" resultType="com.synway.reconciliation.pojo.AlarmPhoneNumber">
+        SELECT
+        ID id,
+        NAME name,
+        PHONE_NUMBER phoneNumber,
+        ALARM_TYPE alarmType,
+        CREATE_TIME createTime
+        FROM
+        ALARM_PHONENUMBER
+        where 1=1 order by CREATE_TIME desc
+    </select>
+
+    <select id="getAlarmPhoneNumberById" resultType="com.synway.reconciliation.pojo.AlarmPhoneNumber">
+        SELECT ID id,NAME name,PHONE_NUMBER phoneNumber,ALARM_TYPE alarmType,CREATE_TIME createTime FROM ALARM_PHONENUMBER where 1=1
+        <if test="id !=null and id !=''">
+            and ID = #{id}
+        </if>
+    </select>
+
+    <insert id="insertAlarmPhoneNumber" parameterType="com.synway.reconciliation.pojo.AlarmPhoneNumber">
+        insert into ALARM_PHONENUMBER(ID,NAME,PHONE_NUMBER,ALARM_TYPE,CREATE_TIME)
+         values (#{id,jdbcType=VARCHAR},#{name,jdbcType=VARCHAR},#{phoneNumber,jdbcType=VARCHAR},#{alarmType,jdbcType=VARCHAR},sysdate)
+    </insert>
+
+    <update id="updateAlarmPhoneNumber" parameterType="com.synway.reconciliation.pojo.AlarmPhoneNumber">
+        UPDATE ALARM_PHONENUMBER SET NAME=#{name,jdbcType=VARCHAR},PHONE_NUMBER=#{phoneNumber,jdbcType=VARCHAR},ALARM_TYPE=#{alarmType,jdbcType=VARCHAR}
+        where ID = #{id}
+    </update>
+
+    <delete id="deleteAlarmPhoneNumber">
+        delete from ALARM_PHONENUMBER
+        <where>
+            <foreach collection="array" item="id" open="id in(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </delete>
+
+    <select id="getPrivateReconciliationAlarmSettingByName" resultType="com.synway.reconciliation.pojo.ThresholdConfig">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+        FROM DGN_COMMON_SETTING
+        <where>
+            <foreach collection="array" item="name" open="name in(" close=")" separator=",">
+                #{name}
+            </foreach>
+            and exists (select t.resource_id from DAC_BILL_ALARM_STATISTICS t where t.resource_id=parent_id)
+        </where>
+    </select>
+
+</mapper>

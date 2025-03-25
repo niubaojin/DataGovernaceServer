@@ -1,0 +1,186 @@
+ html,
+ body{
+	height:100%;
+	width: 99%;
+	/*background-color: white;*/
+}
+ .resourceButton{
+     float: right;
+     text-align: center;
+     line-height: 18px!important;;
+ }
+ .querybtn {
+     /*border-color: #3582ef;*/
+     /*width: 60px;*/
+     /*height: 30px;*/
+     /*border-radius:2px;*/
+     /*color: #3582ef;*/
+     /*line-height: 1;*/
+     /*white-space: nowrap;*/
+     /*background-color: white;*/
+     width: 60px;
+     height: 30px;
+     line-height: 28px;
+     text-align: center;
+     font-size: 12px;
+     color: #2ba1f5;
+     border: solid 1px #2ba1f5;
+     cursor: pointer;
+
+ }
+ .querybtn:hover{
+     background-image: var(--main-gradient-color)!important;
+     color: #fff!important;
+ }
+table{
+    width: 100%;
+    font-size: 12px;
+    font-family: MicrosoftYaHei;
+    color:#333333;
+}
+th{
+
+	text-align: center;
+
+	vertical-align: middle; 
+}
+.TableDiv td{
+    font-size: 12px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+ div.TableDiv{
+     position: absolute;
+     margin-left: 310px;
+     margin-top: 10px;
+     margin-right: 10px;
+     width: calc( 100% - 320px );
+ }
+
+ div .TableDivBootom {
+     position: absolute;
+     margin-left: 310px;
+     margin-top: 160px;
+     margin-right: 10px;
+     width: calc(100% - 320px);
+     height: calc(100% - 190px);
+ }
+ body font{
+     font-size: 14px;
+     vertical-align: middle;
+ }
+
+ button .exportbtn {
+     width: 60px;
+     height: 30px;
+     line-height: 28px;
+     text-align: center;
+     font-size: 12px;
+     color: var(--main-color);
+     border: solid 1px var(--main-color);
+     cursor: pointer;
+ }
+ button .exportbtn:hover{
+     background-image: var(--main-gradient-color);
+     color: #fff!important;
+ }
+ input {
+     width: 15px;
+     height: 32px;
+     display: inline-block;
+     vertical-align: middle;
+ }
+
+ .leftdiv{
+     margin-top: 10px;
+     margin-bottom: 0px;
+ }
+ .rightDiv{
+     margin-left: 10px;
+     margin-bottom: 10px;
+ }
+ .leftdiv a{
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+  }
+
+ .treeDiv{
+     position: fixed;
+     top:15px;
+     bottom:10px;
+     height: calc( 100% - 35px );
+     overflow-y: auto;
+     width: 293px;
+     left:15px;
+ }
+
+ #treeId{
+     /*position: absolute;*/
+     margin-top: 10px;
+     margin-left: 0px;
+     margin-right: 0px;
+     overflow-y: auto;
+     /*height: 600px;*/
+     height:calc(100% - 42px);
+     border: 1px solid #f1f1f1;
+ }
+
+ #treeId  .list-group .list-group-item:first-child {
+    border-top: 0;
+}
+ #treeId .list-group .list-group-item {
+     overflow: hidden;
+     white-space: nowrap;
+     text-overflow: ellipsis;
+ }
+
+ .buttonVue{
+     border-image-source: var(--main-gradient-color);
+     border-image-slice: 1;
+     color: var(--main-color);
+     width: 60px;
+     height: 32px;
+
+ }
+ .buttonVue:hover{
+     background-image: var(--main-gradient-color);
+     background-blend-mode: normal, normal;
+     color: #fff;
+     width: 60px;
+     height: 32px;
+ }
+
+.my-txt-file .file-caption-name {
+    padding-bottom: 10px!important;
+}
+ .treeview {
+     color: var(--font-color);
+ }
+ .treeview .list-group-item {
+     border-radius: 0;
+ }
+ .treeview  .list-group-item {
+     padding: 7px  0;
+     border: 0;
+     border-top: 1px solid #f1f1f1;
+     border-bottom: 1px solid #f1f1f1;
+     border-left:0;
+     border-right: 0;
+     font-size: 13px;
+ }
+ .table-condensed {
+     color: var(--font-color);
+ }
+ .table-condensed .table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td {
+     border-top:0;
+ }
+ .jhover {
+     background: #f5f7fa!important;
+     color: var(--font-color) !important;
+ }
+.dropdown-menu .table>tbody>tr>td {
+    padding: 8px;
+    cursor: pointer;
+}

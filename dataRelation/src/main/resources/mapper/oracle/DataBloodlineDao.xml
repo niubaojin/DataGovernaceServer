@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datarelation.dao.datablood.DataBloodlineDao">
+
+    <select id="getDataProcessTableSearch" resultType="com.synway.datarelation.pojo.databloodline.QueryDataBloodlineTable">
+        select dataType, tableNameEn,tableId,tableNameCh,tableName,tableShowData,targetCode from (
+        select  'dataprocess' as dataType,
+        s.table_name as tableNameEn , o.tableid as tableId,
+        o.objectname as tableNameCh, s.tableName as tableName,
+        case when o.objectname is null then '数据加工 —>  '||s.tableName else '数据加工 —> '||o.objectname
+        end as   tableShowData,
+        o.data_source as targetCode
+        from (select objectname,tableid,data_source,tablename from synlte.object where upper(relate_tablename) = 'OBJECTFIELD') o right join
+        (select distinct tableName, table_name
+        from(select  substr(input_tablename , instr(input_tablename , '.' )+1) as tableName,
+        input_tablename as table_name
+        from M_NODE_IN_OUT_TABLE union all
+        select substr(output_tablename , instr(output_tablename , '.' )+1) as tableName,
+        output_tablename as table_name
+        from M_NODE_IN_OUT_TABLE
+        ) where tableName is not null) s
+        on upper(o.tablename) = upper(s.tableName))
+        <where>
+            <if test="queryType == 'like'">
+                <if test="queryStr != null and queryStr != ''">
+                    upper(tableNameEn) like upper('%${queryStr}%')
+                    or upper(tableId) like upper('%${queryStr}%')
+                    or tableNameCh like '%${queryStr}%'
+                </if>
+            </if>
+            <if test="queryType == 'exact'">
+                <if test="queryStr != null and queryStr != ''">
+                    upper(tableNameEn) = upper('${queryStr}')
+                    or upper(tableId) = upper('${queryStr}')
+                    or tableNameCh = '${queryStr}'
+                </if>
+            </if>
+
+        </where>
+        order by tableName asc
+    </select>
+<!--       20200516 使用自己的表 -->
+    <select id="getDataProcessTableSearchV2" resultType="com.synway.datarelation.pojo.databloodline.QueryDataBloodlineTable">
+      select dataType,tableNameEn,tableId,tableNameCh, tableName,tableShowData,targetCode from (
+        select  'dataprocess' as dataType,
+           s.table_name as tableNameEn , o.tableid as tableId,
+           o.objectname as tableNameCh, s.tableName as tableName,
+           case when o.objectname is null then '数据加工 —>  '||s.tableName else '数据加工 —> '||o.objectname end as tableShowData,
+           o.data_source as targetCode
+           from (select objectname,tableid,data_source,tablename from synlte.object where upper(relate_tablename) = 'OBJECTFIELD') o right join
+           (select  distinct  substr(table_name , instr(table_name , '.' )+1) as tableName,table_name
+           from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE) s
+           on upper(o.tablename) = upper(s.tableName))
+        <where>
+            <if test="queryStr != null and queryStr != ''">
+                upper(tableNameEn) like upper('%${queryStr}%')
+                or upper(tableId) like upper('%${queryStr}%')
+                or tableNameCh like '%${queryStr}%'
+            </if>
+        </where>
+    </select>
+
+    <select id="getDataProcessTableRelation" resultType="com.synway.datarelation.pojo.databloodline.RelationshipNode">
+     select t.* ,o1.objectname as childrenTableNameCh,o2.objectname as parentTableNameCh ,
+        o1.tableid as childrenTableId ,o2.tableid as parentTableId,
+        nodeName,flowName
+       from (
+         select a.table_name as childrenTN , substr(a.table_name , instr(a.table_name , '.' )+1) as childrenTableName,
+           b.table_name as parentTN , substr(b.table_name , instr(b.table_name , '.' )+1) as parentTableName,
+           a.node_name as nodeName,
+           a.sub_flow_name as flowName
+          from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE a ,
+          (select node_name,sub_flow_name,type,table_name
+            from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE
+            <where>
+                type=1
+                <if test="queryType == 1">
+                    and upper(table_name) = upper('${queryTableName}')
+                </if>
+                <if test="queryType == 2">
+                    and upper(substr(table_name , instr(table_name , '.' )+1)) = upper('${queryTableName}')
+                </if>
+            </where>
+             ) b
+        where a.node_name = b.node_name and a.sub_flow_name=b.sub_flow_name and a.type=2) t
+        left join (select * from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD') o1
+        on upper(t.childrenTableName) = upper(o1.tablename)
+        left join (select * from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD') o2
+        on upper(t.parentTableName) = upper(o2.tablename)
+    </select>
+
+    <select id="getLeftDataProcessTableRelation" resultType="com.synway.datarelation.pojo.databloodline.RelationshipNode">
+        select t.* ,o1.objectname as childrenTableNameCh,o2.objectname as parentTableNameCh ,
+        o1.tableid as childrenTableId ,o2.tableid as parentTableId,
+        nodeName,flowName
+        from (
+        select a.table_name as parentTN , substr(a.table_name , instr(a.table_name , '.' )+1) as parentTableName,
+        b.table_name as childrenTN , substr(b.table_name , instr(b.table_name , '.' )+1) as childrenTableName,
+        a.node_name as nodeName,
+        a.sub_flow_name as flowName
+        from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE a ,
+        (select node_name,sub_flow_name,type,table_name
+        from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE
+        <where>
+            type=2
+            <if test="queryType == 1">
+                and upper(table_name) = upper('${queryTableName}')
+            </if>
+            <if test="queryType == 2">
+                and upper(substr(table_name , instr(table_name , '.' )+1)) = upper('${queryTableName}')
+            </if>
+        </where>
+        ) b
+        where a.node_name = b.node_name and a.sub_flow_name=b.sub_flow_name and a.type=1) t
+        left join (select objectname,tableid,tablename from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' ) o1
+        on upper(t.childrenTableName) = upper(o1.tablename)
+        left join (select objectname,tableid,tablename from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' ) o2
+        on upper(t.parentTableName) = upper(o2.tablename)
+        where upper(childrentn) != upper(parenttn)
+    </select>
+
+
+    <select id="getApplicationSystemByTableName" resultType="com.synway.datarelation.pojo.databloodline.ApplicationSystem">
+        select applicationName,subModuleName,dataBaseType, project,tableNameEn,tableNameCh from(
+            select APPLICATION_NAME as applicationName,
+            SUB_MODULE_NAME as subModuleName,
+            DATABASE_TYPE as dataBaseType,
+            PROJECT as project,
+            TABLENAME_EN as tableNameEn,
+            tablename_ch as tableNameCh,
+             ROW_NUMBER() over(partition by APPLICATION_NAME||SUB_MODULE_NAME||DATABASE_TYPE||PROJECT||TABLENAME_EN  order by insert_date desc) as num
+            from ApplicationSystem
+            <where>
+                <if test="pageType == 'like'">
+                    <if test="queryType == 1">
+                        upper(PROJECT||'.'||TABLENAME_EN) like upper('%${tableName}%')
+                    </if>
+                    <if test="queryType == 2">
+                        upper(PROJECT||'.'||TABLENAME_EN) = upper('${tableName}')
+                    </if>
+                    <if test="queryType == 4">
+                        upper(PROJECT||'.'||TABLENAME_EN) like upper('%${tableName}%')  or  upper(APPLICATION_NAME) like upper('%${tableName}%')
+                        or  upper(SUB_MODULE_NAME) like upper('%${tableName}%') or upper(tablename_ch) like upper('%${tableName}%')
+                    </if>
+                </if>
+                <if test="pageType == 'exact'">
+                    <if test="queryType == 1">
+                        upper(PROJECT||'.'||TABLENAME_EN) = upper('${tableName}')
+                    </if>
+                    <if test="queryType == 2">
+                        upper(PROJECT||'.'||TABLENAME_EN) = upper('${tableName}')
+                    </if>
+                    <if test="queryType == 4">
+                        upper(PROJECT||'.'||TABLENAME_EN) = upper('${tableName}')  or  upper(APPLICATION_NAME) = upper('${tableName}')
+                        or  upper(SUB_MODULE_NAME) = upper('${tableName}') or upper(tablename_ch) = upper('${tableName}')
+                    </if>
+                </if>
+            </where>
+        ) where num = 1
+    </select>
+
+    <select id="getAllApplicationSystemByTableName" resultType="com.synway.datarelation.pojo.databloodline.ApplicationSystem">
+        select applicationName,subModuleName,dataBaseType,project,tableNameEn,tableNameCh from(
+            select APPLICATION_NAME as applicationName,
+            SUB_MODULE_NAME as subModuleName,
+            DATABASE_TYPE as dataBaseType,
+            PROJECT as project,
+            TABLENAME_EN as tableNameEn,
+            tablename_ch as tableNameCh,
+             ROW_NUMBER() over(partition by APPLICATION_NAME||SUB_MODULE_NAME||DATABASE_TYPE||PROJECT||TABLENAME_EN  order by insert_date desc) as num
+
+            from ApplicationSystem
+            )
+    </select>
+
+
+    <insert id="insertApplicationSystem" parameterType="com.synway.datarelation.pojo.databloodline.ApplicationSystem">
+        insert into ApplicationSystem(APPLICATION_NAME ,SUB_MODULE_NAME, DATABASE_TYPE,PROJECT,TABLENAME_EN,TABLENAME_CH)
+        VALUES (#{applicationName} , #{subModuleName} , #{dataBaseType} , #{project}, #{tableNameEn} , #{tableNameCh})
+    </insert>
+
+    <select id="getApplicationSystemCount" parameterType="com.synway.datarelation.pojo.databloodline.ApplicationSystem"
+            resultType="java.lang.Integer">
+        select count(0) from  ApplicationSystem
+        <where>
+            <if test="applicationName != null and applicationName != ''">
+                upper(APPLICATION_NAME) = upper(#{applicationName})
+            </if>
+            <if test="subModuleName != null and subModuleName != ''">
+                and upper(SUB_MODULE_NAME) = upper(#{subModuleName})
+            </if>
+            <if test="tableNameEn != null and tableNameEn != ''">
+                and upper(TABLENAME_EN) = upper(#{tableNameEn})
+            </if>
+        </where>
+    </select>
+
+
+    <delete id="deleteColumnRelation">
+        delete from COLUMN_BLOODLINE_relation
+        <where>
+            upper(NODE_ID) =upper(#{nodeId})
+            and upper(TYPE)=upper(#{type})
+        </where>
+    </delete>
+
+    <delete id="deleteColumnRelationByList">
+       delete from COLUMN_BLOODLINE_relation  where  upper(TYPE)=upper('datastandard') and
+        <foreach collection="rcList" item="item" index="index" separator="or">
+            upper(NODE_ID) = upper(#{item})
+        </foreach>
+    </delete>
+
+    <insert id="insertColumnRelation" parameterType="com.synway.datarelation.pojo.databloodline.ColumnRelationDB">
+        insert into COLUMN_BLOODLINE_RELATION(ID,FACTORY_ID,COLUMN_NAME,TABLE_ID,TABLE_CODE,TABLE_NAME,TYPE,COLUMN_CHINAME,
+          NODE_ID, TABLE_NAME_CH,TABLE_ID_CH,DB_ENGNAME,TASK_UUID,DATA_NODE_NAME)
+        select  * from(
+        <foreach collection="rcList" item="item" separator="union all">
+            SELECT #{item.id,jdbcType=VARCHAR},#{item.factoryId,jdbcType=VARCHAR},#{item.columnName,jdbcType=VARCHAR},
+            #{item.tableId,jdbcType=VARCHAR} ,#{item.tableCode,jdbcType=VARCHAR},#{item.tableName,jdbcType=VARCHAR},
+            #{item.type,jdbcType=VARCHAR},#{item.columnChiName,jdbcType=VARCHAR},#{item.nodeId,jdbcType=VARCHAR},
+            #{item.tableNameCh,jdbcType=VARCHAR},#{item.tableIdCh,jdbcType=VARCHAR},#{item.dbEngName,jdbcType=VARCHAR},
+            #{item.taskUuid,jdbcType=VARCHAR},#{item.nodeName,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <delete id="deleteNodeColumnMessage">
+        delete from TABLE_COLUMN_BLOODLINE where upper(SOURCE_NODE_ID||'|'||TARGET_NODE_ID)=upper(#{id})
+    </delete>
+
+    <delete id="deleteNodeColumnMessageByList">
+        delete from TABLE_COLUMN_BLOODLINE where
+        <foreach collection="rcList" item="item" index="index" separator="or">
+            upper(SOURCE_NODE_ID||'|'||TARGET_NODE_ID) = upper(#{item})
+        </foreach>
+    </delete>
+
+    <insert id="insertNodeColumnMessage">
+        insert into TABLE_COLUMN_BLOODLINE(ID,SOURCE_NODE_ID,SOURCE_COLUMN_NAME,TARGET_NODE_ID,TARGET_COLUMN_NAME)
+        select  * from(
+        <foreach collection="rcList" item="item" separator="union all">
+            SELECT
+            #{item.id,jdbcType=VARCHAR},#{item.sourceNodeId,jdbcType=VARCHAR},#{item.sourceColumnName,jdbcType=VARCHAR},
+            #{item.targetNodeId,jdbcType=VARCHAR} ,#{item.targetColumnName,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <select id="getTableNameByTableId" resultType="java.lang.String">
+        select DISTINCT  tablename from synlte.object where
+            DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and rownum = 1
+          and  upper(tableid) = upper(#{tableId})
+          <if test="tableCode !=''">
+              and data_source = #{tableCode}
+          </if>
+    </select>
+
+    <!-- 20200516 使用自己解析的表-->
+    <select id="getAllDataProcessList" resultType="com.synway.datarelation.pojo.databloodline.RelationshipNode">
+        select t.parentTN,t.parentTableName,t.childrenTN,t.childrenTableName,t.nodeName,t.flowName ,
+        case when o1.objectname is not null then o1.objectname else o4.TABLECOMMENT end as childrenTableNameCh,
+				case when o2.objectname is not null then o2.objectname  else o3.TABLECOMMENT end as parentTableNameCh ,
+        o1.tableid as childrenTableId ,o2.tableid as parentTableId,
+        nodeName,flowName,dataType
+        from (
+        select input_tablename as parentTN , substr(input_tablename , instr(input_tablename  , '.' )+1) as parentTableName,
+        output_tablename as childrenTN , substr(output_tablename , instr(output_tablename , '.' )+1) as childrenTableName,
+        node_name as nodeName,
+        flow_name as flowName,
+        NODE_TYPE as dataType
+        from (select input_tablename,output_tablename,node_name,flow_name,NODE_TYPE , ROW_NUMBER() over(partition
+								by node_id||input_tablename||output_tablename order by insert_date desc) as num
+                 from M_NODE_IN_OUT_TABLE) where num = 1) t
+        left join (select objectname,tablename,tableid from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD') o1
+        on upper(t.childrenTableName) = upper(o1.tablename)
+        left join (select objectname,tablename,tableid from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD') o2
+        on upper(t.parentTableName) = upper(o2.tablename)
+				left join
+				(select TABLEPROJECT,tablename ,TABLECOMMENT from (
+                select TABLEPROJECT,tablename ,TABLECOMMENT, PARTITIONDATE,
+								ROW_NUMBER() over(partition
+								by concat(TABLEPROJECT,tablename) order by PARTITIONDATE desc) as num
+                  from synlte.syndmg_table_all where TABLECOMMENT is not null) t where t.num=1  and t.PARTITIONDATE is not null ) o3
+									on upper(t.parentTN) = upper(o3.tableproject||'.'||o3.tablename)
+				 left join 	(select TABLEPROJECT,tablename ,TABLECOMMENT from (
+                select TABLEPROJECT,tablename ,TABLECOMMENT, PARTITIONDATE,
+								ROW_NUMBER() over(partition
+								by concat(TABLEPROJECT,tablename) order by PARTITIONDATE desc) as num
+                  from synlte.syndmg_table_all where TABLECOMMENT is not null) t where t.num=1  and t.PARTITIONDATE is not null ) o4
+									on upper(t.childrenTN) = upper(o4.tableproject||'.'||o4.tablename)
+		where upper(childrentn) != upper(parenttn)
+    </select>
+
+
+    <select id="getAllDataProcessListV2" resultType="com.synway.datarelation.pojo.databloodline.RelationshipNode">
+        select t.parentTN,t.parentTableName,t.childrenTN,t.childrenTableName,t.nodeName,t.flowName ,
+        case when o1.objectname is not null then o1.objectname else o4.TABLECOMMENT end as childrenTableNameCh,
+				case when o2.objectname is not null then o2.objectname  else o3.TABLECOMMENT end as parentTableNameCh ,
+        o1.tableid as childrenTableId ,o2.tableid as parentTableId,
+        nodeName,flowName
+        from (
+        select a.table_name as parentTN , substr(a.table_name , instr(a.table_name , '.' )+1) as parentTableName,
+        b.table_name as childrenTN , substr(b.table_name , instr(b.table_name , '.' )+1) as childrenTableName,
+        a.node_name as nodeName,
+        a.sub_flow_name as flowName
+        from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE a ,
+        (select node_name,sub_flow_name,type,table_name
+        from synuserprofile.SYNDT_IN_OUT_TABLE_ANALYZE
+        where  type=2
+        ) b
+        where a.node_name = b.node_name and a.sub_flow_name=b.sub_flow_name and a.type=1) t
+        left join (select objectname,tableid,tablename from synlte.object where upper(relate_tablename) = 'OBJECTFIELD' ) o1
+        on upper(t.childrenTableName) = upper(o1.tablename)
+        left join (select objectname,tableid,tablename from synlte.object where upper(relate_tablename) = 'OBJECTFIELD' ) o2
+        on upper(t.parentTableName) = upper(o2.tablename)
+				left join
+				(select TABLEPROJECT,tablename ,TABLECOMMENT from (
+                select TABLEPROJECT,tablename ,TABLECOMMENT, PARTITIONDATE,
+								ROW_NUMBER() over(partition
+								by concat(TABLEPROJECT,tablename) order by PARTITIONDATE desc) as num
+                  from synlte.syndmg_table_all where TABLECOMMENT is not null) t where t.num=1  and t.PARTITIONDATE is not null) o3
+									on upper(t.parentTN) = upper(o3.tableproject||'.'||o3.tablename)
+				 left join 	(select TABLEPROJECT,tablename ,TABLECOMMENT from (
+                select TABLEPROJECT,tablename ,TABLECOMMENT, PARTITIONDATE,
+								ROW_NUMBER() over(partition
+								by concat(TABLEPROJECT,tablename) order by PARTITIONDATE desc) as num
+                  from synlte.syndmg_table_all where TABLECOMMENT is not null) t where t.num=1  and t.PARTITIONDATE is not null) o4
+									on upper(t.childrenTN) = upper(o4.tableproject||'.'||o4.tablename)
+				where upper(childrentn) != upper(parenttn)
+    </select>
+
+
+    <insert id="insertInOutTables" parameterType="com.synway.datarelation.pojo.modelrelation.DataBloodlineInOutTable">
+        insert into M_NODE_IN_OUT_TABLE(node_Id,node_type,node_name,flow_name,input_tablename,output_tablename,FILE_VERSION
+        ,in_out_location,in_out_level)
+        select * from (
+          <foreach  collection="list" item="record" separator="union all">
+                select
+               #{record.nodeId,jdbcType=VARCHAR},#{record.nodeType,jdbcType=VARCHAR},
+               #{record.nodeName,jdbcType=VARCHAR},#{record.flowName,jdbcType=VARCHAR},
+                #{record.inputTableName,jdbcType=VARCHAR},#{record.outputTableName,jdbcType=VARCHAR},
+                #{record.fileVersion,jdbcType=NUMERIC},#{record.inOutLocation,jdbcType=NUMERIC},
+              #{record.inOutLevel,jdbcType=NUMERIC}
+                from dual
+            </foreach>
+         )
+    </insert>
+
+    <select id="getMaxVersionNode" resultType="com.synway.datarelation.pojo.monitor.node.MaxVersionNodeId">
+        select NODE_ID as nodeId,max(FILE_VERSION) as maxVersion from M_NODE_THREE group by NODE_ID
+    </select>
+
+    <delete id="delMaxVersionInOutTable">
+        DELETE from M_NODE_IN_OUT_TABLE
+        <where>
+            <foreach collection="list" item="item" separator="or">
+                (NODE_ID=#{item.nodeId} and FILE_VERSION=#{item.maxVersion})
+            </foreach>
+        </where>
+    </delete>
+
+    <delete id="deleteInOutTables">
+        delete from M_NODE_IN_OUT_TABLE where node_id is not null
+    </delete>
+
+    <select id="getTableRelationCount" resultType="java.lang.Integer">
+        select count(*) from M_NODE_IN_OUT_TABLE where  to_char(insert_date,'yyyymmdd')= to_char(SYSDATE,'yyyymmdd')
+    </select>
+
+    <delete id="deleteInOutTablesByType">
+        delete from M_NODE_IN_OUT_TABLE where node_type = #{nodeType}
+    </delete>
+
+    <select id="getObjectIdbyTableId" resultType="java.lang.String">
+        select distinct objectId from synlte.OBJECT WHERE UPPER(TABLEID) = UPPER(#{tableId}) and rownum = 1
+    </select>
+
+
+    <select id="searchSummaryData" resultType="com.synway.datarelation.pojo.databloodline.SummaryData">
+         select count(distinct application_name) as applicationNameSum ,
+              count(distinct TABLENAME_EN) as involvedTableSum from applicationsystem
+    </select>
+
+
+    <select id="searchApplicationBloodTable" resultType="com.synway.datarelation.pojo.databloodline.ApplicationSystemTable">
+
+       select * from (
+           select distinct t1.application_name||t1.sub_module_name||t1.tablename_en,
+               lower(t1.application_name) as applicationSystem,
+               lower(t1.sub_module_name) as oneLevelModule,
+               upper(t1.tablename_en) as tableNameEn,
+               case when t1.tablename_ch is null then
+                t2.objectname else t1.tablename_ch end as tableNameCh ,
+               t2.tableid as tableId,
+               t1.insert_date as insert_date
+          from  applicationsystem  t1
+          left join (select * from synlte.object where  upper(relate_tablename) = 'OBJECTFIELD' and DELETED = 0)
+           t2 on upper(t1.tablename_en) = upper(t2.tablename)
+        )
+        <where>
+            applicationSystem is not null
+            <if test="inputSearch != null and inputSearch!=''">
+                and (
+                upper(applicationSystem) like upper(#{inputSearch}||'%')
+                or
+                upper(oneLevelModule) like upper(#{inputSearch}||'%')
+                or
+                upper(tableNameEn) like upper(#{inputSearch}||'%')
+                or
+                upper(tableNameCh) like upper(#{inputSearch}||'%')
+                or
+                upper(tableId) like upper(#{inputSearch}||'%')
+                )
+            </if>
+        </where>
+      <if test="sort !='onelevelmodule' and sort !='twolevelmodule' and sort !='threelevelmodule' and sort!= null and sort!=''">
+         order by  ${sort} ${sortOrder}
+      </if>
+      <if test="sort == null or sort=='' ">
+         order by insert_date desc
+      </if>
+
+    </select>
+
+
+    <select id="searchAllData" resultType="com.synway.datarelation.pojo.databloodline.ApplicationSystemTable">
+        select application_name as applicationSystem,
+               sub_module_name as oneLevelModule
+          from applicationsystem
+          where application_name is not null
+    </select>
+
+
+    <delete id="deleteApplicationSystem" parameterType="com.synway.datarelation.pojo.databloodline.ApplicationSystem">
+        delete from applicationsystem where upper(application_name) = upper(#{applicationName})
+           and upper(sub_module_name) =upper(#{subModuleName}) and upper(tablename_en) = upper(#{tableNameEn})
+    </delete>
+
+    <select id="queryConditionSuggestion" resultType="java.lang.String">
+        select distinct dataName from(
+          select distinct  tablename_en as dataName from applicationsystem
+        <where>
+            tablename_en is not null
+            <if test="searchValue != ''">
+                and upper(tablename_en) like upper(#{searchValue})||'%'
+            </if>
+        </where>
+        union all
+          select distinct  tablename_ch as dataName from applicationsystem
+        <where>
+            <if test="searchValue != ''">
+                tablename_ch is not null and
+                upper(tablename_ch) like upper(#{searchValue})||'%'
+            </if>
+            <if test="searchValue == ''">
+                1 = 2
+            </if>
+        </where>
+        )
+    </select>
+
+
+    <select id="getQueryNodeParams" resultType="com.synway.datarelation.pojo.databloodline.QueryNodeParams">
+        select t1.nodeName, t1.flowName, t1.projectName, t1.fileVersion
+         from(select t.node_name as nodeName, t.flow_name as flowName, t.project_name as projectName ,t.FILE_VERSION as fileVersion from(
+            select   node_name, flow_name, project_name  , FILE_VERSION,
+            ROW_NUMBER() over(partition by node_name||flow_name||project_name  order by file_version desc) as num
+             from m_node where node_type = #{nodeType} ) t where t.num =1 and t.node_name is not null
+             and t.flow_name is not null and t.project_name is not null) t1 left join
+             (select instance_id,node_name ,flow_name,project_name,num
+              from(select instance_id,node_name ,flow_name,project_name ,ROW_NUMBER() over(partition
+             by node_name||flow_name||project_name  order by begin_run_time desc) as num
+             from m_flow
+             where begin_run_time > sysdate - 180 ) where  num=1) t2 on t1.flowName = t2.node_name and t1.projectName = t2.project_name
+             where instance_id is not null
+    </select>
+
+    <select id="queryInOutTableCount" resultType="java.lang.Integer">
+        select count(0) from m_node_in_out_table
+    </select>
+
+    <select id="queryAllTableClassify" resultType="com.synway.datarelation.pojo.databloodline.TableClassify">
+        select sjxjbm as tableId,
+           tablename as tableNameEn,
+           case
+             when primaryorganizationch = '未知' then
+              '其它'
+             when primaryorganizationch = '业务要素索引库' then
+              '其它'
+             else
+              primaryorganizationch
+           end as organizationClassifyName
+        from classify_interface_all_date
+        where sjxjbm is not null and tablename is not null
+    </select>
+
+
+    <select id="getTableNameChByEn" resultType="java.lang.String">
+        select  objectname  from synlte.object  where upper(tablename) = upper(#{tableName}) and rownum = 1
+    </select>
+
+    <select id="getApplicationTableCount" resultType="java.lang.Integer">
+        select count(0) from  ApplicationSystem
+        where upper(APPLICATION_NAME) =upper(#{applicationName}) and
+        upper(SUB_MODULE_NAME) =upper(#{subModuleName})  and
+        upper(TABLENAME_EN) = upper(#{tableNameEn})
+    </select>
+
+    <select id="getApplicationNum" resultType="java.lang.Integer">
+        select  count(distinct APPLICATION_NAME) from ApplicationSystem
+        where APPLICATION_NAME is not null
+    </select>
+</mapper>
