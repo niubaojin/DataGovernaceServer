@@ -1,2 +1,7 @@
-
 - 数据工厂后端
+    - datagovernance：主框架
+    - dataRelation：数据血缘
+    - dataoperations：数据运维
+    - datastandardmanager：数据标准
+    - property：数据资产
+    - reconciliation：数据对账
