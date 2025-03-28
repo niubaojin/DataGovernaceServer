@@ -120,13 +120,10 @@ parClass_id_source as SJLYYJ,
 secondClass_id_source as SJLYEJ,
 -- 数据组织一级分类codename
 Parcodename_id as SJYJFLCODENAME,
-
 -- 数据组织二级分类codename
 firstCodename_id as SJEJFLCODENAME,
-
 -- 数据组织三级分类codename
 codename_id as SJSJFLCODENAME,
-
 -- 数据来源一级分类codename
 ParsourceCodename_id as SJLYYJCODENAME,
 -- 数据来源二级分类codename
@@ -184,7 +181,6 @@ from(
            sourceVci.codename as secondClass_id_source ,
            -- 二级来源codetext
            sourceVci.CODETEXT  as secondClass_ch_source,
-
            -- 一级组织的codename
            parvci.CODENAME as Parcodename_id,
            -- 二、三级组织的codename(针对于原始库是三级codename，除原始库是二级codename)
@@ -198,7 +194,7 @@ from(
                    upper(relate_tablename) = 'OBJECTFIELD') org
                left join  v_classify_info parvci on upper(parvci.codename) = upper(org.SJZZYJFLVALLUE) and parvci.root = 'JZCODEGASJZZFL'
                left join  v_classify_info vci on upper(vci.codename) = upper(org.SJZZEJFLVALUE)
-               left join v_classify_info sourceVci on upper(sourceVci.codename) = upper(org.SJZYLYLXVALUE) and sourceVci.root = ' GACODE000404'
+               left join v_classify_info sourceVci on upper(sourceVci.codename) = upper(org.SJZYLYLXVALUE) and sourceVci.root = 'GACODE000404'
                left join  v_classify_info sourceParVci on upper(sourceParVci.codeid) = upper(sourceVci.parcodeid)
                left join v_classify_info sparvci on upper(vci.parcodeid) = upper(sparvci.codeid)
    )where tableid is not null

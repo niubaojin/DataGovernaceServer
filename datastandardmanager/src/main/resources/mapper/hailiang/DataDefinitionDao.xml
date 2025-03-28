@@ -36,12 +36,57 @@
 
     <select id="searchDataDefinitionTable" parameterType="com.synway.datastandardmanager.pojo.dataDefinitionManagement.DataDefinitionParameter"
                                             resultType="com.synway.datastandardmanager.pojo.dataDefinitionManagement.DataDefinitionPojo">
-        select objectId,tableId,sourceId,tableName as objectEnglishName, objectname as objectChineseName, dataSourceClassify as dataSourceClassify,updatetime as modDate
-         from(select distinct o.objectId, c.sjxjbm as tableId,o.SOURCEID as sourceId,c.tablename as tableName,o.objectname as objectname,case
-             when c.SECONDARYDATASOURCECH is null then c.primarydatasourcech else c.primarydatasourcech || '->' || c.SECONDARYDATASOURCECH
-             end as dataSourceClassify,o.updatetime  from classify_interface_all_date c
-                inner join (select * from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD') o
-                on upper(c.sjxjbm) = upper(o.tableid) and (c.SJEJFLCODENAME = '0191' or c.SJYJFLCODENAME = '04') )
+        select tableid as tableId,
+               objectId as objectId,
+               SOURCEID as sourceId,
+               tablename as objectEnglishName,
+               objectname as objectChineseName,
+               updatetime as modDate,
+               case
+                 when SECONDARYDATASOURCECH is null then
+                  primarydatasourcech
+                 else
+                  primarydatasourcech || '->' || SECONDARYDATASOURCECH
+               end as dataSourceClassify
+          from (select distinct o.*,
+                                case
+                                  when sourceParVci.CODETEXT is null then
+                                   '未知'
+                                  else
+                                   sourceParVci.CODETEXT
+                                end as PRIMARYDATASOURCECH,
+                                case
+                                  when (sourceVci.CODETEXT is null and
+                                       sourceParVci.CODETEXT is null) then
+                                   '未知'
+                                  when (sourceVci.CODETEXT is null and
+                                       sourceParVci.CODETEXT is not null) then
+                                   ''
+                                  else
+                                   sourceVci.CODETEXT
+                                end as SECONDARYDATASOURCECH
+                  from (select o.*
+                          from (select objectId,
+                                       SOURCEID,
+                                       tablename,
+                                       objectname,
+                                       tableid,
+                                       updatetime,
+                                       SJZYLYLXVALUE
+                                  from synlte.object
+                                 where DELETED = 0
+                                   and upper(relate_tablename) = 'OBJECTFIELD') o
+                         where exists (select 1
+                                  from (select sjxjbm
+                                          from classify_interface_all_date
+                                         where SJEJFLCODENAME = '0191'
+                                            or SJYJFLCODENAME = '04') cd
+                                 where cd.sjxjbm = o.tableid)) o
+                  left join v_classify_info sourceVci
+                    on upper(sourceVci.codename) = upper(o.SJZYLYLXVALUE)
+                   and sourceVci.root = 'GACODE000404'
+                  left join v_classify_info sourceParVci
+                    on upper(sourceParVci.codeid) = upper(sourceVci.parcodeid))
         <where>
             <if test="searchText != null">
                 (upper(objectname) like upper(concat('%',concat(#{searchText},'%')))
