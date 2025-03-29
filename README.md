@@ -1,7 +1,11 @@
 - 数据工厂后端
     - datagovernance：主框架
-    - dataRelation：数据血缘
+      - 包括前端页面菜单功能、数据大屏等
     - dataoperations：数据运维
+      - 数据治理下数据运维相关页面
     - datastandardmanager：数据标准
+      - 数据标准功能的相关页面
     - property：数据资产
+      - 数据治理下数据资产相关页面
     - reconciliation：数据对账
+      - 数据作业下数据对账相关页面
