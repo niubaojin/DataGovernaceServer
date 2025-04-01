@@ -561,7 +561,7 @@ public class ResourceManageController {
             for (ProjectInfo data : result) {
                 list.add(data.getProjectName());
             }
-//            list.add("test");
+            list.add("test");
         } catch (Exception e) {
             ServerResponse.asErrorResponse();
         }
