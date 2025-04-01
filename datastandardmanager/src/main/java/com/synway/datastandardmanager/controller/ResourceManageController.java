@@ -558,10 +558,12 @@ public class ResourceManageController {
         try {
             logger.info("查询的参数为：" + dataId);
             List<ProjectInfo> result = restTemplateHandle.getProjectList(dataId);
+            if (result == null){
+                list.add("test");
+            }
             for (ProjectInfo data : result) {
                 list.add(data.getProjectName());
             }
-            list.add("test");
         } catch (Exception e) {
             ServerResponse.asErrorResponse();
         }
