@@ -93,6 +93,10 @@
             resultMap="UnitOrganizationResult">
         select UNIT_CODE,UNIT_NAME,UNIT_TYPE,UNIT_LEVEL,UNIT_AREA,UNIT_AREA_ID,P_UNIT_CODE,P_UNIT_NAME,MEMO,CREATE_TIME,
         UPDATE_TIME from SYNLTE.STANDARDIZE_UNIT_MANAGE where P_UNIT_CODE=#{parentUnitCode}
+        <if test="searchText != null">
+            and (upper(UNIT_NAME) like upper(concat('%',concat(#{searchText},'%')))
+            or upper(UNIT_CODE) like upper(concat('%',concat(#{searchText},'%'))))
+        </if>
     </select>
 
     <select id="searchAllFilterTable" resultType="com.synway.datastandardmanager.pojo.FilterObject">

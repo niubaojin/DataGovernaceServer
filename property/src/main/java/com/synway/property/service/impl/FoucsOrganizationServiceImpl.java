@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.synway.property.dao.DataMonitorDao;
 import com.synway.property.dao.DataStorageMonitorDao;
 import com.synway.property.dao.FoucsOrganizationDao;
-import com.synway.property.dao.OrganizationDetailDao;
 import com.synway.property.enums.MainClassifyExp;
 import com.synway.property.interceptor.AuthorizedUserUtils;
 import com.synway.property.pojo.*;
@@ -32,9 +31,6 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
     private static Logger logger = LoggerFactory.getLogger(FoucsOrganizationServiceImpl.class);
     @Autowired
     private FoucsOrganizationDao foucsOrganizationDao;
-
-    @Autowired
-    private OrganizationDetailDao organizationDetailDao;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -324,15 +320,6 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             double tableCount = 0L;
             if (oneMap.get("TOTAL") != null) {
                 tableCount = Double.valueOf(oneMap.get("TOTAL").toString());
-            }
-            //判断是否是中文名字
-            if (tableName.length()== tableName.getBytes().length && "1".equals(environment.getProperty("tableNameCh"))){
-//                String tableType = String.valueOf(oneMap.get("TABLETYPE"));
-//                String name = restTemplate.getForObject(
-//                        TableOrganizationConstant.DATARESOURCE_BASEURL +
-//                                "/DataResource/getLocalTableImformation?tableType="
-//                                + tableType +
-//                                "&tableId=" + tableName, DataResourceImformation.class).getTableNameChn();
             }
             dataNameList.add(tableName);
             recordsNumberList.add(tableCount);

@@ -81,7 +81,7 @@ public interface UnitOrganizationDao {
      * @param parentUnitCode 父级单位机构编码
      * @return
      */
-    List<UnitOrganizationPojo> searchUnitOrganizationListByParentId(@Param("parentUnitCode") String parentUnitCode);
+    List<UnitOrganizationPojo> searchUnitOrganizationListByParentId(@Param("parentUnitCode") String parentUnitCode, @Param("searchText") String searchText);
 
     /**
      * 获取表格的筛选内容

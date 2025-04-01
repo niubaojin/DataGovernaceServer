@@ -12,13 +12,11 @@ import com.synway.datastandardmanager.exceptionhandler.SystemException;
 import com.synway.datastandardmanager.pojo.FieldCodeVal;
 import com.synway.datastandardmanager.pojo.FilterObject;
 import com.synway.datastandardmanager.pojo.LayuiClassifyPojo;
-import com.synway.datastandardmanager.pojo.OperatorLog;
 import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationParameter;
 import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationPojo;
 import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationTree;
 import com.synway.datastandardmanager.service.UnitOrganizationService;
 import com.synway.datastandardmanager.util.ExceptionUtil;
-import com.synway.datastandardmanager.util.RestTemplateHandle;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,45 +94,6 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
             notGovernmentRootNode.setChildrenUnit(arrayRoutine2);
         }
 
-//        //政府机构的左侧树生成
-//        if(governmentLeftTreeInfoList == null || governmentLeftTreeInfoList.isEmpty()){
-//            governmentRootNode.setUnitName("政府机构(0)");
-//        }else{
-//            List<UnitOrganizationTree> result = new ArrayList<>();
-//            int count = governmentLeftTreeInfoList.size();
-//            governmentRootNode.setUnitName("政府机构("+count+")");
-//            governmentRootNode.setUnitType(1);
-//            for(UnitOrganizationTree data : governmentLeftTreeInfoList){
-//                data.setUnitType(1);
-//                //获取子级树
-//                getChildrenTree(governmentLeftTreeInfoList,data);
-//                if(data.getUnitLevel() == 1){
-//                    result.add(data);
-//                }
-//            }
-//            governmentRootNode.setChildrenUnit(result);
-//        }
-//
-//        //非政府机构的左侧树生成
-//        if(notGovernmentLeftTreeInfoList == null || notGovernmentLeftTreeInfoList.isEmpty()){
-//            notGovernmentRootNode.setUnitName("非政府机构(0)");
-//        }else{
-//            ArrayList<UnitOrganizationTree> result = new ArrayList<>();
-//
-//            int count = notGovernmentLeftTreeInfoList.size();
-//            notGovernmentRootNode.setUnitName("非政府机构("+count+")");
-//            notGovernmentRootNode.setUnitType(2);
-//            for(UnitOrganizationTree data : notGovernmentLeftTreeInfoList){
-//                data.setUnitType(2);
-//                //获取子级树信息
-//                getChildrenTree(notGovernmentLeftTreeInfoList,data);
-//                if(data.getUnitLevel() == 1){
-//                    result.add(data);
-//                }
-//            }
-//            notGovernmentRootNode.setChildrenUnit(result);
-//        }
-
         resultUnitLeftTreeInfo.add(governmentRootNode);
         resultUnitLeftTreeInfo.add(notGovernmentRootNode);
         return resultUnitLeftTreeInfo;
@@ -148,10 +107,10 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
             parameter.setSearchText(null);
         }
 
-        Page<Object> page = PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
+        PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
         // 单位机构id不为空，则是点击了左侧树，获取信息
         if(StringUtils.isNotBlank(parameter.getUnitCode())){
-            List<UnitOrganizationPojo> unitOrganizationPojoList = getUnitList(parameter.getUnitCode());
+            List<UnitOrganizationPojo> unitOrganizationPojoList = getUnitList(parameter.getUnitCode(), parameter.getSearchText());
             log.info("单位机构表格信息获取结束{}",unitOrganizationPojoList);
             PageInfo<UnitOrganizationPojo> unitOrganizationPojoPageInfo = new PageInfo<>(unitOrganizationPojoList);
             Map<String,Object> map = new HashMap<>();
@@ -349,16 +308,16 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
      * 获取左侧树信息
      * @return
      */
-    private List<UnitOrganizationPojo> getUnitList(String code){
+    private List<UnitOrganizationPojo> getUnitList(String code, String searchText){
         ArrayList<UnitOrganizationPojo> list = new ArrayList<>();
         //通过父id获取单位机构信息列表
-        List<UnitOrganizationPojo> unitOrganizationList = unitOrganizationDao.searchUnitOrganizationListByParentId(code);
+        List<UnitOrganizationPojo> unitOrganizationList = unitOrganizationDao.searchUnitOrganizationListByParentId(code, searchText);
         if(unitOrganizationList.isEmpty()){
             return list;
         }else {
             for(UnitOrganizationPojo data :unitOrganizationList){
                 list.add(data);
-                List<UnitOrganizationPojo> allUnitOrganizationList = getUnitList(data.getUnitCode());
+                List<UnitOrganizationPojo> allUnitOrganizationList = getUnitList(data.getUnitCode(), searchText);
                 list.addAll(allUnitOrganizationList);
             }
             return list;
