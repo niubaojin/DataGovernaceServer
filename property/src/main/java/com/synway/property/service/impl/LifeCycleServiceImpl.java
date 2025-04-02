@@ -184,64 +184,64 @@ public class LifeCycleServiceImpl implements LifeCycleService {
             density.setTwoHandle(oldValDensity.getTwoHandle());
             density.setUnstructedData(oldValDensity.getUnstructedData());
         }
-        try {
-            //获取所有下游表，然后获取组织分类
-            String returnObj = restTemplate.getForObject(UrlConstants.DATARELATION_BASEURL +
-                            "/datarelation/api/externalInterfce/getUpStreamTables" +
-                            "?projectName={projectName}&tableName={tableName}", String.class, queryParams.getTableProject(),
-                    queryParams.getTableNameEn());
-            if (returnObj != null && "1".equals(JSONArray.parseObject(returnObj).getString("status"))) {
-                List<String> tables = JSONArray.parseObject(returnObj).getJSONArray("data").toJavaList(String.class);
-                List<DetailedTableByClassify> tableByClassifies = new ArrayList<>();
-                tables.parallelStream().forEach(
-                        item -> {
-                            DetailedTableByClassify table = new DetailedTableByClassify();
-                            table.setTableProject(item.split("\\.")[0]);
-                            table.setTableNameEn(item.split("\\.")[1]);
-                            tableByClassifies.add(table);
-                        }
-                );
-                //获取主题库，资源库，要素库分类
-                if (tableByClassifies.size() > 0) {
-                    List<Map> temp = lifeCycleDao.getClassifyNum(tableByClassifies);
-                    for (Map map : temp) {
-                        switch ((String) map.get("CLASSIFY")) {
-                            case "主题库":
-                                density.setZhutikuUsed(((BigDecimal) map.get("NUM")).intValue());
-                                break;
-                            case "资源库":
-                                density.setZiyuankuUsed(((BigDecimal) map.get("NUM")).intValue());
-                                break;
-                            case "业务要素索引库":
-                                density.setYaosukuUsed(((BigDecimal) map.get("NUM")).intValue());
-                                break;
-                            default:
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error("价值密度更新失败：调用getUpStreamTables接口失败");
-        }
-        try {
-            //获取被调用工作流和应用系统
-            String returnObj = restTemplate.getForObject(UrlConstants.DATARELATION_BASEURL +
-                            "/datarelation/api/externalInterfce/getImpactAnalysisByTableName" +
-                            "?projectName={projectName}&tableName={tableName}", String.class, queryParams.getTableProject(),
-                    queryParams.getTableNameEn());
-            ServerResponse<ImpactAnalysisProperty> resultObj =
-                    JSON.parseObject(returnObj, new TypeReference<ServerResponse<ImpactAnalysisProperty>>() {
-                    });
-            if (resultObj != null) {
-                ImpactAnalysisProperty property = resultObj.getData();
-                if (property != null) {
-                    density.setApplicationUsed(property.getApplicationBloodlineCount());
-                    density.setWorkflowUsed(property.getWorkFlowCount());
-                }
-            }
-        } catch (Exception e) {
-            logger.error("价值密度更新失败：调用getImpactAnalysisByTableName接口失败");
-        }
+//        try {
+//            //获取所有下游表，然后获取组织分类
+//            String returnObj = restTemplate.getForObject(UrlConstants.DATARELATION_BASEURL +
+//                            "/datarelation/api/externalInterfce/getUpStreamTables" +
+//                            "?projectName={projectName}&tableName={tableName}", String.class, queryParams.getTableProject(),
+//                    queryParams.getTableNameEn());
+//            if (returnObj != null && "1".equals(JSONArray.parseObject(returnObj).getString("status"))) {
+//                List<String> tables = JSONArray.parseObject(returnObj).getJSONArray("data").toJavaList(String.class);
+//                List<DetailedTableByClassify> tableByClassifies = new ArrayList<>();
+//                tables.parallelStream().forEach(
+//                        item -> {
+//                            DetailedTableByClassify table = new DetailedTableByClassify();
+//                            table.setTableProject(item.split("\\.")[0]);
+//                            table.setTableNameEn(item.split("\\.")[1]);
+//                            tableByClassifies.add(table);
+//                        }
+//                );
+//                //获取主题库，资源库，要素库分类
+//                if (tableByClassifies.size() > 0) {
+//                    List<Map> temp = lifeCycleDao.getClassifyNum(tableByClassifies);
+//                    for (Map map : temp) {
+//                        switch ((String) map.get("CLASSIFY")) {
+//                            case "主题库":
+//                                density.setZhutikuUsed(((BigDecimal) map.get("NUM")).intValue());
+//                                break;
+//                            case "资源库":
+//                                density.setZiyuankuUsed(((BigDecimal) map.get("NUM")).intValue());
+//                                break;
+//                            case "业务要素索引库":
+//                                density.setYaosukuUsed(((BigDecimal) map.get("NUM")).intValue());
+//                                break;
+//                            default:
+//                        }
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            logger.error("价值密度更新失败：调用getUpStreamTables接口失败");
+//        }
+//        try {
+//            //获取被调用工作流和应用系统
+//            String returnObj = restTemplate.getForObject(UrlConstants.DATARELATION_BASEURL +
+//                            "/datarelation/api/externalInterfce/getImpactAnalysisByTableName" +
+//                            "?projectName={projectName}&tableName={tableName}", String.class, queryParams.getTableProject(),
+//                    queryParams.getTableNameEn());
+//            ServerResponse<ImpactAnalysisProperty> resultObj =
+//                    JSON.parseObject(returnObj, new TypeReference<ServerResponse<ImpactAnalysisProperty>>() {
+//                    });
+//            if (resultObj != null) {
+//                ImpactAnalysisProperty property = resultObj.getData();
+//                if (property != null) {
+//                    density.setApplicationUsed(property.getApplicationBloodlineCount());
+//                    density.setWorkflowUsed(property.getWorkFlowCount());
+//                }
+//            }
+//        } catch (Exception e) {
+//            logger.error("价值密度更新失败：调用getImpactAnalysisByTableName接口失败");
+//        }
         //TODO 标签未确定
         double numerator = density.getTextHandle() + density.getTwoHandle() + density.getUnstructedData()
                 + density.getWorkflowUsed() + density.getApplicationUsed() + density.getZhutikuUsed() +
