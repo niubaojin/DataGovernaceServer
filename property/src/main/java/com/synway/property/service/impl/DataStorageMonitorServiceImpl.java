@@ -412,7 +412,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             /*获取数据资产告警配置*/
             OrganizationAlarmSetting setting = getAlarmSetting();
             /*获取标准信息*/
-            Map<String, Map> classifyMap = dataMonitorDao.getClassifyInfo();
+            List<TableOrganizationData> classifyList = dataMonitorDao.getClassifyInfo();
+            Map<String,List<TableOrganizationData>> classifyMap = classifyList.stream().collect(Collectors.groupingBy(TableOrganizationData::getTableNameEn));
+
             /*获取平均量*/
             List<DataResourceTable> averageList = dataMonitorDao.getSyndmgTableAverageData(setting);
             Map<DataResourceTable, DataResourceTable> averageMap = averageList.stream().collect(Collectors.toMap(Function.identity(), Function.identity()));
@@ -498,32 +500,34 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             });
             logger.info("allTableList:" + allTableList.size());
             /*处理组织信息，并入库*/
-            handleTableOrganizationData(allTableList, setting, classifyMap);
+            handleTableOrganizationData(allTableList, setting);
 
         } catch (Exception e) {
             logger.error("获取仓库资源出错" + ExceptionUtil.getExceptionTrace(e));
-//            logger.error("\n使用原来的方式导入资产");
-//            getAllOrganizationData();
         }
     }
 
     /*注入协议编号等标准信息*/
-    public void injectStandardInfo(TableOrganizationData t, Map<String, Map> classifyMap, String tableName){
-        Map standardMap = classifyMap.get(tableName.toUpperCase());
+    public void injectStandardInfo(TableOrganizationData t, Map<String,List<TableOrganizationData>> classifyMap, String tableName){
+//        Map standardMap = classifyMap.get(tableName.toUpperCase());
+        if (classifyMap.get(tableName.toUpperCase()) == null){
+            return;
+        }
+        TableOrganizationData standardMap = classifyMap.get(tableName.toUpperCase()).get(0);
         if (standardMap != null) {
-            t.setSjxjbm((String) standardMap.get("SJXJBM"));
-            if (StringUtils.isNotBlank((String) standardMap.get("NAME"))){
-                t.setName((String) standardMap.get("NAME"));
+            t.setSjxjbm(standardMap.getSjxjbm());
+            if (StringUtils.isNotBlank(standardMap.getName())){
+                t.setName(standardMap.getName());
             }
 //                    t.setObjectId(standardMap.get("OBJECTID").toString());
-            t.setObjectId(standardMap.get("OBJECTID") == null ? "":standardMap.get("OBJECTID").toString());
-            t.setObjectState(standardMap.get("OBJECTSTATE") == null ? "":standardMap.get("OBJECTSTATE").toString());
-            t.setPrimaryDatasourceCh((String) standardMap.get("PRIMARYDATASOURCECH"));
-            t.setSecondaryDatasourceCh((String) standardMap.get("SECONDARYDATASOURCECH"));
+            t.setObjectId(standardMap.getObjectId() == null ? "":standardMap.getObjectId());
+            t.setObjectState(standardMap.getObjectState() == null ? "":standardMap.getObjectState());
+            t.setPrimaryDatasourceCh(standardMap.getPrimaryDatasourceCh());
+            t.setSecondaryDatasourceCh(standardMap.getSecondaryDatasourceCh());
             /*刘新鹏修改的CLASSIFY_INTERFACE_ALL_DATE表，FIRSTORGANIZATIONCH为二级组织分类，SECONDARYORGANIZATIONCH为三级组织分类*/
-            String PriOrg = String.valueOf(standardMap.get("PRIMARYORGANIZATIONCH"));
-            String FirOrg = String.valueOf(standardMap.get("FIRSTORGANIZATIONCH")).equalsIgnoreCase("null") ? "" : String.valueOf(standardMap.get("FIRSTORGANIZATIONCH"));
-            String SecOrg = String.valueOf(standardMap.get("SECONDARYORGANIZATIONCH")).equalsIgnoreCase("null") ? "" : String.valueOf(standardMap.get("SECONDARYORGANIZATIONCH"));
+            String PriOrg = String.valueOf(standardMap.getPrimaryOrganizationCh());
+            String FirOrg = String.valueOf(standardMap.getThreeLevelOrganizationCh()).equalsIgnoreCase("null") ? "" : String.valueOf(standardMap.getThreeLevelOrganizationCh());
+            String SecOrg = String.valueOf(standardMap.getSecondaryOrganizationCh()).equalsIgnoreCase("null") ? "" : String.valueOf(standardMap.getSecondaryOrganizationCh());
             if ("原始库".equalsIgnoreCase(PriOrg) || ("主题库".equals(PriOrg) && !PriOrg.equals(FirOrg)) ){
                 t.setPrimaryOrganizationCh(PriOrg);
                 t.setSecondaryOrganizationCh(FirOrg);
@@ -532,8 +536,8 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 t.setPrimaryOrganizationCh(PriOrg);
                 t.setSecondaryOrganizationCh(SecOrg);
             }
-            t.setOrganizationIdLastLevel(standardMap.get("SJZZFLCODEID").toString());
-            t.setDataresourceIdLastLevel(standardMap.get("SJLYFLCODEID").toString());
+            t.setOrganizationIdLastLevel(standardMap.getOrganizationIdLastLevel());
+            t.setDataresourceIdLastLevel(standardMap.getDataresourceIdLastLevel());
         }
     }
 
@@ -602,26 +606,6 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         return array;
     }
 
-    /**
-     * 获取数据表组织资产的相关数据
-     * 1：根据sql语句获取大部分的信息，然后再拼接
-     * 2: 插入语句每次最多只能插入500条数据，所以拼接插入列表
-     */
-    @Override
-    public void getAllOrganizationData() {
-        try {
-            /*获取数据资产告警配置*/
-            OrganizationAlarmSetting setting = getAlarmSetting();
-            /*查询所有的表组织信息*/
-            List<TableOrganizationData> allTableOrganizationDataList = dataMonitorDao.getAllOrganizationData(setting);
-            /*处理组织信息，并入库*/
-            Map<String, Map> classifyMap = new HashMap<>();
-            handleTableOrganizationData(allTableOrganizationDataList, setting, classifyMap);
-        } catch (Exception e) {
-            logger.error("获取表组织资产的数据报错\n" + ExceptionUtil.getExceptionTrace(e));
-        }
-    }
-
     private OrganizationAlarmSetting getAlarmSetting() {
         OrganizationAlarmSetting setting = null;
         try {
@@ -642,13 +626,11 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
      * @param allTableOrganizationDataList
      * @param setting
      */
-    private void handleTableOrganizationData(List<TableOrganizationData> allTableOrganizationDataList, OrganizationAlarmSetting setting, Map<String, Map> classifyMap) {
+    private void handleTableOrganizationData(List<TableOrganizationData> allTableOrganizationDataList, OrganizationAlarmSetting setting) {
         String todayNow = DateUtil.formatDate(new Date(), DateUtil.DEFAULT_PATTERN_DATE_SIMPLE);
         int insertCount = 0;
         long startTime=System.currentTimeMillis();
 
-        /*增加标准建表时插入到统计表的odps/ads表,这时未统计到odps、ads的信息，所以需要自行添加临时数据。*/
-//        getOdpsAdsInfo(allTableOrganizationDataList, classifyMap);
         long getOdpsAdsInfoFinishTime=System.currentTimeMillis();
         logger.info("获取标准建表时插入到统计表OdpsAds信息结束，用时：" + ((getOdpsAdsInfoFinishTime-startTime)/1000) + "秒");
 
@@ -831,42 +813,42 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
      * 增加标准建表时插入到统计表的odps/ads表,这时未统计到odps、ads的信息，所以需要自行添加临时数据。
      * @param allTableOrganizationDataList
      */
-    private void getOdpsAdsInfo(List<TableOrganizationData> allTableOrganizationDataList, Map<String, Map> classifyMap){
-        try {
-            List<TableOrganizationData> insertOdpsAdsTableList = dataMonitorDao.getOdpsAdsTableInfo();
-            List<TableOrganizationData> deleteOdpsAdsTableList = new ArrayList<>();
-            boolean flag = false;
-            for (TableOrganizationData t : insertOdpsAdsTableList) {
-                t.setTableType(t.getTableType().toLowerCase());
-                Iterator<TableOrganizationData> it = allTableOrganizationDataList.iterator();
-                while (it.hasNext()) {
-                    TableOrganizationData tod = it.next();
-                    injectStandardInfo(t, classifyMap, t.getTableNameEn());
-                    flag = StringUtils.isBlank(t.getPrimaryOrganizationCh()) ? true : false;
-                    if (t.getTableNameEn().equalsIgnoreCase(tod.getTableNameEn())) {
-                        if (StringUtils.isBlank(tod.getTableProject()) && StringUtils.isBlank(tod.getTableType())) {
-                            it.remove();
-                            continue;
-                        }
-                        if (t.getTableProject().equalsIgnoreCase(tod.getTableProject()) && t.getTableType().equalsIgnoreCase(tod.getTableType())) {
-                            flag = true;
-                        }
-                    }
-                }
-                if (!flag) {
-                    allTableOrganizationDataList.add(t);
-                } else {
-                    deleteOdpsAdsTableList.add(t);
-                }
-                flag = false;
-            }
-            if (deleteOdpsAdsTableList.size() > 0) {
-                dataMonitorDao.deleteOdpsAdsTableInfo(deleteOdpsAdsTableList);
-            }
-        } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
-        }
-    }
+//    private void getOdpsAdsInfo(List<TableOrganizationData> allTableOrganizationDataList, Map<String, Map> classifyMap){
+//        try {
+//            List<TableOrganizationData> insertOdpsAdsTableList = dataMonitorDao.getOdpsAdsTableInfo();
+//            List<TableOrganizationData> deleteOdpsAdsTableList = new ArrayList<>();
+//            boolean flag = false;
+//            for (TableOrganizationData t : insertOdpsAdsTableList) {
+//                t.setTableType(t.getTableType().toLowerCase());
+//                Iterator<TableOrganizationData> it = allTableOrganizationDataList.iterator();
+//                while (it.hasNext()) {
+//                    TableOrganizationData tod = it.next();
+//                    injectStandardInfo(t, classifyMap, t.getTableNameEn());
+//                    flag = StringUtils.isBlank(t.getPrimaryOrganizationCh()) ? true : false;
+//                    if (t.getTableNameEn().equalsIgnoreCase(tod.getTableNameEn())) {
+//                        if (StringUtils.isBlank(tod.getTableProject()) && StringUtils.isBlank(tod.getTableType())) {
+//                            it.remove();
+//                            continue;
+//                        }
+//                        if (t.getTableProject().equalsIgnoreCase(tod.getTableProject()) && t.getTableType().equalsIgnoreCase(tod.getTableType())) {
+//                            flag = true;
+//                        }
+//                    }
+//                }
+//                if (!flag) {
+//                    allTableOrganizationDataList.add(t);
+//                } else {
+//                    deleteOdpsAdsTableList.add(t);
+//                }
+//                flag = false;
+//            }
+//            if (deleteOdpsAdsTableList.size() > 0) {
+//                dataMonitorDao.deleteOdpsAdsTableInfo(deleteOdpsAdsTableList);
+//            }
+//        } catch (Exception e) {
+//            logger.error(ExceptionUtil.getExceptionTrace(e));
+//        }
+//    }
 
     /**
      * 获取所有表生命周期

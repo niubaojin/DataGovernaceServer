@@ -80,8 +80,8 @@ public interface DataMonitorDao extends BaseDAO {
     List<DataResourceTable> getSyndmgTableAllDataByDate(@Param("days") int days);
     List<DataResourceTable> getSyndmgTableAllCKData();
 
-    @MapKey("TABLENAME")
-    Map<String, Map> getClassifyInfo();
+//    @MapKey("TABLENAME")
+    List<TableOrganizationData> getClassifyInfo();
 
     List<DataResourceTable> getSyndmgTableAverageData(@Param("setting") OrganizationAlarmSetting setting);
 

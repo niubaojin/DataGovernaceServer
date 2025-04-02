@@ -10,8 +10,6 @@ public interface DataStorageMonitorService {
      */
     void statisticsTableTodayVolume();
 
-    void getAllOrganizationData();
-
     void updateAssetsInfo();
 
     void getHbaseData();

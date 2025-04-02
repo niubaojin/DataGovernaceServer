@@ -712,21 +712,21 @@
               TABLETYPE = 7 and TO_CHAR(TO_TIMESTAMP(INSERTEDDATATIME, 'YYYY-MM-DD HH24:MI:SS'), 'YYYYMMDD') >= to_char(CURRENT_DATE, 'YYYYMMDD')
     </select>
 
-    <select id="getClassifyInfo" resultType="java.util.Map">
+    <select id="getClassifyInfo" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
     /*刘新鹏修改的CLASSIFY_INTERFACE_ALL_DATE表，FIRSTORGANIZATIONCH为二级组织分类，SECONDARYORGANIZATIONCH为三级组织分类*/
         SELECT DISTINCT
-            SJXJBM,
-            upper(TABLENAME) as TABLENAME,
-            NAME,
-            PRIMARYORGANIZATIONCH,
-            FIRSTORGANIZATIONCH,
-            SECONDARYORGANIZATIONCH,
-            PRIMARYDATASOURCECH,
-            SECONDARYDATASOURCECH,
-            OBJECTID,
-            OBJECTSTATE,
-            case when SJYJFLCODENAME is null or SJYJFLCODENAME = '' then 'null' else 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME||SJSJFLCODENAME end as SJZZFLCODEID,
-            case when SJLYYJCODENAME is null or SJLYYJCODENAME = '' then 'null' else 'GACODE000404'||SJLYYJCODENAME||SJLYEJCODENAME end as SJLYFLCODEID
+            SJXJBM as sjxjbm,
+            upper(TABLENAME) as tableNameEn,
+            NAME as name,
+            PRIMARYORGANIZATIONCH as primaryOrganizationCh,
+            FIRSTORGANIZATIONCH as threeLevelOrganizationCh,
+            SECONDARYORGANIZATIONCH as secondaryOrganizationCh,
+            PRIMARYDATASOURCECH as primaryDatasourceCh,
+            SECONDARYDATASOURCECH as secondaryDatasourceCh,
+            OBJECTID as objectId,
+            OBJECTSTATE as objectState,
+            case when SJYJFLCODENAME is null or SJYJFLCODENAME = '' then 'null' else 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME||SJSJFLCODENAME end as organizationIdLastLevel,
+            case when SJLYYJCODENAME is null or SJLYYJCODENAME = '' then 'null' else 'GACODE000404'||SJLYYJCODENAME||SJLYEJCODENAME end as dataresourceIdLastLevel
         FROM
             CLASSIFY_INTERFACE_ALL_DATE
     </select>
