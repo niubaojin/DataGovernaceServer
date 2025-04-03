@@ -327,21 +327,12 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             }
             //判断是否是中文名字
             if (tableName.length()== tableName.getBytes().length && "1".equals(environment.getProperty("tableNameCh"))){
-                String tableType = String.valueOf(oneMap.get("TABLETYPE"));
-                String name = "";
+//                String tableType = String.valueOf(oneMap.get("TABLETYPE"));
 //                String name = restTemplate.getForObject(
 //                        TableOrganizationConstant.DATARESOURCE_BASEURL +
 //                                "/DataResource/getLocalTableImformation?tableType="
 //                                + tableType +
 //                                "&tableId=" + tableName, DataResourceImformation.class).getTableNameChn();
-                if(StringUtils.isBlank(name)){
-                    name = organizationDetailDao.getRegisterTableNameChByEn(tableName.split("\\.")[1]);
-                    if(StringUtils.isNotBlank(name)){
-                        tableName = name;
-                    }
-                } else {
-                    tableName = name;
-                }
             }
             dataNameList.add(tableName);
             recordsNumberList.add(tableCount);

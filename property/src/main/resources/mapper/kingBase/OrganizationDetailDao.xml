@@ -65,9 +65,6 @@
         and upper(TABLENAME) = upper(#{tableNameEn,jdbcType=VARCHAR})
         and upper(TABLEPROJECT) = upper(#{tableProject,jdbcType=VARCHAR})
     </select>
-    <select id="getRegisterTableNameChByEn" resultType="java.lang.String">
-        select TABLE_NAME_CH from SYNLTE.table_register_info where upper(table_name) = #{tableNameEn,jdbcType=VARCHAR}
-    </select>
 
     <select id="getTableOrganizationInfo" resultType="com.synway.property.pojo.DetailedTableByClassify">
         select PRIMARY_ORGANIZATION_CH||'->'||SECONDARY_ORGANIZATION_CH as organizationClassifyCh,

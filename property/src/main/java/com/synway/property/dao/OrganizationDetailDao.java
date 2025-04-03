@@ -32,8 +32,6 @@ public interface OrganizationDetailDao {
                                             @Param("tableNameEn") String tableNameEn,
                                             @Param("tableType") String tableType);
 
-    String getRegisterTableNameChByEn(@Param("tableNameEn") String tableNameEn);
-
 
     DetailedTableByClassify getTableOrganizationInfo(@Param("tableProject") String tableProject,
                                                      @Param("tableNameEn") String tableNameEn,

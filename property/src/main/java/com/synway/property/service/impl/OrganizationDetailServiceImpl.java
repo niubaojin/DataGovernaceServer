@@ -198,8 +198,6 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
 //        }
 //        if (StringUtils.isNotBlank(tableNameCh)) {
 //            dataResourceImformation.setTableNameChn(tableNameCh);
-//        } else if (StringUtils.isBlank(dataResourceImformation.getTableNameChn())) {
-//            dataResourceImformation.setTableNameChn(organizationDetailDao.getRegisterTableNameChByEn(tableNameEn));
 //        }
         return dataResourceImformation;
     }

@@ -856,7 +856,7 @@
         else
         to_char(TABLE_SIZE/1073741824,'fm999999999990.00000') end as tableSize,
         -- labels,
-        update_date as updateDate,update_period as updatePeriod,product_stage as productStage,
+        update_date as updateDate,update_period as updatePeriod,'' as productStage,
         EXCEPTION_MESSAGE as exceptionMessage,LIFE_CYCLE_STATUS as lifeCycleStatus,resourceid,ISSTANDARD as isStandard
         from
         (
@@ -866,13 +866,6 @@
         ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_TYPE), lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
         STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
         )a
-        left join
-        (select TABLE_NAME,PROJECT_NAME,CLUSTER_NAME,PRODUCT_STAGE from SYNLTE.table_register_info) b
-        on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME)
-        and upper(a.TABLE_PROJECT) = upper(b.PROJECT_NAME)
-        and upper(a.TABLE_TYPE) = upper(b.CLUSTER_NAME)
-        -- left join (SELECT P.*, row_number () over (PARTITION BY upper(TABLENAME) ORDER BY GXSJ DESC ) as rnn from SYNLTE.PUBLIC_DATA_INFO P) pdi
-        -- on upper(a.TABLE_NAME_EN) = upper(pdi.TABLENAME) and upper(a.SJXJBM) = upper(pdi.SJXJBM) and pdi.rnn = 1
         ) h
         WHERE
         h.rnn = 1
@@ -1072,20 +1065,13 @@
         select distinct
          TABLE_TYPE || '->' || RES_NAME || '->' || TABLE_PROJECT as tableProject,
          update_period as updatePeriod,
-         product_stage as productStage
+         '' as productStage
           from (SELECT *
                   FROM (SELECT j.*,
                                row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) as rnn
                           from table_organization_assets j
                          where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) a
-                  left join (select TABLE_NAME,
-                                   PROJECT_NAME,
-                                   CLUSTER_NAME,
-                                   PRODUCT_STAGE
-                              from SYNLTE.table_register_info) b
-                    on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME)
-                   and upper(a.TABLE_PROJECT) = upper(b.PROJECT_NAME)
-                   and upper(a.TABLE_TYPE) = upper(b.CLUSTER_NAME)) h
+               ) h
          WHERE h.rnn = 1
     </select>
 

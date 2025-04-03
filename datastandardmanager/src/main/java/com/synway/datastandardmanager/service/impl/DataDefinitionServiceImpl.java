@@ -1,52 +1,33 @@
 package com.synway.datastandardmanager.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.synway.common.bean.ServerResponse;
-import com.synway.datastandardmanager.config.HashLock;
-import com.synway.datastandardmanager.constant.Common;
 import com.synway.datastandardmanager.dao.master.*;
 import com.synway.datastandardmanager.exceptionhandler.ErrorCode;
 import com.synway.datastandardmanager.exceptionhandler.SystemException;
-import com.synway.datastandardmanager.interceptor.AuthorizedUserUtils;
 import com.synway.datastandardmanager.pojo.*;
 import com.synway.datastandardmanager.pojo.dataDefinitionManagement.*;
-import com.synway.datastandardmanager.pojo.enums.ManufacturerName;
-import com.synway.datastandardmanager.pojo.enums.ObjectStateType;
-import com.synway.datastandardmanager.pojo.enums.StoreType;
 import com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject;
 import com.synway.datastandardmanager.pojo.warehouse.DataSimilarParameter;
 import com.synway.datastandardmanager.pojo.warehouse.FieldInfo;
 import com.synway.datastandardmanager.pojo.warehouse.TableSimilarInfo;
 import com.synway.datastandardmanager.service.DataDefinitionService;
-import com.synway.datastandardmanager.service.ResourceManageService;
-import com.synway.datastandardmanager.util.DateUtil;
-import com.synway.datastandardmanager.util.ExceptionUtil;
 import com.synway.datastandardmanager.util.RestTemplateHandle;
-import com.synway.datastandardmanager.util.UUIDUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.validation.constraints.Size;
 import java.text.Collator;
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
 @Service
 @Slf4j
 public class DataDefinitionServiceImpl implements DataDefinitionService {
-
-    private static HashLock<String> HASH_LOCK = new HashLock<>();
 
 
     @Autowired
@@ -60,12 +41,6 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
 
     @Autowired
     private ResourceManageDao resourceManageDao;
-
-    @Autowired
-    private ConcurrentHashMap<String, Boolean> switchHashMap;
-
-    @Autowired
-    private ResourceManageService resourceManageServiceImpl;
 
     @Autowired
     private ResourceManageAddDao resourceManageAddDao;
@@ -90,7 +65,7 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
             parameter.setSortOrder("desc");
         }
 
-        Page<DataDefinitionPojo> page = PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
+        PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
 
         List<DataDefinitionPojo> dataDefinitionList = dataDefinitionDao.searchDataDefinitionTable(parameter);
 

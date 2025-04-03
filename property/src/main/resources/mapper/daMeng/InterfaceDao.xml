@@ -61,7 +61,7 @@
         else
         to_char(TABLE_SIZE/1073741824,'fm999999999990.00') end as tableSize,
         -- labels,
-        update_date as updateDate,update_period as updatePeriod,product_stage as productStage,
+        update_date as updateDate,update_period as updatePeriod,'' as productStage,
         EXCEPTION_MESSAGE as exceptionMessage,LIFE_CYCLE_STATUS as lifeCycleStatus
         from
         (
@@ -71,11 +71,6 @@
         ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
         STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)
         )a
-        left join
-        (select TABLE_NAME,PROJECT_NAME,CLUSTER_NAME,PRODUCT_STAGE from SYNLTE.table_register_info) b
-        on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME)
-        and upper(a.TABLE_PROJECT) = upper(b.PROJECT_NAME)
-        and upper(a.TABLE_TYPE) = upper(b.CLUSTER_NAME)
         where
         <foreach collection="tables" item="item" open="(" close=")" separator="or">
             <if test="item.tableName!=null and item.tableName!=''">
