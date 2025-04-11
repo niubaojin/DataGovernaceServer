@@ -109,7 +109,7 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
 
         PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
         // 单位机构id不为空，则是点击了左侧树，获取信息
-        if(StringUtils.isNotBlank(parameter.getUnitCode())){
+        if(StringUtils.isNotBlank(parameter.getUnitCode()) && !StringUtils.isBlank(parameter.getSearchText())){
             List<UnitOrganizationPojo> unitOrganizationPojoList = getUnitList(parameter.getUnitCode(), parameter.getSearchText());
             log.info("单位机构表格信息获取结束{}",unitOrganizationPojoList);
             PageInfo<UnitOrganizationPojo> unitOrganizationPojoPageInfo = new PageInfo<>(unitOrganizationPojoList);
