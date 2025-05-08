@@ -309,7 +309,8 @@
                     statistics_time >= trunc(sysdate)
                     and table_name_en is not null
                     and table_all_count is  not null
-                    and lower(table_type) in ('odps', 'hive', 'hdfs')
+                    and (lower(table_type) IN ('odps', 'hive', 'hdfs','clickhouse')
+                    OR lower(table_type) like '%hive%')
                     ) l
             inner join (
                 select objectname,tablename from synlte.object

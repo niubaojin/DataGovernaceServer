@@ -46,6 +46,7 @@ public class RestTemplateHandle {
 //            String requestUrl = "http://property/dataStorageMonitoring/getDataBaseStatus?platFormType=阿里";
             String requestUrl = ApiConstant.PROPERTY_GET_DB_STATUS + "阿里";
             String result = loadBalanced.getForObject(requestUrl, String.class);
+            logger.info("调用getDataBaseStatus返回的数据为：{}", JSONObject.toJSONString(result));
             if (StringUtils.isBlank(result)) {
                 throw new NullPointerException("接口[获取存储总量信息]返回的结果为空");
             }
