@@ -665,7 +665,8 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
             }else {
                 objectStoreInfoDao.delObjectStoreInfoByTableInfoId(objectStoreInfo);
                 objectStoreInfoDao.delObjectStoreFieldInfoByTableInfoId(objectStoreInfo);
-                DataResource dataResource = restTemplateHandle.getResourceById(objectStoreInfo.getDataId());
+                String resId = objectStoreInfo.getDataId() == null ? objectStoreInfo.getResId() : objectStoreInfo.getDataId();
+                DataResource dataResource = restTemplateHandle.getResourceById(resId);
                 objectStoreInfo.setResName(dataResource.getResName());
                 operateLogServiceImpl.objectStoreInfoSuccessLog(OperateLogHandleTypeEnum.DELETE, "建表信息管理", objectStoreInfo);
                 return ServerResponse.asSucessResponse("true","删除成功");

@@ -236,6 +236,7 @@ public class SynlteFieldController {
      * @param parameter  列表中的数据
      */
     @RequestMapping(value="/downloadSynlteFieldExcel",produces="application/json;charset=utf-8")
+    @ResponseBody
     public void downloadSynlteFieldExcel(HttpServletResponse response,@RequestBody SynlteFieldParameter parameter){
         log.info("=======开始下载数据元的相关信息=======");
         synlteFieldServiceImpl.downloadSynlteFieldExcel(response,parameter,"数据元信息表",new SynlteFieldExcel());

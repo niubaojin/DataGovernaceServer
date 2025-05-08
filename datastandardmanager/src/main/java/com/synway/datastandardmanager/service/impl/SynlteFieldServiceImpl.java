@@ -678,11 +678,10 @@ public class SynlteFieldServiceImpl implements SynlteFieldService {
                     }
                     synlteFieldExcelList.add(synlteFieldExcel);
                     });
-                response.setContentType("application/x-xls");
+                response.setContentType("application/vnd.ms-excel");
                 response.setCharacterEncoding("utf-8");
                 String fileName = URLEncoder.encode(name,"UTF-8")+".xlsx";
-                response.setHeader("Content-disposition",
-                        "attachment;filename*=utf-8''" +fileName);
+                response.setHeader("Content-disposition", "attachment;filename*=utf-8''" +fileName);
                 EasyExcel.write(response.getOutputStream(), object.getClass()).autoCloseStream(Boolean.FALSE)
                         .sheet("标准数据元").doWrite(synlteFieldExcelList);
 
@@ -719,11 +718,10 @@ public class SynlteFieldServiceImpl implements SynlteFieldService {
                 synlteFieldExcelList.add(synlteFieldExcel);
             });
             try{
-                response.setContentType("application/x-xls");
+                response.setContentType("application/vnd.ms-excel");
                 response.setCharacterEncoding("utf-8");
                 String fileName = URLEncoder.encode(name,"UTF-8")+".xlsx";
-                response.setHeader("Content-disposition",
-                        "attachment;filename*=utf-8''" +fileName);
+                response.setHeader("Content-disposition", "attachment;filename*=utf-8''" +fileName);
                 EasyExcel.write(response.getOutputStream(), object.getClass()).autoCloseStream(Boolean.FALSE)
                         .sheet("标准数据元").doWrite(synlteFieldExcelList);
             }catch (Exception e){
