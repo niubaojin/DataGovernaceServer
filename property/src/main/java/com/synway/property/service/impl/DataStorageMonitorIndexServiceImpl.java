@@ -639,9 +639,9 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     List<Double> recordsNumberList = new ArrayList<>();
                     List<Double> storageSizeList = new ArrayList<>();
                     for (Map<String, Object> oneMap : oneResult) {
-                        String primaryClassName = String.valueOf(oneMap.getOrDefault("PRIMARY_NAME", "未知"));
-                        Double recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("RECORDS", "0")));
-                        Double storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("TABLESIZE", "0.0")));
+                        String primaryClassName = String.valueOf(oneMap.getOrDefault("primary_name", "未知"));
+                        Double recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("records", "0")));
+                        Double storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("tablesize", "0.0")));
                         primaryClassNameList.add(primaryClassName);
                         recordsNumberList.add(recordsNumberOne);
                         storageSizeList.add(storageSizeOne);
@@ -1472,12 +1472,19 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
     @Override
     public ServerResponse getTableType() {
-        List<String> tableTypeList;
+        List<String> tableTypeList = new ArrayList<>();
         try {
             logger.info("=======开始获表类型=========");
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
-            tableTypeList = dataStorageMonitorDao.getTableType(daysAgo);
+            List<String> tableTypeList1 = dataStorageMonitorDao.getTableType(daysAgo);
+            for (String tableType : tableTypeList1){
+                if (tableType.contains("HIVE")){
+                    tableTypeList.add("HIVE");
+                }else {
+                    tableTypeList.add(tableType);
+                }
+            }
             logger.info("=======获取表类型完成=========");
         } catch (Exception e) {
             logger.error("获取表类型失败:", e);

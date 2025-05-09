@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.property.common.UrlConstants;
 import com.synway.property.dao.DataStorageMonitorDao;
+import com.synway.property.interceptor.IgnoreSecurity;
 import com.synway.property.pojo.DataQualitySummary;
 import com.synway.property.pojo.GetTreeReq;
 import com.synway.property.pojo.NumStorageByPrimaryClassify;
@@ -39,6 +40,7 @@ public class DataStorageMonitoringController {
     @Autowired
     DataStorageMonitorDao dataStorageMonitorDao;
 
+    @IgnoreSecurity
     @RequestMapping("/getDataBaseStatus")
     @ResponseBody
     public ServerResponse<List<DataBaseState>> getDataBaseStatus(@RequestParam("platFormType")String platFormType) {

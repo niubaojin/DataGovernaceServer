@@ -277,6 +277,7 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
             List<Map<String, Object>> resultList = foucsOrganizationDao.getFullDataRankingDao(daysAgo);
+            logger.info("全量排行数据为：" + JSONObject.toJSONString(resultList));
             getTableNameCh(dataNameList, recordsNumberList, resultList);
             dataRankingTop.setDataNameList(dataNameList);
             dataRankingTop.setRecordsNumberList(recordsNumberList);
@@ -302,11 +303,11 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
             resultList = foucsOrganizationDao.getIncrementalDataRankingDao(daysAgo);
+            logger.info("增量数据排行查询到的数据为：" + JSONObject.toJSONString(resultList));
             getTableNameCh(dataNameList, recordsNumberList, resultList);
             dataRankingTop.setDataNameList(dataNameList);
             dataRankingTop.setRecordsNumberList(recordsNumberList);
             serverResponse = ServerResponse.asSucessResponse(dataRankingTop);
-            logger.info("增量数据排行查询到的数据为" + dataRankingTop.toString());
         } catch (Exception e) {
             logger.error("增量数据TOP5报错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse("增量数据TOP5报错");
@@ -316,10 +317,10 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
 
     private void getTableNameCh(List<String> dataNameList, List recordsNumberList, List<Map<String, Object>> resultList) {
         resultList.forEach(oneMap-> {
-            String tableName = String.valueOf(oneMap.get("TABLENAMEZH"));
+            String tableName = String.valueOf(oneMap.get("tablenamezh"));
             double tableCount = 0L;
-            if (oneMap.get("TOTAL") != null) {
-                tableCount = Double.valueOf(oneMap.get("TOTAL").toString());
+            if (oneMap.get("total") != null) {
+                tableCount = Double.valueOf(oneMap.get("total").toString());
             }
             dataNameList.add(tableName);
             recordsNumberList.add(tableCount);

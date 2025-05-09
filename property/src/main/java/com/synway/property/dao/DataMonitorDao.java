@@ -78,7 +78,10 @@ public interface DataMonitorDao extends BaseDAO {
     List<DataApproval> getApprovalsByType(@Param("approvalType") String approvalType);
 
     List<DataResourceTable> getSyndmgTableAllDataByDate(@Param("days") int days);
+
     List<DataResourceTable> getSyndmgTableAllCKData();
+
+    List<DataResourceTable> getSyndmgTableAllHiveData();
 
 //    @MapKey("TABLENAME")
     List<TableOrganizationData> getClassifyInfo();

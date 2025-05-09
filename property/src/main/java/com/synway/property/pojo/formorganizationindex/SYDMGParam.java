@@ -29,7 +29,7 @@ public class SYDMGParam {
     private String TABLEALLCOUNT;               // 表总记录数
     private String PARTITIONSIZE;               // 分区大小
     private String ERROR;
-    private String DATAID;
+    private String DATAID = "dataid";
 
     @Override
     public boolean equals(Object o) {

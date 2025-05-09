@@ -197,6 +197,8 @@
         when TABLETYPE = 1 THEN 'ODPS'
         when TABLETYPE = 2 THEN 'ADS'
         when TABLETYPE = 3 THEN 'ADS'
+        when TABLETYPE = 5 THEN 'HIVE'
+        when TABLETYPE = 7 THEN 'CLICKHOUSE'
         else '' end as TABLETYPE
         from(
         select  NAME  as TABLENAMEZH  ,tableen as tablenameen , sum(TABLEUSECOUNTOFDAY) as TOTAL, TABLETYPE  from
@@ -206,9 +208,11 @@
         from (select x.* from StoreCycleAndUseHeat x inner join synlte.object y
             on upper(substr(x.TABLENAMEEN,INSTR(x.TABLENAMEEN, '.') + 1)) =
                upper(y.tablename)
-            where x.tablenamezh is not null
+            where
+                --x.tablenamezh is not null
             --根据东威控制objectstate是否为1决定数据是否展示
-            and y.objectstate=1 and y.relate_tablename='OBJECTFIELD') b) a
+            --and
+                y.objectstate=1 and y.relate_tablename='OBJECTFIELD') b) a
         inner join
         table_organization_assets b
         on upper(a.tableen) = upper(b.TABLE_NAME_EN) and upper(a.tableproject) = upper(b.TABLE_PROJECT)
@@ -258,7 +262,7 @@
                 left join synlte.object b on a.sjxjbm = b.tableid
                 where a.STATISTICS_TIME &gt;= (CURRENT_DATE - INTERVAL '#{daysAgo} days') and a.STATISTICS_TIME &lt; (CURRENT_DATE + INTERVAL '1 day' - INTERVAL '#{daysAgo} days')
                 and a.PARTITION_MESSAGE = 0
-                and upper(a.table_type) = 'ODPS'
+                --and upper(a.table_type) = 'ODPS'
                 and a.SJXJBM is not null
                 and b.objectstate = 1
                 ORDER BY YESTERDAY_COUNT desc nulls last)

@@ -1266,10 +1266,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 //                        break;
 //                    }
 //                }
-                String finalDataId = "hive";
                 hiveParams.parallelStream().forEach(item -> {
+                    item.setDATAID("hive");
                     try {
-                        item.setDATAID(finalDataId);
                         if ("永久".equals(item.getLIFECYCLE())) {
                             item.setLIFECYCLE("-1");
                         } else if (item.getLIFECYCLE().indexOf("天") > 0) {
@@ -1314,6 +1313,22 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                         logger.error(ExceptionUtil.getExceptionTrace(e));
                     }
                 });
+                // 昨日hive数据
+                List<DataResourceTable> yestodayHiveData = dataMonitorDao.getSyndmgTableAllHiveData();
+                logger.info("yestodayHiveData：{}", yestodayHiveData.size());
+                // 汇总数据量
+                for (SYDMGParam data : insertDatas){
+                    for (DataResourceTable yestodayData : yestodayHiveData){
+                        String tableName = data.getTABLENAME();
+                        String tableProject = data.getTABLEPROJECT();
+                        if (tableName.equalsIgnoreCase(yestodayData.getTableName()) && tableProject.equalsIgnoreCase(yestodayData.getProjectName())){
+                            long yestodayTableCount = StringUtils.isNotBlank(yestodayData.getTotalCount()) ? Long.parseLong(yestodayData.getTotalCount()) : 0;
+                            long partitionCount = StringUtils.isNotBlank(data.getPARTITIONCOUNT()) ? Long.parseLong(data.getPARTITIONCOUNT()) : 0;
+                            data.setTABLEALLCOUNT(String.valueOf(yestodayTableCount + partitionCount));
+                        }
+                    }
+                }
+
                 // 批量插入数据
                 /*改为批量入库，如果查询到的数据大于0 ， 先删除数据库表中指定时间的所有数据，然后再将新查询到的数据插入到数据库中*/
                 transactionUtil.transaction(s -> {

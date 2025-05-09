@@ -23,8 +23,10 @@
         and statistics_time <![CDATA[<]]> TO_DATE(#{endTime},'yyyy-MM-dd hh24:mi:ss')
         )t
         right join (
-        select to_char(to_date(#{beginTime},'yyyy-MM-dd') - 8 + ROWNUM - 1,'yyyy-MM-dd') statistics_time from dual
-        connect by ROWNUM<![CDATA[<=]]>to_date(#{endTime},'yyyy-MM-dd') - (to_date(#{beginTime},'yyyy-MM-dd') - 8)
+        select statistics_time from (
+        select to_char(to_date(#{beginTime}, 'YYYY-MM-DD') - offs, 'YYYY-MM-DD') as statistics_time from generate_series(0, 8) as offs union all
+        select to_char(to_date(#{beginTime}, 'YYYY-MM-DD') - offs, 'YYYY-MM-DD') as statistics_time from generate_series(-5, -1) as offs
+        ) where statistics_time &lt;= #{endTime}
         ) d on t.statistics_time = d.statistics_time order by d.statistics_time
     </select>
     <select id="getDataNum" resultType="com.synway.property.pojo.organizationdetail.DataNum">

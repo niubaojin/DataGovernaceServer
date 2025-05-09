@@ -146,7 +146,8 @@
                 and THREELEVEL_ORGANIZATION_CH = #{secondaryClassifyCh}
             </if>
         </if>
-            and upper(TABLE_TYPE) in ('ODPS','HIVE')
+            and (upper(TABLE_TYPE) in ('ODPS','CLICKHOUSE')
+            or upper(TABLE_TYPE) like '%HIVE%')
             and STATISTICS_TIME >= (CURRENT_DATE - INTERVAL '#{daysAgo} days') and h.import_flag=1
             ) h
         WHERE
