@@ -405,6 +405,11 @@ public class SynlteFieldServiceImpl implements SynlteFieldService {
         JSONObject parse = (JSONObject) JSON.parse(version);
         String versions = (String) parse.get("synlteFieldVersions");
         synlteFieldObject.setVersions(versions);
+        oldSynlteFieldObject.setFieldClassCh(synlteFieldObject.getFieldClassCh());
+        oldSynlteFieldObject.setFieldChineseName(synlteFieldObject.getFieldChineseName());
+        oldSynlteFieldObject.setFullChinese(synlteFieldObject.getFullChinese());
+        oldSynlteFieldObject.setSimChinese(synlteFieldObject.getSimChinese());
+        oldSynlteFieldObject.setSubOrg(synlteFieldObject.getSubOrg());
     }
 
     /**

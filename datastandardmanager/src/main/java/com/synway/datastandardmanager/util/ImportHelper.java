@@ -47,14 +47,14 @@ public class ImportHelper {
                     }
                     //获取值并自己格式化
                     switch(cell.getCellType()){
-                        case Cell.CELL_TYPE_STRING:
+                        case CellType.STRING:
                             map.put(arrHead[k],cell.getStringCellValue());
                             break;
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case CellType.NUMERIC:
                             int number =(int)cell.getNumericCellValue();
                             map.put(arrHead[k],number);
                             break;
-                        case Cell.CELL_TYPE_BLANK:
+                        case CellType.BLANK:
                             String uu=" ";
                             map.put(arrHead[k],uu);
                             break;
@@ -99,14 +99,14 @@ public class ImportHelper {
                 }
                 //获取值并自己格式化
                 switch(cell.getCellType()){
-                    case Cell.CELL_TYPE_STRING:
+                    case CellType.STRING:
                         map.put(arrHead[k],cell.getStringCellValue());
                         break;
-                    case Cell.CELL_TYPE_NUMERIC:
+                    case CellType.NUMERIC:
                         int number =(int)cell.getNumericCellValue();
                         map.put(arrHead[k],number);
                         break;
-                    case Cell.CELL_TYPE_BLANK:
+                    case CellType.BLANK:
                         String uu=" ";
                         map.put(arrHead[k],uu);
                         break;
@@ -132,7 +132,7 @@ public class ImportHelper {
             for(Cell ce :rr){
                 int roC= rr.getPhysicalNumberOfCells();
                 int ceC=ce.getColumnIndex();
-                ce.setCellType(Cell.CELL_TYPE_STRING);
+                ce.setCellType(CellType.STRING);
                 arrHead[j]=ce.getStringCellValue().toUpperCase().trim();
                 j++;
             }
@@ -149,14 +149,14 @@ public class ImportHelper {
                     }
                     //获取值并自己格式化
                     switch(cell.getCellType()){
-                        case Cell.CELL_TYPE_STRING:
+                        case CellType.STRING:
                             map.put(arrHead[k],cell.getStringCellValue());
                             break;
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case CellType.NUMERIC:
                             int number =(int)cell.getNumericCellValue();
                             map.put(arrHead[k],number);
                             break;
-                        case Cell.CELL_TYPE_BLANK:
+                        case CellType.BLANK:
                             String uu=" ";
                             map.put(arrHead[k],uu);
                             break;

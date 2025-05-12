@@ -3,16 +3,16 @@ package com.synway.datastandardmanager.pojo.labelmanage;
 import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.write.style.*;
+import com.alibaba.excel.enums.BooleanEnum;
+import com.alibaba.excel.enums.poi.FillPatternTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.poi.ss.usermodel.FillPatternType;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * 文件导入以及模板文件需要的对象
@@ -24,9 +24,9 @@ import java.util.Date;
 @HeadRowHeight(20)
 @ColumnWidth(10)
 // 设置excel头的背景色为 暗板岩蓝 浅色
-@HeadStyle(fillPatternType = FillPatternType.SOLID_FOREGROUND,fillForegroundColor = 40)
+@HeadStyle(fillPatternType = FillPatternTypeEnum.SOLID_FOREGROUND,fillForegroundColor = 40)
 //头字体设置为 9
-@HeadFontStyle(fontHeightInPoints =  10,bold = false)
+@HeadFontStyle(fontHeightInPoints =  10,bold = BooleanEnum.FALSE)
 // 内容的字体设置为9
 @ContentFontStyle(fontHeightInPoints = 10)
 @Data
@@ -79,7 +79,7 @@ public class LabelManageExcel implements Serializable {
     @ExcelProperty("*常用组织分类代码")
     @NotBlank(message = "【常用组织分类代码】不能为空")
     @ColumnWidth(value=20)
-    @ContentStyle(quotePrefix = true)
+    @ContentStyle(quotePrefix = BooleanEnum.TRUE)
     private String classId="";
 
     /**

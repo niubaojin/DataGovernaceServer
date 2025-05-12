@@ -2,7 +2,8 @@ package com.synway.datastandardmanager.pojo.standardtemplateexcel;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.write.style.*;
-import org.apache.poi.ss.usermodel.FillPatternType;
+import com.alibaba.excel.enums.BooleanEnum;
+import com.alibaba.excel.enums.poi.FillPatternTypeEnum;
 
 /**
  * @author wangdongwei
@@ -15,9 +16,9 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 @HeadRowHeight(20)
 @ColumnWidth(10)
 // 设置excel头的背景色为 暗板岩蓝 浅色
-@HeadStyle(fillPatternType = FillPatternType.SOLID_FOREGROUND,fillForegroundColor = 40)
+@HeadStyle(fillPatternType = FillPatternTypeEnum.SOLID_FOREGROUND,fillForegroundColor = 40)
 //头字体设置为 9
-@HeadFontStyle(fontHeightInPoints =  9,bold = false)
+@HeadFontStyle(fontHeightInPoints =  9,bold = BooleanEnum.FALSE)
 // 内容的字体设置为9
 @ContentFontStyle(fontHeightInPoints = 9)
 public class RevisionDescription {

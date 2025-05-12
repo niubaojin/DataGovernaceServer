@@ -1,8 +1,5 @@
 package com.synway.datastandardmanager.service.impl;
 
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.ExcelWriter;
-import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.common.bean.ServerResponse;
@@ -20,7 +17,6 @@ import com.synway.datastandardmanager.pojo.enums.ObjectStateType;
 import com.synway.datastandardmanager.pojo.enums.SynlteFieldType;
 import com.synway.datastandardmanager.pojo.standardtemplateexcel.ObjectFieldSheet;
 import com.synway.datastandardmanager.pojo.standardtemplateexcel.ObjectTableSheet;
-import com.synway.datastandardmanager.pojo.standardtemplateexcel.RevisionDescription;
 import com.synway.datastandardmanager.pojo.standardtemplateexcel.TableColumnSheet;
 import com.synway.datastandardmanager.service.ResourceManageAddService;
 import com.synway.datastandardmanager.service.ResourceManageService;
@@ -29,7 +25,6 @@ import com.synway.datastandardmanager.util.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

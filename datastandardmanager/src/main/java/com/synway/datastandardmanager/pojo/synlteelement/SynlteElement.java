@@ -3,12 +3,13 @@ package com.synway.datastandardmanager.pojo.synlteelement;
 import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.write.style.*;
+import com.alibaba.excel.enums.BooleanEnum;
+import com.alibaba.excel.enums.poi.FillPatternTypeEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.synway.datastandardmanager.valid.ListValue;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.poi.ss.usermodel.FillPatternType;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.validation.constraints.NotNull;
@@ -30,9 +31,9 @@ import java.util.Date;
 @HeadRowHeight(20)
 @ColumnWidth(15)
 // 设置excel头的背景色为 暗板岩蓝 浅色
-@HeadStyle(fillPatternType = FillPatternType.SOLID_FOREGROUND,fillForegroundColor = 40)
+@HeadStyle(fillPatternType = FillPatternTypeEnum.SOLID_FOREGROUND,fillForegroundColor = 40)
 //头字体设置为 9
-@HeadFontStyle(fontHeightInPoints =  10,bold = false)
+@HeadFontStyle(fontHeightInPoints =  10,bold = BooleanEnum.FALSE)
 // 内容的字体设置为9
 @ContentFontStyle(fontHeightInPoints = 10)
 public class SynlteElement implements Serializable {

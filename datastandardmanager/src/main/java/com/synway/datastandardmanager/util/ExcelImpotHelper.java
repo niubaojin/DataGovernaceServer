@@ -44,14 +44,14 @@ public class ExcelImpotHelper {
                     }
                     //获取值并自己格式化
                     switch(cell.getCellType()){
-                        case Cell.CELL_TYPE_STRING:
+                        case CellType.STRING:
                             map.put(arrHead[k],cell.getStringCellValue());
                             break;
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case CellType.NUMERIC:
                             int number =(int)cell.getNumericCellValue();
                             map.put(arrHead[k],number);
                             break;
-                        case Cell.CELL_TYPE_BLANK:
+                        case CellType.BLANK:
                             String uu=" ";
                             map.put(arrHead[k],uu);
                             break;
@@ -96,14 +96,14 @@ public class ExcelImpotHelper {
                 }
                 //获取值并自己格式化
                 switch(cell.getCellType()){
-                    case Cell.CELL_TYPE_STRING:
+                    case CellType.STRING:
                         map.put(arrHead[k],cell.getStringCellValue());
                         break;
-                    case Cell.CELL_TYPE_NUMERIC:
+                    case CellType.NUMERIC:
                         int number =(int)cell.getNumericCellValue();
                         map.put(arrHead[k],number);
                         break;
-                    case Cell.CELL_TYPE_BLANK:
+                    case CellType.BLANK:
                         String uu=" ";
                         map.put(arrHead[k],uu);
                         break;
@@ -144,14 +144,14 @@ public class ExcelImpotHelper {
                     }
                     //获取值并自己格式化
                     switch(cell.getCellType()){
-                        case Cell.CELL_TYPE_STRING:
+                        case CellType.STRING:
                             map.put(arrHead[k],cell.getStringCellValue());
                             break;
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case CellType.NUMERIC:
                             int number =(int)cell.getNumericCellValue();
                             map.put(arrHead[k],number);
                             break;
-                        case Cell.CELL_TYPE_BLANK:
+                        case CellType.BLANK:
                             String uu=" ";
                             map.put(arrHead[k],uu);
                             break;
