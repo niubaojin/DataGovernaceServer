@@ -315,10 +315,10 @@
             inner join (
                 select objectname,tablename from synlte.object
                 where objectstate = 1 and deleted = 0 and relate_tablename = 'OBJECTFIELD' ) r on
-                upper(l.table_name_en) = upper(r.tablename) )
+                upper(l.table_name_en) = upper(r.tablename)
+            order by tableCount desc )
         where
             rownum <![CDATA[<=]]> 8
-            order by tableCount desc
     </select>
 
     <select id="getPuYuanInformationBus" resultType="com.synway.governace.pojo.largeScreen.PyPublishInfo">
