@@ -222,7 +222,7 @@ public class SynlteFieldServiceImpl implements SynlteFieldService {
         String lockId =PinYinUtil.getLockId(synlteFieldObject.getFieldChineseName());
         HASH_LOCK.lock(lockId);
         try{
-            dataBackFill(synlteFieldObject,null);
+            dataBackFill(synlteFieldObject,new SynlteFieldObject());
             // 相关事件进行修改
             int num = synlteFieldDao.insertObject(synlteFieldObject);
             log.info("插入synlte.SYNLTEFIELD表中数据量为{}",num);
