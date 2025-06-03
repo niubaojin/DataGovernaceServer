@@ -82,6 +82,7 @@ public interface DataMonitorDao extends BaseDAO {
     List<DataResourceTable> getSyndmgTableAllCKData();
 
     List<DataResourceTable> getSyndmgTableAllHiveData();
+    void delHiveHisData(@Param("sydmgParam") SYDMGParam sydmgParam, @Param("minDelDate") long minDelDate);
 
 //    @MapKey("TABLENAME")
     List<TableOrganizationData> getClassifyInfo();

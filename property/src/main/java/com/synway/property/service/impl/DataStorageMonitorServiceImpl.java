@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import java.sql.*;
 import java.text.MessageFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1134,9 +1135,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         dataBaseState.setBareCapacity(String.valueOf(totalSpace.divide(denominator, 2, BigDecimal.ROUND_HALF_UP)));
 
         for (Map<String, Object> row : allPlatformCountList) {
-            String platformType = String.valueOf(row.get("TABLETYPE")).toLowerCase();
+            String platformType = String.valueOf(row.get("tabletype")).toLowerCase();
             if (platformType.contains("clickhouse")) {
-                dataBaseState.setTableCount(String.valueOf(row.get("DATABASE_COUNT")));
+                dataBaseState.setTableCount(String.valueOf(row.get("database_count")));
                 break;
             }
         }
@@ -1152,9 +1153,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void setTableCountByPlatformName(DataBaseState dataBaseState, List<Map<String, Object>> allPlatformCountList, String platformType) {
         for (Map<String, Object> row : allPlatformCountList) {
-            String platformName = String.valueOf(row.get("TABLETYPE")).toLowerCase();
+            String platformName = String.valueOf(row.get("tabletype")).toLowerCase();
             if (platformName.contains(platformType)) {
-                dataBaseState.setTableCount(String.valueOf(row.get("DATABASE_COUNT")));
+                dataBaseState.setTableCount(String.valueOf(row.get("database_count")));
                 break;
             }
         }
@@ -1319,12 +1320,19 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 // 汇总数据量
                 for (SYDMGParam data : insertDatas){
                     for (DataResourceTable yestodayData : yestodayHiveData){
-                        String tableName = data.getTABLENAME();
-                        String tableProject = data.getTABLEPROJECT();
-                        if (tableName.equalsIgnoreCase(yestodayData.getTableName()) && tableProject.equalsIgnoreCase(yestodayData.getProjectName())){
-                            long yestodayTableCount = StringUtils.isNotBlank(yestodayData.getTotalCount()) ? Long.parseLong(yestodayData.getTotalCount()) : 0;
-                            long partitionCount = StringUtils.isNotBlank(data.getPARTITIONCOUNT()) ? Long.parseLong(data.getPARTITIONCOUNT()) : 0;
-                            data.setTABLEALLCOUNT(String.valueOf(yestodayTableCount + partitionCount));
+                        if (data.getTABLENAME() != null
+                                && data.getTABLEPROJECT() != null
+                                && yestodayData.getTableName() != null
+                                && yestodayData.getProjectName() != null){
+                            String tableName = data.getTABLENAME();
+                            String ytableName = yestodayData.getTableName();
+                            String tableProject = data.getTABLEPROJECT();
+                            String ytableProject = yestodayData.getProjectName();
+                            if (tableName.equalsIgnoreCase(ytableName) && tableProject.equalsIgnoreCase(ytableProject)){
+                                long yestodayTableCount = yestodayData.getPartionCount() != null ? Long.parseLong(yestodayData.getPartionCount()) : 0;
+                                long partitionCount = data.getPARTITIONCOUNT() != null ? Long.parseLong(data.getPARTITIONCOUNT()) : 0;
+                                data.setTABLEALLCOUNT(String.valueOf(yestodayTableCount + partitionCount));
+                            }
                         }
                     }
                 }
@@ -1341,16 +1349,48 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                             DAOHelper.insertDelList(insertDatas, dataMonitorDao, "addHiveDataPatch", 200);
                             logger.info("syndmg_tabble_all【" + todayNow + "】新插入" + insertDatas.size() + "条hive数据");
                         } catch (Exception e) {
-                            logger.error(ExceptionUtil.getExceptionTrace(e));
+                            logger.error("插入hive数据出错：\n{}", e);
                         }
                     } else {
                         logger.info("hive【" + todayNow + "】查询到的数据量为0");
                     }
                 });
+                logger.info("开始删除hive的过期数据");
+                insertDatas.stream().forEach(sydmgParam -> {
+                    delHisData(sydmgParam);
+                });
+
             }
         } catch (Exception e) {
-            logger.error("获取华为平台资产的数据报错\n" + ExceptionUtil.getExceptionTrace(e));
+            logger.error("获取华为平台资产的数据报错:\n{}", e);
         }
+    }
+
+    // 删除HIVE历史数据
+    public void delHisData(SYDMGParam sydmgParam) {
+        long minDelDate = 0;
+        if (sydmgParam.getISPARTITION().equalsIgnoreCase("0")
+                && sydmgParam.getLIFECYCLE() != null
+                && !sydmgParam.getLIFECYCLE().equalsIgnoreCase("-1")){
+
+            int lifeCycle = Integer.parseInt(sydmgParam.getLIFECYCLE());
+            if (lifeCycle > 0) {
+                minDelDate = dateBefore(lifeCycle);    // 当前日期减去生命周期天数
+            } else {
+                minDelDate = dateBefore(3600);      // 当前日期减去生命周期天数（如果没匹配到，默认3600）
+            }
+            dataMonitorDao.delHiveHisData(sydmgParam, minDelDate);
+        }
+    }
+
+    public static long dateBefore(int i) {
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DAY_OF_MONTH, -i);//
+        long d = Integer.parseInt(sdf.format(calendar.getTime()));
+        return d;
     }
 
     @Override

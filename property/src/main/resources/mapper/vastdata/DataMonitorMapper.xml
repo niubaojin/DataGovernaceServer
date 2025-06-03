@@ -707,40 +707,25 @@
     </select>
 
     <select id="getSyndmgTableAllHiveData" resultType="com.synway.property.pojo.datastoragemonitor.DataResourceTable">
-        SELECT
-            upper(TABLENAME) AS tableName,
-            upper(TABLEPROJECT) AS projectName,
-            CASE
-                WHEN TABLETYPE = 1 THEN
-                    'ODPS'
-                WHEN TABLETYPE = 2 THEN
-                    'ADS'
-                WHEN TABLETYPE = 3 THEN
-                    'ADS'
-                WHEN TABLETYPE = 4 THEN
-                    'HBASE'
-                WHEN TABLETYPE = 5 THEN
-                    'Hive-HUAWEI'
-                WHEN TABLETYPE = 12 THEN
-                    'Hive-CDH'
-                WHEN TABLETYPE = 7 THEN
-                    'CLICKHOUSE'
-                ELSE ''
-                END AS tableType,
-            TABLESIZE AS totalSize,
-            PARTITIONCOUNT AS partionCount,
-            TABLEALLCOUNT AS totalCount,
-            PARTITIONSIZE AS partionSize,
-            ISPARTITION AS isPartitionTable,
-            LIFECYCLE AS tableLife,
-            TABLECREATEDTIME as tableCreatedTime,
-            tableLastMetaModifiedTime as lastDataModifiedTime,
-            partitionnum as partitionNum
-        FROM
-            SYNLTE.SYNDMG_TABLE_ALL
-        WHERE
-            to_char(to_date(INSERTEDDATATIME, 'yyyy-MM-dd HH24:mi:ss'), 'yyyyMMdd') = to_char (sysdate -1, 'yyyyMMdd') and TABLETYPE in (5, 12)
+        SELECT UPPER(TABLENAME) AS tableName,
+               UPPER(TABLEPROJECT) AS projectName,
+               TABLETYPE as tableType,
+               SUM(PARTITIONCOUNT) AS partionCount
+        FROM SYNLTE.SYNDMG_TABLE_ALL
+        WHERE TABLETYPE IN (5, 12)
+          AND ISPARTITION = 0
+        GROUP BY TABLENAME,
+                 TABLEPROJECT,
+                 TABLETYPE
     </select>
+
+    <delete id="delHiveHisData" parameterType="com.synway.property.pojo.formorganizationindex.SYDMGParam">
+        delete from synlte.syndmg_table_all
+        where tablename=#{sydmgParam.TABLENAME,jdbcType=VARCHAR}
+          and tableproject=#{sydmgParam.TABLEPROJECT,jdbcType=VARCHAR}
+          and tabletype=#{sydmgParam.TABLETYPE,jdbcType=VARCHAR}
+          and partitionDate &lt; #{minDelDate,jdbcType=INTEGER}
+    </delete>
 
     <select id="getClassifyInfo" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
     /*刘新鹏修改的CLASSIFY_INTERFACE_ALL_DATE表，FIRSTORGANIZATIONCH为二级组织分类，SECONDARYORGANIZATIONCH为三级组织分类*/
