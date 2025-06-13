@@ -40,9 +40,9 @@ public class TableOrganizationData implements Serializable {
     //数据资源属性分类代码名称
     private String factorAttributesName;
     //表数据总行数 到昨天分区
-    private BigInteger tableAllCount;
+    private BigInteger tableAllCount = new BigInteger("0");
     //表数据总大小 到昨天分区 byte
-    private BigInteger tableSize;
+    private BigInteger tableSize = new BigInteger("0");
     //表的项目名
     private String tableProject = "";
     // 表的生命周期
@@ -50,13 +50,13 @@ public class TableOrganizationData implements Serializable {
     //表类型 odps/ads/''
     private String tableType = "";
     // 昨天分区的数据量
-    private BigInteger yesterdayCount;
+    private BigInteger yesterdayCount = new BigInteger("0");
     // 是否为分区表 0:分区表  1:不是分区表  -1：不确定是否为分区表
     private String partitionMessage;
     // 日均数据量
-    private BigInteger averageDailyVolume;
+    private BigInteger averageDailyVolume = new BigInteger("0");
     // 日均数据大小
-    private BigInteger averageDailySize;
+    private BigInteger averageDailySize = new BigInteger("0");
     //  有值率
     private Double valueRate = 0.0;
     // 空值率

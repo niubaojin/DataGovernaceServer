@@ -803,165 +803,218 @@
     </select>
 
     <select id="getAllDataContentByTags" resultType="com.synway.property.pojo.DetailedTableByClassify">
-        select primaryDataSourceCh,secondaryDataSourceCh ,primaryOrganizationCh,secondaryOrganizationCh, tableType,
-        tableProject ,name , tableNameEn ,tableAllCount , averageDailyVolume , yesterdayCount ,lifeCycle , valueRate ,
-        nullRate ,tableState,statisticsTimeStr,updateType
-        ,frequency,liveType,tableid,registerState,objectId,tableSize,objectState,
-        -- labels,
-        updateDate,updatePeriod,productStage,organizationClassifyCh,dataSourceClassifyCh,exceptionMessage,lifeCycleStatus,resourceId,isStandard
-        from(
-        select rownum rn, PRIMARY_DATASOURCE_CH as primaryDataSourceCh , SECONDARY_DATASOURCE_CH as secondaryDataSourceCh ,
-        PRIMARY_ORGANIZATION_CH as primaryOrganizationCh , SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh
-        ,
-        case when (SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '') and (THREELEVEL_ORGANIZATION_CH is null or THREELEVEL_ORGANIZATION_CH = '') then PRIMARY_ORGANIZATION_CH
-        when THREELEVEL_ORGANIZATION_CH is not null or THREELEVEL_ORGANIZATION_CH !='' then PRIMARY_ORGANIZATION_CH || '->' || THREELEVEL_ORGANIZATION_CH
-        else PRIMARY_ORGANIZATION_CH||'->'||SECONDARY_ORGANIZATION_CH
-        end as organizationClassifyCh,
-        case when SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH ='' then PRIMARY_DATASOURCE_CH
-        else PRIMARY_DATASOURCE_CH ||'->'|| SECONDARY_DATASOURCE_CH
-        end as dataSourceClassifyCh,
-        case when RES_NAME is null or RES_NAME = '' then TABLE_TYPE||'->'||TABLE_PROJECT
-        else TABLE_TYPE || '->' || RES_NAME || '->' || TABLE_PROJECT end as tableProject, NAME as name , TABLE_NAME_EN as tableNameEn ,
-        case when TABLE_ALL_COUNT = '0' then '0'
-        when to_char(TABLE_ALL_COUNT/ 10000, 'fm9999999999990.00')='0.00' then '0'
-        else
-        to_char(TABLE_ALL_COUNT/ 10000, 'fm9999999999990.00') End
-        as tableAllCount, AVERAGE_DAILY_VOLUME as averageDailyVolume,
-        case when YESTERDAY_COUNT = '0' then '0'
-        when to_char(YESTERDAY_COUNT/10000,'fm999999999990.00') = '0.00' then '0'
-        else
-        to_char(YESTERDAY_COUNT/10000,'fm999999999990.00') end as yesterdayCount ,TABLE_TYPE as tableType, LIFE_CYCLE as
-        lifeCycle , VALUE_RATE as valueRate ,
-        NULL_RATE as nullRate, TABLE_STATE as tableState,OBJECT_STATE as objectState,
-        case when PARTITION_MESSAGE = 0 then '增量' when PARTITION_MESSAGE = 1 then '全量' else '其它' END as updateType
-        ,to_char(STATISTICS_TIME,'yyyy-MM-dd HH24:mi:ss') as statisticsTimeStr ,
-        FREQUENCY as frequency , LIVETYPE as liveType ,SJXJBM as tableid,
-        REGISTER_STATE as registerState,
-        -- CASE WHEN pdi.TABLENAME is not null THEN 2 ELSE 1 END registerState,
-        OBJECT_ID as objectId,
-        case when TABLE_SIZE = '0' then '0'
-        when to_char(TABLE_SIZE/1073741824,'fm999999999990.00000')='0.00000' then '0'
-        else
-        to_char(TABLE_SIZE/1073741824,'fm999999999990.00000') end as tableSize,
-        update_date as updateDate,update_period as updatePeriod,'' as productStage,
-        EXCEPTION_MESSAGE as exceptionMessage,LIFE_CYCLE_STATUS as lifeCycleStatus,resourceid,ISSTANDARD as isStandard
-        from
-        (
-        SELECT
-        *
-        FROM
-        ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_TYPE), lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
-        )a
+        select primaryDataSourceCh,
+               secondaryDataSourceCh,
+               primaryOrganizationCh,
+               secondaryOrganizationCh,
+               tableType,
+               tableProject,
+               name,
+               tableNameEn,
+               tableAllCount,
+               averageDailyVolume,
+               yesterdayCount,
+               lifeCycle,
+               valueRate,
+               nullRate,
+               tableState,
+               statisticsTimeStr,
+               updateType,
+               frequency,
+               liveType,
+               tableid,
+               registerState,
+               objectId,
+               tableSize,
+               objectState,
+               updateDate,
+               updatePeriod,
+               productStage,
+               organizationClassifyCh,
+               dataSourceClassifyCh,
+               exceptionMessage,
+               lifeCycleStatus,
+               resourceId,
+               isStandard
+          from (select rownum rn,
+                       PRIMARY_DATASOURCE_CH as primaryDataSourceCh,
+                       SECONDARY_DATASOURCE_CH as secondaryDataSourceCh,
+                       PRIMARY_ORGANIZATION_CH as primaryOrganizationCh,
+                       SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh,
+                       case
+                         when (SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '') and
+                              (THREELEVEL_ORGANIZATION_CH is null or THREELEVEL_ORGANIZATION_CH = '')
+                           then PRIMARY_ORGANIZATION_CH
+                         when THREELEVEL_ORGANIZATION_CH is not null or THREELEVEL_ORGANIZATION_CH != ''
+                           then PRIMARY_ORGANIZATION_CH || '->' || THREELEVEL_ORGANIZATION_CH
+                         else
+                          PRIMARY_ORGANIZATION_CH || '->' || SECONDARY_ORGANIZATION_CH
+                       end as organizationClassifyCh,
+                       case
+                         when SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH = ''
+                           then PRIMARY_DATASOURCE_CH
+                         else
+                          PRIMARY_DATASOURCE_CH || '->' || SECONDARY_DATASOURCE_CH
+                       end as dataSourceClassifyCh,
+                       case
+                         when RES_NAME is null or RES_NAME = ''
+                           then TABLE_TYPE || '->' || TABLE_PROJECT
+                         else
+                          TABLE_TYPE || '->' || RES_NAME || '->' || TABLE_PROJECT
+                       end as tableProject,
+                       NAME as name,
+                       TABLE_NAME_EN as tableNameEn,
+                       case
+                         when TABLE_ALL_COUNT = '0' then '0'
+                         when to_char(TABLE_ALL_COUNT / 10000, 'fm9999999999990.00') = '0.00' then '0'
+                         else to_char(TABLE_ALL_COUNT / 10000, 'fm9999999999990.00')
+                       end as tableAllCount,
+                       AVERAGE_DAILY_VOLUME as averageDailyVolume,
+                       case
+                         when YESTERDAY_COUNT = '0' then '0'
+                         when to_char(YESTERDAY_COUNT / 10000, 'fm999999999990.00') = '0.00' then '0'
+                         else to_char(YESTERDAY_COUNT / 10000, 'fm999999999990.00')
+                       end as yesterdayCount,
+                       TABLE_TYPE as tableType,
+                       LIFE_CYCLE as lifeCycle,
+                       VALUE_RATE as valueRate,
+                       NULL_RATE as nullRate,
+                       TABLE_STATE as tableState,
+                       OBJECT_STATE as objectState,
+                       case
+                         when PARTITION_MESSAGE = 0 then '增量'
+                         when PARTITION_MESSAGE = 1 then '全量'
+                         else '其它'
+                       END as updateType,
+                       to_char(STATISTICS_TIME, 'yyyy-MM-dd HH24:mi:ss') as statisticsTimeStr,
+                       FREQUENCY as frequency,
+                       LIVETYPE as liveType,
+                       SJXJBM as tableid,
+                       REGISTER_STATE as registerState,
+                       OBJECT_ID as objectId,
+                       case
+                         when TABLE_SIZE = '0' then '0'
+                         when to_char(TABLE_SIZE / 1073741824, 'fm999999999990.00000') = '0.00000' then '0'
+                         else to_char(TABLE_SIZE / 1073741824, 'fm999999999990.00000')
+                       end as tableSize,
+                       update_date as updateDate,
+                       update_period as updatePeriod,
+                       '' as productStage,
+                       EXCEPTION_MESSAGE as exceptionMessage,
+                       LIFE_CYCLE_STATUS as lifeCycleStatus,
+                       resourceid,
+                       ISSTANDARD as isStandard
+                  from (SELECT *
+                          FROM (SELECT j.*,
+                                       row_number() over(partition by lower(TABLE_TYPE), lower(TABLE_PROJECT), upper(TABLE_NAME_EN) order by STATISTICS_TIME desc) as rnn
+                                  from table_organization_assets j
+                                 where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) a
+        <if test="orderBy != null and orderBy != ''">
+            order by #{orderBy}
+        </if>
         ) h
         WHERE
-        h.rnn = 1
-        <if test="registerState=='已注册'">
-            and REGISTER_STATE ='2'
-        </if>
-        <if test="registerState=='未注册'">
-            and (REGISTER_STATE !='2' or REGISTER_STATE is null)
-        </if>
-        <if test="usingTagsState=='启用'">
-            and (OBJECT_STATE = '1' or OBJECT_STATE = '0')
-        </if>
-        <if test="usingTagsState=='停用'">
-            and (OBJECT_STATE = '-1' or OBJECT_STATE is null)
-        </if>
-        <if test="projectList.size >0">
-            and
-            <foreach collection="projectList" item="p" index="index" separator="or" open="(" close=")">
-                (lower(TABLE_PROJECT) =
-                lower(#{p.secondaryClassifyCh,jdbcType=VARCHAR}) and upper(TABLE_TYPE) =
-                upper(#{p.primaryClassifyCh,jdbcType=VARCHAR}))
-            </foreach>
-        </if>
-        <if test="sourceClassify.size >0 or organizationClassify.size >0">
-            and(
-            <if test="sourceClassify.size >0">
-                (
-                <foreach collection="sourceClassify" item="sc" index="index" separator=" or " open="(" close=")">
-                    1=1
-                    <if test="sc.primaryClassifyCh!='' and sc.primaryClassifyCh!=null">
-                        and PRIMARY_DATASOURCE_CH =
-                        #{sc.primaryClassifyCh,jdbcType=VARCHAR}
-                    </if>
-                    <if test="sc.primaryClassifyCh!='' and sc.primaryClassifyCh!=null and sc.secondaryClassifyCh!='' and sc.secondaryClassifyCh!=null">
-                        and
-                    </if>
-                    <if test="sc.secondaryClassifyCh!='' and sc.secondaryClassifyCh!=null">
-                        SECONDARY_DATASOURCE_CH =
-                        #{sc.secondaryClassifyCh,jdbcType=VARCHAR}
-                    </if>
+            h.rnn = 1
+            <if test="registerState=='已注册'">
+                and REGISTER_STATE ='2'
+            </if>
+            <if test="registerState=='未注册'">
+                and (REGISTER_STATE !='2' or REGISTER_STATE is null)
+            </if>
+            <if test="usingTagsState=='启用'">
+                and (OBJECT_STATE = '1' or OBJECT_STATE = '0')
+            </if>
+            <if test="usingTagsState=='停用'">
+                and (OBJECT_STATE = '-1' or OBJECT_STATE is null)
+            </if>
+            <if test="projectList.size >0">
+                and
+                <foreach collection="projectList" item="p" index="index" separator="or" open="(" close=")">
+                    (lower(TABLE_PROJECT) = lower(#{p.secondaryClassifyCh,jdbcType=VARCHAR})
+                        and upper(TABLE_TYPE) = upper(#{p.primaryClassifyCh,jdbcType=VARCHAR})
+                    )
                 </foreach>
-                )
             </if>
-            <if test="sourceClassify.size >0 and organizationClassify.size >0">
-                or
-            </if>
-            <if test="organizationClassify.size >0 ">
-                (
-                <foreach collection="organizationClassify" item="oc" index="index" separator=" or " open="("
-                         close=")">
-                    1=1
-                    <if test="oc !=null">
-                        <if test="oc.primaryClassifyCh!='' and oc.primaryClassifyCh!=null">
-                            and PRIMARY_ORGANIZATION_CH =
-                            #{oc.primaryClassifyCh,jdbcType=VARCHAR}
+            <if test="sourceClassify.size >0 or organizationClassify.size >0">
+                and(
+                <if test="sourceClassify.size >0">
+                    (
+                    <foreach collection="sourceClassify" item="sc" index="index" separator=" or " open="(" close=")">
+                        1=1
+                        <if test="sc.primaryClassifyCh!='' and sc.primaryClassifyCh!=null">
+                            and PRIMARY_DATASOURCE_CH = #{sc.primaryClassifyCh,jdbcType=VARCHAR}
                         </if>
-                        <if test="oc.primaryClassifyCh!='' and oc.primaryClassifyCh!=null and oc.secondaryClassifyCh!='' and oc.secondaryClassifyCh!=null">
+                        <if test="sc.primaryClassifyCh!='' and sc.primaryClassifyCh!=null and sc.secondaryClassifyCh!='' and sc.secondaryClassifyCh!=null">
                             and
                         </if>
-                        <if test="oc.secondaryClassifyCh!='' and oc.secondaryClassifyCh!=null">
-                            SECONDARY_ORGANIZATION_CH =
-                            #{oc.secondaryClassifyCh,jdbcType=VARCHAR}
+                        <if test="sc.secondaryClassifyCh!='' and sc.secondaryClassifyCh!=null">
+                            SECONDARY_DATASOURCE_CH = #{sc.secondaryClassifyCh,jdbcType=VARCHAR}
                         </if>
-                        <if test="oc.threeLevelClassfyCh!='' and oc.threeLevelClassfyCh!=null">
-                            and THREELEVEL_ORGANIZATION_CH =
-                            #{oc.threeLevelClassfyCh,jdbcType=VARCHAR}
+                    </foreach>
+                    )
+                </if>
+                <if test="sourceClassify.size >0 and organizationClassify.size >0">
+                    or
+                </if>
+                <if test="organizationClassify.size >0 ">
+                    (
+                    <foreach collection="organizationClassify" item="oc" index="index" separator=" or " open="(" close=")">
+                        1=1
+                        <if test="oc !=null">
+                            <if test="oc.primaryClassifyCh!='' and oc.primaryClassifyCh!=null">
+                                and PRIMARY_ORGANIZATION_CH = #{oc.primaryClassifyCh,jdbcType=VARCHAR}
+                            </if>
+                            <if test="oc.primaryClassifyCh!='' and oc.primaryClassifyCh!=null and oc.secondaryClassifyCh!='' and oc.secondaryClassifyCh!=null">
+                                and
+                            </if>
+                            <if test="oc.secondaryClassifyCh!='' and oc.secondaryClassifyCh!=null">
+                                SECONDARY_ORGANIZATION_CH = #{oc.secondaryClassifyCh,jdbcType=VARCHAR}
+                            </if>
+                            <if test="oc.threeLevelClassfyCh!='' and oc.threeLevelClassfyCh!=null">
+                                and THREELEVEL_ORGANIZATION_CH = #{oc.threeLevelClassfyCh,jdbcType=VARCHAR}
+                            </if>
                         </if>
-                    </if>
-                </foreach>
+                    </foreach>
+                    )
+                </if>
                 )
             </if>
-            )
-        </if>
-        <if test="input != ''">
-            and (upper(TABLE_NAME_EN) like upper('%${input}%')
-            or upper(NAME) like upper('%${input}%')
-            or upper(SJXJBM) like upper('%${input}%'))
-        </if>
-        <if test="termSetting.size >0">
-            and
-            <foreach collection="termSetting" item="i" open="(" close=")" separator="or">
-                upper(TABLE_NAME_EN) = upper(#{i,jdbcType=VARCHAR})
-            </foreach>
-        </if>
-        <if test="startLastModifiedTime != ''">
-            and to_date(regexp_replace(LASTDATAMODIFIEDTIME, '\..*', ''),'yyyy-MM-dd hh24:mi:ss') >=
-            to_date(#{startLastModifiedTime,jdbcType=VARCHAR},'yyyy-MM-dd')
-        </if>
-        <if test="endLastModifiedTime != ''">
-            and to_date(regexp_replace(LASTDATAMODIFIEDTIME, '\..*', ''),'yyyy-MM-dd hh24:mi:ss')-1  <![CDATA[<= ]]>
-            to_date(#{endLastModifiedTime,jdbcType=VARCHAR},'yyyy-MM-dd')
-        </if>
-        <if test="startRecordNum != 0 and startRecordNum!= null">
-            and TABLE_ALL_COUNT >= #{startRecordNum}
-        </if>
-        <if test="endRecordNum != 0 and endRecordNum!= null">
-            and TABLE_ALL_COUNT <![CDATA[<= ]]> #{endRecordNum}
-        </if>
-        <if test="startStorageSize != 0 and startStorageSize!= null">
-            and TABLE_SIZE >= #{startStorageSize}
-        </if>
-        <if test="endStorageSize != 0 and endStorageSize!= null">
-            and TABLE_SIZE <![CDATA[<= ]]> #{endStorageSize}
-        </if>
-        <if test="queryTable != null">
-            and upper(TABLE_TYPE)=upper(#{queryTable.tableType,jdbcType=VARCHAR})
-            and upper(TABLE_PROJECT)=upper(#{queryTable.projectName,jdbcType=VARCHAR})
-            and upper(TABLE_NAME_EN)=upper(#{queryTable.tableName,jdbcType=VARCHAR})
-        </if>
+            <if test="input != '' and input != null">
+                and (upper(TABLE_NAME_EN) like upper('%${input}%')
+                or upper(NAME) like upper('%${input}%')
+                or upper(SJXJBM) like upper('%${input}%'))
+            </if>
+            <if test="termSetting.size >0">
+                and
+                <foreach collection="termSetting" item="i" open="(" close=")" separator="or">
+                    upper(TABLE_NAME_EN) = upper(#{i,jdbcType=VARCHAR})
+                </foreach>
+            </if>
+            <if test="startLastModifiedTime != ''">
+                and to_date(regexp_replace(LASTDATAMODIFIEDTIME, '\..*', ''),'yyyy-MM-dd hh24:mi:ss') >=
+                to_date(#{startLastModifiedTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+            </if>
+            <if test="endLastModifiedTime != ''">
+                and to_date(regexp_replace(LASTDATAMODIFIEDTIME, '\..*', ''),'yyyy-MM-dd hh24:mi:ss')-1  <![CDATA[<= ]]>
+                to_date(#{endLastModifiedTime,jdbcType=VARCHAR},'yyyy-MM-dd')
+            </if>
+            <if test="startRecordNum != 0 and startRecordNum!= null">
+                and TABLE_ALL_COUNT >= #{startRecordNum}
+            </if>
+            <if test="endRecordNum != 0 and endRecordNum!= null">
+                and TABLE_ALL_COUNT <![CDATA[<= ]]> #{endRecordNum}
+            </if>
+            <if test="startStorageSize != 0 and startStorageSize!= null">
+                and TABLE_SIZE >= #{startStorageSize}
+            </if>
+            <if test="endStorageSize != 0 and endStorageSize!= null">
+                and TABLE_SIZE <![CDATA[<= ]]> #{endStorageSize}
+            </if>
+            <if test="queryTable != null">
+                and upper(TABLE_TYPE)=upper(#{queryTable.tableType,jdbcType=VARCHAR})
+                and upper(TABLE_PROJECT)=upper(#{queryTable.projectName,jdbcType=VARCHAR})
+                and upper(TABLE_NAME_EN)=upper(#{queryTable.tableName,jdbcType=VARCHAR})
+            </if>
         )
         <where>
             1=1
@@ -1019,13 +1072,6 @@
                 </foreach>
             </if>
         </where>
-        order by
-        case
-        when registerState = 2 then 1
-        when registerState = -1 then 2
-        when registerState = 1 then 3
-        when registerState is null then 4
-        end,lifeCycleStatus,rn desc
     </select>
 
     <select id="getAllDataContentFilter" resultType="com.synway.property.pojo.DetailedTableByClassify">

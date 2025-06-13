@@ -160,7 +160,8 @@ public interface DataStorageMonitorDao {
                                                           @Param("tableStateStatus")        String[] tableStateStatus,
                                                           @Param("tableidStatus")           String[] tableidStatus,
                                                           @Param("updatePeriodStatus")      String[] updatePeriodStatus,
-                                                          @Param("isStandardStatus")      String[] isStandardStatus
+                                                          @Param("isStandardStatus")        String[] isStandardStatus,
+                                                          @Param("orderBy")                String orderBy
     );
 
 //    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})

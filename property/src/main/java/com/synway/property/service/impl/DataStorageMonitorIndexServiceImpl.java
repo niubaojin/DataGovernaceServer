@@ -468,14 +468,29 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             ).collect(toList());
         }
 
+        // 排序
         Page page = PageHelper.startPage(pageIndex, pageSize);
         String orderBy = "";
+        if (StringUtils.isNotEmpty(sortName)) {
+            if (StringUtils.isEmpty(sortOrder)){
+                sortOrder = "desc";
+            }
+            if ("tableSize".equals(sortName)){
+                orderBy = "TABLE_SIZE " + sortOrder;
+            }
+            if ("yesterdayCount".equals(sortName)){
+                orderBy = "YESTERDAY_COUNT " + sortOrder;
+            }
+            if ("tableAllCount".equals(sortName)){
+                orderBy = "TABLE_ALL_COUNT " + sortOrder;
+            }
+        }
         if (StringUtils.isNotEmpty(sortName)) {
             if ("tableSize".equals(sortName) || "yesterdayCount".equals(sortName) || "tableAllCount".equals(sortName)) {
                 sortName = "to_number(" + sortName + ")";
             }
             if (StringUtils.isEmpty(sortOrder)){
-                sortOrder = "ASC";
+                sortOrder = "desc";
             }
             orderBy = sortName + " " + sortOrder;
             page.setUnsafeOrderBy(orderBy);
@@ -523,7 +538,8 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     organizationClassify, sourceClassify, input, registerState, usingTagsState, storageTagsList
 //                    , labels
                     , termSetting, startLastModifiedTime, endLastModifiedTime, startRecordNum, endRecordNum, startStorageSize, endStorageSize, queryTable, daysAgo
-                    , objectStateStatus,productStageStatusList,registerStateStatus,tableProjectStatus,tableStateStatus,tableidStatus,updatePeriodStatus,isStandardStatus
+                    , objectStateStatus,productStageStatusList,registerStateStatus,tableProjectStatus,tableStateStatus,tableidStatus,updatePeriodStatus,isStandardStatus,
+                    orderBy
             );
 
             PageInfo<DetailedTableByClassify> pageInfo = new PageInfo<>(allDataContentByTags);
@@ -1549,7 +1565,8 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     organizationClassify, sourceClassify, input, registerState, usingTagsState, storageTagsList,
 //                    , labels
                     termSetting, startLastModifiedTime, endLastModifiedTime, startRecordNum, endRecordNum, startStorageSize, endStorageSize, queryTable,0,
-                    null,null,null,null,null,null,null,null);
+                    null,null,null,null,null,null,null,null
+                    , null);
 
 //            List<Label> labelList = dataStorageMonitorDao.getAllLabels();
 //            Map<String, String> labelMap = labelList.parallelStream().collect(Collectors.toMap(item -> item.getLabelCode(), item -> item.getLabelName()));
