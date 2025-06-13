@@ -8,7 +8,8 @@
         select l.objectname,l.tablename,r.VERSION,r."VERSIONS",r.AUTHOR,r.MEMO,r.objectId, l.UPDATETIME
         from synlte.object_history  l
         inner join synlte.objecte_version r
-        on l.objectid = r.objectid and l.updatetime=r.updatetime
+        on l.objectid = r.objectid
+        --and l.updatetime=r.updatetime
         <where>
             <if test="searchText != null">
                 l.objectname like concat('%',concat(#{searchText},'%'))
