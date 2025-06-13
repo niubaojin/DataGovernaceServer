@@ -49,7 +49,13 @@
     <select id="getDataOrganizationTable" resultType="com.synway.property.pojo.dataOrganization.DataOrganization">
         SELECT OBJECTID as objectId, NAME as tableNameCh,TABLENAME as tableNameEn,SJXJBM as resourceIdentify from
         CLASSIFY_INTERFACE_ALL_DATE
-        where SJXJBM is not null and PRIMARYORGANIZATIONCH = #{primaryClassifyCh} and objectstate = 1
+        where SJXJBM is not null and objectstate = 1
+        <if test="primaryClassifyCh = '业务要素索引库'">
+            and (PRIMARYORGANIZATIONCH = #{primaryClassifyCh} or SECONDARYORGANIZATIONCH = #{primaryClassifyCh})
+        </if>
+        <if test="primaryClassifyCh != '业务要素索引库'">
+            and PRIMARYORGANIZATIONCH = #{primaryClassifyCh}
+        </if>
         <if test="secondaryClassifyCh!='' and secondaryClassifyCh!=null and primaryClassifyCh!='原始库' and primaryClassifyCh!='主题库'">
             and SECONDARYORGANIZATIONCH = #{secondaryClassifyCh}
         </if>
