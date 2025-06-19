@@ -64,25 +64,25 @@ public class DataProcessController {
         return JSONObject.toJSONString(serverResponse);
     }
 
-    /**
-     * 页面上查询 数据历程 数据
-     * @param request
-     * @return
-     */
-    @RequestMapping(value = "/searchDataProcess" )
-    @ResponseBody
-    public ServerResponse<ProcessPage> searchDataProcess(DataProcessRequest request) {
-        ServerResponse<ProcessPage> serverResponse = null;
-        try{
-            ProcessPage processPage = dataProcessServiceImpl.searchDataProcess(request);
-            serverResponse = ServerResponse.asSucessResponse(processPage);
-        }catch (Exception e){
-            logger.error("查询数据历程数据报错"+ExceptionUtil.getExceptionTrace(e));
-            serverResponse = ServerResponse.asErrorResponse("查询数据历程数据报错【"+e.getMessage()+"】");
-        }
-
-        return serverResponse;
-    }
+//    /**
+//     * 页面上查询 数据历程 数据，(20250617：废弃)
+//     * @param request
+//     * @return
+//     */
+//    @RequestMapping(value = "/searchDataProcess" )
+//    @ResponseBody
+//    public ServerResponse<ProcessPage> searchDataProcess(DataProcessRequest request) {
+//        ServerResponse<ProcessPage> serverResponse = null;
+//        try{
+//            ProcessPage processPage = dataProcessServiceImpl.searchDataProcess(request);
+//            serverResponse = ServerResponse.asSucessResponse(processPage);
+//        }catch (Exception e){
+//            logger.error("查询数据历程数据报错"+ExceptionUtil.getExceptionTrace(e));
+//            serverResponse = ServerResponse.asErrorResponse("查询数据历程数据报错【"+e.getMessage()+"】");
+//        }
+//
+//        return serverResponse;
+//    }
 
 
     /**
