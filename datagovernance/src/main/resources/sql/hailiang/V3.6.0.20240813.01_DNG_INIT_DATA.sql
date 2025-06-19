@@ -102,11 +102,11 @@ values ('14','数据集成',NULL,'page/dataJobs/dataIntegration/index','1','0','
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
 values ('15','作业流程',NULL,'page/dataJobs/dataIntegration/jobCanvas','0','0','3','dataIntegration','030401','jobCanvas',NULL,NULL,0);
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
-values ('16','数据链路对账',NULL,'page/dataJobs/dataReconciliation/dataLink/index','1','0','3','dataReconciliation','030401','dataLink',NULL,NULL,0);
+values ('16','数据对账统计',NULL,'page/dataJobs/dataReconciliation/dataLink/index','0','0','3','dataReconciliation','030401','dataLink',NULL,NULL,0);
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
 values ('17','作业管理',NULL,'page/dataJobs/dataIntegration/jobManagement','0','0','3','dataIntegration','030402','jobManagement',NULL,NULL,0);
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
-values ('18','数据对账统计',NULL,'page/dataBilling/billingAlarm','1','0','3','dataReconciliation','030402','billingAlarm',NULL,NULL,0);
+values ('18','数据链路对账',NULL,'page/dataBilling/billingAlarm','1','0','3','dataReconciliation','030402','billingAlarm',NULL,NULL,0);
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
 values ('20','数据对账详单',NULL,'page/dataBilling/index','1','0','3','dataReconciliation','030403','dataBilling',NULL,NULL,0);
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
