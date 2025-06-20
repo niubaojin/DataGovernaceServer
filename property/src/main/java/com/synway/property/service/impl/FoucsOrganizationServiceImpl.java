@@ -278,6 +278,7 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             int daysAgo = todayAssetsCount<100?1:0;
             List<Map<String, Object>> resultList = foucsOrganizationDao.getFullDataRankingDao(daysAgo);
             logger.info("全量排行数据为：" + JSONObject.toJSONString(resultList));
+            Collections.reverse(resultList);
             getTableNameCh(dataNameList, recordsNumberList, resultList);
             dataRankingTop.setDataNameList(dataNameList);
             dataRankingTop.setRecordsNumberList(recordsNumberList);
@@ -303,6 +304,7 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
             resultList = foucsOrganizationDao.getIncrementalDataRankingDao(daysAgo);
+            Collections.reverse(resultList);
             logger.info("增量数据排行查询到的数据为：" + JSONObject.toJSONString(resultList));
             getTableNameCh(dataNameList, recordsNumberList, resultList);
             dataRankingTop.setDataNameList(dataNameList);
