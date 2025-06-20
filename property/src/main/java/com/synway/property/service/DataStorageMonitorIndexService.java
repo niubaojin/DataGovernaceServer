@@ -58,7 +58,7 @@ public interface DataStorageMonitorIndexService {
      * @param secondaryClassifyCh 二级分类名称 为空表示查询所有
      * @return
      */
-    ServerResponse<List<SummaryTableByClassify>> getSummaryTableByClassify(String mainClassify, String primaryClassifyCh, String secondaryClassifyCh, String threeValue);
+    PageVO<SummaryTableByClassify> getSummaryTableByClassify(String mainClassify, String primaryClassifyCh, String secondaryClassifyCh, String threeValue);
 
     /**
      * 根据 三大类别名称来获取对应一级分类的总记录数和存储大小

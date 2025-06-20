@@ -125,26 +125,22 @@ public class TableOrganizationDataController {
      */
     @RequestMapping("/getSummaryTableByClassify")
     @ResponseBody
-    public ServerResponse<List<SummaryTableByClassify>> getSummaryTableByClassify(@RequestParam("mainClassify")String  mainClassify,
+    public ServerResponse<PageVO<SummaryTableByClassify>> getSummaryTableByClassify(@RequestParam("mainClassify")String  mainClassify,
                                                                                   @RequestParam("primaryClassifyCh")String  primaryClassifyCh,
                                                                                   @RequestParam("secondaryClassifyCh")String  secondaryClassifyCh,
                                                                                   @RequestParam("threeValue")String threeValue){
-        logger.info(String.format("开始查询表组织资产的汇总信息，查询条件为 mainClassify：%s ,primaryClassifyCh: %s ,secondaryClassifyCh: %s"
+        logger.info(String.format(">>>>>>开始查询表组织资产的汇总信息，查询条件为 mainClassify：%s ,primaryClassifyCh: %s ,secondaryClassifyCh: %s"
                 ,mainClassify,primaryClassifyCh,secondaryClassifyCh));
         // 返回的接口信息
-        ServerResponse<List<SummaryTableByClassify>> serverResponse;
         if(!(mainClassify.equalsIgnoreCase(UrlConstants.DATA_ORGANIZATION_CLASSIFY)
                 || mainClassify.equalsIgnoreCase(UrlConstants.DATA_SOURCE_CLASSIFY)
-                   || mainClassify.equalsIgnoreCase(UrlConstants.DATA_RESOURCE_CLASSIFY)
-                     || "null".equalsIgnoreCase(mainClassify))){
+                || mainClassify.equalsIgnoreCase(UrlConstants.DATA_RESOURCE_CLASSIFY)
+                || "null".equalsIgnoreCase(mainClassify))){
             String ss = UrlConstants.DATA_ORGANIZATION_CLASSIFY+"|"+
                     UrlConstants.DATA_SOURCE_CLASSIFY+"|"+
                     UrlConstants.DATA_RESOURCE_CLASSIFY;
-            String errorMessage = "传入的参数mainClassify值【"+mainClassify+"】不在规定的数值【"+ss+"】中";
-            serverResponse = ServerResponse.asErrorResponse(errorMessage);
-            logger.info("getSummaryTableByClassify()方法运行结束，返回结果为\n"+JSON.toJSONString(serverResponse));
-            logger.info("============================================");
-            return serverResponse;
+            logger.info(">>>>>>表组织资产的汇总信息查询结束");
+            return ServerResponse.asErrorResponse(String.format("传参的mainClassify：[%s]，不在规定的数值：[%s]", mainClassify, ss));
         }
         if(StringUtils.isBlank(primaryClassifyCh)){
             primaryClassifyCh = "";
@@ -153,10 +149,9 @@ public class TableOrganizationDataController {
             secondaryClassifyCh = "";
         }
         // 在后台查询具体的数值
-        serverResponse = dataStorageMonitorIndexServiceImpl.getSummaryTableByClassify(mainClassify,primaryClassifyCh,secondaryClassifyCh, threeValue);
-        logger.info("getSummaryTableByClassify()方法运行结束，返回结果为\n"+JSON.toJSONString(serverResponse));
-        logger.info("============================================");
-        return serverResponse;
+        logger.info(">>>>>>表组织资产的汇总信息查询结束");
+        PageVO<SummaryTableByClassify> pageVO = dataStorageMonitorIndexServiceImpl.getSummaryTableByClassify(mainClassify,primaryClassifyCh,secondaryClassifyCh, threeValue);
+        return ServerResponse.asSucessResponse(pageVO);
     }
 
     /**

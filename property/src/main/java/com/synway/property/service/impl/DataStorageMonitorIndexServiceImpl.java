@@ -409,19 +409,20 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
      * @return
      */
     @Override
-    public ServerResponse<List<SummaryTableByClassify>> getSummaryTableByClassify(String mainClassify, String primaryClassifyCh, String secondaryClassifyCh, String threeValue) {
-        ServerResponse<List<SummaryTableByClassify>> serverResponse;
+    public PageVO<SummaryTableByClassify> getSummaryTableByClassify(String mainClassify, String primaryClassifyCh, String secondaryClassifyCh, String threeValue) {
+        PageVO<SummaryTableByClassify> pageVO = new PageVO<>();
         try {
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
             List<SummaryTableByClassify> allSummaryTableByClassifyList = dataStorageMonitorDao.getAllSummaryTableByClassifyList(
                     mainClassify, primaryClassifyCh, secondaryClassifyCh,threeValue, daysAgo);
-            serverResponse = ServerResponse.asSucessResponse(allSummaryTableByClassifyList);
+            List<String> filterSec = allSummaryTableByClassifyList.stream().map(d -> d.getSecondaryClassifyCh()).distinct().collect(toList());
+            pageVO.setRows(allSummaryTableByClassifyList);
+            pageVO.setFilterSec(filterSec);
         } catch (Exception e) {
             logger.error("获取表组织资产的汇总信息报错\n" + ExceptionUtil.getExceptionTrace(e));
-            serverResponse = ServerResponse.asErrorResponse("获取表组织资产的汇总信息报错");
         }
-        return serverResponse;
+        return pageVO;
     }
 
     @Override
