@@ -4,24 +4,23 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.constant.Common;
-import com.synway.datastandardmanager.dao.master.FieldCodeValDao;
-import com.synway.datastandardmanager.dao.master.ResourceManageDao;
-import com.synway.datastandardmanager.dao.master.StandardResourceManageDao;
+import com.synway.datastandardmanager.dao.master.*;
 import com.synway.datastandardmanager.dao.standard.ResourceManageAddColumnDao;
 import com.synway.datastandardmanager.exceptionhandler.ErrorCode;
 import com.synway.datastandardmanager.exceptionhandler.SystemException;
 import com.synway.datastandardmanager.listener.ExcelListener;
 import com.synway.datastandardmanager.pojo.*;
-import com.synway.datastandardmanager.pojo.enums.FieldType;
-import com.synway.datastandardmanager.pojo.enums.ObjectStateType;
-import com.synway.datastandardmanager.pojo.enums.SynlteFieldType;
+import com.synway.datastandardmanager.pojo.enums.*;
 import com.synway.datastandardmanager.pojo.standardtemplateexcel.ObjectFieldSheet;
 import com.synway.datastandardmanager.pojo.standardtemplateexcel.ObjectTableSheet;
 import com.synway.datastandardmanager.pojo.standardtemplateexcel.TableColumnSheet;
+import com.synway.datastandardmanager.pojo.synlteelement.SynlteElementVO;
+import com.synway.datastandardmanager.pojo.synltefield.SynlteFieldClassEnum;
 import com.synway.datastandardmanager.service.ResourceManageAddService;
 import com.synway.datastandardmanager.service.ResourceManageService;
 import com.synway.datastandardmanager.service.StandardTemplateImportService;
 import com.synway.datastandardmanager.util.*;
+import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -42,6 +41,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -73,6 +73,12 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
     @Autowired
     private ResourceManageDao resourceManageDao;
 
+    @Autowired
+    private SynlteFieldDao synlteFieldDao;
+
+    @Autowired
+    private SynlteElementDao elementDao;
+
     @Autowired()
     private Environment env;
 
@@ -80,11 +86,21 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
 
 
     @Override
-    public void downloadObjectInfoExcel(HttpServletResponse response, String name,List<String> tableIdList) {
+    public void downloadObjectInfoExcel(HttpServletResponse response, String name,List<String> tableIdList) throws IOException {
+        // 设置响应头
+        if (tableIdList.size() > 1){
+            response.setHeader("Content-Disposition","attachment;fileName=" + URLEncoder.encode(name+".zip", "UTF-8"));
+            response.setContentType("application/zip");
+            response.setCharacterEncoding("utf-8");
+        }else {
+            response.setHeader("Content-Disposition","attachment;fileName=" + URLEncoder.encode(name+".xls", "UTF-8"));
+            response.setContentType("application/vnd.ms-excel");
+            response.setCharacterEncoding("utf-8");
+        }
+        ServletOutputStream outputStream = response.getOutputStream();
+        ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
         try{
             logger.info("=====开始导出标准信息=====");
-            ServletOutputStream outputStream = response.getOutputStream();
-
             String[] objectTitles = { "表名","标准表名","源数据名称","对应的数据项描述","表描述","MD_ID取值","主键","过滤列",
                     "分区列","二级分区列","聚集列","加载方式","支持操作类型","ADS(HBASE保存时间)","HDFS源文件保存数","预估数据量","其他要求说明"};
 
@@ -106,16 +122,52 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
 
             //如果大于1条则导出zip文件，1条信息则是excel文件
             if(tableIdList.size() > 1){
-                //压缩文件输出流
-                ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+                // object
+                List<ObjectPojo> objectPojos = resourceManageDao.selectObjectPojoByTableIds(tableIdList);
+                List<InputObjectCreate> allInpuObjectList = standardResourceManageDao.getAllInputObjects(tableIdList);
+                Map<String, List<InputObjectCreate>> allInpuObjectListMap = allInpuObjectList.stream().collect(Collectors.groupingBy(InputObjectCreate::getOutObjEngName));
+                List<FieldCodeVal> fieldCodeVals = resourceManageDao.selectOneSysNames();
+                List<ObjectPojoTable> classifyOnes = resourceManageDao.getClassifyByTableids();
+                // objectfield
+                List<ObjectField> objectFieldLists = resourceManageDao.selectObjectFieldByObjectIds();
+                Map<Long, List<ObjectField>> objectFieldMap = objectFieldLists.stream().collect(Collectors.groupingBy(ObjectField::getObjectId));
+                List<PageSelectOneValue> synlteFieldInfos = synlteFieldDao.getGadsjFieldByTexts();
+                Map<String, List<PageSelectOneValue>> synlteFieldInfoMap = synlteFieldInfos.stream().collect(Collectors.groupingBy(PageSelectOneValue::getValue));
+                List<SynlteElementVO> elementNames = elementDao.searchElementNameByIds();
+                //  获取 表字段信息的 字段分类信息  synltefield. FIELD_CLASS 这个字段里面
+                List<Synltefield> list = resourceManageDao.getCodeTextAndCodeidByObjectFields();
+
                 //将要导出的标准信息都回填
-                for (int i = 0; i<tableIdList.size(); i++){
+                for (int i = 0; i < tableIdList.size(); i++){
                     String tableId = tableIdList.get(i);
+                    ObjectPojo objectInfo = objectPojos.stream().filter(d -> d.getTableId().equalsIgnoreCase(tableId)).findFirst().orElse(new ObjectPojo());
+                    // 获取输入和输出的对应关系
+                    List<InputObjectCreate> inputObjectCreate = new ArrayList<>();
+                    for (String outObjEngName : allInpuObjectListMap.keySet()){
+                        if (outObjEngName.equalsIgnoreCase(tableId)){
+                            inputObjectCreate = allInpuObjectListMap.get(outObjEngName);
+                        }
+                    }
+                    // fieldCodeVal
+                    FieldCodeVal fieldCodeVal = new FieldCodeVal();
+                    if (objectInfo.getTableId() != null && objectInfo.getDataSource() != null){
+                        fieldCodeVal = fieldCodeVals.stream().filter(d -> d.getValValue().equalsIgnoreCase(objectInfo.getDataSource())).findFirst().orElse(new FieldCodeVal());
+                    }
+                    // 字段信息
+                    ObjectPojoTable classifyOne = classifyOnes.stream().filter(d -> d.getTableId().equalsIgnoreCase(tableId)).findFirst().orElse(new ObjectPojoTable());
+                    List<ObjectField> objectFieldList1 = new ArrayList<>();
+                    for (Long objectId : objectFieldMap.keySet()){
+                        if (objectInfo.getObjectId() != null && objectInfo.getObjectId() == objectId){
+                            objectFieldList1 = objectFieldMap.get(objectId);
+                        }
+                    }
                     // 标准表信息
-                    ObjectPojo objectInfo = resourceManageDao.selectObjectPojoByTableId(tableId);
-                    ObjectPojoTable objectPojoInfo = resourceManageService.selectObjectPojoByTableId(tableId);
+//                    ObjectPojoTable objectPojoInfo = resourceManageService.selectObjectPojoByTableId(tableId);
+                    ObjectPojoTable objectPojoInfo = selectObjectPojoByTableIdNew(objectInfo, inputObjectCreate, fieldCodeVal, classifyOne);
                     //查出标准字段信息
-                    List<ObjectField> objectFieldList = resourceManageService.selectObjectFieldByObjectId(tableId);
+//                    List<ObjectField> objectFieldList = resourceManageService.selectObjectFieldByObjectId(tableId);
+                    List<ObjectField> objectFieldList = selectObjectFieldByObjectIdNew(objectInfo, objectFieldList1, synlteFieldInfoMap, elementNames, list);
+
                     // 其他信息注入
                     ExportObjectInfo exportObjectInfo = getExportObjectInfo(objectPojoInfo, objectFieldList);
                     List<ObjectField> objectFields = exportObjectInfo.getObjectFieldInfo();
@@ -124,23 +176,21 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
                         String fieldTypeNew = SynlteFieldType.getSynlteFieldType(Integer.valueOf(objectField.getFieldType())) + "(" + objectField.getFieldLen() + ")";
                         objectField.setFieldType(fieldTypeNew);
                     }
-                    //压缩文件中放入excel文件
-                    zipOutputStream.putNextEntry(new ZipEntry(exportObjectInfo.getTableName()+"@"+exportObjectInfo.getObjectName()+".xls"));
                     //生成workbook
                     HSSFWorkbook workbook = ExcelHelper.exportHorizontalExcelZip(new ExportObjectInfo(), exportObjectInfo, objectInfo, objectFields, objectTitles, standardTableInfoTitles, columnTitles,
                             "表说明","标准表信息", "表字段", objectName,standardTableInfoName, objectFieldName);
-
-                    //字节数组输出流
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                    workbook.write(byteArrayOutputStream);
-                    byteArrayOutputStream.writeTo(zipOutputStream);
-                    zipOutputStream.closeEntry();
-                    IOUtils.closeQuietly(byteArrayOutputStream);
+                    String xlsName = String.format("%s@%s.xls", exportObjectInfo.getTableName(), exportObjectInfo.getObjectName());
+                    try {
+                        //压缩文件中放入excel文件
+                        zipOutputStream.putNextEntry(new ZipEntry(xlsName));
+                        workbook.write(zipOutputStream);
+                        zipOutputStream.closeEntry();
+                        workbook.close();
+                    }catch (IOException e){
+                        logger.error("文件处理失败：{}", xlsName, e);
+                    }
                 }
-                response.setHeader("Content-Disposition","attachment;fileName=" + URLEncoder.encode(name+".zip", "UTF-8"));
-                response.setContentType("application/octet-stream");
-                response.setCharacterEncoding("utf-8");
-                zipOutputStream.finish();
+//                zipOutputStream.finish();
             }else{
                 String tableId = tableIdList.get(0);
                 //根据tableId查询标准信息
@@ -167,18 +217,287 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
                     data.setFieldType(fieldTypeNew);
                 }
                 objectFields.addAll(objectFieldInfo);
-                logger.info("开始导出==========");
-                response.setHeader("Content-Disposition","attachment;fileName=" + URLEncoder.encode(name+".xls", "UTF-8"));
-                response.setContentType("application/vnd.ms-excel");
-                response.setCharacterEncoding("utf-8");
                 //生成excel文件
+                logger.info("开始导出==========");
                 ExcelHelper.exportHorizontalExcel(new ExportObjectInfo(),objects,objectInfo,objectFields,objectTitles,standardTableInfoTitles,columnTitles,
                         "表说明","标准表信息","表字段", objectName,standardTableInfoName,objectFieldName,outputStream);
                 logger.info("导出结束=====================");
             }
+        }catch (ClientAbortException e){
+            logger.error("客户端中断下载：{}", e);
         }catch (Exception e){
-            logger.error("下载标准信息报错"+ ExceptionUtil.getExceptionTrace(e));
+            if (!response.isCommitted()){
+                response.sendError(500, "压缩失败");
+            }
+            logger.error("下载标准信息报错:\n", e);
+        }finally {
+            zipOutputStream.finish();
         }
+    }
+
+    public ObjectPojoTable selectObjectPojoByTableIdNew(ObjectPojo objectInfo,
+                                                        List<InputObjectCreate> allInpuObjectList,
+                                                        FieldCodeVal fieldCodeVal,
+                                                        ObjectPojoTable classifyOne) {
+        ObjectPojoTable oneObjectPojoTable = new ObjectPojoTable();
+        try {
+            if (objectInfo == null) {
+                return oneObjectPojoTable;
+            }
+            if (!StringUtils.isEmpty(objectInfo.getDataLevel())) {
+                objectInfo.setDataLevelVo(ObjectSecurityLevelType.getValueById("1_" + objectInfo.getDataLevel()));
+            }
+            // 拼接对应的数据 object 这个表里面存在的数据
+            // 序号
+            oneObjectPojoTable.setObjectId(String.valueOf(objectInfo.getObjectId()));
+            // 数据名
+            oneObjectPojoTable.setDataSourceName(objectInfo.getObjectName());
+            // 真实表名
+            oneObjectPojoTable.setRealTablename(objectInfo.getTableName());
+
+            //源应用系统名称二级
+            oneObjectPojoTable.setCodeTextTd(String.valueOf(objectInfo.getDataSource()));
+            //根据二级去码表回填一级
+            if (objectInfo.getDataSource() == null){
+                logger.info("源应用系统名称（DATA_SOUCE）为空");
+            }else {
+                oneObjectPojoTable.setParentCodeTextId(fieldCodeVal.getCodeId());
+            }
+
+            oneObjectPojoTable.setTableId(objectInfo.getTableId());
+            // 存储表状态
+            if (objectInfo.getObjectState() != null){
+                oneObjectPojoTable.setStorageTableStatus(ObjectStateType.getObjectStateType(objectInfo.getObjectState()));
+            }
+            // 存储方式
+            if (objectInfo.getStoreType() != null){
+                oneObjectPojoTable.setStorageDataMode(StoreType.getStoreType(objectInfo.getStoreType()));
+            }
+            //更新表类型 20200507 majia添加
+            if (objectInfo.getIsActiveTable() != null){
+                oneObjectPojoTable.setIsActiveTable(objectInfo.getIsActiveTable());
+            }
+            // 厂商 存储方式 存储的数据源
+            List<String> outOobjSourceCodeList = new ArrayList<>();
+            // 源表ID  sourceId 的值 20191118号新增需求
+            oneObjectPojoTable.setSourceId(objectInfo.getSourceId());
+            // 注释的字段信息
+            oneObjectPojoTable.setObjectMemo(objectInfo.getObjectMemo());
+            //数据分级
+            if (!StringUtils.isEmpty(objectInfo.getDataLevel()) && objectInfo.getDataLevel() != null) {
+                if (objectInfo.getDataLevel().length()==1){
+                    oneObjectPojoTable.setDataLevel("0" + objectInfo.getDataLevel());
+                }else {
+                    oneObjectPojoTable.setDataLevel(objectInfo.getDataLevel());
+                }
+            }
+            if (!StringUtils.isEmpty(objectInfo.getDataLevelVo()) && objectInfo.getDataLevelVo() != null) {
+                oneObjectPojoTable.setDataLevelCh(objectInfo.getDataLevelVo());
+            }
+            if(objectInfo.getVersion() != null){
+                oneObjectPojoTable.setVersion(objectInfo.getVersion());
+            }
+            //资源标签
+            if (StringUtils.isNotBlank(objectInfo.getSjzybq1())) {
+                oneObjectPojoTable.setSjzybq1(objectInfo.getSjzybq1());
+            }
+            if (StringUtils.isNotBlank(objectInfo.getSjzybq2())) {
+                oneObjectPojoTable.setSjzybq2(objectInfo.getSjzybq2());
+            }
+            if (StringUtils.isNotBlank(objectInfo.getSjzybq3())) {
+                oneObjectPojoTable.setSjzybq3(objectInfo.getSjzybq3());
+            }
+            if (StringUtils.isNotBlank(objectInfo.getSjzybq4())) {
+                oneObjectPojoTable.setSjzybq4(objectInfo.getSjzybq4());
+            }
+            if (StringUtils.isNotBlank(objectInfo.getSjzybq5())) {
+                oneObjectPojoTable.setSjzybq5(objectInfo.getSjzybq5());
+            }
+            if(StringUtils.isNotBlank(objectInfo.getSjzybq6())){
+                oneObjectPojoTable.setSjzybq6(objectInfo.getSjzybq6());
+            }
+
+
+            List<String> outOobjSourceList = new ArrayList<>();
+            for (InputObjectCreate inputObjectCreate : allInpuObjectList) {
+                Integer sysId = inputObjectCreate.getOutSysId();
+                Integer outOobjSource = inputObjectCreate.getOutOobjSource();
+                outOobjSourceList.add(ManufacturerName.getNameByIndex(outOobjSource));
+                outOobjSourceCodeList.add(String.valueOf(outOobjSource));
+            }
+            if (outOobjSourceCodeList.size() >= 1) {
+                oneObjectPojoTable.setOwnerFactoryCode(outOobjSourceCodeList.get(0));
+                oneObjectPojoTable.setOwnerFactory(outOobjSourceList.get(0));
+            } else {
+                oneObjectPojoTable.setOwnerFactoryCode("0");
+                oneObjectPojoTable.setOwnerFactory("全部");
+            }
+            // TODO 存储数据源信息
+            //  根据 codeTextTd的值获取对应的中文翻译
+            if (StringUtils.isEmpty(oneObjectPojoTable.getCodeTextTd())) {
+                oneObjectPojoTable.setCodeTextCh("");
+            } else {
+                if (StringUtils.isEmpty(fieldCodeVal.getValText())) {
+                    oneObjectPojoTable.setCodeTextCh("错误协议代码");
+                } else {
+                    oneObjectPojoTable.setCodeTextCh(fieldCodeVal.getValText());
+                }
+            }
+            //  获取这个tableid在 数据组织 ， 数据来源的分级分类信息。
+            if (classifyOne != null) {
+                //处理组织分类中文信息
+                String orgClassify = classifyOne.getOrganizationClassify();
+                if (StringUtils.isNotBlank(orgClassify) && orgClassify.endsWith("/")) {
+                    //处理了只有1级分类时(业务要素索引库和其它)
+                    oneObjectPojoTable.setOrganizationClassify(orgClassify.substring(0, orgClassify.length() - 2));
+                } else {
+                    if (orgClassify.contains("原始库")) {
+                        //如果是原始库，则直接赋值3级
+                        oneObjectPojoTable.setOrganizationClassify(orgClassify);
+                    } else {
+                        //非原始库，只赋值1级和2级
+                        oneObjectPojoTable.setOrganizationClassify(orgClassify.split("/")[1] + "/" + orgClassify.split("/")[2]);
+                    }
+                }
+                //处理来源分类中文信息
+                oneObjectPojoTable.setSourceClassify(classifyOne.getSourceClassify());
+                //回填组织分类和来源分类的id值
+                String classIds = classifyOne.getClassIds();
+                if (classIds.contains(",")) {
+                    String[] classIdSplit = classIds.split(",");
+                    List<String> classIdList = Arrays.asList(classIdSplit);
+                    List<String> finalClassIdList = new ArrayList<>();
+
+                    String organizationClassify = Common.DATA_ORGANIZATION_CODE;
+                    for (int i = 0; i < classIdList.size(); i++) {
+                        if (i < classIdList.size() - 1) {
+                            //除原始库外，其它组织分类primary和first存储的一样，所以跳出
+                            if (classIdList.get(i).equalsIgnoreCase(classIdList.get(i + 1))) {
+                                continue;
+                            }
+                        }
+                        String s = classIdList.get(i);
+                        organizationClassify = organizationClassify + s;
+                        finalClassIdList.add(organizationClassify);
+                    }
+                    //拼接后的classId
+                    String realClassIds = StringUtils.join(finalClassIdList, ",");
+                    oneObjectPojoTable.setClassIds(realClassIds);
+                } else {
+                    String realClassIds = Common.DATA_ORGANIZATION_CODE + classIds;
+                    oneObjectPojoTable.setClassIds(realClassIds);
+                }
+
+                //赋值来源分类
+                String sourceClassIds = classifyOne.getSourceClassIds();
+                if (sourceClassIds.contains(",")) {
+                    String[] sourceIdSplit = sourceClassIds.split(",");
+                    List<String> sourceIdList = Arrays.asList(sourceIdSplit);
+                    List<String> finalSourceIdList = new ArrayList<>();
+                    String sourceClassCode = Common.DATA_SOURCE_CODE;
+                    for (String data : sourceIdList) {
+                        sourceClassCode = sourceClassCode + data;
+//						String finalSourceId = Common.DATA_SOURCE_CODE+data;
+                        finalSourceIdList.add(sourceClassCode);
+                    }
+                    //拼接后的classId
+                    String realSourceIds = StringUtils.join(finalSourceIdList, ",");
+                    oneObjectPojoTable.setSourceClassIds(realSourceIds);
+                } else {
+                    String realSourceIds = Common.DATA_SOURCE_CODE + sourceClassIds;
+                    oneObjectPojoTable.setClassIds(realSourceIds);
+                }
+//                oneObjectPojoTable.setClassIds(classifyOne.getClassIds());
+//                oneObjectPojoTable.setSourceClassIds(classifyOne.getSourceClassIds());
+            } else {
+                oneObjectPojoTable.setOrganizationClassify("未知/未知");
+                oneObjectPojoTable.setSourceClassify("未知/未知");
+                oneObjectPojoTable.setClassIds("");
+                oneObjectPojoTable.setSourceClassIds("");
+            }
+            oneObjectPojoTable.setCreateTime(objectInfo.getCreateTime());
+            oneObjectPojoTable.setUpdateTime(objectInfo.getUpdateTimeStr());
+            oneObjectPojoTable.setCreator(objectInfo.getCreator());
+            oneObjectPojoTable.setUpdater(objectInfo.getUpdater());
+        } catch (Exception e) {
+            logger.error("根据tableId获取对象详细信息报错" + ExceptionUtil.getExceptionTrace(e));
+        }
+        return oneObjectPojoTable;
+    }
+
+    public List<ObjectField> selectObjectFieldByObjectIdNew(ObjectPojo objectFieldDemo,
+                                                            List<ObjectField> objectFieldList,
+                                                            Map<String, List<PageSelectOneValue>> synlteFieldInfoMap,
+                                                            List<SynlteElementVO> elementVOList,
+                                                            List<Synltefield> list) {
+        // 先根据 tableId获取对应的objectId
+        try {
+            if (objectFieldDemo == null || objectFieldList == null || objectFieldList.size() == 0) {
+                return new ArrayList<>();
+            }
+            // 获取代码中文名
+            for (ObjectField objectField : objectFieldList) {
+                String fieldId = objectField.getFieldId();
+                if(objectField.getFieldId().indexOf("_") != -1){
+                    fieldId = objectField.getFieldId().split("_")[1];
+                }
+                List<PageSelectOneValue> synlteFieldInfo = new ArrayList<>();
+                for (String fieldId1 : synlteFieldInfoMap.keySet()){
+                    if (fieldId1.equalsIgnoreCase(fieldId)){
+                        synlteFieldInfo = synlteFieldInfoMap.get(fieldId);
+                    }
+                }
+                if (synlteFieldInfo.size() > 0){
+                    PageSelectOneValue value = synlteFieldInfo.get(0);
+                    objectField.setSynlteFieldMemo(value.getMemo());
+                    objectField.setLabel(value.getLabel());
+                }
+
+                if (StringUtils.isEmpty(objectField.getSecurityLevel())) {
+                    objectField.setSecurityLevel("");
+                    objectField.setSecurityLevelCh("");
+                } else {
+                    objectField.setSecurityLevelCh(ObjectSecurityLevelType.getValueById("2_" + objectField.getSecurityLevel()));
+                }
+                // 判断
+                if (StringUtils.isEmpty(objectField.getFieldId()) || objectField.getFieldId().contains("unknown_")) {
+                    objectField.setFieldId("");
+                }
+                if(objectField.getMd5Index() != null && objectField.getMd5Index() != 0){
+                    objectField.setMd5IndexStatus(true);
+                }
+                if (StringUtils.isEmpty(objectField.getFieldId())) {
+                    objectField.setCodeText("");
+                    objectField.setCodeid("");
+                    objectField.setFieldClassId("");
+                    objectField.setFieldClassCh("");
+                    objectField.setSameWordType("");
+                } else {
+                    //20210913 通过标准字段fieldId字段获取对应的数据要素名称
+                    SynlteElementVO elementVO = elementVOList.stream().filter(d -> d.getElementCode().equalsIgnoreCase(objectField.getFieldId())).findFirst().orElse(new SynlteElementVO());
+                    objectField.setElementName(elementVO.getElementChname() != null ? elementVO.getElementChname() : "");
+                    //  获取 表字段信息的 字段分类信息  synltefield. FIELD_CLASS 这个字段里面
+                    if (list.size() > 0) {
+                        Synltefield synltefield = list.stream().filter(d -> d.getFieldid().equalsIgnoreCase(objectField.getFieldId())).findFirst().orElse(new Synltefield());
+                        objectField.setCodeText(synltefield.getCodeText() != null ? synltefield.getCodeText() : "");
+                        objectField.setCodeid(synltefield.getCodeid() != null ? synltefield.getCodeid() : "");
+                        objectField.setFieldClassId(synltefield.getFieldClass() != null ? synltefield.getFieldClass() : "");
+                        objectField.setFieldClassCh(synltefield.getFieldClassCh() != null ? synltefield.getFieldClassCh() : "");
+                        objectField.setSameWordType(synltefield.getWordName() != null ? synltefield.getWordName() : "");
+                    }
+                }
+                if (StringUtils.isNotBlank(objectField.getFieldClassId())){
+                    objectField.setFieldClassCh(SynlteFieldClassEnum.getValueById(objectField.getFieldClassId()));
+                }
+                if (objectField.getPkRecno() != null && objectField.getPkRecno() != 0) {
+                    objectField.setPkRecnoStatus(true);
+                }
+            }
+            return objectFieldList;
+        } catch (Exception e) {
+            logger.error("根据tableId获取字段定义信息报错" + ExceptionUtil.getExceptionTrace(e));
+        }
+        return null;
     }
 
     @Override
@@ -390,57 +709,61 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
         exportObjectInfo.setTableId(objectPojoTable.getTableId());
         exportObjectInfo.setSourceId(objectPojoTable.getSourceId());
         exportObjectInfo.setObjectMemo(objectPojoTable.getObjectMemo());
-        objectFieldList.stream().forEach(d -> {
-            if(d.getMd5Index() != null && d.getMd5Index() != 0){
-                md5IndexList.add(d.getFieldName());
-            }
-            if(d.getPkRecno() != null && d.getPkRecno() != 0){
-                pkRecnoList.add(d.getFieldName());
-            }
-            if(d.getPartitionRecno() != null && d.getPartitionRecno() ==1 ){
-                partitionRecnoList.add(d.getFieldName());
-            }
-            if(d.getPartitionRecno() != null && d.getPartitionRecno() == 2){
-                secondPartitionRecno.add(d.getFieldName());
-            }
-            if(d.getClustRecno() != null && d.getClustRecno() != 0 ){
-                clustRecnoList.add(d.getFieldName());
-            }
-            if (d.getNeedValue() == 0){
-                d.setNeedValueStr("否");
-            }else if (d.getNeedValue() == 1){
-                d.setNeedValueStr("是");
-            }
-            if (d.getIsIndex() == 0){
-                d.setIsIndexStr("否");
-            }else if (d.getIsIndex() == 1){
-                d.setIsIndexStr("是");
-            }
-            if (d.getIsContorl() == 0){
-                d.setIsContorlStr("否");
-            }else if (d.getIsContorl() == 1){
-                d.setIsContorlStr("是");
-            }
-            if (d.getIsPrivate().equalsIgnoreCase("0")){
-                d.setIsPrivate("否");
-            }else if (d.getIsPrivate().equalsIgnoreCase("1")){
-                d.setIsPrivate("是");
-            }
-            if (d.getOraShow() == 0){
-                d.setOraShowStr("否");
-            }else if (d.getOraShow() == 1){
-                d.setOraShowStr("是");
-            }
-        });
+        if (objectFieldList != null && objectFieldList.size() > 0){
+            objectFieldList.stream().forEach(d -> {
+                if(d.getMd5Index() != null && d.getMd5Index() != 0){
+                    md5IndexList.add(d.getFieldName());
+                }
+                if(d.getPkRecno() != null && d.getPkRecno() != 0){
+                    pkRecnoList.add(d.getFieldName());
+                }
+                if(d.getPartitionRecno() != null && d.getPartitionRecno() ==1 ){
+                    partitionRecnoList.add(d.getFieldName());
+                }
+                if(d.getPartitionRecno() != null && d.getPartitionRecno() == 2){
+                    secondPartitionRecno.add(d.getFieldName());
+                }
+                if(d.getClustRecno() != null && d.getClustRecno() != 0 ){
+                    clustRecnoList.add(d.getFieldName());
+                }
+                if (d.getNeedValue() == 0){
+                    d.setNeedValueStr("否");
+                }else if (d.getNeedValue() == 1){
+                    d.setNeedValueStr("是");
+                }
+                if (d.getIsIndex() == 0){
+                    d.setIsIndexStr("否");
+                }else if (d.getIsIndex() == 1){
+                    d.setIsIndexStr("是");
+                }
+                if (d.getIsContorl() == 0){
+                    d.setIsContorlStr("否");
+                }else if (d.getIsContorl() == 1){
+                    d.setIsContorlStr("是");
+                }
+                if (d.getIsPrivate().equalsIgnoreCase("0")){
+                    d.setIsPrivate("否");
+                }else if (d.getIsPrivate().equalsIgnoreCase("1")){
+                    d.setIsPrivate("是");
+                }
+                if (d.getOraShow() == 0){
+                    d.setOraShowStr("否");
+                }else if (d.getOraShow() == 1){
+                    d.setOraShowStr("是");
+                }
+            });
+        }
         exportObjectInfo.setMd5Index(StringUtils.join(md5IndexList,","));
         exportObjectInfo.setPkRecno(StringUtils.join(pkRecnoList,","));
         exportObjectInfo.setPartitionRecno(StringUtils.join(partitionRecnoList,","));
         exportObjectInfo.setSecondPartitionRecno(StringUtils.join(secondPartitionRecno,","));
         exportObjectInfo.setClustRecno(StringUtils.join(clustRecnoList,","));
-        String firstOrganization = objectPojoTable.getOrganizationClassify().split("/")[0];
-        String secondOrganization = objectPojoTable.getOrganizationClassify().split("/")[1];
-        exportObjectInfo.setParOrganizationClassify(firstOrganization);
-        exportObjectInfo.setSecondOrganizationClassify(secondOrganization);
+        if (objectPojoTable.getOrganizationClassify() != null){
+            String firstOrganization = objectPojoTable.getOrganizationClassify().split("/")[0];
+            String secondOrganization = objectPojoTable.getOrganizationClassify().split("/")[1];
+            exportObjectInfo.setParOrganizationClassify(firstOrganization);
+            exportObjectInfo.setSecondOrganizationClassify(secondOrganization);
+        }
         exportObjectInfo.setObjectFieldInfo(objectFieldList);
         return exportObjectInfo;
     }

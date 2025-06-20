@@ -18,6 +18,8 @@ public interface StandardResourceManageDao {
 
 	List<InputObjectCreate> getAllInputObject(@Param("tableId") String tableId);
 
+	List<InputObjectCreate> getAllInputObjects(@Param("tableIds") List<String> tableIds);
+
 
 	List<InputObjectCreate> getAllInputObjectRelation(@Param("tableId") String tableId);
 

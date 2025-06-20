@@ -325,6 +325,15 @@
         </where>
     </select>
 
+    <select id="getGadsjFieldByTexts" resultType="com.synway.datastandardmanager.pojo.PageSelectOneValue">
+        select fieldid as value, fieldchinesename as label, gadsj_fieldId as memo
+          from synlte.SYNLTEFIELD
+         where GADSJ_FIELDID is not null
+           and upper(substr(FIELDID, 0, 3)) != 'WBZ'
+           and STATUS = '05'
+           and field_standard != '99'
+    </select>
+
     <select id="searchSynlteFieldCount" parameterType="java.lang.String" resultType="java.lang.Integer">
         select count(*) from synlte.SYNLTEFIELD
         where fieldid = #{fieldId} and columnName = #{columnName}

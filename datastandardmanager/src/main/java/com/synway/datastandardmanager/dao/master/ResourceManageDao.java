@@ -23,12 +23,17 @@ public interface ResourceManageDao {
     @AuthorControl(tableNames ={"synlte.object","synlte.\"OBJECT\""},columnNames = {"tableid","tableid"})
 	ObjectPojo selectObjectPojoByTableId(@Param("tableId") String tableId);
 
+	@AuthorControl(tableNames ={"synlte.object","synlte.\"OBJECT\""},columnNames = {"tableid","tableid"})
+	List<ObjectPojo> selectObjectPojoByTableIds(@Param("tableIds") List<String> tableIds);
+
 	/**
 	 * 根据表ID获取表字段信息
 	 * @param objectId 表id
 	 * @return
 	 */
 	List<ObjectField> selectObjectFieldByObjectId(@Param("objectId") long objectId);
+
+	List<ObjectField> selectObjectFieldByObjectIds();
 
 
     List<ObjectField> selectObjectFieldByObjectIdQuery(@Param("objectId") long objectId,
@@ -43,6 +48,8 @@ public interface ResourceManageDao {
 	public ObjectField showObjectField(@Param("tableId") String tableId, @Param("fieldId") String fieldId);
 	
 	public List<Map<String,String>> getCodeTextAndCodeidByObjectField(@Param("fieldId") String fieldId);
+
+	public List<Synltefield> getCodeTextAndCodeidByObjectFields();
 
 
     void addObjectField(ObjectField objectField);
@@ -68,6 +75,8 @@ public interface ResourceManageDao {
 
     ObjectPojoTable getClassifyByTableid(@Param("tableId") String tableId);
 
+    List<ObjectPojoTable> getClassifyByTableids();
+
 
 	/**
 	 * 获取源应用系统名称得下拉列表
@@ -81,6 +90,8 @@ public interface ResourceManageDao {
 	 * @return
 	 */
 	FieldCodeVal selectOneSysName(@Param("value") String value);
+
+	List<FieldCodeVal> selectOneSysNames();
 
 	String getSysChiName(@Param("sysCode") String sysCode);
 

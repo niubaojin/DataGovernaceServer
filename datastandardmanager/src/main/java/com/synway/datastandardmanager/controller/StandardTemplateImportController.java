@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class StandardTemplateImportController {
     @RequestMapping(value = "/downloadObjectInfo",produces="application/json;charset=utf-8")
     @ResponseBody
     public void downloadObjectInfoExcel(HttpServletResponse response,
-                                        @RequestBody @Valid List<String> tableIdList){
+                                        @RequestBody @Valid List<String> tableIdList) throws IOException {
         standardTemplateImportServiceImpl.downloadObjectInfoExcel(response,"数据标准导出"+
                 DateUtil.formatDateTime(new Date(),DateUtil.DEFAULT_PATTERN_DATE_SIMPLE),tableIdList);
 

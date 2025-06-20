@@ -13,6 +13,19 @@
             </if>
         </where>
     </select>
+
+    <select id="getAllInputObjects" resultType="com.synway.datastandardmanager.pojo.InputObjectCreate">
+        select
+            f6.sys_id as outSysId ,
+            f6.SYS_SOURCE as outOobjSource,
+            obj_engname as outObjEngName
+        from
+            STANDARDIZE_OUTPUTOBJECT f5
+        inner join STANDARDIZE_OBJECT f6 on
+            f5.OBJ_GUID = f6.obj_guid
+        where f5.OOBJ_STATUS = 1
+    </select>
+
     <!--STANDARDIZE_OBJECT_web-->
     <select id="getAllInputObjectRelation" resultType="com.synway.datastandardmanager.pojo.InputObjectCreate">
         select inputSysId,

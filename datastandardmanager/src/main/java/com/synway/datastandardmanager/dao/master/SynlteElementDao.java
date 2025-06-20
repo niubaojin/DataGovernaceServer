@@ -158,4 +158,6 @@ public interface SynlteElementDao {
      */
     String searchElementNameById(@Param("elementCode")String elementCode);
 
+    List<SynlteElementVO> searchElementNameByIds();
+
 }

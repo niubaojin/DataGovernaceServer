@@ -208,5 +208,9 @@
         select ELEMNTCHNAME from synlte.entity_element where createmode=1 and elemntcode=#{elementCode}
     </select>
 
+    <select id="searchElementNameByIds" resultType="com.synway.datastandardmanager.pojo.synlteelement.SynlteElementVO">
+        select ELEMNTCHNAME as elementChname, elemntcode as elementCode from synlte.entity_element where createmode=1
+    </select>
+
 
 </mapper>

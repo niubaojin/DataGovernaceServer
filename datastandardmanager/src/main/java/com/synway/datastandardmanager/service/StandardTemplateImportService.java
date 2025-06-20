@@ -5,6 +5,8 @@ import com.synway.datastandardmanager.pojo.standardtemplateexcel.ObjectFieldShee
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -19,7 +21,7 @@ public interface StandardTemplateImportService {
      * @param name 文件名
      * @param tableIdList 标准协议列表
      */
-    void downloadObjectInfoExcel(HttpServletResponse response, String name, List<String> tableIdList);
+    void downloadObjectInfoExcel(HttpServletResponse response, String name, List<String> tableIdList) throws IOException;
 
     /**
      * 导出(下载)标准sql文本

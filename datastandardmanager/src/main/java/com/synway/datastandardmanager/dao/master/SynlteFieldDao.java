@@ -196,6 +196,7 @@ public interface SynlteFieldDao {
      */
     List<PageSelectOneValue> getGadsjFieldByText(@Param("searchText")String searchText,@Param("fieldType")String fieldType,
                                                  @Param("fieldId")String fieldId);
+    List<PageSelectOneValue> getGadsjFieldByTexts();
 
     /**
      * 查询数据元是否存在
