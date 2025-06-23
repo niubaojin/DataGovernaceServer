@@ -184,86 +184,78 @@ public class LifeCycleServiceImpl implements LifeCycleService {
             density.setTwoHandle(oldValDensity.getTwoHandle());
             density.setUnstructedData(oldValDensity.getUnstructedData());
         }
-//        try {
-//            //获取所有下游表，然后获取组织分类
-//            String returnObj = restTemplate.getForObject(UrlConstants.DATARELATION_BASEURL +
-//                            "/datarelation/api/externalInterfce/getUpStreamTables" +
-//                            "?projectName={projectName}&tableName={tableName}", String.class, queryParams.getTableProject(),
-//                    queryParams.getTableNameEn());
-//            if (returnObj != null && "1".equals(JSONArray.parseObject(returnObj).getString("status"))) {
-//                List<String> tables = JSONArray.parseObject(returnObj).getJSONArray("data").toJavaList(String.class);
-//                List<DetailedTableByClassify> tableByClassifies = new ArrayList<>();
-//                tables.parallelStream().forEach(
-//                        item -> {
-//                            DetailedTableByClassify table = new DetailedTableByClassify();
-//                            table.setTableProject(item.split("\\.")[0]);
-//                            table.setTableNameEn(item.split("\\.")[1]);
-//                            tableByClassifies.add(table);
-//                        }
-//                );
-//                //获取主题库，资源库，要素库分类
-//                if (tableByClassifies.size() > 0) {
-//                    List<Map> temp = lifeCycleDao.getClassifyNum(tableByClassifies);
-//                    for (Map map : temp) {
-//                        switch ((String) map.get("CLASSIFY")) {
-//                            case "主题库":
-//                                density.setZhutikuUsed(((BigDecimal) map.get("NUM")).intValue());
-//                                break;
-//                            case "资源库":
-//                                density.setZiyuankuUsed(((BigDecimal) map.get("NUM")).intValue());
-//                                break;
-//                            case "业务要素索引库":
-//                                density.setYaosukuUsed(((BigDecimal) map.get("NUM")).intValue());
-//                                break;
-//                            default:
-//                        }
-//                    }
-//                }
-//            }
-//        } catch (Exception e) {
-//            logger.error("价值密度更新失败：调用getUpStreamTables接口失败");
-//        }
-//        try {
-//            //获取被调用工作流和应用系统
-//            String returnObj = restTemplate.getForObject(UrlConstants.DATARELATION_BASEURL +
-//                            "/datarelation/api/externalInterfce/getImpactAnalysisByTableName" +
-//                            "?projectName={projectName}&tableName={tableName}", String.class, queryParams.getTableProject(),
-//                    queryParams.getTableNameEn());
-//            ServerResponse<ImpactAnalysisProperty> resultObj =
-//                    JSON.parseObject(returnObj, new TypeReference<ServerResponse<ImpactAnalysisProperty>>() {
-//                    });
-//            if (resultObj != null) {
-//                ImpactAnalysisProperty property = resultObj.getData();
-//                if (property != null) {
-//                    density.setApplicationUsed(property.getApplicationBloodlineCount());
-//                    density.setWorkflowUsed(property.getWorkFlowCount());
-//                }
-//            }
-//        } catch (Exception e) {
-//            logger.error("价值密度更新失败：调用getImpactAnalysisByTableName接口失败");
-//        }
-        //TODO 标签未确定
-        double numerator = density.getTextHandle() + density.getTwoHandle() + density.getUnstructedData()
-                + density.getWorkflowUsed() + density.getApplicationUsed() + density.getZhutikuUsed() +
-                density.getZiyuankuUsed() + density.getYaosukuUsed() + density.getTagUsed();
-        //数据信息价值,针对原始库、业务生产库有效，非这两种库的表不参与计算
-        double part = 0;
-        if ("原始库".equals(queryParams.getPrimaryOrganizationCh()) || "业务生产库".equals(queryParams.getSecondaryOrganizationCh())) {
-            part = 1 + 1 + 1;
-        }
-        double denominator = part + (density.getWorkflowUsed() == 0 ? 1 : density.getWorkflowUsed()) +
-                (density.getApplicationUsed() == 0 ? 1 : density.getApplicationUsed()) +
-                (density.getZhutikuUsed() == 0 ? 1 : density.getZhutikuUsed()) +
-                (density.getZiyuankuUsed() == 0 ? 1 : density.getZiyuankuUsed()) +
-                (density.getYaosukuUsed() == 0 ? 1 : density.getYaosukuUsed()) +
-                (density.getTagUsed() == 0 ? 1 : density.getTagUsed());
-        BigDecimal bg = BigDecimal.valueOf(numerator / denominator);
-        double val = bg.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-        density.setValDensity(val);
-        if(oldValDensity == null) {
-            lifeCycleDao.insertValDensity(queryParams, density);
-        } else if(updateFlag){
-            lifeCycleDao.updateValDensity(queryParams, density);
+        try {
+            //请求参数
+            JSONObject queryParam = new JSONObject();
+            queryParam.put("platformType", queryParams.getPlatformType());
+            queryParam.put("tableProject", queryParams.getTableProject());
+            queryParam.put("tableNameEn", queryParams.getTableNameEn());
+
+            //获取所有下游表，然后获取组织分类
+            JSONObject targetTablesJson = restTemplate.postForObject(UrlConstants.DATARELATION_BASEURL + "/getTargetTables", queryParam, JSONObject.class);
+            if (targetTablesJson != null && targetTablesJson.getBoolean("success")) {
+                List<ValDensityPageParam> datas = targetTablesJson.getJSONArray("data").toJavaList(ValDensityPageParam.class);
+                List<DetailedTableByClassify> tableByClassifies = new ArrayList<>();
+                datas.stream().forEach(data ->{
+                    DetailedTableByClassify table = new DetailedTableByClassify();
+                    table.setTableProject(data.getTableProject());
+                    table.setTableNameEn(data.getTableNameEn());
+                    tableByClassifies.add(table);
+                });
+                //获取主题库，资源库，要素库分类
+                if (tableByClassifies.size() > 0) {
+                    List<Map> temp = lifeCycleDao.getClassifyNum(tableByClassifies);
+                    for (Map map : temp) {
+                        switch ((String) map.get("CLASSIFY")) {
+                            case "主题库":
+                                density.setZhutikuUsed(((BigDecimal) map.get("NUM")).intValue());
+                                break;
+                            case "资源库":
+                                density.setZiyuankuUsed(((BigDecimal) map.get("NUM")).intValue());
+                                break;
+                            case "业务要素索引库":
+                                density.setYaosukuUsed(((BigDecimal) map.get("NUM")).intValue());
+                                break;
+                            default:
+                        }
+                    }
+                }
+            }
+            //获取被调用工作流和应用系统
+            JSONObject impactStatisticJson = restTemplate.postForObject(UrlConstants.DATARELATION_BASEURL + "/getImpactStatistic", queryParam, JSONObject.class);
+            if (impactStatisticJson != null && impactStatisticJson.getBoolean("success")) {
+                ImpactAnalysisProperty property = impactStatisticJson.getJSONObject("data").toJavaObject(ImpactAnalysisProperty.class);
+                if (property != null) {
+                    density.setApplicationUsed(property.getAppCount());
+                    density.setWorkflowUsed(property.getWorkFlowCount());
+                }
+            }
+
+            //TODO 标签未确定
+            double numerator = density.getTextHandle() + density.getTwoHandle() + density.getUnstructedData()
+                    + density.getWorkflowUsed() + density.getApplicationUsed() + density.getZhutikuUsed() +
+                    density.getZiyuankuUsed() + density.getYaosukuUsed() + density.getTagUsed();
+            //数据信息价值,针对原始库、业务生产库有效，非这两种库的表不参与计算
+            double part = 0;
+            if ("原始库".equals(queryParams.getPrimaryOrganizationCh()) || "业务生产库".equals(queryParams.getSecondaryOrganizationCh())) {
+                part = 1 + 1 + 1;
+            }
+            double denominator = part + (density.getWorkflowUsed() == 0 ? 1 : density.getWorkflowUsed()) +
+                    (density.getApplicationUsed() == 0 ? 1 : density.getApplicationUsed()) +
+                    (density.getZhutikuUsed() == 0 ? 1 : density.getZhutikuUsed()) +
+                    (density.getZiyuankuUsed() == 0 ? 1 : density.getZiyuankuUsed()) +
+                    (density.getYaosukuUsed() == 0 ? 1 : density.getYaosukuUsed()) +
+                    (density.getTagUsed() == 0 ? 1 : density.getTagUsed());
+            BigDecimal bg = BigDecimal.valueOf(numerator / denominator);
+            double val = bg.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+            density.setValDensity(val);
+            if(oldValDensity == null) {
+                lifeCycleDao.insertValDensity(queryParams, density);
+            } else if(updateFlag){
+                lifeCycleDao.updateValDensity(queryParams, density);
+            }
+        } catch (Exception e) {
+            logger.error("价值密度更新失败，调用血缘接口失败：\n", e);
         }
         return density;
     }

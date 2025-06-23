@@ -66,7 +66,7 @@ public class UrlConstants {
     /**
      * 数据血缘
      */
-    public static final String DATARELATION_BASEURL = "http://datarelation";
+    public static final String DATARELATION_BASEURL = "http://datarelation/datarelation/api";
 
     /**
      * 数据运维

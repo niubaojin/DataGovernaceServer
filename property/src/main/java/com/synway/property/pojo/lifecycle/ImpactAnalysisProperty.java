@@ -1,5 +1,7 @@
 package com.synway.property.pojo.lifecycle;
 
+import lombok.Data;
+
 import java.io.Serializable;
 
 /**
@@ -7,6 +9,7 @@ import java.io.Serializable;
  * @description
  * @date 2021/3/3 10:52
  */
+@Data
 public class ImpactAnalysisProperty implements Serializable {
 
     /**
@@ -16,21 +19,6 @@ public class ImpactAnalysisProperty implements Serializable {
     /**
      * 这张表直接涉及到的应用血缘信息 数量
      */
-    private int applicationBloodlineCount;
+    private int appCount;
 
-    public int getWorkFlowCount() {
-        return workFlowCount;
-    }
-
-    public void setWorkFlowCount(int workFlowCount) {
-        this.workFlowCount = workFlowCount;
-    }
-
-    public int getApplicationBloodlineCount() {
-        return applicationBloodlineCount;
-    }
-
-    public void setApplicationBloodlineCount(int applicationBloodlineCount) {
-        this.applicationBloodlineCount = applicationBloodlineCount;
-    }
 }
