@@ -682,10 +682,4 @@ comment on column OPERATE_LOG.LOGTIME
 comment on column OPERATE_LOG.DATACOUNT
     is '数据量';
 
------------------------------------------------------------------------------------------------------
--- CREATE OR REPLACE VIEW synlte.V_DS_DATA_RESOURCE AS
--- SELECT  ds.RES_ID, ds.RES_NAME, ds.RES_TYPE, ds.STATUS, ds.CONNECT_INFO,
---     dc.CENTER_NAME, ds.VERSION, ds.IS_LOCAL, ds.REMARK,  ds.APPROVED, ds.GMT_CREATE, ds.GMT_MODIFIED
--- FROM SYNDG.DS_DATA_RESOURCE ds LEFT JOIN SYNDG.ds_data_center dc
--- ON ds.CENTER_ID = dc.CENTER_ID;
 
