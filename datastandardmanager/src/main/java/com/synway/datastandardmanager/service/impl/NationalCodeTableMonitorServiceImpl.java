@@ -9,6 +9,7 @@ import com.synway.datastandardmanager.pojo.Fieldcode;
 import com.synway.datastandardmanager.pojo.TreeNode;
 import com.synway.datastandardmanager.service.NationalCodeTableMonitorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import com.synway.datastandardmanager.pojo.FieldCodeVal;
 import com.synway.datastandardmanager.pojo.Fieldcode;
@@ -26,19 +27,23 @@ public class NationalCodeTableMonitorServiceImpl implements NationalCodeTableMon
     @Autowired
     private NationalCodeTableMonitorDao nationalCodeTableMonitorDao;
 
+    @Autowired
+    private Environment env;
+
 
     @Override
     public String codeTextQuery(String codeText) {
         List<TreeNode> treeNodeLists=new ArrayList<TreeNode>();
         //获取一级节点
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
         List<Map<String,Object>> treeNodes = nationalCodeTableMonitorDao.codeTextQuery(codeText);
         for(int i=0;i<treeNodes.size();i++){
             TreeNode treeNode = new TreeNode();
             Map<String,Object> map = treeNodes.get(i);
-            treeNode.setText(String.valueOf(map.get("CODETEXT")));
+            treeNode.setText(String.valueOf(isHailiang ? map.get("codetext") : map.get("CODETEXT")));
             treeNode.setIcon("");
             List<Object> tabs=new ArrayList<Object>();
-            tabs.add(map.get("CODEID"));
+            tabs.add(isHailiang ? map.get("codeid") : map.get("CODEID"));
             treeNode.setTabs(tabs);
             treeNodeLists.add(treeNode);
         }

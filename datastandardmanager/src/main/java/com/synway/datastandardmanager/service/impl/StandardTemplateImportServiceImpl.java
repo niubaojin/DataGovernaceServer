@@ -825,7 +825,8 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
         //查询大版本和设置小版本
         String searchVersion = fieldCodeValDao.searchVersion();
         JSONObject parse = (JSONObject) JSON.parse(searchVersion);
-        String versions = (String) parse.get("objectVersions");
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+        String versions = isHailiang ? parse.getString("objectVersions") : parse.getString("objectVersions");
         addObjectInfo.setVersions(versions);
 
         addObjectInfo.setSjzybq1(objectTableSheet.getSjzybq1());
@@ -891,7 +892,8 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
         //查询赋值大版本
         String searchVersion = fieldCodeValDao.searchVersion();
         JSONObject parse = (JSONObject) JSON.parse(searchVersion);
-        String versions = (String) parse.get("objectVersions");
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+        String versions = isHailiang ? parse.getString("objectVersions") : parse.getString("objectVersions");
         objectField.setVersion0(versions);
         objectField.setIsPrivate("是".equalsIgnoreCase(tableColumnSheet.getIsPrivateCh()) ? 1 : 0);
         objectField.setStandardRecno(tableColumnSheet.getStandardRecno() != null? tableColumnSheet.getStandardRecno():0);

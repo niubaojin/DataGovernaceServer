@@ -403,7 +403,8 @@ public class SynlteFieldServiceImpl implements SynlteFieldService {
         //大版本 从版本管理中读取
         String version = fieldCodeValDao.searchVersion();
         JSONObject parse = (JSONObject) JSON.parse(version);
-        String versions = (String) parse.get("synlteFieldVersions");
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+        String versions = isHailiang ? parse.getString("synltefieldversions") : parse.getString("synlteFieldVersions");
         synlteFieldObject.setVersions(versions);
         oldSynlteFieldObject.setFieldClassCh(synlteFieldObject.getFieldClassCh());
         oldSynlteFieldObject.setFieldChineseName(synlteFieldObject.getFieldChineseName());

@@ -16,6 +16,7 @@ import com.synway.property.pojo.DetailedTableByClassify;
 import com.synway.property.pojo.LoginUser;
 import com.synway.property.pojo.lifecycle.*;
 import com.synway.property.service.LifeCycleService;
+import com.synway.property.util.CacheManager;
 import com.synway.property.util.ExceptionUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
     private RestTemplate restTemplate;
 
     @Autowired
-    private Environment environment;
+    private CacheManager cacheManager;
 
     /**
      * 生命周期页面
@@ -108,7 +109,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
         List<LifeCyclePageReturn.FilterObject> projectNameList = new ArrayList<>();
         List<LifeCyclePageReturn.FilterObject> updateTypeList = new ArrayList<>();
         List<LifeCyclePageReturn.FilterObject> partitionList = new ArrayList<>();
-        String databaseType = environment.getProperty("database.type");
+        String databaseType = cacheManager.getValue("dsType").toString();
 //        logger.info("数据库类型是：" + databaseType);
         for (Map<String, String> element : filterList) {
             LifeCyclePageReturn.FilterObject filterObject = new LifeCyclePageReturn.FilterObject();
@@ -156,8 +157,14 @@ public class LifeCycleServiceImpl implements LifeCycleService {
         Map map = new HashMap<>();
         ValDensity oldValDensity = lifeCycleDao.getOldValDensity(queryParams);
         Map<String, String> classifyMap = lifeCycleDao.getOrganizationClassify(queryParams);
-        queryParams.setPrimaryOrganizationCh(classifyMap.get("PRIMARY_ORGANIZATION_CH"));
-        queryParams.setSecondaryOrganizationCh(classifyMap.get("SECONDARY_ORGANIZATION_CH"));
+        boolean isHailiang = cacheManager.getValue("dsType").toString().equalsIgnoreCase("hailiang");
+        if (isHailiang){
+            queryParams.setPrimaryOrganizationCh(classifyMap.get("primary_organization_ch"));
+            queryParams.setSecondaryOrganizationCh(classifyMap.get("secondary_organization_ch"));
+        }else {
+            queryParams.setPrimaryOrganizationCh(classifyMap.get("PRIMARY_ORGANIZATION_CH"));
+            queryParams.setSecondaryOrganizationCh(classifyMap.get("SECONDARY_ORGANIZATION_CH"));
+        }
         ValDensity newValDensity = updateValDensity(oldValDensity, queryParams, false);
         boolean flag = false;
         if (oldValDensity == null ||
@@ -172,8 +179,13 @@ public class LifeCycleServiceImpl implements LifeCycleService {
         map.put("updateStatus", flag);
         map.put("oldValDensity", oldValDensity);
         map.put("newValDensity", newValDensity);
-        map.put("primaryOrganizationCh", classifyMap.get("PRIMARY_ORGANIZATION_CH"));
-        map.put("secondaryOrganizationCh", classifyMap.get("SECONDARY_ORGANIZATION_CH"));
+        if (isHailiang){
+            map.put("primaryOrganizationCh", classifyMap.get("primary_organization_ch"));
+            map.put("secondaryOrganizationCh", classifyMap.get("secondary_organization_ch"));
+        }else {
+            map.put("primaryOrganizationCh", classifyMap.get("PRIMARY_ORGANIZATION_CH"));
+            map.put("secondaryOrganizationCh", classifyMap.get("SECONDARY_ORGANIZATION_CH"));
+        }
         return map;
     }
 
@@ -205,16 +217,18 @@ public class LifeCycleServiceImpl implements LifeCycleService {
                 //获取主题库，资源库，要素库分类
                 if (tableByClassifies.size() > 0) {
                     List<Map> temp = lifeCycleDao.getClassifyNum(tableByClassifies);
+                    boolean isHailiang = cacheManager.getValue("dsType").toString().equalsIgnoreCase("hailiang");
                     for (Map map : temp) {
-                        switch ((String) map.get("CLASSIFY")) {
+                        int usedNum = (isHailiang ? (BigDecimal) map.get("num") : (BigDecimal) map.get("NUM")).intValue();
+                        switch (isHailiang ? (String) map.get("classify") : (String) map.get("CLASSIFY")) {
                             case "主题库":
-                                density.setZhutikuUsed(((BigDecimal) map.get("NUM")).intValue());
+                                density.setZhutikuUsed(usedNum);
                                 break;
                             case "资源库":
-                                density.setZiyuankuUsed(((BigDecimal) map.get("NUM")).intValue());
+                                density.setZiyuankuUsed(usedNum);
                                 break;
                             case "业务要素索引库":
-                                density.setYaosukuUsed(((BigDecimal) map.get("NUM")).intValue());
+                                density.setYaosukuUsed(usedNum);
                                 break;
                             default:
                         }

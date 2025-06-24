@@ -139,6 +139,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                 return new ArrayList<>();
             }
             List<ObjectField> objectFieldList = resourceManageDao.selectObjectFieldByObjectId(objectFieldDemo.getObjectId());
+            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
             // 获取代码中文名
             for (ObjectField objectField : objectFieldList) {
                 if(objectField.getFieldId().indexOf("_") != -1){
@@ -194,11 +195,11 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                         if (map == null) {
                             continue;
                         }
-                        codeText = map.get("codeText");
-                        codeId = map.get("codeId");
-                        fieldClass = map.get("fieldClass");
-                        fieldClassCh = map.get("fieldClassCh");
-                        sameWordType = map.get("sameWordType");
+                        codeText = isHailiang ? map.get("codetext") : map.get("codeText");
+                        codeId = isHailiang ? map.get("codeid") : map.get("codeId");
+                        fieldClass = isHailiang ? map.get("fieldclass") : map.get("fieldClass");
+                        fieldClassCh = isHailiang ? map.get("fieldclassch") : map.get("fieldClassCh");
+                        sameWordType = isHailiang ? map.get("samewordtype") : map.get("sameWordType");
                         objectField.setCodeText(StringUtils.isEmpty(codeText) ? "" : codeText);
                         objectField.setCodeid(StringUtils.isEmpty(codeId) ? "" : codeId);
                         objectField.setFieldClassId(StringUtils.isEmpty(fieldClass) ? "" : fieldClass);
@@ -626,6 +627,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
         }
         // 先判断在这张表中输入的fieldId是否已经存在，如果存在，返回报错信息，提示页面
         int fieldNeedCount = resourceManageAddColumnDao.getcolumnCountByFieldId(objectField.getObjectId(), objectField.getColumnName());
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
         if (fieldNeedCount == 1) {
             // 如果为1，表示属于更新操作，更新数据
             //20210818 新增需求 并将之前的数据存储到历史表中
@@ -639,7 +641,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             //大版本 从版本管理中读取
             String version0 = fieldCodeValDao.searchVersion();
             JSONObject parse = (JSONObject) JSON.parse(version0);
-            String versions = parse != null ? (String) parse.get("synlteFieldVersions") : "1.0";
+            String versions = parse != null ? (isHailiang ? parse.getString("synltefieldversions") : parse.getString("synlteFieldVersions")) : "1.0";
             copyObjectField.setVersion0(versions);
             copyObjectField.setMemo(objectField.getMemo() == null ? "" : objectField.getMemo());
             if (copyObjectField.getPartitionRecno() == null){
@@ -659,7 +661,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             //大版本 从版本管理中读取
             String version0 = fieldCodeValDao.searchVersion();
             JSONObject parse = StringUtils.isNotBlank(version0) ? (JSONObject) JSON.parse(version0) : new JSONObject();
-            String versions = (String) parse.get("synlteFieldVersions");
+            String versions = isHailiang ? parse.getString("synltefieldversions") : parse.getString("synlteFieldVersions");
             objectField.setVersion0(StringUtils.isNotBlank(versions) ? versions : "");
             int addCount = resourceManageAddColumnDao.addObjectField(objectField);
             if (addCount == 1) {
@@ -940,8 +942,9 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                 Map<String, Integer> queryIsExistMap = standardResourceManageDao.selectDataIsExist(outputGuid,
                         inputObjectCreate.objGuid == null ? "null" : inputObjectCreate.objGuid,
                         inputObjectCreate.inputIobjSource == null ? 0 : inputObjectCreate.inputIobjSource);
-                int usedCount = Integer.valueOf(String.valueOf(queryIsExistMap.get("USEDCOUNT")));
-                int disableUsedCount = Integer.valueOf(String.valueOf(queryIsExistMap.get("DISABLEUSEDCOUNT")));
+                boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+                int usedCount = Integer.valueOf(String.valueOf(isHailiang ? queryIsExistMap.get("usedcount") : queryIsExistMap.get("USEDCOUNT")));
+                int disableUsedCount = Integer.valueOf(String.valueOf(isHailiang ? queryIsExistMap.get("disableusedcount") : queryIsExistMap.get("DISABLEUSEDCOUNT")));
                 // 如果都为0，表示在数据库中没有该条数据
                 if (usedCount == 0 && disableUsedCount == 0) {
                     // 拼接成需要插入的数据 然后将数据插入到表中
@@ -1098,11 +1101,12 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             oneSynltefield.setFieldtypeName(SynlteFieldType.getSynlteFieldType(oneSynltefield.getFieldtype()));
             // 20210601 需要获取到分类信息
             List<Map<String, String>> list = resourceManageDao.getCodeTextAndCodeidByObjectField(oneSynltefield.getFieldid());
+            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
             if (!list.isEmpty()) {
                 Map<String, String> map = list.get(0);
                 if (map != null) {
-                    String fieldClass = map.get("fieldClass");
-                    String fieldClassCh = map.get("fieldClassCh");
+                    String fieldClass = isHailiang ? map.get("fieldclass") : map.get("fieldClass");
+                    String fieldClassCh = isHailiang ? map.get("fieldclassch") : map.get("fieldClassCh");
                     oneSynltefield.setFieldClass(StringUtils.isBlank(fieldClass) ? "" : fieldClass);
                     oneSynltefield.setFieldClassCh(StringUtils.isBlank(fieldClassCh) ? "" : fieldClassCh);
                 }
@@ -1299,7 +1303,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             //查询大版本和设置小版本
             String searchVersion = fieldCodeValDao.searchVersion();
             JSONObject parse = StringUtils.isNotBlank(searchVersion) ? (JSONObject) JSON.parse(searchVersion) : new JSONObject();
-            String versions = (String) parse.get("objectVersions");
+            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+            String versions = isHailiang ? parse.getString("objectversions") : parse.getString("objectVersions");
 
             // 注入标准表objectPojoTable其他信息
             injectObjectPojoTable(objectPojoTable, factory, versions);
@@ -1928,6 +1933,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             List<ObjectField> objectFieldList = resourceManageDao.selectObjectFieldByObjectIdQuery(objectFieldDemo.getObjectId(),
                     searchInput, searchType);
             // 获取代码中文名
+            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
             for (ObjectField objectField : objectFieldList) {
                 String codeText = null;
                 String codeId = null;
@@ -1939,8 +1945,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                     list = resourceManageDao.getCodeTextAndCodeidByObjectField(objectField.getFieldId());
                     if (list.size() != 0) {
                         Map<String, String> map = list.get(0);
-                        codeText = map.get("codeText");
-                        codeId = map.get("codeId");
+                        codeText = isHailiang ? map.get("codetext") : map.get("codeText");
+                        codeId = isHailiang ? map.get("codeid") : map.get("codeId");
                         objectField.setCodeText(codeText);
                         objectField.setCodeid(codeId);
                     }

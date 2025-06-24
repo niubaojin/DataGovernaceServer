@@ -82,6 +82,9 @@ public class InitData implements ApplicationRunner {
                 cacheManager.addOrUpdateCache("dataPlatFormType", "huaweiyun");
             }
         });
+
+        // 数据库类型
+        cacheManager.addOrUpdateCache("dsType", environment.getProperty("database.type"));
     }
 
 }

@@ -17,6 +17,7 @@ import com.synway.datastandardmanager.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 
@@ -44,6 +45,9 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
 
     @Resource
     private OperateLogServiceImpl operateLogServiceImpl;
+
+    @Autowired
+    private Environment env;
 
     private static final Lock lock = new ReentrantLock();
 
@@ -137,7 +141,8 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
         //大版本 从版本管理中读取
         String version = fieldCodeValDao.searchVersion();
         JSONObject parse = (JSONObject) JSON.parse(version);
-        String versions = (String) parse.get("fieldDeterminerVersions");
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+        String versions = isHailiang ? parse.getString("fielddeterminerversions") : parse.getString("fieldDeterminerVersions");
         data.setVersions(versions);
         //  版本发布日期 date   YYYYMMDD
         Date date = null ;
@@ -218,7 +223,8 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
             //大版本号 从系统配置获取
             String version = fieldCodeValDao.searchVersion();
             JSONObject parse = (JSONObject) JSON.parse(version);
-            String versions = (String) parse.get("fieldDeterminerVersions");
+            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
+            String versions = isHailiang ? parse.getString("fielddeterminerversions") : parse.getString("fieldDeterminerVersions");
             data.setVersions(versions);
 
             int updateNum = fieldDeterminerDao.upOneData(data);

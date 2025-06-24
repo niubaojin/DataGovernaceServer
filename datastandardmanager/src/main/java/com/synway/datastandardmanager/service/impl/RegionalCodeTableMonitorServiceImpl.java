@@ -8,6 +8,7 @@ import com.synway.datastandardmanager.pojo.RegionalCodeTable;
 import com.synway.datastandardmanager.pojo.TreeNode;
 import com.synway.datastandardmanager.service.RegionalCodeTableMonitorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.text.Collator;
@@ -24,18 +25,22 @@ public class RegionalCodeTableMonitorServiceImpl implements RegionalCodeTableMon
     @Autowired
     private RegionalCodeTableMonitorDao regionalCodeTableMonitorDao;
 
+    @Autowired
+    private Environment env;
+
     @Override
     public String createDMZDZWMTree(String dmzdzwm) {
         List<TreeNode> treeNodeLists=new ArrayList<TreeNode>();
         //获取一级节点
         List<Map<String,Object>> treeNodes = regionalCodeTableMonitorDao.createDMZDZWMTree(dmzdzwm);
+        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
         for(int i=0;i<treeNodes.size();i++){
             TreeNode treeNode = new TreeNode();
             Map<String,Object> map = treeNodes.get(i);
-            treeNode.setText(String.valueOf(map.get("DMZDZWM")));
+            treeNode.setText(String.valueOf(isHailiang ? map.get("dmzdzwm") : map.get("DMZDZWM")));
             treeNode.setIcon("");
             List<Object> tabs=new ArrayList<Object>();
-            tabs.add(map.get("DMZD"));
+            tabs.add(isHailiang ? map.get("dmzd") : map.get("DMZD"));
             treeNode.setTabs(tabs);
             treeNodeLists.add(treeNode);
         }

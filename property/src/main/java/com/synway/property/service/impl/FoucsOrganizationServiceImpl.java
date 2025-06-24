@@ -10,6 +10,7 @@ import com.synway.property.pojo.*;
 import com.synway.property.pojo.formorganizationindex.ClassifyInfo;
 import com.synway.property.pojo.formorganizationindex.ClassifyInfoTree;
 import com.synway.property.service.FoucsOrganizationService;
+import com.synway.property.util.CacheManager;
 import com.synway.property.util.ExceptionUtil;
 import com.synway.common.bean.ServerResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +44,9 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
 
     @Autowired
     private DataMonitorDao dataMonitorDao;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     /**
      * 获取所有的重点组织信息
@@ -318,11 +322,12 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
     }
 
     private void getTableNameCh(List<String> dataNameList, List recordsNumberList, List<Map<String, Object>> resultList) {
+        boolean isHailiang = cacheManager.getValue("dsType").toString().equalsIgnoreCase("hailiang");
         resultList.forEach(oneMap-> {
-            String tableName = String.valueOf(oneMap.get("tablenamezh"));
+            String tableName = String.valueOf(isHailiang ? oneMap.get("tablenamezh") : oneMap.get("TABLENAMEZH"));
             double tableCount = 0L;
-            if (oneMap.get("total") != null) {
-                tableCount = Double.valueOf(oneMap.get("total").toString());
+            if ( (isHailiang ? oneMap.get("total") : oneMap.get("TOTAL")) != null) {
+                tableCount = Double.valueOf(isHailiang ? oneMap.get("total").toString() : oneMap.get("TOTAL").toString());
             }
             dataNameList.add(tableName);
             recordsNumberList.add(tableCount);

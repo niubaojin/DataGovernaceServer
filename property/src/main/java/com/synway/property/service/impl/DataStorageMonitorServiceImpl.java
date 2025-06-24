@@ -1026,8 +1026,12 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                     : dataStorageMonitorDao.getOdpsAdsUsedCapacity();
             List<Map<String, Object>> ossFileCount = dataStorageMonitorDao.getOssFileCount();
             // odps/ads
+            boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
             for (Map<String, Object> row : allPlatformCountList) {
                 String platformType = String.valueOf(row.get("TABLETYPE")).toUpperCase();
+                if (isHailiang){
+                    platformType = String.valueOf(row.get("tabletype")).toUpperCase();
+                }
                 if ("ODPS".equals(platformType) || "ADS".equals(platformType)) {
                     addAliDatabaseState(dataBaseStates, platTableSumList, row, allOdpsAdsSizelist);
                 }
@@ -1072,16 +1076,17 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                                      List<DataBaseState> platTableSumList,
                                      Map<String, Object> row,
                                      List<Map<String, Object>> allOdpsAdsSizelist) {
-        String platformType = String.valueOf(row.get("TABLETYPE")).toUpperCase();
+        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
+        String platformType = String.valueOf(isHailiang ? row.get("tabletype") : row.get("TABLETYPE")).toUpperCase();
         DataBaseState dataBaseState = new DataBaseState();
         dataBaseState.setName(platformType);
         dataBaseState = getTableSum(platTableSumList, dataBaseState, platformType);
-        dataBaseState.setTableCount(String.valueOf(row.get("DATABASE_COUNT")));
+        dataBaseState.setTableCount(String.valueOf(isHailiang ? row.get("database_count") : row.get("DATABASE_COUNT")));
 
         Map<String, Object> odpsAdsSize = findOdpsAdsSize(allOdpsAdsSizelist, platformType);
         if (odpsAdsSize != null) {
-            dataBaseState.setUsedCapacity(String.valueOf(odpsAdsSize.get("USED_CAPACITY")));
-            dataBaseState.setBareCapacity(String.valueOf(odpsAdsSize.get("BARE_CAPACITY")));
+            dataBaseState.setUsedCapacity(String.valueOf(isHailiang ? odpsAdsSize.get("used_capacity") : odpsAdsSize.get("USED_CAPACITY")));
+            dataBaseState.setBareCapacity(String.valueOf(isHailiang ? odpsAdsSize.get("bare_capacity") : odpsAdsSize.get("BARE_CAPACITY")));
             if ("ODPS".equals(platformType)) {
                 dataBaseState.setLiveTableRote(dataStorageMonitorDao.getOdpsLiveRote());
             }
@@ -1091,21 +1096,22 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     private void addAliOssDatahubDatabaseState(List<DataBaseState> dataBaseStates, List<Map<String, Object>> allOdpsAdsSizelist, List<DataBaseState> platTableSumList, List<Map<String, Object>> ossFileCount){
         if (allOdpsAdsSizelist != null && !allOdpsAdsSizelist.isEmpty() &&
                 (containsNameInList(allOdpsAdsSizelist, "OSS") || containsNameInList(allOdpsAdsSizelist, "DATAHUB"))) {
+            boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
             Map<String, DataBaseState> states = new HashMap<>();
             states.put("OSS", new DataBaseState());
             states.put("DATAHUB", new DataBaseState());
             for (Map<String, Object> oneRow1 : allOdpsAdsSizelist) {
-                String name = String.valueOf(oneRow1.get("NAME")).toUpperCase();
+                String name = String.valueOf(isHailiang ? oneRow1.get("name") : oneRow1.get("NAME")).toUpperCase();
                 if (states.containsKey(name)) {
                     DataBaseState state = states.get(name);
                     state.setName(name);
                     state = getTableSum(platTableSumList, state, name.toLowerCase());
-                    state.setUsedCapacity(String.valueOf(oneRow1.get("USED_CAPACITY")));
-                    state.setBareCapacity(String.valueOf(oneRow1.get("BARE_CAPACITY")));
+                    state.setUsedCapacity(String.valueOf(isHailiang ? oneRow1.get("used_capacity") : oneRow1.get("USED_CAPACITY")));
+                    state.setBareCapacity(String.valueOf(isHailiang ? oneRow1.get("bare_capacity") : oneRow1.get("BARE_CAPACITY")));
                     if ("OSS".equals(name)) {
                         for (Map<String, Object> oneline : ossFileCount) {
-                            if ("OSS".equalsIgnoreCase(String.valueOf(oneline.get("NAME")))) {
-                                state.setTableCount(String.valueOf(oneline.get("FILECOUNT")));
+                            if ("OSS".equalsIgnoreCase(String.valueOf(isHailiang ? oneline.get("name") : oneline.get("NAME")))) {
+                                state.setTableCount(String.valueOf(isHailiang ? oneline.get("filecount") : oneline.get("FILECOUNT")));
                                 break;
                             }
                         }
@@ -1116,8 +1122,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         }
     }
     private boolean containsNameInList(List<Map<String, Object>> list, String name) {
+        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
         return list.stream()
-                .anyMatch(row -> name.equalsIgnoreCase(String.valueOf(row.get("NAME"))));
+                .anyMatch(row -> name.equalsIgnoreCase(String.valueOf(isHailiang ? row.get("name") : row.get("NAME"))));
     }
 
     private void addClickhouseDatabaseState(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList, JSONObject data) {
@@ -1134,10 +1141,11 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         dataBaseState.setUsedCapacity(String.valueOf(totalSpace.subtract(freeSpace).divide(denominator, 2, BigDecimal.ROUND_HALF_UP)));
         dataBaseState.setBareCapacity(String.valueOf(totalSpace.divide(denominator, 2, BigDecimal.ROUND_HALF_UP)));
 
+        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
         for (Map<String, Object> row : allPlatformCountList) {
-            String platformType = String.valueOf(row.get("tabletype")).toLowerCase();
+            String platformType = String.valueOf(isHailiang ? row.get("tabletype") : row.get("TABLETYPE")).toLowerCase();
             if (platformType.contains("clickhouse")) {
-                dataBaseState.setTableCount(String.valueOf(row.get("database_count")));
+                dataBaseState.setTableCount(String.valueOf(isHailiang ? row.get("database_count") : row.get("DATABASE_COUNT")));
                 break;
             }
         }
@@ -1145,17 +1153,19 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     }
 
     private Map<String, Object> findOdpsAdsSize(List<Map<String, Object>> allOdpsAdsSizelist, String platformType) {
+        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
         return allOdpsAdsSizelist.stream()
-                .filter(sizeRow -> platformType.equalsIgnoreCase(String.valueOf(sizeRow.get("NAME"))))
+                .filter(sizeRow -> platformType.equalsIgnoreCase(String.valueOf(isHailiang ? sizeRow.get("name") : sizeRow.get("NAME"))))
                 .findFirst()
                 .orElse(null);
     }
 
     private void setTableCountByPlatformName(DataBaseState dataBaseState, List<Map<String, Object>> allPlatformCountList, String platformType) {
+        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
         for (Map<String, Object> row : allPlatformCountList) {
-            String platformName = String.valueOf(row.get("tabletype")).toLowerCase();
+            String platformName = String.valueOf(isHailiang ? row.get("tabletype") : row.get("TABLETYPE")).toLowerCase();
             if (platformName.contains(platformType)) {
-                dataBaseState.setTableCount(String.valueOf(row.get("database_count")));
+                dataBaseState.setTableCount(String.valueOf(isHailiang ? row.get("database_count") : row.get("DATABASE_COUNT")));
                 break;
             }
         }
