@@ -179,7 +179,8 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
                     //生成workbook
                     HSSFWorkbook workbook = ExcelHelper.exportHorizontalExcelZip(new ExportObjectInfo(), exportObjectInfo, objectInfo, objectFields, objectTitles, standardTableInfoTitles, columnTitles,
                             "表说明","标准表信息", "表字段", objectName,standardTableInfoName, objectFieldName);
-                    String xlsName = String.format("%s@%s.xls", exportObjectInfo.getTableName(), exportObjectInfo.getObjectName());
+                    String tableNameCh = exportObjectInfo.getObjectName().replace("/", "、");
+                    String xlsName = String.format("%s@%s.xls", exportObjectInfo.getTableName(), tableNameCh);
                     try {
                         //压缩文件中放入excel文件
                         zipOutputStream.putNextEntry(new ZipEntry(xlsName));
@@ -218,10 +219,10 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
                 }
                 objectFields.addAll(objectFieldInfo);
                 //生成excel文件
-                logger.info("开始导出==========");
+                logger.info(">>>>>>开始导出");
                 ExcelHelper.exportHorizontalExcel(new ExportObjectInfo(),objects,objectInfo,objectFields,objectTitles,standardTableInfoTitles,columnTitles,
                         "表说明","标准表信息","表字段", objectName,standardTableInfoName,objectFieldName,outputStream);
-                logger.info("导出结束=====================");
+                logger.info(">>>>>>导出结束");
             }
         }catch (ClientAbortException e){
             logger.error("客户端中断下载：{}", e);
@@ -511,12 +512,30 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
                 response.setContentType("application/octet-stream");
                 response.setCharacterEncoding("utf-8");
                 ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
+
+                // object
+                List<ObjectPojo> objectPojos = resourceManageDao.selectObjectPojoByTableIds(tableIdList);
+                // objectfield
+                List<ObjectField> objectFieldLists = resourceManageDao.selectObjectFieldByObjectIds();
+                Map<Long, List<ObjectField>> objectFieldMap = objectFieldLists.stream().collect(Collectors.groupingBy(ObjectField::getObjectId));
+                List<PageSelectOneValue> synlteFieldInfos = synlteFieldDao.getGadsjFieldByTexts();
+                Map<String, List<PageSelectOneValue>> synlteFieldInfoMap = synlteFieldInfos.stream().collect(Collectors.groupingBy(PageSelectOneValue::getValue));
+                List<SynlteElementVO> elementNames = elementDao.searchElementNameByIds();
+                //  获取 表字段信息的 字段分类信息  synltefield. FIELD_CLASS 这个字段里面
+                List<Synltefield> list = resourceManageDao.getCodeTextAndCodeidByObjectFields();
+
                 //大于1条，导出zip文件
                 for(String tableId:tableIdList){
-                    ObjectPojo objectInfo = resourceManageDao.selectObjectPojoByTableId(tableId);
-                    List<ObjectField> objectFieldList = resourceManageService.selectObjectFieldByObjectId(tableId);
-
-                    zipOutputStream.putNextEntry(new ZipEntry(objectInfo.getTableName()+"@"+objectInfo.getObjectName()+".sql"));
+                    ObjectPojo objectInfo = objectPojos.stream().filter(d -> d.getTableId().equalsIgnoreCase(tableId)).findFirst().orElse(new ObjectPojo());
+                    List<ObjectField> objectFieldList1 = new ArrayList<>();
+                    for (Long objectId : objectFieldMap.keySet()){
+                        if (objectInfo.getObjectId() != null && objectInfo.getObjectId() == objectId){
+                            objectFieldList1 = objectFieldMap.get(objectId);
+                        }
+                    }
+                    List<ObjectField> objectFieldList = selectObjectFieldByObjectIdNew(objectInfo, objectFieldList1, synlteFieldInfoMap, elementNames, list);
+                    String tableNameCh = objectInfo.getObjectName().replace("/", "、");
+                    zipOutputStream.putNextEntry(new ZipEntry(String.format("%s@%s.sql", objectInfo.getTableName(), tableNameCh)));
                     //生成object的sql
                     StringBuffer sql = jointSql(objectInfo);
                     //生成objectField的sql
@@ -547,7 +566,6 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
             for(ObjectField data : objectFieldList){
                 sql.append(jointFieldSql(data));
             }
-            logger.info("sql语句为:{}",sql.toString());
             try{
                 outStr = response.getOutputStream();
                 buff = new BufferedOutputStream(outStr);
