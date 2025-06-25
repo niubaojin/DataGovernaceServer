@@ -627,7 +627,6 @@ public class ResourceManageServiceImpl implements ResourceManageService {
         }
         // 先判断在这张表中输入的fieldId是否已经存在，如果存在，返回报错信息，提示页面
         int fieldNeedCount = resourceManageAddColumnDao.getcolumnCountByFieldId(objectField.getObjectId(), objectField.getColumnName());
-        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
         if (fieldNeedCount == 1) {
             // 如果为1，表示属于更新操作，更新数据
             //20210818 新增需求 并将之前的数据存储到历史表中
@@ -641,7 +640,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             //大版本 从版本管理中读取
             String version0 = fieldCodeValDao.searchVersion();
             JSONObject parse = (JSONObject) JSON.parse(version0);
-            String versions = parse != null ? (isHailiang ? parse.getString("synltefieldversions") : parse.getString("synlteFieldVersions")) : "1.0";
+            String versions = parse != null ? parse.getString("synlteFieldVersions") : "1.0";
             copyObjectField.setVersion0(versions);
             copyObjectField.setMemo(objectField.getMemo() == null ? "" : objectField.getMemo());
             if (copyObjectField.getPartitionRecno() == null){
@@ -661,7 +660,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             //大版本 从版本管理中读取
             String version0 = fieldCodeValDao.searchVersion();
             JSONObject parse = StringUtils.isNotBlank(version0) ? (JSONObject) JSON.parse(version0) : new JSONObject();
-            String versions = isHailiang ? parse.getString("synltefieldversions") : parse.getString("synlteFieldVersions");
+            String versions = parse.getString("synlteFieldVersions");
             objectField.setVersion0(StringUtils.isNotBlank(versions) ? versions : "");
             int addCount = resourceManageAddColumnDao.addObjectField(objectField);
             if (addCount == 1) {
@@ -1303,8 +1302,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             //查询大版本和设置小版本
             String searchVersion = fieldCodeValDao.searchVersion();
             JSONObject parse = StringUtils.isNotBlank(searchVersion) ? (JSONObject) JSON.parse(searchVersion) : new JSONObject();
-            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
-            String versions = isHailiang ? parse.getString("objectversions") : parse.getString("objectVersions");
+            String versions = parse.getString("objectVersions");
 
             // 注入标准表objectPojoTable其他信息
             injectObjectPojoTable(objectPojoTable, factory, versions);
@@ -1531,6 +1529,9 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                     copyeObject.setVersions(StringUtils.isNotBlank(versions) ? versions : "1.0");
                     if (copyeObject.getStandardType() == null){
                         copyeObject.setStandardType(0);
+                    }
+                    if (copyeObject.getDataLevel() == null || StringUtils.isBlank(copyeObject.getDataLevel())){
+                        copyeObject.setDataLevel(objectPojoTable.getDataLevel());
                     }
                     log.info("保存的OBJECT_HISTORY参数为：" + JSONObject.toJSONString(copyeObject));
                     standardResourceManageDao.saveOldData(copyeObject);

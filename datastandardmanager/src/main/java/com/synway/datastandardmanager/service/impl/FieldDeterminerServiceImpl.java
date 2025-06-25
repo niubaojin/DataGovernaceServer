@@ -141,8 +141,7 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
         //大版本 从版本管理中读取
         String version = fieldCodeValDao.searchVersion();
         JSONObject parse = (JSONObject) JSON.parse(version);
-        boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
-        String versions = isHailiang ? parse.getString("fielddeterminerversions") : parse.getString("fieldDeterminerVersions");
+        String versions = parse.getString("fieldDeterminerVersions");
         data.setVersions(versions);
         //  版本发布日期 date   YYYYMMDD
         Date date = null ;
@@ -223,8 +222,7 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
             //大版本号 从系统配置获取
             String version = fieldCodeValDao.searchVersion();
             JSONObject parse = (JSONObject) JSON.parse(version);
-            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
-            String versions = isHailiang ? parse.getString("fielddeterminerversions") : parse.getString("fieldDeterminerVersions");
+            String versions = parse.getString("fieldDeterminerVersions");
             data.setVersions(versions);
 
             int updateNum = fieldDeterminerDao.upOneData(data);
@@ -258,7 +256,7 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
                 if(!(data.getMemo().equals(searchFieldDeterminer.getMemo()))){
                     stringMemo.append("限定词描述属性,");
                 }
-                if(!data.getVersions().equals(searchFieldDeterminer.getVersions())){
+                if(data.getVersions() != null && !data.getVersions().equals(searchFieldDeterminer.getVersions())){
                     stringMemo.append("大版本号属性,");
                 }
                 StringBuffer constantStr = null;
