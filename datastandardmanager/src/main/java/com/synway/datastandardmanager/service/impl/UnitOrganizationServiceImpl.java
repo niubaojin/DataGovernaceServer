@@ -201,46 +201,45 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
         try{
             //查询所属地区信息
             List<FieldCodeVal> searchList = unitOrganizationDao.getAreaInfo();
-
-            //筛选出所属地区一级总共的名称列表
-            List<String> primaryChList = searchList.stream().filter(d -> StringUtils.isNotEmpty(d.getCodeText()))
-                    .map(d->(d.getCodeId()+"&&"+d.getCodeText())).distinct().collect(toList());
             //根据出所属地区一级分组总共有多少数据
             Map<String ,List<FieldCodeVal>> primaryListMap = searchList.stream().filter(d -> StringUtils.isNotEmpty(d.getCodeText()))
                     .collect(Collectors.groupingBy(d->(d.getCodeId()+"&&"+d.getCodeText())));
-
-            for(String data : primaryChList){
+            for(String data : primaryListMap.keySet()){
                 LayuiClassifyPojo parentPojo = new LayuiClassifyPojo();
                 parentPojo.setValue(data.split("&&")[0]);
                 parentPojo.setLabel(data.split("&&")[1]);
+                List<LayuiClassifyPojo> childrenSecond = new ArrayList<>();
                 //获取当前地区下的数据
-                List<FieldCodeVal> childrenList = primaryListMap.get(data);
-                List<LayuiClassifyPojo> childrenLayuiList = new ArrayList<>();
-                //地区二级数据
-                List<String> secondaryList = childrenList.stream().filter(d ->
-                            StringUtils.isNotEmpty(d.getValText()) && d.getValValue().substring(d.getValValue().length() - 2).equalsIgnoreCase("00")
-                        ).map(d -> (d.getValValue()+"&&"+d.getValText())).distinct().collect(toList());
-                //地区三级数据
-                List<String> threeList = childrenList.stream().filter(d ->
-                        StringUtils.isNotEmpty(d.getValText()) && !d.getValValue().substring(d.getValValue().length() - 2).equalsIgnoreCase("00")
-                ).map(d -> (d.getValValue()+"&&"+d.getValText())).distinct().collect(toList());
-
-                for(String childrenData:secondaryList){
+                List<FieldCodeVal> fieldCodeValsSecond = primaryListMap.get(data);
+                //市级列表
+                List<FieldCodeVal> secondList = fieldCodeValsSecond.stream().filter(d ->
+                        StringUtils.isNotEmpty(d.getValText()) && d.getValValue().substring(d.getValValue().length() - 2).equalsIgnoreCase("00"))
+                        .collect(toList());
+                for(FieldCodeVal fieldCodeVal : secondList){
                     LayuiClassifyPojo secondaryLayuiClassifyPojo = new LayuiClassifyPojo();
-                    secondaryLayuiClassifyPojo.setValue(childrenData.split("&&")[0]);
-                    secondaryLayuiClassifyPojo.setLabel(childrenData.split("&&")[1]);
+                    secondaryLayuiClassifyPojo.setValue(fieldCodeVal.getValValue());
+                    secondaryLayuiClassifyPojo.setLabel(fieldCodeVal.getValText());
+                    List<FieldCodeVal> fieldCodeValsThree = fieldCodeValsSecond.stream().filter(d -> {
+                        String valValue = d.getValValue().substring(0, 4);
+                        String valValueSec = fieldCodeVal.getValValue().substring(0, 4);
+                        if (valValue.equalsIgnoreCase(valValueSec)){
+                            return true;
+                        }else {
+                            return false;
+                        }
+                    }).collect(toList());
                     //注入地区三级数据
                     List<LayuiClassifyPojo> threeChildrenList = new ArrayList<>();
-                    for(String threeChild:threeList){
+                    for(FieldCodeVal threeChild : fieldCodeValsThree){
                         LayuiClassifyPojo threeLayuiClassifyPojo = new LayuiClassifyPojo();
-                        threeLayuiClassifyPojo.setValue(threeChild.split("&&")[0]);
-                        threeLayuiClassifyPojo.setLabel(threeChild.split("&&")[1]);
+                        threeLayuiClassifyPojo.setValue(threeChild.getValValue());
+                        threeLayuiClassifyPojo.setLabel(threeChild.getValText());
                         threeChildrenList.add(threeLayuiClassifyPojo);
                     }
                     secondaryLayuiClassifyPojo.setChildren(threeChildrenList);
-                    childrenLayuiList.add(secondaryLayuiClassifyPojo);
+                    childrenSecond.add(secondaryLayuiClassifyPojo);
                 }
-                parentPojo.setChildren(childrenLayuiList);
+                parentPojo.setChildren(childrenSecond);
                 resultList.add(parentPojo);
             }
             return resultList;
