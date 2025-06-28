@@ -222,7 +222,8 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
                     List<FieldCodeVal> fieldCodeValsThree = fieldCodeValsSecond.stream().filter(d -> {
                         String valValue = d.getValValue().substring(0, 4);
                         String valValueSec = fieldCodeVal.getValValue().substring(0, 4);
-                        if (valValue.equalsIgnoreCase(valValueSec)){
+                        boolean isProvincial = d.getValValue().substring(d.getValValue().length() -2).equalsIgnoreCase("00");
+                        if (valValue.equalsIgnoreCase(valValueSec) && !isProvincial){
                             return true;
                         }else {
                             return false;
