@@ -109,11 +109,13 @@ public class LifeCycleServiceImpl implements LifeCycleService {
         List<LifeCyclePageReturn.FilterObject> projectNameList = new ArrayList<>();
         List<LifeCyclePageReturn.FilterObject> updateTypeList = new ArrayList<>();
         List<LifeCyclePageReturn.FilterObject> partitionList = new ArrayList<>();
-        String databaseType = cacheManager.getValue("dsType").toString();
-//        logger.info("数据库类型是：" + databaseType);
+        boolean isHailiang = cacheManager.getValue("dsType").toString().equalsIgnoreCase("hailiang");
         for (Map<String, String> element : filterList) {
             LifeCyclePageReturn.FilterObject filterObject = new LifeCyclePageReturn.FilterObject();
             String text = element.getOrDefault("TYPEVALUE", null);
+            if (isHailiang){
+                text = element.getOrDefault("typevalue", null);
+            }
             if (StringUtils.isBlank(text)){
                 text = element.getOrDefault("typeValue", null);
             }
@@ -124,7 +126,11 @@ public class LifeCycleServiceImpl implements LifeCycleService {
             } else {
                 continue;
             }
-            switch (element.getOrDefault("TYPE", "")) {
+            String caseSelect = element.getOrDefault("TYPE", "");
+            if (isHailiang){
+                caseSelect = element.getOrDefault("type", "");
+            }
+            switch (caseSelect) {
                 case "organizationClassify":
                     organizationClassifyList.add(filterObject);
                     break;

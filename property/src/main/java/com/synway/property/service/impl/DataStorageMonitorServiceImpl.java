@@ -1321,7 +1321,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                         }
 //                        dataMonitorDao.addHiveData(item);
                     } catch (Exception e) {
-                        logger.error(ExceptionUtil.getExceptionTrace(e));
+                        logger.error(">>>>>>解析hive数据出错：\n{}", e);
                     }
                 });
                 // 昨日hive数据

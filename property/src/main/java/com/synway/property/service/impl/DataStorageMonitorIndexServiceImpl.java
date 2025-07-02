@@ -655,10 +655,16 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     List<String> primaryClassNameList = new ArrayList<>();
                     List<Double> recordsNumberList = new ArrayList<>();
                     List<Double> storageSizeList = new ArrayList<>();
+                    boolean isHailiang = cacheManager.getValue("dsType").toString().equalsIgnoreCase("hailiang");
                     for (Map<String, Object> oneMap : oneResult) {
-                        String primaryClassName = String.valueOf(oneMap.getOrDefault("primary_name", "未知"));
-                        Double recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("records", "0")));
-                        Double storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("tablesize", "0.0")));
+                        String primaryClassName = String.valueOf(oneMap.getOrDefault("PRIMARY_NAME", "未知"));
+                        Double recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("RECORDS", "0")));
+                        Double storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("TABLESIZE", "0.0")));
+                        if (isHailiang){
+                            primaryClassName = String.valueOf(oneMap.getOrDefault("primary_name", "未知"));
+                            recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("records", "0")));
+                            storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("tablesize", "0.0")));
+                        }
                         primaryClassNameList.add(primaryClassName);
                         recordsNumberList.add(recordsNumberOne);
                         storageSizeList.add(storageSizeOne);
