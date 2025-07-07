@@ -1,12 +1,12 @@
 server:
-  address: ${spring.cloud.client.ip-address}
-#  address: 192.168.61.135
+#  address: ${spring.cloud.client.ip-address}
+  address: 192.168.61.135
   port: 8222
   max-http-request-header-size: 30000000
 
 nacosServer:
-#  namespace: SH_SHUHUI360
-  namespace: SH_SHUHUI_PostgreSQL
+  namespace: SH_SHUHUI360
+#  namespace: SH_SHUHUI_PostgreSQL
   serverAddr: 10.1.15.132:8848
   username: nacos
   password: nacos

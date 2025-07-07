@@ -579,7 +579,7 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
         });
         detectedTableList.stream().forEach( d ->{
             String tableInfoId = objectStoreInfoDao.searchObjectStoreInfoId(d.getTableNameEN(), d.getProjectName(), d.getResId());
-            logger.info(String.format("开始处理：%s->%s->%s->%s",d.getCenterName(),d.getResName(),d.getProjectName(),d.getTableNameEN()));
+            logger.info(String.format("开始处理：%s>>>%s>>>%s>>>%s>>>%s，tableInfoId：%s",d.getCenterName(),d.getResName(),d.getResId(),d.getProjectName(),d.getTableNameEN()),tableInfoId);
             ObjectPojo targetObjectPojo = resourceManageDao.searchObjectInfo(d.getTableNameEN());
             if (targetObjectPojo == null){
                 logger.info(String.format("表：%s，在object没有记录，略过",d.getTableNameEN()));

@@ -177,7 +177,7 @@
         union ALL
         <if test="dataWorkVersion == 3 ">
             select 'abnormalModelsSum' as type, count(status) as oneCount
-            from m_business_instance
+            from dbr_workflow_instance
             where status = '运行失败'
             <if test="odpsProjectList!=null and odpsProjectList.size>0">
                 and project_name in
@@ -188,7 +188,7 @@
         </if>
         <if test="dataWorkVersion == 2 ">
             select 'abnormalModelsSum' as type, count(status) as oneCount
-            from m_business_instance
+            from dbr_workflow_instance
             where status = '运行失败'
             <if test="odpsProjectList!=null and odpsProjectList.size>0">
                 and project_name in

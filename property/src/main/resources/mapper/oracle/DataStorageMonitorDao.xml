@@ -182,7 +182,7 @@
 --             from m_flow_three where prg_TYPE = 98) where status = 5 and rn = 1)
             -- 改为只判断 工作流监控页面 状态为运行失败的数量
             select 'abnormalModelsSum' as type, count(status) as oneCount
-            from m_business_instance
+            from dbr_workflow_instance
             where status = '运行失败'
             <if test="odpsProjectList!=null and odpsProjectList.size>0">
                 and project_name in
@@ -199,7 +199,7 @@
 --             from M_FLOW where NODE_TYPE = 98 ) where rn =1 and status = 5)
             -- 改为只判断 工作流监控页面 状态为运行失败的数量
             select 'abnormalModelsSum' as type, count(status) as oneCount
-            from m_business_instance
+            from dbr_workflow_instance
             where status = '运行失败'
             <if test="odpsProjectList!=null and odpsProjectList.size>0">
                 and project_name in
