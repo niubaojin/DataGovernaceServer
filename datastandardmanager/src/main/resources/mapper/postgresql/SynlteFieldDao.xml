@@ -37,7 +37,7 @@
         where   upper(o1.relate_tablename) = 'OBJECTFIELD' and o2.deleted = 0)
             group by fieldid) o on upper(s.FIELDID) = upper(o.fieldid)
         <where>
-            GADSJ_FIELDID is not null and  S.FIELDID NOT LIKE 'WBZ%'  and field_standard != '99'
+            S.FIELDID NOT LIKE 'WBZ%'  and field_standard != '99'
             <if test="searchName !=null">
               and  (
                   upper(s.FIELDID) like upper(concat('%',concat(#{searchName},'%')))
