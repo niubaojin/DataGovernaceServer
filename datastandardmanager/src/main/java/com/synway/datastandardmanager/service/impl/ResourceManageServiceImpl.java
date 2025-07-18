@@ -942,8 +942,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                         inputObjectCreate.objGuid == null ? "null" : inputObjectCreate.objGuid,
                         inputObjectCreate.inputIobjSource == null ? 0 : inputObjectCreate.inputIobjSource);
                 boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
-                int usedCount = Integer.valueOf(String.valueOf(isHailiang ? queryIsExistMap.get("usedcount") : queryIsExistMap.get("USEDCOUNT")));
-                int disableUsedCount = Integer.valueOf(String.valueOf(isHailiang ? queryIsExistMap.get("disableusedcount") : queryIsExistMap.get("DISABLEUSEDCOUNT")));
+                int usedCount = isHailiang ? queryIsExistMap.get("usedcount") : queryIsExistMap.get("USEDCOUNT");
+                int disableUsedCount = isHailiang ? queryIsExistMap.get("disableusedcount") : queryIsExistMap.get("DISABLEUSEDCOUNT");
                 // 如果都为0，表示在数据库中没有该条数据
                 if (usedCount == 0 && disableUsedCount == 0) {
                     // 拼接成需要插入的数据 然后将数据插入到表中

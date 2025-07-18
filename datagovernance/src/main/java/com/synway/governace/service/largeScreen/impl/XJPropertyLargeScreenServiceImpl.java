@@ -391,6 +391,9 @@ public class XJPropertyLargeScreenServiceImpl implements XJPropertyLargeScreenSe
             JSONObject data = (JSONObject) jsonArray309.get(i);
             if (data.getString("name").equalsIgnoreCase("服务使用")){
                 JSONArray serverUseData = (JSONArray) data.get("data");
+                if (serverUseData == null){
+                    break;
+                }
                 for (int j = 0; j < serverUseData.size(); j++){
                     JSONObject serverUnit = (JSONObject) serverUseData.get(j);
                     if (serverUnit.getString("label").equalsIgnoreCase("服务单位")){

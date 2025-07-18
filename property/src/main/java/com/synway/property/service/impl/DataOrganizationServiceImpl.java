@@ -155,28 +155,18 @@ public class DataOrganizationServiceImpl implements DataOrganizationService {
             classify = "";
             classifyid = "";
         }
-        // 统计表数量
-        Set<DataOrganization> objectTableSet = new HashSet<>();
         if (StringUtils.isBlank(classifyid)){
             dataOrgLevel = 1;
-            String dataOCCode = SysCodeEnum.getCodeByNameAndType(dataOrganizationType,"DATAOC");
-            objectTableSet = dao.getObjectInfos(1,dataOCCode,search);
         } else {
-            String dataOCCode = "";
             if (classifyid.length() > 20){
                 dataOrgLevel = 3;
-                dataOCCode = classifyid.substring(20,classifyid.length());
-                objectTableSet = dao.getObjectInfos(3,dataOCCode,search);
             }else {
                 dataOrgLevel = 2;
-                dataOCCode = classifyid.substring(16,classifyid.length());
-                objectTableSet = dao.getObjectInfos(2,dataOCCode,search);
             }
         }
-        int tableNums = objectTableSet.size();
-        returnResult.setTableNums(tableNums);
 
         //资源标识，中文表名，物理表名,OBJECTID
+        Set<DataOrganization> objectTableSet = new HashSet<>();
         if (dataSet.equalsIgnoreCase("全部数据集") || dataSet.isEmpty()){
             objectTableSet = dao.getDataOrganizationTable(dataOrganizationType, classify, classifyid, search);
         }
@@ -253,6 +243,7 @@ public class DataOrganizationServiceImpl implements DataOrganizationService {
             }
         });
         returnResult.setDataOrganizations(objectTableSet);
+        returnResult.setTableNums(0);
         return returnResult;
     }
 }
