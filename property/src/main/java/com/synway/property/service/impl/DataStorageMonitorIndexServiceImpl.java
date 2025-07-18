@@ -82,15 +82,15 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         ServerResponse<List<DataBaseState>> serverResponse;
         try {
         List<DataBaseState> dataBaseStates = dataStorageMonitorDao.getDataBaseState();
-        for(int i=0;i<dataBaseStates.size();i++){
-            DataBaseState dataBaseState=dataBaseStates.get(i);
-            if (dataBaseState.getUsedCapacity()!=null){
-                dataBaseState.setUsedCapacity(Double.valueOf(dataBaseState.getUsedCapacity()).toString());
-            }
-            if (dataBaseState.getBareCapacity()!=null){
-                dataBaseState.setBareCapacity(Double.valueOf(dataBaseState.getBareCapacity()).toString());
-            }
-        }
+//        for(int i=0;i<dataBaseStates.size();i++){
+//            DataBaseState dataBaseState=dataBaseStates.get(i);
+//            if (dataBaseState.getUsedCapacity()!=null){
+//                dataBaseState.setUsedCapacity(Double.valueOf(dataBaseState.getUsedCapacity()).toString());
+//            }
+//            if (dataBaseState.getBareCapacity()!=null){
+//                dataBaseState.setBareCapacity(Double.valueOf(dataBaseState.getBareCapacity()).toString());
+//            }
+//        }
             serverResponse = ServerResponse.asSucessResponse(dataBaseStates);
         } catch (Exception e) {
             logger.error("查询数据组织监控首页中数据库状况出错" + ExceptionUtil.getExceptionTrace(e));
