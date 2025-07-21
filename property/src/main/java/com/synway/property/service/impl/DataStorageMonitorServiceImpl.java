@@ -1329,6 +1329,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 logger.info("yestodayHiveData：{}", yestodayHiveData.size());
                 // 汇总数据量
                 for (SYDMGParam data : insertDatas){
+                    if (data == null) {
+                        continue;
+                    }
                     for (DataResourceTable yestodayData : yestodayHiveData){
                         if (data.getTABLENAME() != null
                                 && data.getTABLEPROJECT() != null
