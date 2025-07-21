@@ -1332,6 +1332,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                     if (data == null) {
                         continue;
                     }
+                    if (data.getTABLEALLCOUNT() != null && !data.getTABLEALLCOUNT().isBlank() && !data.getTABLEALLCOUNT().equalsIgnoreCase("0")){
+                        continue;
+                    }
                     for (DataResourceTable yestodayData : yestodayHiveData){
                         if (data.getTABLENAME() != null
                                 && data.getTABLEPROJECT() != null
