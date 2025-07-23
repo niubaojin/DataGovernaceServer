@@ -77,11 +77,16 @@ public class LoginUser implements Serializable {
      * 将数据权限解析后构建 In所需语句
      * @return
      */
-    public String getFormatDataAuthIds(){
+    public String getFormatDataAuthIds(String dsType){
         try {
-            return (StringUtils.isBlank(this.dataAuth)) ?
-                    "('')" :
-                    JSONArray.parseArray(this.dataAuth).stream().map(e -> ((JSONObject) e).getString("organId")).collect(Collectors.joining("'),(0,'", "((0,'", "'))"));
+            if (StringUtils.isBlank(this.dataAuth)) {
+                return "('')";
+            }
+            String dataAuthIds = JSONArray.parseArray(this.dataAuth).stream().map(e -> ((JSONObject) e).getString("organId")).collect(Collectors.joining("'),(0,'", "((0,'", "'))"));
+            if (!dsType.equalsIgnoreCase("oracle")){
+                dataAuthIds = JSONArray.parseArray(this.dataAuth).stream().map(e -> ((JSONObject) e).getString("organId")).collect(Collectors.joining("','", "('", "')"));
+            }
+            return dataAuthIds;
         }catch (Exception ex){
             log.error("在解析数据权限时出错，错误信息为:",ex);
         }

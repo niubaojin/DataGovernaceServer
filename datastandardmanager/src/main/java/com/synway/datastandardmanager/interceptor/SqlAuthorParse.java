@@ -19,6 +19,9 @@ public class SqlAuthorParse {
     private static final String PATTERN_SQL = "  (SELECT l11.* FROM {0} l11 inner join " +
             "(select id from USER_AUTHORITY where (0, organid) in {1}  and upper(modulecode) = ''BZGL'') r11 on upper(l11.{2}) = upper(r11.id) )  ";
 
+    private static final String PATTERN_SQL1 = "  (SELECT l11.* FROM {0} l11 inner join " +
+            "(select id from USER_AUTHORITY where organid in {1}  and upper(modulecode) = ''BZGL'') r11 on upper(l11.{2}) = upper(r11.id) )  ";
+
     /**
      *  解析旧的sql 获取到新的sql信息
      * @param oldSql  旧的sql信息
@@ -28,7 +31,7 @@ public class SqlAuthorParse {
      * @return
      */
     public static String getNewSql(String oldSql, AuthorControl authorControl
-            , LoginUser object, String methodName){
+            , LoginUser object, String methodName, String dsType){
         try{
             if(object == null || StringUtils.isBlank(oldSql)){
                 return oldSql;
@@ -40,7 +43,7 @@ public class SqlAuthorParse {
                 return oldSql;
             }
             for(int i = 0; i < tableNames.length;i++){
-                String sqlStr = MessageFormat.format(PATTERN_SQL,tableNames[i],object.getFormatDataAuthIds(),columnNames[i]);
+                String sqlStr = MessageFormat.format(dsType.equals("oracle") ? PATTERN_SQL : PATTERN_SQL1, tableNames[i],object.getFormatDataAuthIds(dsType),columnNames[i]);
                 oldSql = oldSql.replaceAll("([\\s|\\(])(?i)"+tableNames[i]+"([\\s|\\)])*","$1"+sqlStr+"$2");
             }
         }catch (Exception e){
