@@ -3,7 +3,7 @@ path = "/" + path;
 //所有的协议厂商中文名
 var allSourceFirmList = ["全部", "普天", "汇智", "三所", "烽火", "三汇", "锐安", "部中心", "部中心mq", "海康"];
 // 存储表状态
-var storageTableStatusList = ["正式使用", "临时使用", "废止"];
+var storageTableStatusList = ["正式使用", "临时使用", "停用"];
 // 更新表类型
 var isActiveTableList = [{label:"实时表",value:"1"}, {label:"批量表",value:"0"}]
 // 存储方式

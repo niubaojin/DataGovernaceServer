@@ -1523,7 +1523,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                     ConvertUtils.register(new DateConverter(null), java.util.Date.class);
                     BeanUtils.copyProperties(copyeObject, oldObject);
                     copyeObject.setObjectVersion(uuId);
-                    copyeObject.setStorageTableStatus(String.valueOf(ObjectStateType.getObjectStateStatus("废止")));
+                    copyeObject.setStorageTableStatus(String.valueOf(ObjectStateType.getObjectStateStatus("停用")));
                     copyeObject.setUpdateTime(dayStr);
                     copyeObject.setVersion(Integer.valueOf(DateUtil.formatDateTime(new Date(), DateUtil.DEFAULT_PATTERN_DATE_SIMPLE)));
                     copyeObject.setVersions(StringUtils.isNotBlank(versions) ? versions : "1.0");

@@ -27,7 +27,7 @@
         ) r ON r.elementobject = l.code_value
         <where>
             <if test="searchText != null">
-                (upper(r.elementchname) like upper(concat('%',concat(#{searchText},'%'))))
+                (upper(r.elementchname) like upper(concat('%',concat(#{searchText},'%'))) or upper(l.code_text) like upper(concat('%',concat(#{searchText},'%'))) )
             </if>
 
             <if test="isElementList != null">

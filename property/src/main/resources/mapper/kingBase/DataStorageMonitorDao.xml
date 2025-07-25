@@ -1030,24 +1030,48 @@
 
     <select id="getRecordsStorageByPrimaryClassifyMap" resultType="java.util.HashMap">
         <if test="categoryName== 'dataOrganizationClassify'">
-            select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME, records , tableSize
-            from(
-            select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
-            select PRIMARY_ORGANIZATION_CH AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
-            TRUNC(sum(table_size)/1073741824,4) as tableSize,to_char(STATISTICS_TIME,'yyyyMMdd') as STATISTICS_day
-            from table_organization_assets where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by PRIMARY_ORGANIZATION_CH ,
-            to_char(STATISTICS_TIME,'yyyyMMdd') ) t
-            where t.PRIMARY_NAME is not null) where rn =1
+            select case
+                     when primary_name is null then '未知'
+                     else primary_name
+                   end as primary_name,
+                   records,
+                   tableSize,
+                   tableNum
+              from (select row_number() over(partition by primary_name order by statistics_day desc) rn,
+                           t.*
+                      from (select primary_organization_ch AS primary_name,
+                                   trunc(sum(table_all_count) / 100000000, 6) as records,
+                                   trunc(sum(table_size) / 1073741824, 4) as tableSize,
+                                   to_char(statistics_time, 'yyyyMMdd') as statistics_day,
+                                   count(*) as tableNum
+                              from table_organization_assets
+                             where statistics_time >= trunc(sysdate - #{daysAgo})
+                             group by primary_organization_ch,
+                                      to_char(statistics_time, 'yyyyMMdd')) t
+                     where t.primary_name is not null)
+             where rn = 1
         </if>
         <if test="categoryName== 'dataSourceClassify'">
-            select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME , records , tableSize
-            from(
-            select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
-            select PRIMARY_DATASOURCE_CH AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
-            TRUNC(sum(table_size)/1073741824,4) as tableSize,to_char(STATISTICS_TIME,'yyyyMMdd') as STATISTICS_day
-            from table_organization_assets where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by PRIMARY_DATASOURCE_CH ,
-            to_char(STATISTICS_TIME,'yyyyMMdd') ) t
-            where t.PRIMARY_NAME is not null) where rn =1
+            select case
+                     when primary_name is null then '未知'
+                     else primary_name
+                   end as primary_name,
+                   records,
+                   tableSize,
+                   tableNum
+              from (select row_number() over(partition by primary_name order by statistics_day desc) rn,
+                           t.*
+                      from (select primary_datasource_ch AS primary_name,
+                                   TRUNC(sum(table_all_count) / 100000000, 6) as records,
+                                   TRUNC(sum(table_size) / 1073741824, 4) as tableSize,
+                                   to_char(statistics_time, 'yyyyMMdd') as statistics_day,
+                                   count(*) as tableNum
+                              from table_organization_assets
+                             where statistics_time >= trunc(sysdate - #{daysAgo})
+                             group by primary_datasource_ch,
+                                      to_char(statistics_time, 'yyyyMMdd')) t
+                     where t.primary_name is not null)
+             where rn = 1
         </if>
         <if test="categoryName== 'dataResourceClassify'">
             select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME , records , tableSize

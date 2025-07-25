@@ -214,7 +214,7 @@ public class SynlteFieldObject implements Serializable {
 
     /**
      * 状态
-     * 目前只会有 01：新建  05：发布  07：废止
+     * 目前只会有 01：新建  05：发布  07：停用
      */
     @NotNull(message="[状态]不能为空")
     @Size(max=10,message = "[状态]长度不能超过10")

@@ -1218,7 +1218,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 int tableType = Integer.valueOf(hbaseParams.get(0).getTABLETYPE());
                 int deleteCount = dataMonitorDao.delSyndmgTableAllDataByType(tableType);
                 String partitionDate = hbaseParams.get(0).getPARTITIONDATE();
-                logger.info("syndmg_tabble_all【" + partitionDate + "】共删除" + deleteCount + "条hbase数据");
+                logger.info("syndmg_table_all【" + partitionDate + "】共删除" + deleteCount + "条hbase数据");
                 try {
                     DAOHelper.insertDelList(hbaseParams, dataMonitorDao, "addHbaseDataPatch", 200);
                     logger.info("syndmg_tabble_all【" + partitionDate + "】新插入" + hbaseParams.size() + "条hbase数据");

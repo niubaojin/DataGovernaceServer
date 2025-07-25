@@ -32,4 +32,21 @@
         <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DSM_INIT.sql" />
     </changeSet>
 
+    <changeSet id="check_and_insert" author="nbj">
+        <!--判断数据是否存在-->
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from all_code_data where code_id = 'SYNLTEFIELD_STATUS' and code_value = '07'
+            </sqlCheck>
+        </preConditions>
+        <!--不存在则插入-->
+        <insert tableName="all_code_data">
+            <column name="id" value="07"></column>
+            <column name="code_id" value="SYNLTEFIELD_STATUS"></column>
+            <column name="code_value" value="07"></column>
+            <column name="code_text" value="停用"></column>
+            <column name="memo" value="数据元页面中的状态-停用"></column>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

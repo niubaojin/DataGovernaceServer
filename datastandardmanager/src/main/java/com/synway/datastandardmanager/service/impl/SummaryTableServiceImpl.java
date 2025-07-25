@@ -155,7 +155,7 @@ public class SummaryTableServiceImpl implements SummaryTableService {
                 if (Common.WEI_FA_BU.equals(useTageValue.getLabel())){
                     useTageValueList.add("0");
                 }
-                if ("废止".equals(useTageValue.getLabel())){
+                if ("停用".equals(useTageValue.getLabel())){
                     useTageValueList.add("-1");
                 }
             });
@@ -435,7 +435,7 @@ public class SummaryTableServiceImpl implements SummaryTableService {
         if(CollectionUtils.isEmpty(pageSelectOneValueList)){
             PageSelectOneValue pageSelectOneValue = new PageSelectOneValue("已发布","已发布(0)");
             PageSelectOneValue pageSelectTwoValue = new PageSelectOneValue("未发布","未发布(0)");
-            PageSelectOneValue pageSelectThreeValue = new PageSelectOneValue("废止","废止(0)");
+            PageSelectOneValue pageSelectThreeValue = new PageSelectOneValue("停用","停用(0)");
             pageSelectOneValueList.add(pageSelectOneValue);
             pageSelectOneValueList.add(pageSelectTwoValue);
             pageSelectOneValueList.add(pageSelectThreeValue);

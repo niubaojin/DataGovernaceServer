@@ -37,7 +37,7 @@ public enum SynlteFieldStatusEnum {
     /**
      * 不再需要其支持信息需求，经数据元管理机构批准，该数据元的内容即将从标准中删去
      */
-    FZ("07","废止");
+    FZ("07","停用");
     private String id;
     private String value;
 

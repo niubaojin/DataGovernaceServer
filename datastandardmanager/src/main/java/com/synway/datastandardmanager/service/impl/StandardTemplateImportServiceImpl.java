@@ -660,7 +660,7 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
                                 oldObjectInfo.setVersion(Integer.valueOf(todayStr));
                                 //standardType默认为0
                                 oldObjectInfo.setStandardType(0);
-                                oldObjectInfo.setStorageTableStatus(String.valueOf(ObjectStateType.getObjectStateStatus("废止")));
+                                oldObjectInfo.setStorageTableStatus(String.valueOf(ObjectStateType.getObjectStateStatus("停用")));
                                 oldObjectInfo.setVersions(StringUtils.isBlank(oldObjectInfo.getVersions())?"1.0":oldObjectInfo.getVersions());
                                 int addObjectHistoryCount = standardResourceManageDao.saveOldData(oldObjectInfo);
                                 if (addObjectHistoryCount != 1) {

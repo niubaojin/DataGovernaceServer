@@ -309,7 +309,7 @@
                  when objectstate = 0 then
                   '未发布'
                  else
-                  '废止'
+                  '停用'
                end as objectstateStr
            from synlte.object
            where DELETED = 0

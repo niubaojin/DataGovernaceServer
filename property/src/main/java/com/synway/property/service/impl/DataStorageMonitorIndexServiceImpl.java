@@ -655,26 +655,32 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     List<String> primaryClassNameList = new ArrayList<>();
                     List<Double> recordsNumberList = new ArrayList<>();
                     List<Double> storageSizeList = new ArrayList<>();
+                    List<Integer> tableNumList = new ArrayList<>();
                     boolean isHailiang = cacheManager.getValue("dsType").toString().equalsIgnoreCase("hailiang");
                     for (Map<String, Object> oneMap : oneResult) {
                         String primaryClassName = String.valueOf(oneMap.getOrDefault("PRIMARY_NAME", "未知"));
                         Double recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("RECORDS", "0")));
                         Double storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("TABLESIZE", "0.0")));
+                        Integer tableNum = Integer.valueOf(String.valueOf(oneMap.getOrDefault("TABLENUM", "0")));
                         if (isHailiang){
                             primaryClassName = String.valueOf(oneMap.getOrDefault("primary_name", "未知"));
                             recordsNumberOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("records", "0")));
                             storageSizeOne = Double.valueOf(String.valueOf(oneMap.getOrDefault("tablesize", "0.0")));
+                            tableNum = Integer.valueOf(String.valueOf(oneMap.getOrDefault("tablenum", "0")));
                         }
                         primaryClassNameList.add(primaryClassName);
                         recordsNumberList.add(recordsNumberOne);
                         storageSizeList.add(storageSizeOne);
+                        tableNumList.add(tableNum);
                     }
                     numStorageByPrimaryClassify.setCateGoryName(cateGoryName);
                     numStorageByPrimaryClassify.setPrimaryClassifyList(primaryClassNameList);
                     numStorageByPrimaryClassify.setRecordsNumber(recordsNumberList);
                     numStorageByPrimaryClassify.setStorageSize(storageSizeList);
+                    numStorageByPrimaryClassify.setTableNum(tableNumList);
                     numStorageByPrimaryClassify.setRecordsUnit(UrlConstants.RECORDS_UNIT);
                     numStorageByPrimaryClassify.setStorageUnit(UrlConstants.STORAGE_UNIT);
+                    numStorageByPrimaryClassify.setTableNumUnit("张");
                     serverResponse = ServerResponse.asSucessResponse(numStorageByPrimaryClassify);
                 } else {
                     serverResponse = ServerResponse.asErrorResponse("从数据库中查询到的数据量为空");

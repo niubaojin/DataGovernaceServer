@@ -1161,20 +1161,20 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
                 List<DataBaseState> list2 = list.stream().filter(d -> StringUtils.isNotBlank(d.getName()) &&
                         Constant.REALTIME_BS.contains(d.getName().toUpperCase())).collect(Collectors.toList());
                 TotalDataProperty.DataBaseState data2 = getLibraryData(list2, 0);
-                // tgj定制
-                if(StringUtils.equalsIgnoreCase("tgj", assetsLargeScreenVersion)) {
-                    data2.setName("在线库");
-                }
+//                // tgj定制
+//                if(StringUtils.equalsIgnoreCase("tgj", assetsLargeScreenVersion)) {
+//                    data2.setName("在线库");
+//                }
                 totalDataProperty.setRealTimeLibrary(data2);
 
                 // 离线库 数据
                 List<DataBaseState> list3 = list.stream().filter(d -> StringUtils.isNotBlank(d.getName()) &&
                         Constant.OFFLINE_BS.contains(d.getName().toUpperCase())).collect(Collectors.toList());
                 TotalDataProperty.DataBaseState data3 = getLibraryData(list3, 0);
-                // tgj定制
-                if(StringUtils.equalsIgnoreCase("tgj", assetsLargeScreenVersion)) {
-                    data3.setName("离线库");
-                }
+//                // tgj定制
+//                if(StringUtils.equalsIgnoreCase("tgj", assetsLargeScreenVersion)) {
+//                    data3.setName("离线库");
+//                }
                 totalDataProperty.setOfflineLibrary(data3);
             } else {
                 totalDataProperty.setUnstructuredShow(false);

@@ -10,7 +10,7 @@ package com.synway.datastandardmanager.pojo.enums;
 public enum ObjectStateType {
 	FORMAL_USE("已发布"),
 	TEMP_USE("未发布"),
-	ABANDON("废止");
+	ABANDON("停用");
 	private String value=null;
 
 	ObjectStateType(String value){

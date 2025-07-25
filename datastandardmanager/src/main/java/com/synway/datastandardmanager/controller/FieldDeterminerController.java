@@ -103,7 +103,7 @@ public class FieldDeterminerController {
     /**
      * 启用/停用 限定词
      * @param id   限定词内部编码
-     * @param state  01：新建  07：废止禁用
+     * @param state  01：新建  07：停用禁用
      * @param modDate 该条记录的修改时间 与数据库对应不上会造成更新失败
      * @return
      */

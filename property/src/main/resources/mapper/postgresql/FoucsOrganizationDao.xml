@@ -189,36 +189,33 @@
     </delete>
 
     <select id="getDayUseHeatDao" resultType="map">
-      select
---         case  when TABLENAMEZH is null then tablenameen else TABLENAMEZH end  as TABLENAMEZH ,
-        TABLENAMEZH,
-        TOTAL,
-        case
-        when TABLETYPE = 1 THEN 'ODPS'
-        when TABLETYPE = 2 THEN 'ADS'
-        when TABLETYPE = 3 THEN 'ADS'
-        when TABLETYPE = 5 THEN 'HIVE'
-        when TABLETYPE = 7 THEN 'CLICKHOUSE'
-        else '' end as TABLETYPE
-        from(
-        select  NAME  as TABLENAMEZH  ,tableen as tablenameen , sum(TABLEUSECOUNTOFDAY) as TOTAL, TABLETYPE  from
-        (select a.tableen,a.TABLETYPE,a.TABLEUSECOUNTOFDAY,b.NAME,b.TABLE_PROJECT from
-        (select b.TABLETYPE,b.TABLEUSECOUNTOFDAY,substr(b.TABLENAMEEN,0,INSTR(b.TABLENAMEEN,'.')-1) as tableproject,
-        substr(b.TABLENAMEEN,INSTR(b.TABLENAMEEN,'.')+1) as tableen
-        from (select x.* from StoreCycleAndUseHeat x inner join synlte.object y
-            on upper(substr(x.TABLENAMEEN,INSTR(x.TABLENAMEEN, '.') + 1)) =
-               upper(y.tablename)
-            where
-                --x.tablenamezh is not null
-            --根据东威控制objectstate是否为1决定数据是否展示
-            --and
-                y.objectstate=1 and y.relate_tablename='OBJECTFIELD') b) a
-        inner join
-        table_organization_assets b
-        on upper(a.tableen) = upper(b.TABLE_NAME_EN) and upper(a.tableproject) = upper(b.TABLE_PROJECT)
-        where b.STATISTICS_TIME >= (CURRENT_DATE - INTERVAL '#{daysAgo} days')
-		)  group by NAME,tableen,TABLETYPE,TABLE_PROJECT order by TOTAL desc
-        ) where rownum &lt;9
+        select TABLENAMEZH, TOTAL
+          from (select name as TABLENAMEZH,
+                       tableen as tablenameen,
+                       sum(TABLEUSECOUNTOFDAY) as TOTAL,
+                       tabletype
+                  from (select a.tableen,
+                               a.tabletype,
+                               a.TABLEUSECOUNTOFDAY,
+                               toa.NAME,
+                               toa.table_project
+                          from (select b.tabletype,
+                                       b.TABLEUSECOUNTOFDAY,
+                                       substr(b.tablenameen, 0, instr(b.tablenameen, '.') - 1) as tableproject,
+                                       substr(b.tablenameen, instr(b.tablenameen, '.') + 1) as tableen
+                                  from (select scuh.*
+                                          from StoreCycleAndUseHeat scuh
+                                         inner join synlte.object o
+                                            on upper(substr(scuh.tablenameen, instr(scuh.tablenameen, '.') + 1)) = upper(o.tablename)
+                                         where o.objectstate = 1
+                                           and o.relate_tablename = 'OBJECTFIELD') b) a
+                         inner join table_organization_assets toa
+                            on upper(a.tableen) = upper(toa.table_name_en)
+                           and upper(a.tableproject) = upper(toa.table_project)
+                         where toa.statistics_time >= (CURRENT_DATE - INTERVAL '#{daysAgo} days') and toa.name is not null )
+                 group by name, tableen, tabletype, table_project
+                 order by TOTAL desc)
+         where rownum &lt;9
     </select>
 
     <select id="getFullDataRankingDao" resultType="map">

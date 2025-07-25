@@ -353,7 +353,7 @@ public class SynlteFieldServiceImpl implements SynlteFieldService {
                 synlteFieldDao.saveSynlteFieldVersion(synlteFieldVersion);
                 log.info("===========数据元版本信息生成完成=========");
 
-                //原有记录信息保存至历史版本信息表SYNLTE.SYNLTEFIELD_history中，并且数据元状态改为废止（07）
+                //原有记录信息保存至历史版本信息表SYNLTE.SYNLTEFIELD_history中，并且数据元状态改为停用（07）
                 log.info("===========数据元历史信息开始生成=========");
                 oldSynlteFieldObject.setFieldIdVersion(oldSynlteFieldObject.getFieldId());
                 oldSynlteFieldObject.setStatusNum("07");
