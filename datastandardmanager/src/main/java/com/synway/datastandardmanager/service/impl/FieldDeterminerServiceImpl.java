@@ -259,6 +259,9 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
                 if(data.getVersions() != null && !data.getVersions().equals(searchFieldDeterminer.getVersions())){
                     stringMemo.append("大版本号属性,");
                 }
+                if (data.getDeterminerStateNum() != searchFieldDeterminer.getDeterminerStateNum()){
+                    stringMemo.append("状态属性,");
+                }
                 StringBuffer constantStr = null;
                 if(stringMemo.length() != 0){
                     constantStr = new StringBuffer("修改了");
@@ -284,7 +287,7 @@ public class FieldDeterminerServiceImpl implements FieldDeterminerService {
                 log.info("===========开始生成限定词历史信息=========");
                 searchFieldDeterminer.setFieldDeterminerVersion(uuid);
                 searchFieldDeterminer.setModDate(update);
-                searchFieldDeterminer.setDeterminerState("07");
+//                searchFieldDeterminer.setDeterminerState("07");
                 fieldDeterminerDao.saveOneOldData(searchFieldDeterminer);
                 log.info("===========结束生成限定词历史信息=========");
             }

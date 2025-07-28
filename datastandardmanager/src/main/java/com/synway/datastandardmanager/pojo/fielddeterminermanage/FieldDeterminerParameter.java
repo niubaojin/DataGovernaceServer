@@ -30,7 +30,7 @@ public class FieldDeterminerParameter implements Serializable {
     private List<Integer> determinerTypeList;
 
     /**
-     * 状态 的筛选  01：新建  05：发布  07：废弃
+     * 状态 的筛选  01：新建  05：发布  07：停用
      */
     private List<String> determinerStateList;
 

@@ -81,10 +81,21 @@
     </select>
 
     <update id="upOneData" parameterType="com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer">
-        update synlte.FieldDeterminer set DCHINSENAME = #{dChinseName}, DNAME = #{dName}, MEMO = #{memo},
-         AUTHOR = #{author}, MODDATE = sysdate,  DETERMINERTYPE = #{determinerTypeNum}, "VERSIONS" = #{versions},
-         RELEASEDATE = #{releaseDate},FACTURER = #{facturer},REG_ORG = #{regOrg},ON_DATE = #{onDate}
-        where upper(DETERMINERID) = upper(#{determinerId}) and MODDATE = #{modDate}
+        update synlte.FieldDeterminer
+           set DCHINSENAME     = #{dChinseName},
+               DNAME           = #{dName},
+               MEMO            = #{memo},
+               AUTHOR          = #{author},
+               MODDATE         = sysdate,
+               DETERMINERTYPE  = #{determinerTypeNum},
+               VERSIONS        = #{versions},
+               RELEASEDATE     = #{releaseDate},
+               FACTURER        = #{facturer},
+               REG_ORG         = #{regOrg},
+               ON_DATE         = #{onDate},
+               DETERMINERSTATE = #{determinerStateNum}
+         where upper(DETERMINERID) = upper(#{determinerId})
+           and MODDATE = #{modDate}
     </update>
 
     <update id="updateDeterminerState">

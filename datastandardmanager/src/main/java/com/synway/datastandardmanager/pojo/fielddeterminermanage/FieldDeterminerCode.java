@@ -19,9 +19,9 @@ public enum FieldDeterminerCode {
      */
     FB("05","发布"),
     /**
-     *  废弃
+     *  停用
      */
-    FQ("07","废弃"),
+    FQ("07","停用"),
     /**
      * 公安标准
      */

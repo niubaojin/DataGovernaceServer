@@ -19,7 +19,7 @@ public class FieldDeterminerTable implements Serializable {
     private static final long serialVersionUID = 2221157135410553458L;
 
     /**
-     *  状态 的筛选  01：新建  05：发布  07：废弃
+     *  状态 的筛选  01：新建  05：发布  07：停用
      */
     private List<FilterObject>  determinerStateFilter;
 
