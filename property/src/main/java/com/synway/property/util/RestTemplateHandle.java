@@ -225,4 +225,20 @@ public class RestTemplateHandle {
         return saveOperatorLog(operatorLogList);
     }
 
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>血缘接口>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    /**
+     * 获取表使用热度
+     */
+    public JSONArray getTableHots(int limits){
+        JSONArray jsonArray = new JSONArray();
+        String requestUrl = String.format("%s?limits=%d", UrlConstants.ds_getTableHot, limits);
+        log.info(">>>>>>开始调用接口：" + requestUrl);
+        JSONObject jsonObject = restTemplate.getForObject(requestUrl, JSONObject.class);
+        Integer status = jsonObject.getInteger("status");
+        if (status == 1) {
+            jsonArray = jsonObject.getJSONArray("data");
+        }
+        return jsonArray;
+    }
+
 }

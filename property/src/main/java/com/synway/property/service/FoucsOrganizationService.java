@@ -1,7 +1,7 @@
 package com.synway.property.service;
 
 
-import com.synway.property.pojo.ClassTreeData;
+import com.alibaba.fastjson.JSONArray;
 import com.synway.property.pojo.ClassifyInformation;
 import com.synway.property.pojo.DataRankingTop;
 import com.synway.property.pojo.FoucsOrganizationFull;
@@ -9,7 +9,6 @@ import com.synway.common.bean.ServerResponse;
 import com.synway.property.pojo.formorganizationindex.ClassifyInfoTree;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 重点组织监控的相关代码
@@ -24,7 +23,7 @@ public interface FoucsOrganizationService {
 
     ServerResponse<List<ClassifyInformation>> getAllClassifyInformationTableService();
 
-    ServerResponse<Map<String,Object>> getDayUseHeatService();
+    JSONArray getDayUseHeatService();
 
 
     ServerResponse<DataRankingTop> getFullDataRankingService();

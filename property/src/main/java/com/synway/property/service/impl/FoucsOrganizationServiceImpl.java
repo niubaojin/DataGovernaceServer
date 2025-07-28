@@ -1,5 +1,6 @@
 package com.synway.property.service.impl;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.property.dao.DataMonitorDao;
 import com.synway.property.dao.DataStorageMonitorDao;
@@ -13,6 +14,7 @@ import com.synway.property.service.FoucsOrganizationService;
 import com.synway.property.util.CacheManager;
 import com.synway.property.util.ExceptionUtil;
 import com.synway.common.bean.ServerResponse;
+import com.synway.property.util.RestTemplateHandle;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,9 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private RestTemplateHandle restTemplateHandle;
 
     @Autowired
     private DataStorageMonitorDao dataStorageMonitorDao;
@@ -246,29 +251,18 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
     }
 
     /**
-     * 获取昨日使用热度的top10
+     * 获取昨日使用热度的top8
      *
      * @return
      */
     @Override
-    public ServerResponse<Map<String, Object>> getDayUseHeatService() {
-        ServerResponse<Map<String, Object>> serverResponse = null;
+    public JSONArray getDayUseHeatService() {
         try {
-            int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
-            int daysAgo = todayAssetsCount<100?1:0;
-            List<Map<String, Object>> resultList = foucsOrganizationDao.getDayUseHeatDao(daysAgo);
-            List<String> tableNameZhList = new ArrayList<>();
-            List<Integer> usedHeatList = new ArrayList<>();
-            Map<String, Object> resultMap = new HashMap<>();
-            getTableNameCh(tableNameZhList, usedHeatList, resultList);
-            resultMap.put("tableNameCH", tableNameZhList);
-            resultMap.put("usedHeat", usedHeatList);
-            serverResponse = ServerResponse.asSucessResponse(resultMap);
+            return restTemplateHandle.getTableHots(8);
         } catch (Exception e) {
-            serverResponse = ServerResponse.asErrorResponse("查询使用热度top8报错");
-            logger.error("查询使用热度top8报错" + ExceptionUtil.getExceptionTrace(e));
+            logger.error("查询使用热度top8报错：", e);
+            return new JSONArray();
         }
-        return serverResponse;
     }
 
     @Override

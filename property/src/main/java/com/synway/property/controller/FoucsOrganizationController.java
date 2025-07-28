@@ -182,14 +182,12 @@ public class FoucsOrganizationController {
 
     /**
      * 获取24小时热度表柱状图TOP8的接口
-     *
      */
     @RequestMapping("/getDayUseHeatTop8")
     @ResponseBody
-    public ServerResponse<Map<String,Object>> getDayUseHeat(){
+    public ServerResponse<JSONArray> getDayUseHeat(){
         logger.info("开始获取24小时热度表柱状图TOP8的数据");
-        ServerResponse<Map<String,Object>> serverResponse = foucsOrganizationServiceImpl.getDayUseHeatService();
-        return serverResponse;
+        return ServerResponse.asSucessResponse(foucsOrganizationServiceImpl.getDayUseHeatService());
     }
 
 
