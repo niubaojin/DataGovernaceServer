@@ -51,6 +51,11 @@ create table TABLE_ORGANIZATION_ASSETS
     ISSTANDARD                 varchar2(100),
     ALARM_LEVEL                varchar2(100),
 	SJZYBQ5                    VARCHAR2(50)
+)
+partition by range(STATISTICS_TIME)
+interval('1 day')
+(
+    partition p1 values less than ('2025-07-31 00:00:00')
 );
 -- Add comments to the table
 comment on table TABLE_ORGANIZATION_ASSETS
