@@ -1,4 +1,5 @@
 package com.synway.datastandardmanager.aop;
+import com.alibaba.fastjson.JSONObject;
 import com.synway.datastandardmanager.config.TransactionUtils;
 import com.synway.datastandardmanager.entity.BuildTableInfoVo;
 import com.synway.datastandardmanager.enums.OperateLogHandleTypeEnum;
@@ -126,7 +127,7 @@ public class AOPHelper {
         Object returnStr = (Object)pjp.proceed();
         BuildTableInfoVo buildTableInfoVo = (BuildTableInfoVo) pjp.getArgs()[0];
         try{
-            log.info("建表成功之后将相关信息保存到OBJECT_STORE_INFO、操作日志入库");
+            log.info("建表成功之后将相关信息保存到OBJECT_STORE_INFO、操作日志入库：" + JSONObject.toJSONString(buildTableInfoVo));
             objectStoreInfoServiceImpl.saveObjectStoreInfoFromAliyun(buildTableInfoVo);
             // 发送操作日志
             operateLogServiceImpl.createTableSuccessLog(OperateLogHandleTypeEnum.CREATETABLE, "数据建表", buildTableInfoVo);
