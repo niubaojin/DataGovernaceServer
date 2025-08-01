@@ -668,9 +668,6 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         // 要插入的表组织数据table_organization_assets
         List<TableOrganizationData> insertList = new ArrayList<>();
 
-        // 对账数据从数据库依次查询改为统一获取后内存处理
-        List<TableOrganizationData> billDatas = dataMonitorDao.getBillDatas( 3);
-        Map<String, List<TableOrganizationData>> billDataMaps = billDatas.stream().collect(Collectors.groupingBy(TableOrganizationData::getSjxjbm));
         // 资产统计数据从数据库依次查询改为统一获取后内存处理
         List<TableOrganizationData> syndmgTables = dataMonitorDao.getPreviousTableAllCount(3);
         Map<String, List<TableOrganizationData>> syndmgTableMaps = syndmgTables.stream().collect(Collectors.groupingBy(TableOrganizationData::getSjxjbm));
@@ -701,22 +698,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             getIsStandardTable(oneTableOrganizationData, objectTableNames, objectStoreInfos);
             // 注入注册状态
             getRegisterStatus(oneTableOrganizationData, publicDataInfos);
-//            /*注入更新生命周期审批状态*/
-//            updateLifeCycleApprovals.removeIf(item -> {
-//                String tableType = item.getTableProject().split("->")[0];
-//                String tableProject = item.getTableProject().split("->")[1];
-//                if (oneTableOrganizationData.getTableType().equalsIgnoreCase(tableType) &&
-//                        oneTableOrganizationData.getTableProject().equalsIgnoreCase(tableProject) &&
-//                        oneTableOrganizationData.getTableNameEn().equalsIgnoreCase(item.getTableNameEn())) {
-//                    oneTableOrganizationData.setLifeCycleStatus(item.getApprovalStatus());
-//                    return true;
-//                } else {
-//                    return false;
-//                }
-//            });
             /*这里直接查询对账数据相加，减少代码的复杂度，速度有点慢*/
             try {
-                getRealDataNum(oneTableOrganizationData, billDataMaps, syndmgTableMaps);
+                getRealDataNum(oneTableOrganizationData, syndmgTableMaps);
             } catch (Exception e) {
                 logger.error("增加对账数据报错" + ExceptionUtil.getExceptionTrace(e));
             }
@@ -878,7 +862,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
      *
      * @param t
      */
-    private void getRealDataNum(TableOrganizationData t, Map<String, List<TableOrganizationData>> billDataMaps, Map<String, List<TableOrganizationData>> syndmgTableMaps) {
+    private void getRealDataNum(TableOrganizationData t, Map<String, List<TableOrganizationData>> syndmgTableMaps) {
         List<BigInteger> allCount = new ArrayList<>();
         BigInteger zero = new BigInteger("0");
         // 资产统计数据从数据库依次查询改为统一获取后内存处理
@@ -899,48 +883,6 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             }
         }
 
-        // 对账数据从数据库依次查询改为统一获取后内存处理
-        for (String key : billDataMaps.keySet()){
-            if (StringUtils.isNotBlank(t.getSjxjbm()) && t.getSjxjbm().equalsIgnoreCase(key)){
-                List<TableOrganizationData> dataList = billDataMaps.get(key);
-                BigInteger tableAllcount = new BigInteger("0");
-                BigInteger tempData = new BigInteger("0");
-                for (int i = 0; i < 4; i++) {
-                    if (dataList.size() > i) {
-                        tempData = tempData.add(dataList.get(i).getTableAllCount() != null ? dataList.get(i).getTableAllCount() : new BigInteger("0"));
-                    }
-                    if (allCount.size() > i && allCount.get(i).compareTo(zero) != 0L) {
-                        tableAllcount = allCount.get(i).add(tempData);
-                        t.setTableAllCount(tableAllcount);
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-
-//        List<String> todayNum;
-//        if (StringUtils.isNotBlank(t.getSjxjbm())) {
-//            todayNum = dataMonitorDao.getStandardBillNum(t.getTableProject() + "." + t.getTableNameEn(), 6);
-//        } else {
-//            todayNum = dataMonitorDao.getAccessBillNum(t.getTableProject() + "." + t.getTableNameEn(), 6);
-//        }
-//        try {
-//            BigInteger tableAllcount = new BigInteger("0");
-//            BigInteger tempData = new BigInteger("0");
-//            for (int i = 0; i < 7; i++) {
-//                if (todayNum.size() > i) {
-//                    tempData = tempData.add(new BigInteger(todayNum.get(i)));
-//                }
-//                if (allCount.size() > i && allCount.get(i).compareTo(zero) != 0L) {
-//                    tableAllcount = allCount.get(i).add(tempData);
-//                    t.setTableAllCount(tableAllcount);
-//                    break;
-//                }
-//            }
-//        } catch (Exception e) {
-//            logger.error(ExceptionUtil.getExceptionTrace(e));
-//        }
     }
 
     @Override
