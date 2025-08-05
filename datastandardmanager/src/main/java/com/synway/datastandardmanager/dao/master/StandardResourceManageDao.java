@@ -81,7 +81,7 @@ public interface StandardResourceManageDao {
 	/**
 	 *  查询表中是否有存在的数据
 	 */
-	Map<String,Integer> selectDataIsExist(@Param("outputGuid") String outputGuid,
+	Map<String,Long> selectDataIsExist(@Param("outputGuid") String outputGuid,
 										  @Param("inputGuid") String inputGuid,
 										  @Param("inputIobjSource") int inputIobjSource);
 
