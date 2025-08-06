@@ -938,12 +938,11 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                     stringServerResponse = ServerResponse.asErrorResponse("查询的插入数据为空" + JSONObject.toJSONString(inputObjectCreate));
                 }
                 log.info("查询的数据为：" + JSONObject.toJSONString(inputObjectCreate));
-                Map<String, Long> queryIsExistMap = standardResourceManageDao.selectDataIsExist(outputGuid,
+                CommonVO queryIsExistMap = standardResourceManageDao.selectDataIsExist(outputGuid,
                         inputObjectCreate.objGuid == null ? "null" : inputObjectCreate.objGuid,
                         inputObjectCreate.inputIobjSource == null ? 0 : inputObjectCreate.inputIobjSource);
-                boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
-                long usedCount = isHailiang ? queryIsExistMap.get("usedcount").intValue() : queryIsExistMap.get("USEDCOUNT").intValue();
-                long disableUsedCount = isHailiang ? queryIsExistMap.get("disableusedcount").intValue() : queryIsExistMap.get("DISABLEUSEDCOUNT").intValue();
+                int usedCount = queryIsExistMap.getUsedCount();
+                int disableUsedCount = queryIsExistMap.getDisableUsedCount();
                 // 如果都为0，表示在数据库中没有该条数据
                 if (usedCount == 0 && disableUsedCount == 0) {
                     // 拼接成需要插入的数据 然后将数据插入到表中

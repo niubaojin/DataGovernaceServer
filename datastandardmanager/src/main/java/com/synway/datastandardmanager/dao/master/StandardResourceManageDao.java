@@ -1,10 +1,7 @@
 package com.synway.datastandardmanager.dao.master;
 
 import com.synway.datastandardmanager.interceptor.AuthorControl;
-import com.synway.datastandardmanager.pojo.InputObjectCreate;
-import com.synway.datastandardmanager.pojo.ObjectPojoTable;
-import com.synway.datastandardmanager.pojo.ObjectVersion;
-import com.synway.datastandardmanager.pojo.PageSelectOneValue;
+import com.synway.datastandardmanager.pojo.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -81,9 +78,9 @@ public interface StandardResourceManageDao {
 	/**
 	 *  查询表中是否有存在的数据
 	 */
-	Map<String,Long> selectDataIsExist(@Param("outputGuid") String outputGuid,
-										  @Param("inputGuid") String inputGuid,
-										  @Param("inputIobjSource") int inputIobjSource);
+	CommonVO selectDataIsExist(@Param("outputGuid") String outputGuid,
+							   @Param("inputGuid") String inputGuid,
+							   @Param("inputIobjSource") int inputIobjSource);
 
 
 	/**

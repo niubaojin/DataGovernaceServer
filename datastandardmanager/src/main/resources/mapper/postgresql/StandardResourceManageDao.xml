@@ -155,7 +155,7 @@
     </delete>
        <!--update STANDARDIZE_INPUTOBJECTRELATE set IOR_STATUS = 0-->
 
-    <select id="selectDataIsExist" resultType="java.util.Map">
+    <select id="selectDataIsExist" resultType="com.synway.datastandardmanager.pojo.CommonVO">
      select max(decode(typeName, 'used', oneCount, 0)) as usedCount,
         max(decode(typeName, 'disableUsed', oneCount, 0)) as disableUsedCount from(
         select 'used'  as typeName, count(*) as oneCount from STANDARDIZE_INPUTOBJECTRELATE
