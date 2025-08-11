@@ -264,8 +264,10 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
             logger.info("将表名"+objectStoreInfo.getTableName()+"中对应的是否入库修改成：" + objectStoreInfo.getImportFlag());
             objectStoreInfoDao.updateImportFlagByName(objectStoreInfo.getStoreType(),objectStoreInfo.getTableName(),objectStoreInfo.getDataId(),objectStoreInfo.getImportFlag());
         }
-        int flag = objectStoreInfoDao.updateObjectStoreInfoTime(objectStoreInfo,updateFlag);
-        logger.info("更新字段后插入到数据库成功条数"+flag);
+        if(1 == updateFlag){
+            int flag = objectStoreInfoDao.updateObjectStoreInfoTime(objectStoreInfo,updateFlag);
+            logger.info("更新字段后插入到数据库成功条数"+flag);
+        }
     }
 
     @Override
