@@ -55,37 +55,8 @@ public class LoginUser implements Serializable {
     /** 操作权限内容 */
     private String operateAuth;
 
-
-    public void initUserLevel() {
-        if(userRolesName.contains("数汇系统管理员")){
-            this.userLevel = 1;
-        }else if (userRolesName.contains("数汇机构管理员")){
-            this.userLevel = 2;
-        }else if (userRolesName.contains("数汇普通用户")){
-            this.userLevel = 3;
-        }else{
-            this.userLevel = -1;
-        }
-    }
-
-
     public boolean isAdmin(){
         return this.userLevel==1;
-    }
-
-    /**
-     * 将数据权限解析后构建 In所需语句
-     * @return
-     */
-    public String getFormatDataAuthIds(){
-        try {
-            return (StringUtils.isBlank(this.dataAuth)) ?
-                    "('')" :
-                    JSONArray.parseArray(this.dataAuth).stream().map(e -> ((JSONObject) e).getString("organId")).collect(Collectors.joining("'),(0,'", "((0,'", "'))"));
-        }catch (Exception ex){
-            log.error("在解析数据权限时出错，错误信息为:",ex);
-        }
-        return "('')";
     }
 
 }

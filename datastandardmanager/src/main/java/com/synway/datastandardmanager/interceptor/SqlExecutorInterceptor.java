@@ -62,7 +62,6 @@ public class SqlExecutorInterceptor implements Interceptor {
         }
         Class<?> classType = Class.forName(mappedStatement.getId().substring(0,mappedStatement.getId().lastIndexOf(".")));
         String mName = mappedStatement.getId().substring(mappedStatement.getId().lastIndexOf(".")+1);
-        String dsType = env.getProperty("database.type").toLowerCase();
         for(Method method: classType.getDeclaredMethods()){
             // 拥有这个注解的 才需要修改sql信息 AuthorControl
             if(method.isAnnotationPresent(AuthorControl.class)
@@ -71,7 +70,7 @@ public class SqlExecutorInterceptor implements Interceptor {
                 String sql = boundSql.getSql();
                 log.info("拦截器StatementInterceptor拦截前的sql语句为:"+(StringUtils.isBlank(sql)?"":
                         sql.replaceAll("\n"," ")));
-                String newSql = SqlAuthorParse.getNewSql(sql,authorControl,loginUser,mName, dsType);
+                String newSql = SqlAuthorParse.getNewSql(sql,authorControl,loginUser,mName);
                 metaObject.setValue("delegate.boundSql.sql", newSql);
                 return invocation.proceed();
             }

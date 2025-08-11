@@ -48,77 +48,78 @@
                  right join (select *
                               from synlte.object
                              where deleted = 0
-                               and upper(relate_tablename) = 'OBJECTFIELD') o on upper(c.sjxjbm) = upper(o.tableid)
+                               and upper(relate_tablename) = 'OBJECTFIELD'
+                                <if test="summaryQueryParams.searchCode != '' and summaryQueryParams.searchCode != null">
+                                    and (upper(objectname) like upper('%${summaryQueryParams.searchCode}%')
+                                    or upper(tablename) like upper('%${summaryQueryParams.searchCode}%')
+                                    or upper(tableid) like upper('%${summaryQueryParams.searchCode}%'))
+                                </if>
+                                <if test="dataLabelClassifyList1 != null and dataLabelClassifyList1.size > 0">
+                                    and sjzybq1 in
+                                    <foreach collection="dataLabelClassifyList1" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="dataLabelClassifyList2 != null and dataLabelClassifyList2.size > 0">
+                                    and sjzybq2 in
+                                    <foreach collection="dataLabelClassifyList2" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="dataLabelClassifyList3 != null and dataLabelClassifyList3.size > 0">
+                                    and sjzybq3 in
+                                    <foreach collection="dataLabelClassifyList3" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="dataLabelClassifyList4 != null and dataLabelClassifyList4.size > 0">
+                                    and sjzybq4 in
+                                    <foreach collection="dataLabelClassifyList4" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="dataLabelClassifyList5 != null and dataLabelClassifyList5.size > 0">
+                                    and sjzybq5 in
+                                    <foreach collection="dataLabelClassifyList5" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="dataLabelClassifyList6 != null and dataLabelClassifyList6.size > 0">
+                                    and sjzybq6 in
+                                    <foreach collection="dataLabelClassifyList6" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="useTageValueList != null and useTageValueList.size > 0">
+                                    and objectstate in
+                                    <foreach collection="useTageValueList" open="(" close=")" separator="," item="item" >
+                                        #{item}
+                                    </foreach>
+                                </if>
+                                <if test="dataObjectClassifyList != null and dataObjectClassifyList.size > 0">
+                                    and (0, objectid) in
+                                    <foreach collection="dataObjectClassifyList" open="(" close=")" separator="," item="item" >
+                                        (0, #{item})
+                                    </foreach>
+                                </if>
+                             ) o on upper(c.sjxjbm) = upper(o.tableid)
                   left join (select distinct valtext, valvalue
                               from synlte.fieldcodeval
                              where codeid = 'JZCODE0024') s on upper(o.data_source) = upper(s.valvalue)) x
-         <where>
-             <if test="summaryQueryParams.searchCode != '' and summaryQueryParams.searchCode != null">
-                and (upper(x.objectname) like upper('%${summaryQueryParams.searchCode}%')
-                or upper(x.tablename) like upper('%${summaryQueryParams.searchCode}%')
-                or upper(x.tableid) like upper('%${summaryQueryParams.searchCode}%'))
-             </if>
-             <if test="dataOrganizationClassifyList != null and dataOrganizationClassifyList.size > 0">
-                and x.dataorganizationclassify in
-                <foreach collection="dataOrganizationClassifyList" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataSourceClassifyList != null and dataSourceClassifyList.size > 0">
-                and x.datasourceclassify in
-                <foreach collection="dataSourceClassifyList" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataLabelClassifyList1 != null and dataLabelClassifyList1.size > 0">
-                and x.sjzybq1 in
-                <foreach collection="dataLabelClassifyList1" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataLabelClassifyList2 != null and dataLabelClassifyList2.size > 0">
-                and x.sjzybq2 in
-                <foreach collection="dataLabelClassifyList2" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataLabelClassifyList3 != null and dataLabelClassifyList3.size > 0">
-                and x.sjzybq3 in
-                <foreach collection="dataLabelClassifyList3" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataLabelClassifyList4 != null and dataLabelClassifyList4.size > 0">
-                and x.sjzybq4 in
-                <foreach collection="dataLabelClassifyList4" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataLabelClassifyList5 != null and dataLabelClassifyList5.size > 0">
-                and x.sjzybq5 in
-                <foreach collection="dataLabelClassifyList5" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataLabelClassifyList6 != null and dataLabelClassifyList6.size > 0">
-                and x.sjzybq6 in
-                <foreach collection="dataLabelClassifyList6" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="useTageValueList != null and useTageValueList.size > 0">
-                and x.objectstate in
-                <foreach collection="useTageValueList" open="(" close=")" separator="," item="item" >
-                    #{item}
-                </foreach>
-             </if>
-             <if test="dataObjectClassifyList != null and dataObjectClassifyList.size > 0">
-                and (0, x.objectid) in
-                <foreach collection="dataObjectClassifyList" open="(" close=")" separator="," item="item" >
-                    (0, #{item})
-                </foreach>
-             </if>
-         </where>
+          <where>
+              <if test="dataOrganizationClassifyList != null and dataOrganizationClassifyList.size > 0">
+                  and x.dataorganizationclassify in
+                  <foreach collection="dataOrganizationClassifyList" open="(" close=")" separator="," item="item" >
+                      #{item}
+                  </foreach>
+              </if>
+              <if test="dataSourceClassifyList != null and dataSourceClassifyList.size > 0">
+                  and x.datasourceclassify in
+                  <foreach collection="dataSourceClassifyList" open="(" close=")" separator="," item="item" >
+                      #{item}
+                  </foreach>
+              </if>
+          </where>
         <if test="summaryQueryParams.sort != null and summaryQueryParams.sort != '' and summaryQueryParams.sort != 'createdTables' and summaryQueryParams.sort != 'createdtables' and summaryQueryParams.sort != 'CREATEDTABLES'">
             order by ${summaryQueryParams.sort}
             <if test="summaryQueryParams.sortOrder != null and summaryQueryParams.sortOrder != ''">
