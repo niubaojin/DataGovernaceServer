@@ -18,7 +18,7 @@ public class SqlAuthorParse {
             " ( SELECT l11.* FROM {0} l11 inner join " +
             "  ( select t1.id from USER_AUTHORITY t1 where exists " +
             "    ( " +
-            "      select auth_value from servicefac.data_factory_authority t2 where auth_type=2 and user_id_by_auth={1} and t1.userId = t2.user_id_by_auth " +
+            "      select auth_value from servicefac.data_factory_authority t2 where auth_type=2 and user_id_by_auth={1} and ( t1.organid= t2.USER_ORGAN_ID_BY_AUTH OR t1.organid= t2.auth_value) " +
             "    ) " +
             "    and upper(t1.modulecode) = ''BZGL''" +
             "  ) " +
