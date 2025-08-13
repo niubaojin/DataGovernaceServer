@@ -139,7 +139,6 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                 return new ArrayList<>();
             }
             List<ObjectField> objectFieldList = resourceManageDao.selectObjectFieldByObjectId(objectFieldDemo.getObjectId());
-            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
             // 获取代码中文名
             for (ObjectField objectField : objectFieldList) {
                 if(objectField.getFieldId().indexOf("_") != -1){
@@ -195,11 +194,11 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                         if (map == null) {
                             continue;
                         }
-                        codeText = isHailiang ? map.get("codetext") : map.get("codeText");
-                        codeId = isHailiang ? map.get("codeid") : map.get("codeId");
-                        fieldClass = isHailiang ? map.get("fieldclass") : map.get("fieldClass");
-                        fieldClassCh = isHailiang ? map.get("fieldclassch") : map.get("fieldClassCh");
-                        sameWordType = isHailiang ? map.get("samewordtype") : map.get("sameWordType");
+                        codeText = map.get("codeText");
+                        codeId = map.get("codeId");
+                        fieldClass = map.get("fieldClass");
+                        fieldClassCh = map.get("fieldClassCh");
+                        sameWordType = map.get("sameWordType");
                         objectField.setCodeText(StringUtils.isEmpty(codeText) ? "" : codeText);
                         objectField.setCodeid(StringUtils.isEmpty(codeId) ? "" : codeId);
                         objectField.setFieldClassId(StringUtils.isEmpty(fieldClass) ? "" : fieldClass);
@@ -1099,12 +1098,11 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             oneSynltefield.setFieldtypeName(SynlteFieldType.getSynlteFieldType(oneSynltefield.getFieldtype()));
             // 20210601 需要获取到分类信息
             List<Map<String, String>> list = resourceManageDao.getCodeTextAndCodeidByObjectField(oneSynltefield.getFieldid());
-            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
             if (!list.isEmpty()) {
                 Map<String, String> map = list.get(0);
                 if (map != null) {
-                    String fieldClass = isHailiang ? map.get("fieldclass") : map.get("fieldClass");
-                    String fieldClassCh = isHailiang ? map.get("fieldclassch") : map.get("fieldClassCh");
+                    String fieldClass = map.get("fieldClass");
+                    String fieldClassCh = map.get("fieldClassCh");
                     oneSynltefield.setFieldClass(StringUtils.isBlank(fieldClass) ? "" : fieldClass);
                     oneSynltefield.setFieldClassCh(StringUtils.isBlank(fieldClassCh) ? "" : fieldClassCh);
                 }
@@ -1933,7 +1931,6 @@ public class ResourceManageServiceImpl implements ResourceManageService {
             List<ObjectField> objectFieldList = resourceManageDao.selectObjectFieldByObjectIdQuery(objectFieldDemo.getObjectId(),
                     searchInput, searchType);
             // 获取代码中文名
-            boolean isHailiang = env.getProperty("database.type").equalsIgnoreCase("hailiang");
             for (ObjectField objectField : objectFieldList) {
                 String codeText = null;
                 String codeId = null;
@@ -1945,8 +1942,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                     list = resourceManageDao.getCodeTextAndCodeidByObjectField(objectField.getFieldId());
                     if (list.size() != 0) {
                         Map<String, String> map = list.get(0);
-                        codeText = isHailiang ? map.get("codetext") : map.get("codeText");
-                        codeId = isHailiang ? map.get("codeid") : map.get("codeId");
+                        codeText = map.get("codeText");
+                        codeId = map.get("codeId");
                         objectField.setCodeText(codeText);
                         objectField.setCodeid(codeId);
                     }

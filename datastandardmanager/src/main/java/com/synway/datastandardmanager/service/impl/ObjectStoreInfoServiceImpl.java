@@ -1170,6 +1170,7 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
                 ? DateUtil.formatDate(detectedTable.getCreateTime()) : DateUtil.formatDate(new Date(), DateUtil.DEFAULT_PATTERN_DATETIME));
         //searchFlag字段写入默认值0
         objectStoreInfo.setSearchFlag(0);
+        if (objectStoreInfo.getPartitionCount() == null) objectStoreInfo.setPartitionCount(0);
         //TODO partitionCount字段未填写，改字段为KAFKA和datahub平台
         return objectStoreInfo;
     }
@@ -1199,6 +1200,8 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
                         objectStoreFieldInfo.setPartitionRecno(1);
                     }else if (d.getPartitionLevel().equalsIgnoreCase("二级分区")){
                         objectStoreFieldInfo.setPartitionRecno(2);
+                    }else {
+                        objectStoreFieldInfo.setPartitionRecno(0);
                     }
                 }
                 objectStoreFieldInfo.setFieldType(SynlteFieldType.getSynlteNumType(d.getType()));
@@ -1206,6 +1209,9 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
                 objectStoreFieldInfo.setColumnFieldType(d.getType());
                 if (d.getLength() > 0){
                     objectStoreFieldInfo.setColumnFieldLen(d.getLength());
+                    objectStoreFieldInfo.setFieldLen(d.getLength());
+                }else {
+                    objectStoreFieldInfo.setFieldLen(0);
                 }
                 standsFieldList.stream().forEach( e ->{
                     if(d.getFieldName().equalsIgnoreCase(e.getColumnName())){
