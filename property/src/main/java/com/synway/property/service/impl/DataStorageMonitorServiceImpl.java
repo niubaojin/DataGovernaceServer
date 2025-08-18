@@ -946,7 +946,10 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void collectHuaweiDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList, String resId) {
         try {
-            String resultStr = rest.getForObject(UrlConstants.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId, String.class);
+            String url = UrlConstants.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
+            logger.info("hdfs数据库概况统计url：" + url);
+            String resultStr = rest.getForObject(url, String.class);
+            logger.info("hdfs数据库概况统计返回结果为：\n" + resultStr);
             ResourceOverView resourceOverView = JSONObject.parseObject(resultStr).getObject("data", ResourceOverView.class);
 
             DataBaseState dataBaseState = new DataBaseState();
@@ -1006,7 +1009,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             JSONArray dataResourceLocal = restTemplateHandle.getDataResourceByisLocal("2", '0');
             JSONArray dataResourceNoLocal = restTemplateHandle.getDataResourceByisLocal("1", '0');
             dataResourceLocal.addAll(dataResourceNoLocal);
-            JSONObject dataResource = (JSONObject) dataResourceLocal.stream().filter(d -> d.toString().contains(databaseType)).findFirst().orElse(new JSONObject());
+            JSONObject dataResource = (JSONObject) dataResourceLocal.stream().filter(d -> {
+                return JSONObject.parseObject(d.toString()).getString("resType").contains(databaseType);
+            }).findFirst().orElse(new JSONObject());
             return dataResource != null ? dataResource.getString("resId") : "";
         }catch (Exception e){
             logger.error("根据数据源类型获取数据源ID出错：\n", e);
