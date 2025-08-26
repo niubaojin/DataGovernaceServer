@@ -22,7 +22,6 @@ public class Common {
             "    comments as tableComment,\n" +
             "    sub_partition_count as lifeCycle,\n" +
             "    update_time as tableLastMetaModifiedTime,\n" +
-            "    table_type,\n" +
             "    create_time as tableCreatedTime,\n" +
             "    is_sub_partition as isPartitionStr,\n" +
             "    sub_partition_column as partColumn,\n" +
