@@ -89,7 +89,7 @@ public class DaMengDataSourceConfig {
 
     @Bean
     public String myInterceptor(SqlSessionFactory sqlSessionFactory){
-        sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor());
+        sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor(env));
         return "interceptor";
     }
 

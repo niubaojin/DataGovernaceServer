@@ -167,7 +167,7 @@ public class DataSourceConfig {
 
     @Bean
     public String myInterceptor(SqlSessionFactory sqlSessionFactory){
-        sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor());
+        sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor(environment));
         return "interceptor";
     }
 
