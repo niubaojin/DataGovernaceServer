@@ -794,34 +794,34 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                         levelThree.setLabel(twoChild);
                     }
                     levelThree.setLevel(3);
-                    List<TreeNode> chlidThree = new ArrayList<>();
-                    if (isQueryTable || 1==req.getType()) {
-                        for (StandardTableRelation s1 : levelThreeList) {
-                            // 以下为 具体的表信息
-                            TreeNode tableTreeNode = new TreeNode();
-                            tableTreeNode.setId(s1.getTableId());
-                            tableTreeNode.setLabel(s1.getTableNameCh());
-                            tableTreeNode.setLevel(4);
-                            tableTreeNode.setParent(twoChild);
-                            chlidThree.add(tableTreeNode);
-                        }
-                    }
-                    levelThree.setChildren(chlidThree);
+//                    List<TreeNode> chlidThree = new ArrayList<>();
+//                    if (isQueryTable || 1==req.getType()) {
+//                        for (StandardTableRelation s1 : levelThreeList) {
+//                            // 以下为 具体的表信息
+//                            TreeNode tableTreeNode = new TreeNode();
+//                            tableTreeNode.setId(s1.getTableId());
+//                            tableTreeNode.setLabel(s1.getTableNameCh());
+//                            tableTreeNode.setLevel(4);
+//                            tableTreeNode.setParent(twoChild);
+//                            chlidThree.add(tableTreeNode);
+//                        }
+//                    }
+//                    levelThree.setChildren(chlidThree);
                     chlidTwo.add(levelThree);
                 }
-                // 存储三级分类是空的数据
-                if (isQueryTable || 1==req.getType()) {
-                    for (StandardTableRelation standardTableRelation : levelTwoList) {
-                        if (StringUtils.isEmpty(standardTableRelation.getThreeClassifyCh())) {
-                            TreeNode levelTwoTable = new TreeNode();
-                            levelTwoTable.setId(standardTableRelation.getTableId());
-                            levelTwoTable.setLabel(standardTableRelation.getTableNameCh());
-                            levelTwoTable.setLevel(3);
-                            levelTwoTable.setParent(child);
-                            chlidTwo.add(levelTwoTable);
-                        }
-                    }
-                }
+//                // 存储三级分类是空的数据
+//                if (isQueryTable || 1==req.getType()) {
+//                    for (StandardTableRelation standardTableRelation : levelTwoList) {
+//                        if (StringUtils.isEmpty(standardTableRelation.getThreeClassifyCh())) {
+//                            TreeNode levelTwoTable = new TreeNode();
+//                            levelTwoTable.setId(standardTableRelation.getTableId());
+//                            levelTwoTable.setLabel(standardTableRelation.getTableNameCh());
+//                            levelTwoTable.setLevel(3);
+//                            levelTwoTable.setParent(child);
+//                            chlidTwo.add(levelTwoTable);
+//                        }
+//                    }
+//                }
                 levelTwo.setChildren(chlidTwo);
                 chlidOne.add(levelTwo);
             }
