@@ -89,6 +89,7 @@ public class HiveTableColumnHandle implements TableColumnHandle {
         List<ObjectField> columnList = buildTableInfoVo.getColumnData();
         String tableName = buildTableInfoVo.getTableName();
         String projectName = buildTableInfoVo.getProjectName();
+        Integer lifeDays = buildTableInfoVo.getLifeCycle();
         String sql = "";
         sql = "CREATE TABLE IF NOT EXISTS " +projectName+"."+tableName +"(\n";
         //添加字段
@@ -119,9 +120,11 @@ public class HiveTableColumnHandle implements TableColumnHandle {
         }else{
             sql = sql.substring(0,sql.trim().length()-1)+") \n  comment  '"+tableNameCh+"' ";
         }
-
+        if(lifeDays != null && lifeDays > 0){
+            sql += "\n  lifecycle " + lifeDays;
+        }
         // 需要添加 表的存储格式
-        sql = sql + "\n  stored as orc tblproperties (\"orc.compress\"=\"SNAPPY\")";
+        sql = sql + "\n  stored as orc;";
 
         return sql;
     }

@@ -9,6 +9,7 @@ create table STANDARDIZE_OBJECT_RELATION
     CREATE_TIME DATE,
     UPDATE_TIME DATE
 );
+comment on table STANDARDIZE_OBJECT_RELATION is '标准object关系表';
 -- Add comments to the columns
 comment on column STANDARDIZE_OBJECT_RELATION.ID
     is '表 id';
@@ -43,6 +44,7 @@ create table STANDARDIZE_OBJECTFIELD_REL
     UPDATE_TIME           DATE,
     FIELDCHINESENAME      VARCHAR(100)
 );
+comment on table STANDARDIZE_OBJECTFIELD_REL is '标准objectfield关系表';
 -- Add comments to the columns
 comment on column STANDARDIZE_OBJECTFIELD_REL.SET_ID
     is '数据集id';

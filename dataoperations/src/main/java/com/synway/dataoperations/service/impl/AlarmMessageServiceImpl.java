@@ -6,6 +6,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.synway.common.exception.ExceptionUtil;
 import com.synway.dataoperations.dao.AlarmMessageDao;
+import com.synway.dataoperations.dao.DAOHelper;
 import com.synway.dataoperations.enums.AlarmCodeEnum;
 import com.synway.dataoperations.interceptor.AuthorizedUserUtils;
 import com.synway.dataoperations.pojo.AlarmMessage;
@@ -31,7 +32,7 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
     public static final Logger logger = LoggerFactory.getLogger(AlarmMessageServiceImpl.class);
 
     @Autowired
-    AlarmMessageDao dao;
+    private AlarmMessageDao dao;
 
     @Override
     public void insertAlarmMessage(String jsonString){
@@ -54,7 +55,7 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
                 d.setAlarmflagName(alarmflagName);
                 d.setLevelName(alarmLevelName);
             });
-            dao.insertAlarmMessage(alarmMessages);
+            DAOHelper.insertDelList(alarmMessages, dao, "insertAlarmMessage", 200);
             logger.info("告警信息入库成功");
         }catch (Exception e){
             logger.error("告警信息入库失败:\n" + ExceptionUtil.getExceptionTrace(e));
@@ -97,6 +98,7 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
         });
     }
 
+    @Override
     public PageInfo<OperatorLog> getOperatorLogList( Integer currentPage , Integer pageSize ,
                             String sortName , String sortOrder ,
                             String opeModule , String opeType , String opePerson ,
@@ -121,7 +123,14 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
         }
         List<OperatorLog> list = dao.getOperatorLogList(opeModule,opeType,opePerson,beginTime,endTime,null);
         return new PageInfo<>(list);
+//        return PageHelper.startPage(currentPage,pageSize).doSelectPageInfo(() -> list(opeModule, opeType, opePerson));
     }
+
+//    public List<OperatorLog> list(String opeModule , String opeType , String opePerson){
+//        Date beginTime = null;
+//        Date endTime = null;
+//        return dao.getOperatorLogList(opeModule,opeType,opePerson,beginTime,endTime,null);
+//    }
 
 
 }

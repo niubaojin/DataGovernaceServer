@@ -17,7 +17,7 @@ import java.util.List;
  */
 @Mapper
 @Repository
-public interface AlarmMessageDao {
+public interface AlarmMessageDao extends BaseDAO{
 
     /**
      * @description 告警信息入库

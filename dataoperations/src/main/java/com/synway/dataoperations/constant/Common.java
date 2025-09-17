@@ -10,6 +10,16 @@ public class Common {
     public static final String HAILIANG = "HAILIANG";
     public static final String KING_BASE_ES = "KINGBASEES";
     public static final String POSTGRESQL = "POSTGRESQL";
+    public static final String KINGBASE = "kingBaseES";
+    public static final String VASTBASE = "vastbase";
+    public static final String POLAR_DB = "polardb";
+
+    //未适配
+    public static final String MYSQL = "mysql";
+    public static final String HIGHGO = "highgo";
+    public static final String GAUSS = "gauss";
+
+
 
     public static final String ORACLE_CLASS = "oracle.jdbc.driver.OracleDriver";
     public static final String DAMENG_CLASS = "dm.jdbc.driver.DmDriver";

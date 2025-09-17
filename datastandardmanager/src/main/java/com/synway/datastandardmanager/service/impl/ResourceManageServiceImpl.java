@@ -1629,12 +1629,12 @@ public class ResourceManageServiceImpl implements ResourceManageService {
         if (StringUtils.isBlank(objectPojoTable.getSourceId())) {
             objectPojoTable.setSourceId(" ");
         }
-        if (StringUtils.isBlank(objectPojoTable.getUpdateTime())){
-            objectPojoTable.setUpdateTime(DateUtil.formatDate(new Date(), DateUtil.DEFAULT_PATTERN_DATETIME));
-            objectPojoTable.setUpdateTimeRel(new Date());
-        }else {
-            objectPojoTable.setUpdateTimeRel(DateUtil.parseDateTime(objectPojoTable.getUpdateTime(),DateUtil.DEFAULT_PATTERN_DATETIME));
-        }
+//        if (StringUtils.isBlank(objectPojoTable.getUpdateTime())){
+//            objectPojoTable.setUpdateTime(DateUtil.formatDate(new Date(), DateUtil.DEFAULT_PATTERN_DATETIME));
+//            objectPojoTable.setUpdateTimeRel(new Date());
+//        }else {
+//            objectPojoTable.setUpdateTimeRel(DateUtil.parseDateTime(objectPojoTable.getUpdateTime(),DateUtil.DEFAULT_PATTERN_DATETIME));
+//        }
         objectPojoTable.setOwnerFactory(String.valueOf(factory));
         if (StringUtils.isBlank(objectPojoTable.getObjectId()) && StringUtils.isBlank(objectPojoTable.getStorageTableStatus())) {
             objectPojoTable.setStorageTableStatus(String.valueOf(ObjectStateType.getObjectStateStatus("未发布")));

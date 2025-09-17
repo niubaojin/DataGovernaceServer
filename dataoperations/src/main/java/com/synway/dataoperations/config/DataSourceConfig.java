@@ -2,6 +2,7 @@ package com.synway.dataoperations.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.synway.dataoperations.constant.Common;
+import com.synway.dataoperations.interceptor.SqlExecutorInterceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -98,5 +99,10 @@ public class DataSourceConfig {
         return new SqlSessionTemplate(sqlSessionFactory);
     }
 
+    @Bean
+    public String myInterceptor(SqlSessionFactory sqlSessionFactory){
+        sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor(environment));
+        return "interceptor";
+    }
 
 }

@@ -205,7 +205,7 @@
             SJZZYJFLVALLUE,SJZZEJFLVALUE,SJZYLYLXVALUE,STANDARD_TYPE,DELETED)
         VALUES(#{objectId} ,#{dataSourceName}, #{storageTableStatus},upper(#{tableId}) ,#{realTablename} ,#{storageDataMode,jdbcType=VARCHAR},
         #{codeTextTd},'JZ_RESOURCE', #{sourceId},#{objectMemo,jdbcType=VARCHAR},1,'JZ_RESOURCE',#{realTablename},#{dataType,jdbcType=VARCHAR}
-          ,'OBJECTFIELD',#{isActiveTable},#{updateTimeRel,jdbcType=TIMESTAMP},#{creator,jdbcType=VARCHAR},#{updater,jdbcType=VARCHAR},#{createTimeRel,jdbcType=TIMESTAMP},
+          ,'OBJECTFIELD',#{isActiveTable},sysdate,#{creator,jdbcType=VARCHAR},#{updater,jdbcType=VARCHAR},#{createTimeRel,jdbcType=TIMESTAMP},
           #{version},#{versions},#{dataLevel,jdbcType=VARCHAR},#{sjzybq1,jdbcType=VARCHAR},#{sjzybq2,jdbcType=VARCHAR},
           #{sjzybq3,jdbcType=VARCHAR},#{sjzybq4,jdbcType=VARCHAR},#{sjzybq5,jdbcType=VARCHAR},#{sjzybq6,jdbcType=VARCHAR},#{SJZZYJFLVALLUE,jdbcType=VARCHAR},
           #{SJZZEJFLVALUE,jdbcType=VARCHAR},#{SJZYLYLXVALUE,jdbcType=VARCHAR},#{standardType},0

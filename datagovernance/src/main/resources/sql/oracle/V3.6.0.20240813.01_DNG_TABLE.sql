@@ -169,6 +169,7 @@ create table DGN_BSCDATA_CITY
     CITY_ZIP   VARCHAR2(20) default '',
     CITY_CODE  VARCHAR2(20) default '' not null
 );
+comment on table DGN_BSCDATA_CITY is '城市码表';
 
 create table DGN_BSCDATA_PROVINCE
 (
@@ -177,6 +178,7 @@ create table DGN_BSCDATA_PROVINCE
     ISDIRECT   NUMBER(2),
     CANTONCODE NUMBER(10)
 );
+comment on table DGN_BSCDATA_PROVINCE is '省码表';
 
 create table DGN_DISTRIBUTION_STATISTIC
 (
