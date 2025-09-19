@@ -130,6 +130,7 @@ public class ObjectStoreInfoController {
     public ServerResponse<String> refreshCreateTableOneTable(@RequestBody RefreshCreatedPojo refreshCreatedPojo){
         try{
             logger.info("刷新单个表");
+            refreshCreatedPojo.setIsOneTableRefresh(true);
             objectStoreInfoServiceImpl.refreshCreateTableOneTable(refreshCreatedPojo);
             return ServerResponse.asSucessResponse("刷新成功","刷新成功");
         }catch (Exception e){

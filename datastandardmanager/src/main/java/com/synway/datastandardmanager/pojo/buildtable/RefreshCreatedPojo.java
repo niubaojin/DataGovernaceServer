@@ -53,5 +53,8 @@ public class RefreshCreatedPojo {
     //项目空间id
     private String projectId;
 
+    //是否单表刷新
+    private Boolean isOneTableRefresh = false;
+
 
 }

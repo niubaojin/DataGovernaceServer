@@ -598,23 +598,33 @@ public class ObjectStoreInfoServiceImpl implements ObjectStoreInfoService {
                     return Boolean.TRUE;
                 });
             }else{
-                int oldObjectStoreFieldInfoSum = objectStoreInfoDao.getOldOSFInfoSum(tableInfoId);
-                ObjectStoreInfo objectStoreInfo = new ObjectStoreInfo();
-                objectStoreInfo.setTableInfoId(tableInfoId);
-                // List<String> sjzybsfList = objectStoreInfoDao.getSjzybsfList(objectStoreInfo);
-                // 物理表字段个数与object_store_field_info中字段记录数不一致时，不再验证表的tableinfoid是否已注册（未注销）
-                if (oldObjectStoreFieldInfoSum != dataResourceFieldInfo.size()){
-                    logger.info("开始更新object_store_fieldinfo");
+                if (refreshCreatedPojo.getIsOneTableRefresh()){
                     List<ObjectStoreFieldInfo> objectStoreFieldInfoList = createNewObjectStoreFieldInfo(standardObjectFields,dataResourceFieldInfo,tableInfoId, d);
-                    //保存信息
-                    //使用编程式事务，对表和字段的保存进行事务管理
                     transactionTemplate.execute(transactionStatus -> {
                         if (objectStoreFieldInfoList.size()>0){
-                            int deleteCount = objectStoreInfoDao.deleteObjectStoreFieldInfo(tableInfoId);
+                            objectStoreInfoDao.deleteObjectStoreFieldInfo(tableInfoId);
                             objectStoreInfoDao.saveObjectStoreFieldInfo(objectStoreFieldInfoList);
                         }
                         return Boolean.TRUE;
                     });
+                }else {
+                    int oldObjectStoreFieldInfoSum = objectStoreInfoDao.getOldOSFInfoSum(tableInfoId);
+                    ObjectStoreInfo objectStoreInfo = new ObjectStoreInfo();
+                    objectStoreInfo.setTableInfoId(tableInfoId);
+                    // 物理表字段个数与object_store_field_info中字段记录数不一致时，不再验证表的tableinfoid是否已注册（未注销）
+                    if (oldObjectStoreFieldInfoSum != dataResourceFieldInfo.size()){
+                        logger.info("开始更新object_store_fieldinfo");
+                        List<ObjectStoreFieldInfo> objectStoreFieldInfoList = createNewObjectStoreFieldInfo(standardObjectFields,dataResourceFieldInfo,tableInfoId, d);
+                        //保存信息
+                        //使用编程式事务，对表和字段的保存进行事务管理
+                        transactionTemplate.execute(transactionStatus -> {
+                            if (objectStoreFieldInfoList.size()>0){
+                                objectStoreInfoDao.deleteObjectStoreFieldInfo(tableInfoId);
+                                objectStoreInfoDao.saveObjectStoreFieldInfo(objectStoreFieldInfoList);
+                            }
+                            return Boolean.TRUE;
+                        });
+                    }
                 }
             }
         });
