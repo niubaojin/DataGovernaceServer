@@ -10,7 +10,7 @@
        TABLE_ALL_COUNT,TABLE_SIZE,LIFE_CYCLE,YESTERDAY_COUNT,AVERAGE_DAILY_VOLUME,VALUE_RATE,NULL_RATE,FREQUENCY,THREE_ORGANIZATION_CH,OBJECT_STATE,REGISTER_STATE) values
        (#{buildTableInfoVo.tableId},#{buildTableInfoVo.tableName},#{buildTableInfoVo.schema},#{buildTableInfoVo.dsType},CURRENT_DATE,
        #{buildTableInfoVo.objectId},#{buildTableInfoVo.tableNameCH},#{buildTableInfoVo.primaryDatasourceCh},#{buildTableInfoVo.secondaryDatasourceCh},
-       #{buildTableInfoVo.primaryOrganizationCh},#{buildTableInfoVo.secondaryOrganizationCh},'0','0','0',#{buildTableInfoVo.lifeCycle},'0','0','0','0','0/0','未知',0,-1)
+       #{buildTableInfoVo.primaryOrganizationCh},#{buildTableInfoVo.secondaryOrganizationCh},'0','0','0',#{buildTableInfoVo.lifeCycle},'0','0','0','0','0/0','中间表',0,-1)
    </insert>
     <insert id="insertInfoTemp" parameterType="com.synway.datastandardmanager.entity.BuildTableInfoVo">
          insert into TABLE_ORGANIZATION_ASSETS_TEMP (SJXJBM,TABLE_NAME_EN,TABLE_PROJECT,TABLE_TYPE,STATISTICS_TIME,OBJECT_ID,NAME,

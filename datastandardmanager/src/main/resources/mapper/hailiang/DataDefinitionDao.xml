@@ -51,14 +51,14 @@
           from (select distinct o.*,
                                 case
                                   when sourceParVci.CODETEXT is null then
-                                   '未知'
+                                   '中间表'
                                   else
                                    sourceParVci.CODETEXT
                                 end as PRIMARYDATASOURCECH,
                                 case
                                   when (sourceVci.CODETEXT is null and
                                        sourceParVci.CODETEXT is null) then
-                                   '未知'
+                                   '中间表'
                                   when (sourceVci.CODETEXT is null and
                                        sourceParVci.CODETEXT is not null) then
                                    ''

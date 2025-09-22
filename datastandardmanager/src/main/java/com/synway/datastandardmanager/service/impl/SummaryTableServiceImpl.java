@@ -399,7 +399,7 @@ public class SummaryTableServiceImpl implements SummaryTableService {
             logger.error("查询的参数条件mainClassify【"+mainClassify+"】不为dataOrganizationClassify，dataSourceClassify");
             throw new NullPointerException("查询的参数条件mainClassify【"+mainClassify+"】不为dataOrganizationClassify，dataSourceClassify");
         }
-        if(Common.DATA_SOURCE_CLASSIFY.equalsIgnoreCase(mainClassify) && !primaryClassifyCode.equalsIgnoreCase("未知")){
+        if(Common.DATA_SOURCE_CLASSIFY.equalsIgnoreCase(mainClassify) && !primaryClassifyCode.equalsIgnoreCase("中间表")){
             secondCodeId = primaryClassifyCode.split("GACODE000404")[1];
         }
         oneResultList = summaryTableDao.getSecondaryClassifyData(mainClassify.toLowerCase(),primaryClassifyCode.toLowerCase(),secondCodeId);

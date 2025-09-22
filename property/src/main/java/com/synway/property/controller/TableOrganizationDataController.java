@@ -59,7 +59,7 @@ public class TableOrganizationDataController {
         ServerResponse<List<PageSelectOneValue>> serverResponse = null;
         if("null".equalsIgnoreCase(mainClassify)){
             List<PageSelectOneValue> pageSelectOneValueList = new ArrayList<>();
-            pageSelectOneValueList.add(new PageSelectOneValue("null","未知"));
+            pageSelectOneValueList.add(new PageSelectOneValue("null","中间表"));
             serverResponse = ServerResponse.asSucessResponse(pageSelectOneValueList);
             return serverResponse;
         }else if(StringUtils.isBlank(mainClassify)){
@@ -90,7 +90,7 @@ public class TableOrganizationDataController {
         ServerResponse<List<PageSelectOneValue>> serverResponse = null;
         if("null".equalsIgnoreCase(mainClassify) && "null".equalsIgnoreCase(primaryClassifyCode)){
             List<PageSelectOneValue> pageSelectOneValueList = new ArrayList<>();
-            pageSelectOneValueList.add(new PageSelectOneValue("null","未知"));
+            pageSelectOneValueList.add(new PageSelectOneValue("null","中间表"));
             serverResponse = ServerResponse.asSucessResponse(pageSelectOneValueList);
             return serverResponse;
         }

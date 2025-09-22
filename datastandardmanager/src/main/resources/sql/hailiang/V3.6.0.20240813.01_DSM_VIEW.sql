@@ -128,12 +128,12 @@ codename_id as SJSJFLCODENAME,
 ParsourceCodename_id as SJLYYJCODENAME,
 -- 数据来源二级分类codename
 ourcecodename_id as SJLYEJCODENAME,
-case when (firstClass_ch is null and parClass_ch is not null) then '' when (firstClass_ch is null and parClass_ch is null) then '未知' else firstClass_ch end as FIRSTORGANIZATIONCH,
-case when (secondClass_ch is null and parClass_ch is not null) then '' when (secondClass_ch is null and parClass_ch is  null) then '未知' else secondClass_ch end  as SECONDARYORGANIZATIONCH,
-case when parClass_ch is null then '未知' else parClass_ch end  as PRIMARYORGANIZATIONCH,
-case when (secondClass_ch_source is null and parClass_ch_source is null) then '未知' when (secondClass_ch_source is null and parClass_ch_source is not null)
+case when (firstClass_ch is null and parClass_ch is not null) then '' when (firstClass_ch is null and parClass_ch is null) then '中间表' else firstClass_ch end as FIRSTORGANIZATIONCH,
+case when (secondClass_ch is null and parClass_ch is not null) then '' when (secondClass_ch is null and parClass_ch is  null) then '中间表' else secondClass_ch end  as SECONDARYORGANIZATIONCH,
+case when parClass_ch is null then '中间表' else parClass_ch end  as PRIMARYORGANIZATIONCH,
+case when (secondClass_ch_source is null and parClass_ch_source is null) then '中间表' when (secondClass_ch_source is null and parClass_ch_source is not null)
     then '' else secondClass_ch_source end as  SECONDARYDATASOURCECH,
-case when parClass_ch_source is null then '未知' else parClass_ch_source end  as PRIMARYDATASOURCECH,
+case when parClass_ch_source is null then '中间表' else parClass_ch_source end  as PRIMARYDATASOURCECH,
 objectid,
 OBJECTSTATE
 from(

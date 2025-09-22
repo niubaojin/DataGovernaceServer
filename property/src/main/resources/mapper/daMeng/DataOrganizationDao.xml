@@ -10,7 +10,7 @@
         select
             case when a.value is null then 'null' else a.value end as value,
             case
-            when a.label is null then '未知(0)'
+            when a.label is null then '中间表(0)'
             when b.label is null then a.label||'(0)'
             else b.label end
             as label from (

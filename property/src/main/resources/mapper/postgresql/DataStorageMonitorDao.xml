@@ -350,7 +350,7 @@
             select
             case when a.value is null then 'null' else a.value end as value,
             case
-            when a.label is null then '未知(0)'
+            when a.label is null then '中间表(0)'
             when b.label is null then a.label||'(0)'
             else b.label end
             as label from (
@@ -426,25 +426,25 @@
         </if>
         <if test="primaryClassifyCode == 'null'">
             <if test="mainClassify == 'dataSourceClassify' ">
-                SELECT '未知' || '(' || count(1) || ')' AS label, '' AS VALUE
+                SELECT '中间表' || '(' || count(1) || ')' AS label, '' AS VALUE
                 FROM (SELECT j.PRIMARY_DATASOURCE_CH,
                 j.SECONDARY_DATASOURCE_CH,
                 row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
                 FROM table_organization_assets j
                 where STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE)) h
                 WHERE h.rnn = 1
-                and PRIMARY_DATASOURCE_CH = '未知'
+                and PRIMARY_DATASOURCE_CH = '中间表'
                 GROUP BY SECONDARY_DATASOURCE_CH, PRIMARY_DATASOURCE_CH
             </if>
             <if test="mainClassify == 'dataOrganizationClassify' ">
-                SELECT '未知' || '(' || count(1) || ')' AS label, '' AS VALUE
+                SELECT '中间表' || '(' || count(1) || ')' AS label, '' AS VALUE
                 FROM (SELECT j.PRIMARY_ORGANIZATION_CH,
                 j.SECONDARY_ORGANIZATION_CH,
                 row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
                 FROM table_organization_assets j
                 where STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE)) h
                 WHERE h.rnn = 1
-                and PRIMARY_ORGANIZATION_CH = '未知'
+                and PRIMARY_ORGANIZATION_CH = '中间表'
                 GROUP BY SECONDARY_ORGANIZATION_CH, PRIMARY_ORGANIZATION_CH
             </if>
         </if>
@@ -507,7 +507,7 @@
             sum(adsSize) adsSize,sum(odpsSize) odpsSize,
             sum(hbaseSize) hbaseSize,sum(hiveSize) hiveSize,sum(ckSize) ckSize, sum(averageAllDailySize)
             averageAllDailySize,max(Statistics_Day) statisticsDay from(
-            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知'),
+            select mainClassify,nvl(primaryClassifyCh,'中间表') primaryClassifyCh, nvl(secondaryClassifyCh,'中间表'),
             secondaryClassifyCh,
             tableAllSum ,tableAllSize ,yesterdayAllSum, averageAllDailyVolume ,tableNumberSum ,Statistics_Day ,todayStr
             ,
@@ -545,7 +545,7 @@
             FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
             STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= (CURRENT_DATE - INTERVAL '#{daysAgo} days')
-            and PRIMARY_ORGANIZATION_CH != '未知' and SECONDARY_ORGANIZATION_CH!= '未知') h
+            and PRIMARY_ORGANIZATION_CH != '中间表' and SECONDARY_ORGANIZATION_CH!= '中间表') h
             <where>
                 <if test="daysAgo == 0 or daysAgo == 1">
                     h.rnn = 1
@@ -553,27 +553,27 @@
             </where>
             )
             <where>
-                <if test="primaryClassifyCh != '' and primaryClassifyCh != '未知'">
+                <if test="primaryClassifyCh != '' and primaryClassifyCh != '中间表'">
                     PRIMARY_ORGANIZATION_CH =#{primaryClassifyCh}
                 </if>
-                <if test="secondaryClassifyCh != '' and secondaryClassifyCh != '未知' and secondaryClassifyCh != '汇总'">
+                <if test="secondaryClassifyCh != '' and secondaryClassifyCh != '中间表' and secondaryClassifyCh != '汇总'">
                     and SECONDARY_ORGANIZATION_CH = #{secondaryClassifyCh}
                 </if>
-                <if test="threeValue != '' and threeValue != '未知' and threeValue != '汇总'">
+                <if test="threeValue != '' and threeValue != '中间表' and threeValue != '汇总'">
                     and THREELEVEL_ORGANIZATION_CH = #{threeValue}
                 </if>
-                <if test="primaryClassifyCh == '未知'">
-                    and (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '未知')
+                <if test="primaryClassifyCh == '中间表'">
+                    and (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '中间表')
                 </if>
-                <if test="secondaryClassifyCh == '未知'">
-                    and (SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '未知')
+                <if test="secondaryClassifyCh == '中间表'">
+                    and (SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '中间表')
                 </if>
             </where>
             group by PRIMARY_ORGANIZATION_CH ,SECONDARY_ORGANIZATION_CH,to_char(STATISTICS_TIME,'yyyyMMdd')
             ) )
             group by rollup(primaryClassifyCh,secondaryClassifyCh,Statistics_Day)
             having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
-            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            concat(primaryClassifyCh,secondaryClassifyCh)!='中间表'
             and primaryClassifyCh is not null and
             decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
             null
@@ -618,7 +618,7 @@
             sum(adsSize) adsSize,sum(odpsSize) odpsSize,
             sum(hbaseSize) hbaseSize,sum(hiveSize) hiveSize,sum(ckSize) ckSize, sum(averageAllDailySize)
             averageAllDailySize,max(Statistics_Day) statisticsDay from(
-            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知')
+            select mainClassify,nvl(primaryClassifyCh,'中间表') primaryClassifyCh, nvl(secondaryClassifyCh,'中间表')
             secondaryClassifyCh,
             tableAllSum ,tableAllSize ,yesterdayAllSum, averageAllDailyVolume ,tableNumberSum ,Statistics_Day,todayStr
             ,
@@ -654,7 +654,7 @@
             FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
             STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= (CURRENT_DATE - INTERVAL '#{daysAgo} days')
-            and PRIMARY_DATASOURCE_CH != '未知' and SECONDARY_DATASOURCE_CH!= '未知') h
+            and PRIMARY_DATASOURCE_CH != '中间表' and SECONDARY_DATASOURCE_CH!= '中间表') h
             <where>
                 <if test="daysAgo == 0 or daysAgo == 1">
                     h.rnn = 1
@@ -662,23 +662,23 @@
             </where>
             )
             <where>
-                <if test="primaryClassifyCh!= '' and primaryClassifyCh != '未知'">
+                <if test="primaryClassifyCh!= '' and primaryClassifyCh != '中间表'">
                     PRIMARY_DATASOURCE_CH =#{primaryClassifyCh}
                 </if>
-                <if test="secondaryClassifyCh!= '' and secondaryClassifyCh != '未知' and secondaryClassifyCh != '汇总'">
+                <if test="secondaryClassifyCh!= '' and secondaryClassifyCh != '中间表' and secondaryClassifyCh != '汇总'">
                     and SECONDARY_DATASOURCE_CH = #{secondaryClassifyCh}
                 </if>
-                <if test="primaryClassifyCh == '未知'">
-                    and (PRIMARY_DATASOURCE_CH is null or PRIMARY_DATASOURCE_CH = '未知')
+                <if test="primaryClassifyCh == '中间表'">
+                    and (PRIMARY_DATASOURCE_CH is null or PRIMARY_DATASOURCE_CH = '中间表')
                 </if>
-                <if test="secondaryClassifyCh == '未知'">
-                    and (SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH = '未知')
+                <if test="secondaryClassifyCh == '中间表'">
+                    and (SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH = '中间表')
                 </if>
             </where>
             group by PRIMARY_DATASOURCE_CH ,SECONDARY_DATASOURCE_CH ,to_char(STATISTICS_TIME,'yyyyMMdd') ))
             group by rollup(primaryClassifyCh,secondaryClassifyCh, Statistics_Day)
             having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
-            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            concat(primaryClassifyCh,secondaryClassifyCh)!='中间表'
             and primaryClassifyCh is not null and
             decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
             null
@@ -694,7 +694,7 @@
             averageAllDailyVolume,sum(tableNumberSum) tableNumberSum,
             sum(yesterdayAllSum) yesterdayAllSum, sum(adsSum) adsSum, sum(odpsSum) odpsSum, sum(adsSize) adsSize,
             sum(odpsSize) odpsSize, sum(averageAllDailySize) averageAllDailySize from(
-            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知')
+            select mainClassify,nvl(primaryClassifyCh,'中间表') primaryClassifyCh, nvl(secondaryClassifyCh,'中间表')
             secondaryClassifyCh ,
             tableAllSum ,tableAllSize , averageAllDailyVolume ,tableNumberSum ,yesterdayAllSum,Statistics_Day ,todayStr
             ,
@@ -729,23 +729,23 @@
             h.rnn = 1
             )
             <where>
-                <if test="primaryClassifyCh!= '' and primaryClassifyCh != '未知' ">
+                <if test="primaryClassifyCh!= '' and primaryClassifyCh != '中间表' ">
                     FACTOR_ONE_NAME= #{primaryClassifyCh}
                 </if>
-                <if test="secondaryClassifyCh!= '' and secondaryClassifyCh != '未知' and secondaryClassifyCh != '汇总'">
+                <if test="secondaryClassifyCh!= '' and secondaryClassifyCh != '中间表' and secondaryClassifyCh != '汇总'">
                     and FACTOR_TWO_NAME = #{secondaryClassifyCh}
                 </if>
-                <if test="primaryClassifyCh == '未知'  ">
+                <if test="primaryClassifyCh == '中间表'  ">
                     and FACTOR_ONE_NAME is null
                 </if>
-                <if test="secondaryClassifyCh == '未知'">
+                <if test="secondaryClassifyCh == '中间表'">
                     and FACTOR_TWO_NAME is null
                 </if>
             </where>
             group by FACTOR_ONE_NAME ,FACTOR_TWO_NAME ,to_char(STATISTICS_TIME,'yyyyMMdd') ))
             group by rollup(primaryClassifyCh,secondaryClassifyCh)
             having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
-            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            concat(primaryClassifyCh,secondaryClassifyCh)!='中间表'
             and primaryClassifyCh is not null and
             decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
             null
@@ -761,7 +761,7 @@
             averageAllDailyVolume,sum(tableNumberSum) tableNumberSum,sum(yesterdayAllSum) yesterdayAllSum,
             sum(adsSum) adsSum, sum(odpsSum) odpsSum, sum(adsSize) adsSize, sum(odpsSize) odpsSize,
             sum(averageAllDailySize) averageAllDailySize from(
-            select mainClassify,nvl(primaryClassifyCh,'未知') primaryClassifyCh, nvl(secondaryClassifyCh,'未知')
+            select mainClassify,nvl(primaryClassifyCh,'中间表') primaryClassifyCh, nvl(secondaryClassifyCh,'中间表')
             secondaryClassifyCh ,
             tableAllSum ,tableAllSize , averageAllDailyVolume ,tableNumberSum ,Statistics_Day,yesterdayAllSum ,todayStr
             ,
@@ -787,16 +787,16 @@
             from table_organization_assets
             <where>
                 STATISTICS_TIME >= DATE_TRUNC('day', CURRENT_DATE) and
-                (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '未知' )and (SECONDARY_ORGANIZATION_CH is
-                null or SECONDARY_ORGANIZATION_CH = '未知')
-                and (PRIMARY_DATASOURCE_CH is null or PRIMARY_DATASOURCE_CH = '未知' ) and (SECONDARY_DATASOURCE_CH is
-                null or SECONDARY_DATASOURCE_CH = '未知')
+                (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '中间表' )and (SECONDARY_ORGANIZATION_CH is
+                null or SECONDARY_ORGANIZATION_CH = '中间表')
+                and (PRIMARY_DATASOURCE_CH is null or PRIMARY_DATASOURCE_CH = '中间表' ) and (SECONDARY_DATASOURCE_CH is
+                null or SECONDARY_DATASOURCE_CH = '中间表')
                 and FACTOR_ONE_NAME is null and FACTOR_TWO_NAME is null
             </where>
             group by FACTOR_ONE_NAME ,FACTOR_TWO_NAME ,to_char(STATISTICS_TIME,'yyyyMMdd') ) )
             group by rollup(primaryClassifyCh,secondaryClassifyCh)
             having grouping_id(primaryClassifyCh,secondaryClassifyCh) <![CDATA[<= ]]> 1 and
-            concat(primaryClassifyCh,secondaryClassifyCh)!='未知'
+            concat(primaryClassifyCh,secondaryClassifyCh)!='中间表'
             and primaryClassifyCh is not null and
             decode(grouping(secondaryClassifyCh)+grouping(primaryClassifyCh),1,'汇总',2,'合计',secondaryClassifyCh) is not
             null
@@ -1092,7 +1092,7 @@
     <select id="getRecordsStorageByPrimaryClassifyMap" resultType="java.util.HashMap">
         <if test="categoryName== 'dataOrganizationClassify'">
             select case
-                     when primary_name is null then '未知'
+                     when primary_name is null then '中间表'
                      else primary_name
                    end as primary_name,
                    records,
@@ -1114,7 +1114,7 @@
         </if>
         <if test="categoryName== 'dataSourceClassify'">
             select case
-                     when primary_name is null then '未知'
+                     when primary_name is null then '中间表'
                      else primary_name
                    end as primary_name,
                    records,
@@ -1135,7 +1135,7 @@
              where rn = 1
         </if>
         <if test="categoryName== 'dataResourceClassify'">
-            select case when PRIMARY_NAME is NULL THEN '未知' else PRIMARY_NAME end as PRIMARY_NAME , records , tableSize
+            select case when PRIMARY_NAME is NULL THEN '中间表' else PRIMARY_NAME end as PRIMARY_NAME , records , tableSize
             from(
             select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
             select FACTOR_ONE_NAME AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
@@ -1505,7 +1505,7 @@
             select * FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
             STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= (CURRENT_DATE - INTERVAL '#{daysAgo} days')
-            and PRIMARY_ORGANIZATION_CH!='未知' and SECONDARY_ORGANIZATION_CH!='未知'
+            and PRIMARY_ORGANIZATION_CH!='中间表' and SECONDARY_ORGANIZATION_CH!='中间表'
             ) h
             WHERE
             h.rnn = 1
@@ -1533,7 +1533,7 @@
             select * FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
             STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= (CURRENT_DATE - INTERVAL '#{daysAgo} days')
-            and PRIMARY_DATASOURCE_CH!='未知' and SECONDARY_DATASOURCE_CH!='未知') h
+            and PRIMARY_DATASOURCE_CH!='中间表' and SECONDARY_DATASOURCE_CH!='中间表') h
             WHERE
             h.rnn = 1
             ) t1)
@@ -1551,7 +1551,7 @@
             select SJYJFL as primaryClassifyId, --- 一级分类代码
             PRIMARYORGANIZATIONCH as primaryClassifyCh, --- 一级分类中文
             SJEJFL as secondaryClassifyId, -- 二级分类代码
-            case when SECONDARYORGANIZATIONCH is null then '未知' else SECONDARYORGANIZATIONCH end as secondaryClassifyCh,
+            case when SECONDARYORGANIZATIONCH is null then '中间表' else SECONDARYORGANIZATIONCH end as secondaryClassifyCh,
             -- 二级分类中文名
             SJXJBM as tableId, -- 表id
             TABLENAME as tableNameEn, -- 表英文名
@@ -1574,7 +1574,7 @@
             select SJLYYJ as primaryClassifyId, --- 一级分类代码
             PRIMARYDATASOURCECH as primaryClassifyCh, --- 一级分类中文
             SJLYEJ as secondaryClassifyId, -- 二级分类代码
-            case when SECONDARYDATASOURCECH is null then '未知' else SECONDARYDATASOURCECH end as secondaryClassifyCh, --
+            case when SECONDARYDATASOURCECH is null then '中间表' else SECONDARYDATASOURCECH end as secondaryClassifyCh, --
             二级分类中文名
             SJXJBM as tableId, -- 表id
             TABLENAME as tableNameEn, -- 表英文名

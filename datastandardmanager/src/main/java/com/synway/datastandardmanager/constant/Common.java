@@ -64,7 +64,7 @@ public class Common {
     public static final String ASC = "asc";
 
     public static final String QI_YONG = "启用";
-    public static final String WEI_ZHI = "未知";
+    public static final String WEI_ZHI = "中间表";
 
     public static final String YI_FA_BU ="已发布";
     public static final String WEI_FA_BU ="未发布";

@@ -158,7 +158,7 @@
             select value ,
             label||'('||tableCount||')'as label
             from(
-            select case when a.value is null then '未知' else a.value  end  as value ,
+            select case when a.value is null then '中间表' else a.value  end  as value ,
             case when a.label is null then b.classifyCh    else a.label end as label ,
             case when b.tableCount is null then 0 else b.tableCount end as tableCount
             from(
@@ -174,7 +174,7 @@
             select value ,
             label||'('||tableCount||')'as label
             from(
-            select case when a.value is null then '未知' else a.value  end  as value ,
+            select case when a.value is null then '中间表' else a.value  end  as value ,
             case when a.label is null then b.classifyCh    else a.label end as label ,
             case when b.tableCount is null then 0 else b.tableCount end as tableCount
             from(
@@ -196,8 +196,8 @@
             select value ,
             label||'('||tableCount||')'as label
             from(
-            select case when a.value is null then '未知' else a.value end as value ,
-            case when a.label is null then '未知'    else a.label end as label ,
+            select case when a.value is null then '中间表' else a.value end as value ,
+            case when a.label is null then '中间表'    else a.label end as label ,
             case when b.tableCount is null then 0 else b.tableCount end as tableCount
             from (
             select distinct CODENAME as value, CODETEXT as label from V_CLASSIFY_INFO
@@ -207,10 +207,10 @@
             left  join (
             select SJEJFLCODENAME as codeId , count(*) as tableCount  from classify_interface_all_date
             <where>
-                <if test="primaryClassifyCode == '未知'">
-                    primaryorganizationch = '未知'
+                <if test="primaryClassifyCode == '中间表'">
+                    primaryorganizationch = '中间表'
                 </if>
-                <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '未知' and primaryClassifySecondCode != ''">
+                <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '中间表' and primaryClassifySecondCode != ''">
                      sjyjfl = upper(#{primaryClassifySecondCode})
                 </if>
             </where>
@@ -223,8 +223,8 @@
             select value ,
             label||'('||tableCount||')'as label
             from(
-            select case when a.value is null then '未知' else a.value end as value ,
-            case when a.label is null then '未知'    else a.label end as label ,
+            select case when a.value is null then '中间表' else a.value end as value ,
+            case when a.label is null then '中间表'    else a.label end as label ,
             case when b.tableCount is null then 0 else b.tableCount end as tableCount
             from (
             select distinct CODENAME as value, CODETEXT as label from V_CLASSIFY_INFO
@@ -234,10 +234,10 @@
             left  join (
             select SJSJFLCODENAME as codeId , count(*) as tableCount  from classify_interface_all_date
             <where>
-                <if test="primaryClassifyCode == '未知'">
-                    primaryorganizationch = '未知'
+                <if test="primaryClassifyCode == '中间表'">
+                    primaryorganizationch = '中间表'
                 </if>
-                <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '未知' and primaryClassifySecondCode != ''">
+                <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '中间表' and primaryClassifySecondCode != ''">
                     sjyjfl = upper(#{primaryClassifySecondCode})
                 </if>
             </where>
@@ -250,8 +250,8 @@
             select value ,
             label||'('||tableCount||')'as label
             from(
-            select case when a.value is null then '未知' else a.value end  as value ,
-            case when a.label is null then '未知'    else a.label end as label ,
+            select case when a.value is null then '中间表' else a.value end  as value ,
+            case when a.label is null then '中间表'    else a.label end as label ,
             case when b.tableCount is null then 0 else b.tableCount end as tableCount
             from (
             select distinct CODENAME as value, CODETEXT as label from V_CLASSIFY_INFO
@@ -261,10 +261,10 @@
             LEFT  join (
             select SJLYEJCODENAME as codeId , count(*) as tableCount  from classify_interface_all_date
             <where>
-                <if test="primaryClassifyCode == '未知'">
-                    primarydatasourcech = '未知'
+                <if test="primaryClassifyCode == '中间表'">
+                    primarydatasourcech = '中间表'
                 </if>
-                <if test="primaryClassifySecondCode != 'null' and primaryClassifySecondCode != '未知' and primaryClassifySecondCode != ''">
+                <if test="primaryClassifySecondCode != 'null' and primaryClassifySecondCode != '中间表' and primaryClassifySecondCode != ''">
                     upper(sjlyyj) = upper(#{primaryClassifySecondCode})
                 </if>
             </where>
@@ -278,8 +278,8 @@
         select value ,
         label||'('||tableCount||')'as label
         from(
-        select case when a.value is null then '未知' else a.value end as value ,
-        case when a.label is null then '未知'    else a.label end as label ,
+        select case when a.value is null then '中间表' else a.value end as value ,
+        case when a.label is null then '中间表'    else a.label end as label ,
         case when b.tableCount is null then 0 else b.tableCount end as tableCount
         from (
         select distinct CODENAME as value, CODETEXT as label from V_CLASSIFY_INFO
@@ -289,10 +289,10 @@
         left  join (
         select SJSJFLCODENAME as codeId , count(*) as tableCount  from classify_interface_all_date
         <where>
-            <if test="primaryClassifyCode == '未知'">
-                primaryorganizationch = '未知'
+            <if test="primaryClassifyCode == '中间表'">
+                primaryorganizationch = '中间表'
             </if>
-            <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '未知' and primaryClassifySecondCode != ''">
+            <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '中间表' and primaryClassifySecondCode != ''">
                 SJEJFLCODENAME = upper(#{primaryClassifySecondCode})
             </if>
         </where>

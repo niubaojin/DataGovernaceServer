@@ -411,8 +411,8 @@ public class StandardTemplateImportServiceImpl implements StandardTemplateImport
 //                oneObjectPojoTable.setClassIds(classifyOne.getClassIds());
 //                oneObjectPojoTable.setSourceClassIds(classifyOne.getSourceClassIds());
             } else {
-                oneObjectPojoTable.setOrganizationClassify("未知/未知");
-                oneObjectPojoTable.setSourceClassify("未知/未知");
+                oneObjectPojoTable.setOrganizationClassify("中间表/中间表");
+                oneObjectPojoTable.setSourceClassify("中间表/中间表");
                 oneObjectPojoTable.setClassIds("");
                 oneObjectPojoTable.setSourceClassIds("");
             }

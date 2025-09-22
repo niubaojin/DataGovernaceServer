@@ -552,7 +552,7 @@
             select  SJYJFL as primaryClassifyId,   --- 一级分类代码
             PRIMARYORGANIZATIONCH as primaryClassifyCh,  ---  一级分类中文
             SJEJFL as secondaryClassifyId,        --  二级分类代码
-            case when SECONDARYORGANIZATIONCH is null then '未知' else SECONDARYORGANIZATIONCH end  as secondaryClassifyCh,  --  二级分类中文名
+            case when SECONDARYORGANIZATIONCH is null then '中间表' else SECONDARYORGANIZATIONCH end  as secondaryClassifyCh,  --  二级分类中文名
             SJXJBM as tableId,          --  表id
             TABLENAME as tableNameEn,       -- 表英文名
             NAME  as  tableNameCh,           --  表中文名
@@ -573,7 +573,7 @@
             select  SJLYYJ as primaryClassifyId,   --- 一级分类代码
             PRIMARYDATASOURCECH as primaryClassifyCh,  ---  一级分类中文
             SJLYEJ as secondaryClassifyId,        --  二级分类代码
-            case when SECONDARYDATASOURCECH is null then '未知' else SECONDARYDATASOURCECH end  as secondaryClassifyCh,  --  二级分类中文名
+            case when SECONDARYDATASOURCECH is null then '中间表' else SECONDARYDATASOURCECH end  as secondaryClassifyCh,  --  二级分类中文名
             SJXJBM as tableId,          --  表id
             TABLENAME as tableNameEn,       -- 表英文名
             NAME  as  tableNameCh,           --  表中文名

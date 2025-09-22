@@ -407,8 +407,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
 //                oneObjectPojoTable.setClassIds(classifyOne.getClassIds());
 //                oneObjectPojoTable.setSourceClassIds(classifyOne.getSourceClassIds());
             } else {
-                oneObjectPojoTable.setOrganizationClassify("未知/未知");
-                oneObjectPojoTable.setSourceClassify("未知/未知");
+                oneObjectPojoTable.setOrganizationClassify("中间表/中间表");
+                oneObjectPojoTable.setSourceClassify("中间表/中间表");
                 oneObjectPojoTable.setClassIds("");
                 oneObjectPojoTable.setSourceClassIds("");
             }
@@ -1726,8 +1726,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                 oneSourceClassifyCh = sourceClassifyCh.split("/")[0];
                 twoSourceClassifyCh = "";
             } else {
-                oneSourceClassifyCh = "未知";
-                twoSourceClassifyCh = "未知";
+                oneSourceClassifyCh = "中间表";
+                twoSourceClassifyCh = "中间表";
             }
 
             if (organizationClassifyCh.contains("业务要素索引库")) {
@@ -1747,8 +1747,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
                 oneOrganizationClassifyCh = organizationClassifyCh.split("/")[0];
                 twoOrganizationClassifyCh = "";
             } else {
-                oneOrganizationClassifyCh = "未知";
-                twoOrganizationClassifyCh = "未知";
+                oneOrganizationClassifyCh = "中间表";
+                twoOrganizationClassifyCh = "中间表";
             }
             oldTableName = objectPojoTable.getRealTablename();
             resourceManageAddDao.updateAssetsClassify(oneSourceClassifyCh, twoSourceClassifyCh,
@@ -2260,8 +2260,8 @@ public class ResourceManageServiceImpl implements ResourceManageService {
 //                    twoZtreeNode.setpId(parent);
 //                    List<StandardTableRelation> levelTwoList = secondaryClassMap.get(child);
 //                    twoZtreeNode.setName(child + "(" + String.valueOf(levelTwoList.size()) + ")");
-//                    if ((child.equalsIgnoreCase("未知") && !parent.equals("未知")) ||
-//                            (!parent.equals("未知") && StringUtils.isEmpty(child))) {
+//                    if ((child.equalsIgnoreCase("中间表") && !parent.equals("中间表")) ||
+//                            (!parent.equals("中间表") && StringUtils.isEmpty(child))) {
 //
 //                    } else {
 //                        ztreeNodeList.add(twoZtreeNode);
@@ -2297,7 +2297,7 @@ public class ResourceManageServiceImpl implements ResourceManageService {
 //                            tableZtreeNode.setId(standardTableRelation.getTableId());
 //                            tableZtreeNode.setName(standardTableRelation.getTableNameCh());
 //                            tableZtreeNode.setTableNodeFlag(true);
-//                            if (!parent.equals("未知") && (child.equalsIgnoreCase("未知")
+//                            if (!parent.equals("中间表") && (child.equalsIgnoreCase("中间表")
 //                                    || StringUtils.isEmpty(child))) {
 //                                tableZtreeNode.setpId(parent);
 //                            } else {

@@ -678,15 +678,15 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             String checkStatus = checkStatusData(oneTableOrganizationData, setting);
             oneTableOrganizationData.setTableState(checkStatus);
             if (StringUtils.isBlank(oneTableOrganizationData.getPrimaryOrganizationCh())) {
-                oneTableOrganizationData.setPrimaryOrganizationCh("未知");
+                oneTableOrganizationData.setPrimaryOrganizationCh("中间表");
                 if (StringUtils.isBlank(oneTableOrganizationData.getSecondaryOrganizationCh())) {
-                    oneTableOrganizationData.setSecondaryOrganizationCh("未知");
+                    oneTableOrganizationData.setSecondaryOrganizationCh("中间表");
                 }
             }
             if (StringUtils.isBlank(oneTableOrganizationData.getPrimaryDatasourceCh())) {
-                oneTableOrganizationData.setPrimaryDatasourceCh("未知");
+                oneTableOrganizationData.setPrimaryDatasourceCh("中间表");
                 if (StringUtils.isBlank(oneTableOrganizationData.getSecondaryDatasourceCh())) {
-                    oneTableOrganizationData.setSecondaryDatasourceCh("未知");
+                    oneTableOrganizationData.setSecondaryDatasourceCh("中间表");
                 }
             }
             /*再次利用hashcode，让objectId和停用启用状态注入到insert到表里的对象中*/
