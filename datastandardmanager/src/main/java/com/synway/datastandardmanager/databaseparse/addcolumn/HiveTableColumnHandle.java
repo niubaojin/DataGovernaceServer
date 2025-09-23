@@ -121,11 +121,11 @@ public class HiveTableColumnHandle implements TableColumnHandle {
             sql = sql.substring(0,sql.trim().length()-1)+") \n  comment  '"+tableNameCh+"' ";
         }
         if(lifeDays != null && lifeDays > 0){
-            sql += "\n  lifecycle " + lifeDays;
+            sql += "\n  stored as orc tblproperties('lifecycle' = '" + lifeDays + "');";
+        }else {
+            // 需要添加 表的存储格式
+            sql = sql + "\n  stored as orc;";
         }
-        // 需要添加 表的存储格式
-        sql = sql + "\n  stored as orc;";
-
         return sql;
     }
 

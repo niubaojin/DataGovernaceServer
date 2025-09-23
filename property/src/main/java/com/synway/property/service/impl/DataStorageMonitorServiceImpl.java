@@ -993,8 +993,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             String storageInfo = "select sum(total_space) as total_space,\n" +
                                  "       sum(free_space) as free_space,\n" +
                                  "       (total_space - free_space) / total_space as used_rate\n" +
-                                 "  from cluster(ck_cluster, system, disks)\n" +
-                                 " where name = 'default'";
+                                 "  from clusterAllReplicas(ck_cluster, system, disks)";
             JSONArray jsonArray = restTemplateHandle.excuteSql(resId, storageInfo);
             JSONObject data = jsonArray.getJSONObject(0);
             if (data != null) {
