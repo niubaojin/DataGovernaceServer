@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-<!--    <packaging>war</packaging>-->
-<!--    <packaging>${project.packaging}</packaging>-->
+    <!--    <packaging>war</packaging>-->
+    <!--    <packaging>${project.packaging}</packaging>-->
     <parent>
         <artifactId>DataGovernanceServer</artifactId>
         <groupId>com.synway.datagovernace</groupId>
@@ -16,21 +16,20 @@
     <name>dataoperations</name>
 
     <properties>
-        <nacos-client>2.1.0</nacos-client>
+        <nacos-client>2.0.3</nacos-client>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!--分页-->
             <dependency>
-                <groupId>com.github.pagehelper</groupId>
-                <artifactId>pagehelper</artifactId>
-                <version>6.1.0</version>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>6.1.7.Final</version>
             </dependency>
             <dependency>
-                <groupId>com.github.pagehelper</groupId>
-                <artifactId>pagehelper-spring-boot-autoconfigure</artifactId>
-                <version>2.1.0</version>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>1.6.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -58,7 +57,6 @@
             <artifactId>pagehelper-spring-boot-autoconfigure</artifactId>
             <version>2.1.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>dubbo</artifactId>
@@ -88,7 +86,7 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>3.14</version>
+            <version>5.2.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
@@ -98,12 +96,12 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>3.14</version>
+            <version>5.2.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml-schemas</artifactId>
-            <version>3.14</version>
+            <version>4.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
@@ -256,22 +254,22 @@
                 </resources>
                 <plugins>
                     <!--打war包-->
-<!--                    <plugin>-->
-<!--                        <artifactId>maven-war-plugin</artifactId>-->
-<!--                        <configuration>-->
-<!--                            &lt;!&ndash; 无web.xml文件可打war包 &ndash;&gt;-->
-<!--                            <failOnMissingWebXml>false</failOnMissingWebXml>-->
-<!--                            <archive>-->
-<!--                                <manifest>-->
-<!--                                    <addClasspath>true</addClasspath>-->
-<!--                                    <classpathPrefix>lib/</classpathPrefix>-->
-<!--                                    <useUniqueVersions>false</useUniqueVersions>-->
-<!--                                    &lt;!&ndash; 指定执行的Main class全路径 &ndash;&gt;-->
-<!--                                    <mainClass>com.synway.dataoperations.DataOperationsApplication</mainClass>-->
-<!--                                </manifest>-->
-<!--                            </archive>-->
-<!--                        </configuration>-->
-<!--                    </plugin>-->
+                    <!--                    <plugin>-->
+                    <!--                        <artifactId>maven-war-plugin</artifactId>-->
+                    <!--                        <configuration>-->
+                    <!--                            &lt;!&ndash; 无web.xml文件可打war包 &ndash;&gt;-->
+                    <!--                            <failOnMissingWebXml>false</failOnMissingWebXml>-->
+                    <!--                            <archive>-->
+                    <!--                                <manifest>-->
+                    <!--                                    <addClasspath>true</addClasspath>-->
+                    <!--                                    <classpathPrefix>lib/</classpathPrefix>-->
+                    <!--                                    <useUniqueVersions>false</useUniqueVersions>-->
+                    <!--                                    &lt;!&ndash; 指定执行的Main class全路径 &ndash;&gt;-->
+                    <!--                                    <mainClass>com.synway.dataoperations.DataOperationsApplication</mainClass>-->
+                    <!--                                </manifest>-->
+                    <!--                            </archive>-->
+                    <!--                        </configuration>-->
+                    <!--                    </plugin>-->
                 </plugins>
             </build>
         </profile>

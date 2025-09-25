@@ -118,6 +118,7 @@ public class AlarmMessageController {
                     opeType,opePerson,opeBeginTime,opeEndTime);
             return ServerResponse.asSucessResponse(list);
         } catch (Exception ex) {
+            logger.error("查询日志失败:", ex);
             return ServerResponse.asErrorResponse(String.format("获取日志列表失败，失败原因为:%s",ex.getMessage()));
         }
     }

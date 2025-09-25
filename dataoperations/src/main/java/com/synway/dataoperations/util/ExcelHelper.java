@@ -2,8 +2,7 @@ package com.synway.dataoperations.util;
 
 import com.synway.common.exception.ExceptionUtil;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -54,8 +53,8 @@ public class ExcelHelper {
                     row = hssfSheet.createRow(0);//创建第一行
                     for (int m = 0; m < titles.length; m++) {
                         hssfCell = row.createCell(m);//列索引从0开始
-                        hssfCell.setCellValue(titles[m]);//列名1
-                        hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
+//                        hssfCell.setCellValue(titles[m]);//列名1
+//                        hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
                     }
                 }
                 if((i+1)%sheetCount==0){
@@ -105,7 +104,7 @@ public class ExcelHelper {
                 }
                 if (null != currentRow.getCell(columnNum)) {
                     SXSSFCell currentCell = currentRow.getCell(columnNum);
-                    if (currentCell.getCellType() == SXSSFCell.CELL_TYPE_STRING) {
+                    if (currentCell.getCellType() == CellType.STRING) {
                         int len = currentCell.getStringCellValue().getBytes(StandardCharsets.UTF_8).length;
                         if (columnWidth < len) {
                             columnWidth = len;
@@ -325,11 +324,12 @@ public class ExcelHelper {
 
         CellStyle format = workbook.createCellStyle();
         Font font = workbook.createFont();
-        font.setBoldweight(Font.BOLDWEIGHT_BOLD);  //加粗
+//        font.setBoldweight(Font.BOLDWEIGHT_BOLD);  //加粗
+        font.setBold(true);
         font.setFontName("黑体");
         font.setFontHeightInPoints((short)10);
-        format.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
-        format.setAlignment(CellStyle.ALIGN_CENTER);
+        format.setVerticalAlignment(VerticalAlignment.CENTER);
+        format.setAlignment(HorizontalAlignment.CENTER);
         format.setFont(font);
         return format;
     }
@@ -339,8 +339,8 @@ public class ExcelHelper {
         CellStyle format = workbook.createCellStyle();
         Font font = workbook.createFont();
         font.setFontName("宋体");
-        format.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
-        format.setAlignment(CellStyle.ALIGN_CENTER);
+        format.setVerticalAlignment(VerticalAlignment.CENTER);
+        format.setAlignment(HorizontalAlignment.CENTER);
         format.setFont(font);
         return format;
     }

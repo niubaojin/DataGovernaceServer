@@ -11,10 +11,8 @@
     <modules>
         <module>datagovernance</module>
         <module>dataoperations</module>
-<!--        <module>datarelation</module>-->
         <module>datastandardmanager</module>
         <module>property</module>
-        <module>reconciliation</module>
     </modules>
 
     <packaging>pom</packaging>

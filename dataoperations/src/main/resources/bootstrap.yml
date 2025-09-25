@@ -39,4 +39,10 @@ spring:
 logging:
   config:
     classpath: logback-spring.xml
-
+mybatis:
+  configuration:
+    call-setters-on-nulls: true
+pagehelper:
+  auto-dialect: true
+  reasonable: true
+  helper-dialect: postgresql

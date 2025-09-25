@@ -1,6 +1,8 @@
 package com.synway.dataoperations.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInterceptor;
 import com.synway.dataoperations.constant.Common;
 import com.synway.dataoperations.interceptor.SqlExecutorInterceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -14,6 +16,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.annotation.Resource;
+import java.util.Properties;
 
 
 @Configuration
@@ -21,7 +24,6 @@ public class DataSourceConfig {
 
     @Resource
     private Environment environment;
-
 
     @Bean
     @Primary
@@ -68,7 +70,7 @@ public class DataSourceConfig {
     public SqlSessionFactory sqlSessionFactory() throws Exception{
         SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
         bean.setDataSource(dataSource());
-
+        String helperDialect = "oracle";
         String dataType = environment.getProperty("database.type");
         if(Common.DAMENG.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/daMeng/*.xml"));
@@ -78,13 +80,20 @@ public class DataSourceConfig {
         }
         if(Common.HAILIANG.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/hailiang/*.xml"));
+            helperDialect = "postgresql";
         }
         if(Common.POSTGRESQL.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/postgresql/*.xml"));
         }
 
-        bean.setTypeAliasesPackage("com.synway.dataoperations.pojo");
-        return bean.getObject();
+        SqlSessionFactory sessionFactory = bean.getObject();
+//        PageInterceptor interceptor = new PageInterceptor();
+//        Properties properties = new Properties();
+//        properties.setProperty("helperDialect", helperDialect);
+//        interceptor.setProperties(properties);
+//        bean.setTypeAliasesPackage("com.synway.dataoperations.pojo");
+//        sessionFactory.getConfiguration().addInterceptor(interceptor);
+        return sessionFactory;
     }
 
     @Primary
@@ -99,10 +108,12 @@ public class DataSourceConfig {
         return new SqlSessionTemplate(sqlSessionFactory);
     }
 
+    @Primary
     @Bean
     public String myInterceptor(SqlSessionFactory sqlSessionFactory){
         sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor(environment));
         return "interceptor";
     }
+
 
 }

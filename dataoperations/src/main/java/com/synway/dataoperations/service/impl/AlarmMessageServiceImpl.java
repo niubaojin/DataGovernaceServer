@@ -104,33 +104,26 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
                             String opeModule , String opeType , String opePerson ,
                             String opeBeginTime, String opeEndTime ) {
 
-        Page<OperatorLog> page= PageHelper.startPage(currentPage,pageSize);
-        if(StringUtils.isBlank(sortName)){
+        Page<OperatorLog> page = PageHelper.startPage(currentPage, pageSize);
+        if (StringUtils.isBlank(sortName)) {
             sortName = "create_Time";
             sortOrder = "desc";
         }
-        if(StringUtils.isNotBlank(sortOrder)){
+        if (StringUtils.isNotBlank(sortOrder)) {
             page.setOrderBy(sortName + "\t" + sortOrder + " nulls last");
-        }else{
+        } else {
             page.setOrderBy(sortName);
         }
         Date beginTime = null;
         Date endTime = null;
         //前端页面操作开始时间和结束时间会一起提供
-        if(StringUtils.isNotBlank(opeBeginTime) && StringUtils.isNotBlank(opeEndTime)){
+        if (StringUtils.isNotBlank(opeBeginTime) && StringUtils.isNotBlank(opeEndTime)) {
             beginTime = DateUtil.parseDate(opeBeginTime);
             endTime = DateUtil.parseDate(opeEndTime);
         }
-        List<OperatorLog> list = dao.getOperatorLogList(opeModule,opeType,opePerson,beginTime,endTime,null);
+        List<OperatorLog> list = dao.getOperatorLogList(opeModule, opeType, opePerson, beginTime, endTime, null);
         return new PageInfo<>(list);
-//        return PageHelper.startPage(currentPage,pageSize).doSelectPageInfo(() -> list(opeModule, opeType, opePerson));
     }
-
-//    public List<OperatorLog> list(String opeModule , String opeType , String opePerson){
-//        Date beginTime = null;
-//        Date endTime = null;
-//        return dao.getOperatorLogList(opeModule,opeType,opePerson,beginTime,endTime,null);
-//    }
 
 
 }
