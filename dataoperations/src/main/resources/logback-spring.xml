@@ -124,4 +124,6 @@
         <appender-ref ref="WARN_FILE" />
     </root>
 
+    <logger name="mybatis" level="DEBUG"/>
+
 </configuration>

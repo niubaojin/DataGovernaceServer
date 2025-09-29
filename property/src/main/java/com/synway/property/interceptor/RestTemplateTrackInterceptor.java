@@ -29,7 +29,7 @@ public class RestTemplateTrackInterceptor implements ClientHttpRequestIntercepto
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
         try{
             LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
-            if(loginUser != null){
+            if(loginUser != null && StringUtils.isNotBlank(loginUser.getUserId())){
                 HttpHeaders httpHeaders = request.getHeaders();
                 httpHeaders.add(LOGIN_USER, Base64.getEncoder().encodeToString(JSONObject.toJSONString(loginUser).getBytes()));
             }

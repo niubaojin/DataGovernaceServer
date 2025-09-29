@@ -137,21 +137,17 @@
     </select>
 
     <select id="getAlarmStatisticsInfo" resultType="com.synway.dataoperations.pojo.AlarmMessage">
-        select ALARM_ID      as ID,
-               ALARM_SYSTEM  as alarmsystem,
-               ALARM_MODULE  as alarmmodule,
-               ALARM_TIME    as alarmtime,
-               ALARM_FLAG    as alarmflagName,
-               ALARM_LEVEL   as levelName,
-               ALARM_CONTENT as alarmcontent,
-               TABLE_NAME_CH as tableNameCh,
-               TABLEID       as tableId
+        select ALARM_MODULE as alarmmodule,
+               count(ALARM_MODULE) as alarmmoduleCount,
+               ALARM_LEVEL as levelName,
+               count(ALARM_LEVEL) as levelNameCount
           from do_alarm_msg
           <where>
               <if test="searchTime != null and searchTime != ''">
-                  and ALARM_TIME > to_date(#{searchTime},'yyyy-MM-dd hh24:mi:ss')
+                  and ALARM_TIME > to_date(#{searchTime},'yyyy-MM-dd hh24')
               </if>
           </where>
+          group by ALARM_MODULE, ALARM_LEVEL
     </select>
 
     <select id="getDGFData" parameterType="com.synway.dataoperations.pojo.RequestParameter" resultType="com.synway.dataoperations.pojo.DataGFMsg">

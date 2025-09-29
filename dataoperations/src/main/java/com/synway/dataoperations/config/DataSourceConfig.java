@@ -1,12 +1,13 @@
 package com.synway.dataoperations.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.synway.dataoperations.constant.Common;
 import com.synway.dataoperations.interceptor.SqlExecutorInterceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,6 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.annotation.Resource;
-import java.util.Properties;
 
 
 @Configuration
@@ -37,16 +37,18 @@ public class DataSourceConfig {
         if(Common.ORACLE.equalsIgnoreCase(dataType)){
             druidDataSource.setDriverClassName("oracle.jdbc.driver.OracleDriver");
         }
-        if(Common.HAILIANG.equalsIgnoreCase(dataType)){
-            druidDataSource.setDriverClassName("cn.com.vastbase.Driver");
+        String url = environment.getProperty("database.url");
+        if(Common.HAILIANG.equalsIgnoreCase(dataType) || Common.VASTBASE.equalsIgnoreCase(dataType)){
+            druidDataSource.setDriverClassName("org.postgresql.Driver");
             druidDataSource.setValidationQuery("select 'x'");
             druidDataSource.setValidationQueryTimeout(60000);
+            url = url.replace("vastbase", "postgresql");
         }
         if(Common.POSTGRESQL.equalsIgnoreCase(dataType)){
             druidDataSource.setDriverClassName("org.postgresql.Driver");
         }
 
-        druidDataSource.setUrl(environment.getProperty("database.url"));
+        druidDataSource.setUrl(url);
         druidDataSource.setUsername(environment.getProperty("database.name"));
         druidDataSource.setPassword(environment.getProperty("database.password"));
         druidDataSource.setMaxActive(10);
@@ -68,9 +70,9 @@ public class DataSourceConfig {
     @Bean("masterSqlSessionFactory")
     @Primary
     public SqlSessionFactory sqlSessionFactory() throws Exception{
-        SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
+//        SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
+        MybatisSqlSessionFactoryBean bean = new MybatisSqlSessionFactoryBean();
         bean.setDataSource(dataSource());
-        String helperDialect = "oracle";
         String dataType = environment.getProperty("database.type");
         if(Common.DAMENG.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/daMeng/*.xml"));
@@ -78,22 +80,27 @@ public class DataSourceConfig {
         if(Common.ORACLE.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/oracle/*.xml"));
         }
-        if(Common.HAILIANG.equalsIgnoreCase(dataType)){
+        if(Common.HAILIANG.equalsIgnoreCase(dataType) || Common.VASTBASE.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/hailiang/*.xml"));
-            helperDialect = "postgresql";
         }
         if(Common.POSTGRESQL.equalsIgnoreCase(dataType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/postgresql/*.xml"));
         }
 
-        SqlSessionFactory sessionFactory = bean.getObject();
-//        PageInterceptor interceptor = new PageInterceptor();
-//        Properties properties = new Properties();
-//        properties.setProperty("helperDialect", helperDialect);
-//        interceptor.setProperties(properties);
-//        bean.setTypeAliasesPackage("com.synway.dataoperations.pojo");
-//        sessionFactory.getConfiguration().addInterceptor(interceptor);
-        return sessionFactory;
+        com.baomidou.mybatisplus.core.MybatisConfiguration configuration = new com.baomidou.mybatisplus.core.MybatisConfiguration();
+        //  如果数据为空，则用null代替（用于返回map时，值为null也能获取到字段名）
+        configuration.setCallSettersOnNulls(true);
+        configuration.setLogPrefix("mybatis.");
+        bean.setConfiguration(configuration);
+
+        //增加分页处理器
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor();
+        paginationInnerInterceptor.setDbType(DbConfigProperties.getMyBatisPlusDbType(dataType.toLowerCase()));
+        interceptor.addInnerInterceptor(paginationInnerInterceptor);
+        interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+
+        return bean.getObject();
     }
 
     @Primary

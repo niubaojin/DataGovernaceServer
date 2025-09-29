@@ -5,6 +5,8 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -24,6 +26,7 @@ public class RestTemplateConfig {
     @LoadBalanced
     @Bean
     @Primary
+    @Order(Ordered.HIGHEST_PRECEDENCE)
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(5*60*1000);
@@ -34,17 +37,17 @@ public class RestTemplateConfig {
         return restTemplate;
     }
 
-    //调用外部接口用
-    @Bean(value = "restTemplateApi")
-    public RestTemplate restTemplateApi() {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5*60*1000);
-        requestFactory.setReadTimeout(5*60*1000);
-        RestTemplate restTemplate = new RestTemplate(requestFactory);
-        restTemplate.setInterceptors(Collections.singletonList(new RestTemplateTrackInterceptor()));
-        setRestTemplateEncode(restTemplate);
-        return restTemplate;
-    }
+//    //调用外部接口用
+//    @Bean(value = "restTemplateApi")
+//    public RestTemplate restTemplateApi() {
+//        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+//        requestFactory.setConnectTimeout(5*60*1000);
+//        requestFactory.setReadTimeout(5*60*1000);
+//        RestTemplate restTemplate = new RestTemplate(requestFactory);
+//        restTemplate.setInterceptors(Collections.singletonList(new RestTemplateTrackInterceptor()));
+//        setRestTemplateEncode(restTemplate);
+//        return restTemplate;
+//    }
 
     public static void setRestTemplateEncode(RestTemplate restTemplate) {
         if (null == restTemplate || ObjectUtils.isEmpty(restTemplate.getMessageConverters())) {

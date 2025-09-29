@@ -62,7 +62,6 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     private RestTemplate rest;
 
     @Autowired
-    @Qualifier(value ="restTemplateApi")
     private RestTemplate restTemplateApi;
 
     @Autowired

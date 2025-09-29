@@ -2,11 +2,16 @@ package com.synway.dataoperations.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.synway.common.exception.ExceptionUtil;
 import com.synway.dataoperations.dao.AlarmMessageDao;
+import com.synway.dataoperations.dao.DoAlarmMsgDao;
+import com.synway.dataoperations.entity.pojo.DoAlarmMsgEntity;
+import com.synway.dataoperations.entity.vo.PageVO;
 import com.synway.dataoperations.enums.AlarmCodeEnum;
 import com.synway.dataoperations.interceptor.AuthorizedUserUtils;
 import com.synway.dataoperations.pojo.*;
@@ -15,6 +20,7 @@ import com.synway.dataoperations.service.AlarmMessageService;
 import com.synway.dataoperations.util.DateUtil;
 import com.synway.dataoperations.util.ExcelHelper;
 import com.synway.dataoperations.util.ExportUtil;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,86 +40,70 @@ public class AlarmCenterServiceImpl implements AlarmCenterService {
 
     @Autowired
     AlarmMessageDao alarmMessageDao;
-
     @Autowired
     AlarmMessageService alarmMessageService;
+    @Resource
+    private DoAlarmMsgDao doAlarmMsgDao;
 
     @Autowired()
     private Environment env;
 
-//    @Resource(name = "referenceConfig")
-//    private OrganUserService licDubboService;
 
     @Override
     public AlarmReturnResultMap getAlarmData(RequestParameter requestParameter){
         AlarmReturnResultMap alarmReturnResultMap = new AlarmReturnResultMap();
         try {
             // 请求参数
-            String searchTime = requestParameter.getSearchTime();
-            String searchName = requestParameter.getSearchName();
-            String alarmModule = requestParameter.getAlarmModule();
-            String alarmStatus = requestParameter.getAlarmStatus();
-            String[] alarmStatusFilter = StringUtils.isBlank(requestParameter.getAlarmStatusFilter())?null: requestParameter.getAlarmStatusFilter().split(",");
-            String[] alarmModuleFilter = StringUtils.isBlank(requestParameter.getAlarmModuleFilter())?null: requestParameter.getAlarmModuleFilter().split(",");
-            logger.info("开始获取告警中心数据");
-            // 查询告警信息
-            List<AlarmMessage> alarmMessages = alarmMessageDao.getAlarmData(searchTime,searchName,alarmModule,alarmStatus,alarmStatusFilter,alarmModuleFilter);
+            String searchTime = requestParameter.getSearchTime().substring(0, 13);
+            if (requestParameter.getPageNum() != null && requestParameter.getPageSize() != null){
+                PageHelper.startPage(requestParameter.getPageNum(), requestParameter.getPageSize());
+            }
             // 查询告警图表统计信息
             List<AlarmMessage> alarmStatisticsInfo = alarmMessageDao.getAlarmStatisticsInfo(searchTime);
             Map<String,List<AlarmMessage>> alarmModuleMap = new HashMap<>();
-            Map<String,List<AlarmMessage>> alarmStatusMap = new HashMap<>();
+            Map<String,List<AlarmMessage>> alarmLevelMap = new HashMap<>();
             if (alarmStatisticsInfo.size()>0){
                 alarmModuleMap = alarmStatisticsInfo.stream().collect(Collectors.groupingBy(d -> d.getAlarmmodule()));
-                alarmStatusMap = alarmStatisticsInfo.stream().collect(Collectors.groupingBy(d -> d.getLevelName()));
+                alarmLevelMap = alarmStatisticsInfo.stream().collect(Collectors.groupingBy(d -> d.getLevelName()));
             }
+            // 图表
             List<Map<String,String>> alarmModuleChart = new ArrayList();
             List<Map<String,String>> alarmStatusChart = new ArrayList();
+            // 过滤筛选列表
+            List<Map<String,String>> moduleFilterList = new ArrayList();
+            List<Map<String,String>> statusFilterList = new ArrayList();
+
             alarmModuleMap.forEach((k,v) ->{
                 Map<String,String> hashMap = new HashMap<>();
+                Integer count = v.stream().mapToInt(AlarmMessage::getAlarmmoduleCount).sum();
                 hashMap.put("key", k);
-                hashMap.put("value", String.valueOf(v.size()));
+                hashMap.put("value", String.valueOf(count));
                 alarmModuleChart.add(hashMap);
+
+                Map<String,String> hashMapModule = new HashMap<>();
+                hashMapModule.put("key", k);
+                hashMapModule.put("value", k);
+                moduleFilterList.add(hashMapModule);
             });
-            alarmStatusMap.forEach((k,v) ->{
+            alarmLevelMap.forEach((k,v) ->{
                 Map<String,String> hashMap = new HashMap<>();
+                Integer count = v.stream().mapToInt(AlarmMessage::getLevelNameCount).sum();
                 hashMap.put("key", k);
-                hashMap.put("value", String.valueOf(v.size()));
+                hashMap.put("value", String.valueOf(count));
                 alarmStatusChart.add(hashMap);
+
+                Map<String,String> hashMapStatus = new HashMap<>();
+                hashMapStatus.put("key", k);
+                hashMapStatus.put("value", k);
+                statusFilterList.add(hashMapStatus);
             });
 
-            // 过滤筛选列表
-            List<String> alarmLevel1List = new ArrayList<>();
-            List<String> alarmModuleList = new ArrayList<>();
-            alarmMessages.forEach(alarmMessage -> {
-                if (!alarmLevel1List.contains(alarmMessage.getLevelName())){
-                    alarmLevel1List.add(alarmMessage.getLevelName());
-                }
-                if (!alarmModuleList.contains(alarmMessage.getAlarmmodule())){
-                    alarmModuleList.add(alarmMessage.getAlarmmodule());
-                }
-            });
-            List<Map<String,String>> statusFilterList = new ArrayList();
-            for (String s : alarmLevel1List){
-                Map<String,String> hashMap = new HashMap<>();
-                hashMap.put("key",s);
-                hashMap.put("value",s);
-                statusFilterList.add(hashMap);
-            }
-            List<Map<String,String>> moduleFilterList = new ArrayList();
-            for (String s : alarmModuleList){
-                Map<String,String> hashMap = new HashMap<>();
-                hashMap.put("key",s);
-                hashMap.put("value",s);
-                moduleFilterList.add(hashMap);
-            }
             statusFilterList.sort(Comparator.comparing(o -> o.get("key")));
             moduleFilterList.sort(Comparator.comparing(o -> o.get("key")));
             alarmReturnResultMap.setAlarmStatusFilterList(statusFilterList);
             alarmReturnResultMap.setAlarmModuleFilterList(moduleFilterList);
             alarmReturnResultMap.setAlarmStatusChart(alarmStatusChart);
             alarmReturnResultMap.setAlarmModuleChart(alarmModuleChart);
-            alarmReturnResultMap.setData(alarmMessages);
-            logger.info("获取告警中心数据完成");
         }catch (Exception e){
             logger.error("获取告警中心数据出错：\n" + ExceptionUtil.getExceptionTrace(e));
             return alarmReturnResultMap;
@@ -122,7 +112,60 @@ public class AlarmCenterServiceImpl implements AlarmCenterService {
     }
 
     @Override
+    public PageVO getAlarmList(RequestParameter requestParameter) {
+        PageVO pageVO = new PageVO<>();
+        try {
+            // 查询条件
+            LambdaQueryWrapper<DoAlarmMsgEntity> wrapper = Wrappers.lambdaQuery();
+            if (StringUtils.isNotBlank(requestParameter.getSearchTime())){
+                Date date = DateUtil.parseDate(requestParameter.getSearchTime(), DateUtil.DEFAULT_PATTERN_DATETIME);
+                wrapper.gt(DoAlarmMsgEntity::getAlarmtime, date);
+            }
+            if (StringUtils.isNotBlank(requestParameter.getSearchName())){
+                String searchName = requestParameter.getSearchName();
+                wrapper.nested(wrapper2 -> {
+                    wrapper2.apply("lower(ALARM_MODULE) like lower({0})", "%" + searchName.toLowerCase() + "%");
+                    wrapper2.or().apply("lower(ALARM_LEVEL) like lower({0})", "%" + searchName.toLowerCase() + "%");
+                    wrapper2.or().apply("lower(TABLE_NAME_CH) like lower({0})", "%" + searchName.toLowerCase() + "%");
+                    wrapper2.or().apply("lower(ALARM_CONTENT) like lower({0})", "%" + searchName.toLowerCase() + "%");
+                });
+            }
+            if (StringUtils.isNotBlank(requestParameter.getAlarmModule())){
+                wrapper.eq(DoAlarmMsgEntity::getAlarmmodule, requestParameter.getAlarmModule());
+            }
+            if (StringUtils.isNotBlank(requestParameter.getAlarmStatus())){
+                wrapper.eq(DoAlarmMsgEntity::getLevelName, requestParameter.getAlarmStatus());
+            }
+            if (StringUtils.isNotBlank(requestParameter.getAlarmModuleFilter())){
+                List<String> alarmModules = Arrays.stream(requestParameter.getAlarmModuleFilter().split(",")).toList();
+                wrapper.in(DoAlarmMsgEntity::getAlarmmodule, alarmModules);
+            }
+            if (StringUtils.isNotBlank(requestParameter.getAlarmStatusFilter())){
+                List<String> alarmStatus = Arrays.stream(requestParameter.getAlarmStatusFilter().split(",")).toList();
+                wrapper.in(DoAlarmMsgEntity::getLevelName, alarmStatus);
+            }
+            if (requestParameter.getPageNum() != null && requestParameter.getPageSize() != null){
+                PageHelper.startPage(requestParameter.getPageNum(), requestParameter.getPageSize());
+                pageVO.setPageNum(requestParameter.getPageNum());
+                pageVO.setPageSize(requestParameter.getPageSize());
+            }
+            List<DoAlarmMsgEntity> doAlarmMsgEntities = doAlarmMsgDao.selectList(wrapper);
+            PageInfo pageInfo = new PageInfo<>(doAlarmMsgEntities);
+            pageVO.setRows(pageInfo.getList());
+            pageVO.setTotal(pageInfo.getTotal());
+        }catch (Exception e){
+            logger.error(">>>>>>获取告警信息列表报错：", e);
+            return pageVO.emptyResult();
+        }
+        return pageVO;
+    }
+
+    @Override
     public DataGFReturnMap getDGFData(RequestParameter requestParameter){
+        RequestParameter parameter = new RequestParameter();
+        parameter.setPageNum(1);
+        parameter.setPageSize(11);
+        PageVO pageVO = getAlarmList(parameter);
         DataGFReturnMap dataGFReturnMap = new DataGFReturnMap();
         // 请求参数
         String searchName = requestParameter.getSearchName();

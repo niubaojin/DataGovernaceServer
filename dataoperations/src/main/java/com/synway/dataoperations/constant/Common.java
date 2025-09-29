@@ -5,9 +5,9 @@ package com.synway.dataoperations.constant;
  */
 public class Common {
 
-    public static final String ORACLE = "ORACLE";
-    public static final String DAMENG = "DAMENG";
-    public static final String HAILIANG = "HAILIANG";
+    public static final String ORACLE = "oracle";
+    public static final String DAMENG = "dm";
+    public static final String HAILIANG = "hailiang";
     public static final String KING_BASE_ES = "KINGBASEES";
     public static final String POSTGRESQL = "POSTGRESQL";
     public static final String KINGBASE = "kingBaseES";

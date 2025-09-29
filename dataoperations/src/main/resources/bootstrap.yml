@@ -45,4 +45,3 @@ mybatis:
 pagehelper:
   auto-dialect: true
   reasonable: true
-  helper-dialect: postgresql

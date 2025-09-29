@@ -13,6 +13,7 @@ import com.synway.property.pojo.opeartorLog.OperatorLog;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -30,6 +31,7 @@ import java.util.*;
 @Component
 public class RestTemplateHandle {
     @Autowired()
+    @Qualifier("restTemplate")
     private RestTemplate restTemplate;
 
     @Autowired()

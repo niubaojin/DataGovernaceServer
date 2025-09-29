@@ -2,6 +2,7 @@ package com.synway.dataoperations.service;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.synway.dataoperations.entity.vo.PageVO;
 import com.synway.dataoperations.pojo.AlarmReturnResultMap;
 import com.synway.dataoperations.pojo.DataGFMsg;
 import com.synway.dataoperations.pojo.DataGFReturnMap;
@@ -20,6 +21,8 @@ public interface AlarmCenterService {
 
     // 获取告警中心数据
     AlarmReturnResultMap getAlarmData(RequestParameter requestParameter);
+
+    PageVO getAlarmList(RequestParameter requestParameter);
 
     // 获取治理跟踪数据
     DataGFReturnMap getDGFData(RequestParameter requestParameter);

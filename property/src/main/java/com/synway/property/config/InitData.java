@@ -64,7 +64,7 @@ public class InitData implements ApplicationRunner {
                 }
             });
         }
-        asyManager.addTask(() -> dataStorageMonitorService.getDataBaseStatus());
+        dataStorageMonitorService.getDataBaseStatus();
         asyManager.addTask(() -> {
             int num = lifeCycleDao.getCount();
             if (num == 0) {
@@ -73,15 +73,13 @@ public class InitData implements ApplicationRunner {
                 cacheManager.addOrUpdateCache("updateAllValDensity", false);
             }
         });
-        asyManager.addTask(()->{
-            // 获取数据中心信息（本地仓）
-            String result = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0", String.class);
-            if(StringUtils.isNotBlank(result) && result.toLowerCase().contains("odps")){
-                cacheManager.addOrUpdateCache("dataPlatFormType", "aliyun");
-            } else {
-                cacheManager.addOrUpdateCache("dataPlatFormType", "huaweiyun");
-            }
-        });
+        // 获取数据中心信息（本地仓）
+        String result = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0", String.class);
+        if(StringUtils.isNotBlank(result) && result.toLowerCase().contains("odps")){
+            cacheManager.addOrUpdateCache("dataPlatFormType", "aliyun");
+        } else {
+            cacheManager.addOrUpdateCache("dataPlatFormType", "huaweiyun");
+        }
 
         // 数据库类型
         cacheManager.addOrUpdateCache("dsType", environment.getProperty("database.type"));
