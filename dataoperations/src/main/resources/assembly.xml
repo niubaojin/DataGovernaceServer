@@ -13,6 +13,7 @@
             <directory>${project.basedir}/src/main/resources</directory>
             <includes>
                 <include>*.yaml</include>
+                <include>*.yml</include>
             </includes>
             <outputDirectory>config</outputDirectory>
         </fileSet>
