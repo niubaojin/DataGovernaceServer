@@ -5,39 +5,72 @@
 
 <mapper namespace="com.synway.property.dao.LifeCycleDao">
     <sql id="getLifeCyCle">
-        select b.NAME as name,b.TABLE_NAME_EN as tableNameEn,b.TABLE_TYPE as platformType,
-        b.TABLE_PROJECT as projectName,b.PARTITION_NUM as partitionNum,b.LASTDATAMODIFIEDTIME as lastDataModifiedTime,
-        b.LASTVISITEDTIME as lastVisitedTime,b.TABLEUSECOUNTOFMONTH as useCountOfMonth,
-        case when a.VAL_DENSITY = '0' then '0'
-        when a.VAL_DENSITY is null then '0'
-        when to_char(a.VAL_DENSITY ,'fm999999999990.00')='0.00' then '0'
-        else
-        to_char(a.VAL_DENSITY,'fm999999999990.00') end as valDensity,
-        b.PRIMARY_ORGANIZATION_CH as organizationClassify,
-        b.SECONDARY_ORGANIZATION_CH as secOrganizationClassify,
-        case when b.PARTITION_MESSAGE = 0 then '增量' when b.PARTITION_MESSAGE = 1 then '全量' else '其它' END as updateType,
-        case when b.PARTITION_MESSAGE = 0 then '是' when b.PARTITION_MESSAGE = 1 then '否' else '' END as partition,
-        case when b.AVERAGE_DAILY_SIZE = '0' then '0'
-        when to_char(b.AVERAGE_DAILY_SIZE/1073741824,'fm999999999990.00')='0.00' then '0'
-        else
-        to_char(b.AVERAGE_DAILY_SIZE/1073741824,'fm999999999990.00') end as averageDailySize,
-        case when b.TABLE_SIZE = '0' then '0'
-        when to_char(b.TABLE_SIZE/1073741824,'fm999999999990.00')='0.00' then '0'
-        else
-        to_char(b.TABLE_SIZE/1073741824,'fm999999999990.00') end as storageSize,
-        case when b.PARTITION_MESSAGE = 1 then '未分区'
-        else b.LIFE_CYCLE
-        END as lifeCycle,b.LIFE_CYCLE_STATUS as lifeCycleStatus,
-        a.update_val_density_status as updateValDensityStatus,b.resourceId as resourceId,b.res_name as resName
+        select
+            b.NAME as name,
+            b.TABLE_NAME_EN as tableNameEn,
+            b.TABLE_TYPE as platformType,
+            b.TABLE_PROJECT as projectName,
+            case
+                when a.VAL_DENSITY = '0' then '0'
+                when a.VAL_DENSITY is null then '0'
+                when to_char(a.VAL_DENSITY , 'fm999999999990.00')= '0.00' then '0'
+                else to_char(a.VAL_DENSITY, 'fm999999999990.00')
+            end as valDensity,
+            b.PRIMARY_ORGANIZATION_CH as organizationClassify,
+            b.SECONDARY_ORGANIZATION_CH as secOrganizationClassify,
+            case
+                when b.PARTITION_MESSAGE = 0 then '增量'
+                when b.PARTITION_MESSAGE = 1 then '全量'
+                else '其它'
+            end as updateType,
+            case
+                when b.PARTITION_MESSAGE = 0 then '是'
+                when b.PARTITION_MESSAGE = 1 then '否'
+                else '否'
+            end as partition,
+            case
+                when b.AVERAGE_DAILY_SIZE = '0' then '0'
+                when to_char(b.AVERAGE_DAILY_SIZE / 1073741824, 'fm999999999990.00')= '0.00' then '0'
+                else to_char(b.AVERAGE_DAILY_SIZE / 1073741824, 'fm999999999990.00')
+            end as averageDailySize,
+            case
+                when b.TABLE_SIZE = '0' then '0'
+                when to_char(b.TABLE_SIZE / 1073741824, 'fm999999999990.00')= '0.00' then '0'
+                else to_char(b.TABLE_SIZE / 1073741824, 'fm999999999990.00')
+            end as storageSize,
+            case
+                when b.PARTITION_MESSAGE = 1 then '永久'
+                when b.LIFE_CYCLE is null then '永久'
+                else b.LIFE_CYCLE
+            end as lifeCycle,
+            b.LIFE_CYCLE_STATUS as lifeCycleStatus,
+            a.update_val_density_status as updateValDensityStatus,
+            b.resourceId as resourceId,
+            b.res_name as resName
         from
-        (select NAME,TABLE_NAME_EN,PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,TABLE_SIZE,TABLE_PROJECT,
-        LIFE_CYCLE,TABLE_TYPE,PARTITION_MESSAGE,LIFE_CYCLE_STATUS,AVERAGE_DAILY_SIZE,LASTDATAMODIFIEDTIME,
-        PARTITION_NUM,LASTVISITEDTIME,TABLEUSECOUNTOFMONTH,resourceId,res_name from TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME>
-        trunc(sysdate - #{daysAgo})) b
-        left join
-        table_organization_val_density a
-        on upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME_EN) and upper(a.TABLE_TYPE)= upper(b.TABLE_TYPE)
-        and upper(a.TABLE_PROJECT) = upper(b.TABLE_PROJECT)
+            (
+            select
+                NAME,
+                TABLE_NAME_EN,
+                PRIMARY_ORGANIZATION_CH,
+                SECONDARY_ORGANIZATION_CH,
+                TABLE_SIZE,
+                TABLE_PROJECT,
+                LIFE_CYCLE,
+                TABLE_TYPE,
+                PARTITION_MESSAGE,
+                LIFE_CYCLE_STATUS,
+                AVERAGE_DAILY_SIZE,
+                resourceId,
+                res_name
+            from
+                TABLE_ORGANIZATION_ASSETS
+            where
+                STATISTICS_TIME > trunc(sysdate - #{daysAgo}) ) b
+        left join table_organization_val_density a on
+            upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME_EN)
+            and upper(a.TABLE_TYPE)= upper(b.TABLE_TYPE)
+            and upper(a.TABLE_PROJECT) = upper(b.TABLE_PROJECT)
         <where>
             1=1
             <if test="queryParams.input!=null">

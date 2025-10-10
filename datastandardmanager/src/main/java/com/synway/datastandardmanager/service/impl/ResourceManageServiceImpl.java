@@ -2734,12 +2734,12 @@ public class ResourceManageServiceImpl implements ResourceManageService {
         if (StringUtils.isEmpty(fieldName)) {
             throw new Exception("fieldName值为空，不是标准库中的标准列名");
         }
-        int fieldIdCount = resourceManageAddDao.getCountByFiledId(fieldId);
+//        int fieldIdCount = resourceManageAddDao.getCountByFiledId(fieldId);
+//        if (fieldIdCount == 0) {
+//            message = "元素编码错误： 【" + fieldId + "】不是标准库中的元素编码,不能保存";
+//            throw new Exception(message);
+//        }
         int fieldNameCount = resourceManageAddDao.getCountByFiledName(fieldName);
-        if (fieldIdCount == 0) {
-            message = "元素编码错误： 【" + fieldId + "】不是标准库中的元素编码,不能保存";
-            throw new Exception(message);
-        }
         if (fieldNameCount == 0) {
             message += "标准列名错误：【" + fieldName + "】不是标准库中的标准列名,不能保存";
             throw new Exception(message);

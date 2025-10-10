@@ -381,7 +381,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                             dataResourceTable.setTableName(detectedTable.getString("tableNameEN"));
                             dataResourceTable.setTableNameCh(detectedTable.getString("tableNameCN"));
                             dataResourceTable.setProjectName(detectedTable.getString("projectName"));
-                            dataResourceTable.setIsPartitionTable(detectedTable.getString("isPartitioned"));
+                            dataResourceTable.setIsPartitionTable(detectedTable.getString("isPartitioned").equals("2") ? "0" : "1");
                             dataResourceTable.setBelongSystemCode(detectedTable.getString("manageUnitCode"));
                             dataResourceTable.setUpdateDate(detectedTable.getString("updateCycle"));
                             dataResourceTable.setTableCreatedTime(detectedTable.getString("createTime"));

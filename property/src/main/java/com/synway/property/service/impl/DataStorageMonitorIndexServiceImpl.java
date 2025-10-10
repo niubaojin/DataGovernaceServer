@@ -994,7 +994,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 //                } else if (PlatformType.HUAWEI.equalsIgnoreCase(platFormType)) {
                 if ("HBASE".equalsIgnoreCase(tableType)) {
                     //TODO 等hbase的修改生命周期接口
-                } else if ("HIVE".equalsIgnoreCase(tableType)) {
+                } else if (tableType.contains("hive")) {
                     String retrunJsonStr = restTemplate.getForObject(environment.getProperty("dfWorkUrl") +
                                     "/dfworks/interface/updateTableDataLife?dbType=Hive&dbName=" + tableProject +
                                     "&tbName=" + requestParam.getTableNameEn() + "&lifeCycle=" + requestParam.getValue() + "天",
