@@ -64,6 +64,9 @@ public class InitData implements ApplicationRunner {
                 }
             });
         }
+        // 数据库类型
+        cacheManager.addOrUpdateCache("dsType", environment.getProperty("database.type"));
+
         dataStorageMonitorService.getDataBaseStatus();
         asyManager.addTask(() -> {
             int num = lifeCycleDao.getCount();
@@ -80,9 +83,6 @@ public class InitData implements ApplicationRunner {
         } else {
             cacheManager.addOrUpdateCache("dataPlatFormType", "huaweiyun");
         }
-
-        // 数据库类型
-        cacheManager.addOrUpdateCache("dsType", environment.getProperty("database.type"));
     }
 
 }

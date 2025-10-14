@@ -71,30 +71,31 @@
                 where statistics_time &gt;= trunc(sysdate) and upper(TABLE_TYPE) ='ODPS' ) t2 on 1=1
     </select>
     <select id="getAllDataBaseCount" resultType="java.util.Map">
-        select TABLETYPE,trunc(sum(DATABASE_COUNT)/100000000,2) as DATABASE_COUNT from
-            (select case
-                 when TABLETYPE = 1 then
-                  'ODPS'
-                 when TABLETYPE = 2 then
-                  'ADS'
-                 when TABLETYPE = 3 then
-                  'ADS'
-                 when TABLETYPE = 4 then
-                 'HBASE'
-                 when TABLETYPE = 5 then
-                  'HIVE'
-                 when TABLETYPE = 6 then
-                  'ES'
-                 when TABLETYPE = 7 then
-                  'CLICKHOUSE'
-                 when TABLETYPE = 10 then
-                  'ORACLE'
-                 when TABLETYPE = 12 then
-                  'CDH-HIVE'
-               end as TABLETYPE, SUM(TABLEALLCOUNT) AS DATABASE_COUNT from(
-                select TABLEPROJECT,tablename ,max(TABLEALLCOUNT) as TABLEALLCOUNT , TABLETYPE,max(PARTITIONDATE)  from SYNLTE.SYNDMG_TABLE_ALL
-                 where TABLETYPE is not null group by TABLEPROJECT,tablename , TABLETYPE) t group by TABLETYPE
-        ) where TABLETYPE is not null  group by TABLETYPE ORDER BY TABLETYPE desc
+        select tabletype, trunc(sum(DATABASE_COUNT) / 100000000, 2) as DATABASE_COUNT
+          from (select case
+                         when tabletype = 1 then 'ODPS'
+                         when tabletype = 2 then 'ADS'
+                         when tabletype = 3 then 'ADS'
+                         when tabletype = 4 then 'HBASE'
+                         when tabletype = 5 then 'HIVE'
+                         when tabletype = 6 then 'ES'
+                         when tabletype = 7 then 'CLICKHOUSE'
+                         when tabletype = 10 then 'ORACLE'
+                         when tabletype = 12 then 'CDH-HIVE'
+                       end as tabletype,
+                       SUM(tableallcount) AS DATABASE_COUNT
+                  from (select tableproject,
+                               tablename,
+                               max(tableallcount) as tableallcount,
+                               tabletype,
+                               max(partitiondate)
+                          from synlte.syndmg_table_all
+                         where to_char(to_date(INSERTEDDATATIME, 'yyyy-MM-dd HH24:mi:ss'), 'yyyyMMdd') = to_char (sysdate, 'yyyyMMdd')
+                         group by tableproject, tablename, tabletype) t
+                 group by tabletype)
+         where tabletype is not null
+         group by tabletype
+         ORDER BY tabletype desc
     </select>
 
     <select id="getOssFileCount" resultType="java.util.Map">

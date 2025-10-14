@@ -6,19 +6,16 @@
 <mapper namespace="com.synway.governace.dao.PropertyLargeScreenDao">
 
 	<select id="getYesterdayCount" resultType="com.synway.governace.pojo.largeScreen.TotalDataProperty">
-        select
-            case
-                when sum(YESTERDAY_COUNT) is null then 0
-                else sum(YESTERDAY_COUNT)
-            end as dailyIncrement,
-            case
-                when sum(TABLE_ALL_COUNT) is null then 0
-                else sum(TABLE_ALL_COUNT)
-            end as dataTotalVolume
-        from
-            table_organization_assets
-        where
-            statistics_time >= DATE_TRUNC('day', CURRENT_DATE)
+        select case
+                 when sum(partitioncount) is null then 0
+                 else trunc(sum(partitioncount) / 100000000, 2)
+               end as dailyIncrement,
+               case
+                 when sum(tableallcount) is null then 0
+                 else trunc(sum(tableallcount) / 100000000, 2)
+               end as dataTotalVolume
+          from synlte.syndmg_table_all
+         where to_char(to_date(INSERTEDDATATIME, 'yyyy-MM-dd HH24:mi:ss'), 'yyyyMMdd') = DATE_TRUNC('day', CURRENT_DATE)
     </select>
 
     <delete id="delDataByTypeAndFlag">

@@ -926,9 +926,10 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void collectDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList) {
         // 华为统计主页数据库状况
-        String hiveResId = getResIdByDatabaseType("hive");
-        if (StringUtils.isNotBlank(hiveResId)) {
-            collectHuaweiDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList, hiveResId);
+        List<Object> hiveResIds = getResIdByDatabaseType("hive");
+        hiveResIds = removeDuplicatesByName(hiveResIds, "connectInfo");
+        if (!hiveResIds.isEmpty()) {
+            collectHuaweiDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList, hiveResIds);
         }
 
         // 阿里数据库概况统计
@@ -937,29 +938,36 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         }
 
         // ClickHouse 主页数据库状况
-        String ckResId = getResIdByDatabaseType("clickhouse");
-        if (StringUtils.isNotBlank(ckResId)) {
-            collectClickhouseDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList, ckResId);
+        List<Object> ckResIds = getResIdByDatabaseType("clickhouse");
+        if (!ckResIds.isEmpty()) {
+            collectClickhouseDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList, ckResIds);
         }
     }
 
-    private void collectHuaweiDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList, String resId) {
-        try {
-            String url = UrlConstants.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
-            logger.info("hdfs数据库概况统计url：" + url);
-            String resultStr = rest.getForObject(url, String.class);
-            logger.info("hdfs数据库概况统计返回结果为：\n" + resultStr);
-            ResourceOverView resourceOverView = JSONObject.parseObject(resultStr).getObject("data", ResourceOverView.class);
+    private void collectHuaweiDatabaseStates(List<DataBaseState> dataBaseStates,
+                                             List<DataBaseState> platTableSumList,
+                                             List<Map<String, Object>> allPlatformCountList,
+                                             List<Object> resIds) {
+        for (Object object : resIds){
+            try {
+                String resId = JSONObject.parseObject(object.toString()).getString("resId");
+                String resName = JSONObject.parseObject(object.toString()).getString("resName");
+                String url = UrlConstants.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
+                logger.info("hdfs数据库概况统计url：" + url);
+                String resultStr = rest.getForObject(url, String.class);
+                logger.info("hdfs数据库概况统计返回结果为：\n" + resultStr);
+                ResourceOverView resourceOverView = JSONObject.parseObject(resultStr).getObject("data", ResourceOverView.class);
 
-            DataBaseState dataBaseState = new DataBaseState();
-            dataBaseState.setName("HDFS");
-            dataBaseState = getTableSum(platTableSumList, dataBaseState, "hive");
-            dataBaseState.setUsedCapacity(NumUtil.handleNumWithUnit(resourceOverView.getUsedSpace() + "MB"));
-            dataBaseState.setBareCapacity(NumUtil.handleNumWithUnit(resourceOverView.getTotalSpace() + "MB"));
-            setTableCountByPlatformName(dataBaseState, allPlatformCountList, "hive");
-            dataBaseStates.add(dataBaseState);
-        } catch (Exception e) {
-            logger.error("hdfs数据库概况统计报错: {}", e);
+                DataBaseState dataBaseState = new DataBaseState();
+                dataBaseState.setName("HDFS_" + resName);
+                dataBaseState = getTableSum(platTableSumList, dataBaseState, "hive");
+                dataBaseState.setUsedCapacity(NumUtil.handleNumWithUnit(resourceOverView.getUsedSpace() + "MB"));
+                dataBaseState.setBareCapacity(NumUtil.handleNumWithUnit(resourceOverView.getTotalSpace() + "MB"));
+                setTableCountByPlatformName(dataBaseState, allPlatformCountList, "hive");
+                dataBaseStates.add(dataBaseState);
+            } catch (Exception e) {
+                logger.error("hdfs数据库概况统计报错: {}", e);
+            }
         }
     }
 
@@ -987,33 +995,39 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         }
     }
 
-    private void collectClickhouseDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList, String resId) {
-        try {
-            String storageInfo = "select sum(total_space) as total_space,\n" +
-                                 "       sum(free_space) as free_space,\n" +
-                                 "       (total_space - free_space) / total_space as used_rate\n" +
-                                 "  from clusterAllReplicas(ck_cluster, system, disks)";
-            JSONArray jsonArray = restTemplateHandle.excuteSql(resId, storageInfo);
-            JSONObject data = jsonArray.getJSONObject(0);
-            if (data != null) {
-                addClickhouseDatabaseState(dataBaseStates, platTableSumList, allPlatformCountList, data);
+    private void collectClickhouseDatabaseStates(List<DataBaseState> dataBaseStates,
+                                                 List<DataBaseState> platTableSumList,
+                                                 List<Map<String, Object>> allPlatformCountList,
+                                                 List<Object> resIds) {
+        for (Object object : resIds){
+            try {
+                String resId = JSONObject.parseObject(object.toString()).getString("resId");
+                String resName = JSONObject.parseObject(object.toString()).getString("resName");
+                String storageInfo = "select sum(total_space) as total_space,\n" +
+                        "       sum(free_space) as free_space,\n" +
+                        "       (total_space - free_space) / total_space as used_rate\n" +
+                        "  from clusterAllReplicas(ck_cluster, system, disks)";
+                JSONArray jsonArray = restTemplateHandle.excuteSql(resId, storageInfo);
+                JSONObject data = jsonArray.getJSONObject(0);
+                if (data != null) {
+                    addClickhouseDatabaseState(dataBaseStates, platTableSumList, allPlatformCountList, data, resName);
+                }
+            } catch (Exception e) {
+                logger.error("ClickHouse数据库概况统计报错: {}", ExceptionUtil.getExceptionTrace(e));
             }
-        } catch (Exception e) {
-            logger.error("ClickHouse数据库概况统计报错: {}", ExceptionUtil.getExceptionTrace(e));
         }
     }
-    public String getResIdByDatabaseType(String databaseType) {
+    public List<Object> getResIdByDatabaseType(String databaseType) {
         try {
             JSONArray dataResourceLocal = restTemplateHandle.getDataResourceByisLocal("2", '0');
             JSONArray dataResourceNoLocal = restTemplateHandle.getDataResourceByisLocal("1", '0');
             dataResourceLocal.addAll(dataResourceNoLocal);
-            JSONObject dataResource = (JSONObject) dataResourceLocal.stream().filter(d -> {
+            return dataResourceLocal.stream().filter(d -> {
                 return JSONObject.parseObject(d.toString()).getString("resType").contains(databaseType);
-            }).findFirst().orElse(new JSONObject());
-            return dataResource != null ? dataResource.getString("resId") : "";
+            }).collect(Collectors.toList());
         }catch (Exception e){
             logger.error("根据数据源类型获取数据源ID出错：\n", e);
-            return "";
+            return new JSONArray();
         }
     }
 
@@ -1072,14 +1086,18 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 .anyMatch(row -> name.equalsIgnoreCase(String.valueOf(isHailiang ? row.get("name") : row.get("NAME"))));
     }
 
-    private void addClickhouseDatabaseState(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList, JSONObject data) {
+    private void addClickhouseDatabaseState(List<DataBaseState> dataBaseStates,
+                                            List<DataBaseState> platTableSumList,
+                                            List<Map<String, Object>> allPlatformCountList,
+                                            JSONObject data,
+                                            String resName) {
         BigDecimal freeSpace = new BigDecimal(data.getDoubleValue("free_space"));
         BigDecimal totalSpace = new BigDecimal(data.getDoubleValue("total_space"));
         //1024*1024*1024 (GB)
         BigDecimal denominator = new BigDecimal("1073741824");
 
         DataBaseState dataBaseState = new DataBaseState();
-        dataBaseState.setName("CLICKHOUSE");
+        dataBaseState.setName("CLICKHOUSE_" + resName);
         // 表数量
         dataBaseState = getTableSum(platTableSumList, dataBaseState, "clickhouse");
         // 磁盘使用空间、总空间
@@ -1356,30 +1374,63 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     @Override
     public void getClickhouseData() {
-        String resId = getResIdByDatabaseType("clickhouse");
-        if (StringUtils.isBlank(resId)) {
+        List<Object> resIds = getResIdByDatabaseType("clickhouse");
+        if (resIds.isEmpty()) {
             return;
         }
         String todayNow = DateUtil.formatDate(new Date(), DateUtil.DEFAULT_PATTERN_DATE_SIMPLE);
         String yesterday = DateUtil.addDayStr(new Date(), -1);
         String ckDataSql = buildSqlQuery();
-        try {
-            /**
-             * 这个接口获取的是所有的分区和未分区数据，和hive，hbase的不同，且有列名做分区名
-             */
-            JSONArray jsonArray = restTemplateHandle.excuteSql(resId, ckDataSql);
-            List<SYDMGParam> clickhouseParams = JSON.parseArray(JSON.toJSONString(jsonArray), SYDMGParam.class);
+        /**
+         * 这个接口获取的是所有的分区和未分区数据，和hive，hbase的不同，且有列名做分区名
+         */
+        JSONArray jsonArrayAll = new JSONArray();
+        for (Object object : resIds){
+            try {
+                String resId = JSONObject.parseObject(object.toString()).getString("resId");
+                JSONArray jsonArray = restTemplateHandle.excuteSql(resId, ckDataSql);
+                jsonArrayAll.addAll(jsonArray);
+                jsonArrayAll = removeDuplicates(jsonArrayAll);
+                List<SYDMGParam> clickhouseParams = JSON.parseArray(JSON.toJSONString(jsonArrayAll), SYDMGParam.class);
 
-            if (!clickhouseParams.isEmpty()) {
-                List<SYDMGParam> filteredData = processClickhouseData(clickhouseParams, todayNow, yesterday);
-                saveCkToDatabase(filteredData, todayNow);
-            } else {
-                logger.info("clickhouse【" + todayNow + "】查询到的数据量为0");
+                if (!clickhouseParams.isEmpty()) {
+                    List<SYDMGParam> filteredData = processClickhouseData(clickhouseParams, todayNow, yesterday);
+                    saveCkToDatabase(filteredData, todayNow);
+                } else {
+                    logger.info("clickhouse【" + todayNow + "】查询到的数据量为0");
+                }
+            } catch (Exception e) {
+                logger.error("获取clickhouse的数据报错\n" + ExceptionUtil.getExceptionTrace(e));
             }
-        } catch (Exception e) {
-            logger.error("获取clickhouse的数据报错\n" + ExceptionUtil.getExceptionTrace(e));
         }
     }
+
+    public static JSONArray removeDuplicates(JSONArray jsonArray) {
+        Set<String> seen = new HashSet<>();
+        JSONArray result = new JSONArray();
+
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JSONObject obj = jsonArray.getJSONObject(i);
+            String objStr = obj.toString();
+
+            if (!seen.contains(objStr)) {
+                seen.add(objStr);
+                result.add(obj);
+            }
+        }
+        return result;
+    }
+    public static List<Object> removeDuplicatesByName(List<Object> list, String key) {
+        Set<String> seen = new LinkedHashSet<>();
+        List<Object> result = new ArrayList<>();
+        for (Object obj : list) {
+            if (seen.add(JSONObject.parseObject(obj.toString()).getString(key))) {
+                result.add(obj);
+            }
+        }
+        return result;
+    }
+
     private String buildSqlQuery() {
         return "select TABLEPROJECT,\n" +
                 "       TABLENAME,\n" +

@@ -1159,7 +1159,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
 
                 // 实时库的 水位图信息
                 List<DataBaseState> list2 = list.stream().filter(d -> StringUtils.isNotBlank(d.getName()) &&
-                        Constant.REALTIME_BS.contains(d.getName().toUpperCase())).collect(Collectors.toList());
+                        Constant.REALTIME_BS.contains(d.getName().toUpperCase().split("_")[0])).collect(Collectors.toList());
                 TotalDataProperty.DataBaseState data2 = getLibraryData(list2, 0);
 //                // tgj定制
 //                if(StringUtils.equalsIgnoreCase("tgj", assetsLargeScreenVersion)) {
@@ -1169,7 +1169,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
 
                 // 离线库 数据
                 List<DataBaseState> list3 = list.stream().filter(d -> StringUtils.isNotBlank(d.getName()) &&
-                        Constant.OFFLINE_BS.contains(d.getName().toUpperCase())).collect(Collectors.toList());
+                        Constant.OFFLINE_BS.contains(d.getName().toUpperCase().split("_")[0])).collect(Collectors.toList());
                 TotalDataProperty.DataBaseState data3 = getLibraryData(list3, 0);
 //                // tgj定制
 //                if(StringUtils.equalsIgnoreCase("tgj", assetsLargeScreenVersion)) {
@@ -1260,7 +1260,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
             }else{
                 library.setTableCount(String.format("%.2f",tableCount));
             }
-            library.setName(data.get(0).getName());
+            library.setName(data.get(0).getName().split("_")[0]);
 //            //  调用数据仓库那边 获取 本地仓的相关信息 然后再连接获取表的数量
 //            try{
 //                DataBaseHandle dataBaseHandle = DbFactory.getHandler(library.getName());
