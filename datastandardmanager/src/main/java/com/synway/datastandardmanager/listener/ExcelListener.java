@@ -2,7 +2,6 @@ package com.synway.datastandardmanager.listener;
 
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
-import com.synway.datastandardmanager.service.impl.StandardTemplateImportServiceImpl;
 import lombok.Getter;
 import org.assertj.core.util.Lists;
 import org.slf4j.Logger;
@@ -20,11 +19,6 @@ public class ExcelListener<T> extends AnalysisEventListener<T> {
     private Logger logger = LoggerFactory.getLogger(ExcelListener.class);
     @Getter
     List<T> voList = Lists.newArrayList();
-//    private List<String> standardHeadMap;
-//
-//    public ExcelListener(List<String> standardHeadMap){
-//        this.standardHeadMap = standardHeadMap;
-//    }
 
     @Override
     public void invoke(T t, AnalysisContext analysisContext) {

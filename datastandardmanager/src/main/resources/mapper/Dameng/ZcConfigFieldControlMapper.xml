@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.ZcConfigFieldControlMapper">
+
+    <update id="updateBuildTableShowField">
+        merge into ZC_CONFIG_FIELD_CONTROL a
+        using (select 'TABLE_BUILDTABLE' as NAME,
+                      #{userName, jdbcType = VARCHAR} as USERNAME
+                 FROM dual) b
+        on (a.name = b.name and a.USERNAME = b.USERNAME)
+        when matched then
+          update
+             set SHOW_FIELD_LIST = #{showField, jdbcType = VARCHAR}
+           where NAME = 'TABLE_BUILDTABLE'
+             and USERNAME = #{userName, jdbcType = VARCHAR}
+        when not matched then
+          insert
+          values
+            ('TABLE_BUILDTABLE',
+             90,
+             #{showField, jdbcType = VARCHAR},
+             #{userName, jdbcType = VARCHAR})
+    </update>
+
+</mapper>

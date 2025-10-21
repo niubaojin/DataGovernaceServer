@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeOriginalDictMapper">
+
+    <select id="searchLeftTreeInfo" resultType="com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDictEntity">
+        select * from STANDARDIZE_ORIGINAL_DICT
+    </select>
+
+    <update id="updateOneOriginalDictionary" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDictEntity">
+        update STANDARDIZE_ORIGINAL_DICT
+           set DICTIONARY_NAME        = #{dictionaryName},
+               FACTURER_ID            = #{facturerId},
+               FACTURER               = #{facturer, jdbcType = VARCHAR},
+               STANDARD_DICTIONARY    = #{standardDictionary},
+               STANDARD_DICTIONARY_ID = #{standardDictionaryId},
+               MEMO                   = #{memo, jdbcType = VARCHAR},
+               UPDATE_TIME            = sysdate
+         where id = #{id}
+    </update>
+
+</mapper>

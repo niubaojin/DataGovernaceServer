@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeUnitManageMapper">
+
+    <select id="searchUnitOrganizationListByParentId" resultType="com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity">
+        select *
+        from SYNLTE.STANDARDIZE_UNIT_MANAGE
+        where P_UNIT_CODE = #{parentUnitCode}
+        <if test="searchText != null and searchText != ''">
+            and (
+            upper(UNIT_NAME) like upper(concat('%', concat(#{searchText}, '%'))) or
+            upper(UNIT_CODE) like upper(concat('%', concat(#{searchText}, '%')))
+            )
+        </if>
+    </select>
+
+    <select id="searchUnitOrganizationTable"
+            parameterType="com.synway.datastandardmanager.entity.dto.UnitOrganizationDTO"
+            resultType="com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity">
+        select *
+        from SYNLTE.STANDARDIZE_UNIT_MANAGE
+        <where>
+            <if test="searchText != null and searchText != ''">
+                ( upper(UNIT_NAME) like upper(concat('%',concat(#{searchText},'%'))) or
+                 upper(UNIT_CODE) like upper(concat('%',concat(#{searchText},'%'))) )
+            </if>
+
+            <if test="unitType != null">
+                and UNIT_TYPE = #{unitType}
+            </if>
+            <if test="unitLevelFilterList != null and unitLevelFilterList.size() > 0">
+                and UNIT_LEVEL in (
+                <foreach collection="unitLevelFilterList" item="item" separator="union all" open="(" close=")">
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+        </where>
+        <if test="sortOrder != null and sortOrder != ''">
+            order by UNIT_LEVEL ${sortOrder} nulls last
+        </if>
+    </select>
+
+    <update id="updateOneUnitOrganization" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity">
+        update SYNLTE.STANDARDIZE_UNIT_MANAGE
+           set UNIT_NAME   = #{unitName},
+               UNIT_TYPE   = #{unitType},
+               UNIT_LEVEL  = #{unitLevel},
+               P_UNIT_CODE = #{parentUnitCode},
+               P_UNIT_NAME = #{parentUnitName},
+               MEMO        = #{memo},
+               UPDATE_TIME = sysdate
+         where UNIT_CODE = #{unitCode}
+    </update>
+
+</mapper>

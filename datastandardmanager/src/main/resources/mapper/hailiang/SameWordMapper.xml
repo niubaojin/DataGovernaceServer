@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.SameWordMapper">
+
+    <select id="getSameWordList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select distinct sameid as value, wordname as text
+          from synlte.sameword
+         where deleted = 0
+           and sameid is not null
+           and wordname is not null
+        <if test ="searchName != null and searchName != ''">
+            and ( upper(sameid) like upper(concat(#{searchName},'%'))
+                or  upper(wordname) like upper(concat(#{searchName},'%')) )
+        </if>
+    </select>
+
+    <delete id="deleteOneSemanticTableDao">
+        update synlte.Sameword
+           set DELETED  = 1,
+               SAMEID   = SAMEID || #{uuid},
+               wordname = wordname || #{uuid},
+               word     = word || #{uuid}
+         where SAMEID = #{sameId}
+    </delete>
+
+    <insert id="uploadSemanticFileDao" parameterType="com.synway.datastandardmanager.entity.pojo.SameWordEntity">
+        insert into synlte.Sameword
+          (SAMEID, WORD, WORDNAME, ELEMNTOBJECT, MEMO, deleted)
+          select *
+            from (
+               <foreach collection = "rcList" item = "item" separator = "union all" >
+                   select #{item.id, jdbcType = VARCHAR},
+                          #{item.word, jdbcType = VARCHAR},
+                          #{item.wordname, jdbcType = VARCHAR},
+                          #{item.elementObject, jdbcType = VARCHAR},
+                          #{item.memo, jdbcType = VARCHAR},
+                          0
+                     from dual
+               </foreach>
+                 )
+    </insert>
+
+
+</mapper>

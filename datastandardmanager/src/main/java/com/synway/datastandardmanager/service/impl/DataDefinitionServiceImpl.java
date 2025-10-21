@@ -1,19 +1,21 @@
 package com.synway.datastandardmanager.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.synway.datastandardmanager.dao.master.*;
-import com.synway.datastandardmanager.exceptionhandler.ErrorCode;
-import com.synway.datastandardmanager.exceptionhandler.SystemException;
-import com.synway.datastandardmanager.pojo.*;
-import com.synway.datastandardmanager.pojo.dataDefinitionManagement.*;
-import com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject;
-import com.synway.datastandardmanager.pojo.warehouse.DataSimilarParameter;
-import com.synway.datastandardmanager.pojo.warehouse.FieldInfo;
-import com.synway.datastandardmanager.pojo.warehouse.TableSimilarInfo;
+import com.synway.datastandardmanager.entity.dto.DataDefinitionDTO;
+import com.synway.datastandardmanager.entity.pojo.*;
+import com.synway.datastandardmanager.entity.vo.*;
+import com.synway.datastandardmanager.enums.ErrorCodeEnum;
+import com.synway.datastandardmanager.mapper.*;
+import com.synway.datastandardmanager.entity.vo.warehouse.FieldInfo;
+import com.synway.datastandardmanager.entity.vo.warehouse.TableSimilarInfo;
 import com.synway.datastandardmanager.service.DataDefinitionService;
 import com.synway.datastandardmanager.util.RestTemplateHandle;
+import com.synway.datastandardmanager.util.SelectUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,204 +31,225 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DataDefinitionServiceImpl implements DataDefinitionService {
 
-
-    @Autowired
-    private DataDefinitionDao dataDefinitionDao;
-
-    @Autowired
-    private SynlteFieldDao synlteFieldDao;
-
-    @Autowired
-    private ElementCodeSetManageDao elementCodeSetManageDao;
-
-    @Autowired
-    private ResourceManageDao resourceManageDao;
-
-    @Autowired
-    private ResourceManageAddDao resourceManageAddDao;
-
     @Autowired
     private RestTemplateHandle restTemplateHandle;
 
+    @Resource
+    private ObjectMapper objectMapper;
+    @Resource
+    private ObjectFieldMapper objectFieldMapper;
+    @Resource
+    private SynlteFieldMapper synlteFieldMapper;
+    @Resource
+    private FieldCodeMapper fieldCodeMapper;
+    @Resource
+    private StandardizeObjectRelationMapper standardizeObjectRelationMapper;
+    @Resource
+    private StandardizeObjectfieldRelMapper standardizeObjectfieldRelMapper;
+
 
     @Override
-    public Map<String, Object> searchDataDefinitionTable(DataDefinitionParameter parameter) {
-        // 搜索内容如果存在空值，将其变为 null值
-        if (StringUtils.isBlank(parameter.getSearchText())) {
-            parameter.setSearchText(null);
-        }
-//        if (StringUtils.isBlank(parameter.getSearchType())) {
-//            parameter.setSearchType(null);
-//        }
-        if (parameter.getSort() == null || parameter.getSort().isEmpty()) {
-            parameter.setSort("modDate");
-        }
-        if (parameter.getSortOrder() == null || parameter.getSortOrder().isEmpty()){
-            parameter.setSortOrder("desc");
-        }
-
-        PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
-
-        List<DataDefinitionPojo> dataDefinitionList = dataDefinitionDao.searchDataDefinitionTable(parameter);
-
-        if (dataDefinitionList != null && !dataDefinitionList.isEmpty()) {
-            int num = 1;
-            for (DataDefinitionPojo data : dataDefinitionList) {
-                data.setRecno(num++);
+    public PageVO searchDataDefinitionTable(DataDefinitionDTO parameter) {
+        PageVO pageVO = new PageVO<>();
+        try {
+            log.info(">>>>>>开始查询数据定义管理的数据");
+            if (parameter.getSort() == null || parameter.getSort().isEmpty()) {
+                parameter.setSort("modDate");
             }
-        } else {
-            dataDefinitionList = new ArrayList<>();
+            if (parameter.getSortOrder() == null || parameter.getSortOrder().isEmpty()) {
+                parameter.setSortOrder("desc");
+            }
+            PageHelper.startPage(parameter.getPageIndex(), parameter.getPageSize());
+            List<DataDefinitionVO> dataDefinitionList = objectMapper.searchDataDefinitionTable(parameter);
+            if (dataDefinitionList != null && !dataDefinitionList.isEmpty()) {
+                int num = 1;
+                for (DataDefinitionVO data : dataDefinitionList) {
+                    data.setRecno(num++);
+                }
+            } else {
+                return pageVO.emptyResult();
+            }
+            PageInfo<DataDefinitionVO> pageInfo = new PageInfo<>(dataDefinitionList);
+            pageVO.setPageNum(parameter.getPageIndex());
+            pageVO.setPageSize(parameter.getPageSize());
+            pageVO.setTotal(pageInfo.getTotal());
+            pageVO.setRows(pageInfo.getList());
+        } catch (Exception e) {
+            log.error(">>>>>>获取数据定义数据列表出错：", e);
         }
-
-        PageInfo<DataDefinitionPojo> pageInfo = new PageInfo<>(dataDefinitionList);
-        Map<String, Object> map = new HashMap<>();
-        map.put("total", pageInfo.getTotal());
-        map.put("rows", pageInfo.getList());
-
-        return map;
+        return pageVO;
     }
 
     @Override
     public String getDictionaryNameById(String gadsjFieldId) {
-        log.info("开始根据数据元内部标识符查询对应的字典值");
-        SynlteFieldObject synlteFieldObject = synlteFieldDao.searchSynlteFieldById(gadsjFieldId);
-        log.info("数据元信息为:{}",synlteFieldObject);
-        String codeId = synlteFieldObject.getCodeId();
-        String dictionaryName = elementCodeSetManageDao.searchFieldCodeByCodeId(codeId);
-        return dictionaryName;
+        log.info(">>>>>>传递的参数为:{}", gadsjFieldId);
+        LambdaQueryWrapper<SynlteFieldEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(SynlteFieldEntity::getFieldId, gadsjFieldId);
+        SynlteFieldEntity synlteField = synlteFieldMapper.selectOne(wrapper);
+        return fieldCodeMapper.searchFieldCodeByCodeId(synlteField.getCodeId());
     }
 
     @Override
-    public List<PageSelectOneValue> searchAllDataStandard(String searchText) {
-        if(StringUtils.isBlank(searchText)){
-            searchText = null;
-        }
+    public List<KeyValueVO> searchAllDataStandard(String searchText) {
         //查询全部的数据集标准信息
-        List<PageSelectOneValue> resultList = resourceManageDao.searchAllDataStandard(searchText);
-        if(resultList == null || resultList.isEmpty()){
-            return new ArrayList<>();
+        LambdaQueryWrapper<ObjectEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(ObjectEntity::getObjectState, 1);
+        if (StringUtils.isNotBlank(searchText)) {
+            wrapper.apply("lower(objectname) like lower({0})", "%" + searchText.toLowerCase() + "%");
+        }
+        List<ObjectEntity> objectEntities = objectMapper.selectList(wrapper);
+        List<KeyValueVO> resultList = new ArrayList<>();
+        if (objectEntities.size() > 0) {
+            for (ObjectEntity data : objectEntities) {
+                resultList.add(new KeyValueVO(data.getTableId(), data.getObjectName(), data.getObjectId().toString()));
+            }
+        } else {
+            return resultList;
         }
         //根据中文名排序
-//        resultList = resultList.stream().sorted((s1, s2) -> Collator.getInstance(Locale.CHINA)
-//                .compare(s2.getLabel(), s1.getLabel()))
-//                .limit(100).collect(Collectors.toList());
-        resultList = resultList.stream().sorted((s1, s2) -> Collator.getInstance(Locale.CHINA)
-                .compare(s2.getLabel(), s1.getLabel()))
+        resultList = resultList.stream().sorted((s1, s2) -> Collator.getInstance(Locale.CHINA).compare(s2.getLabel(), s1.getLabel()))
                 .collect(Collectors.toList());
-
         return resultList;
     }
 
     @Override
-    public List<PageSelectOneValue> getDataSetDetectSimilarResult(DataSimilarParameter dataSimilarParameter) {
-        log.info("======开始获取探查分析推荐标准数据集======");
-        if(StringUtils.isBlank(dataSimilarParameter.getResId()) && StringUtils.isBlank(dataSimilarParameter.getProjectName())
-                && StringUtils.isBlank(dataSimilarParameter.getTableNameEn())){
-            throw SystemException.asSystemException(ErrorCode.DATA_IS_NULL, "获取探查分析推荐标准数据集参数为空");
+    public List<KeyValueVO> getDataSetDetectSimilarResult(DataDefinitionDTO dto) throws Exception {
+        log.info(">>>>>>开始获取探查分析推荐标准数据集");
+        if (StringUtils.isBlank(dto.getResId()) && StringUtils.isBlank(dto.getProjectName())
+                && StringUtils.isBlank(dto.getTableNameEn())) {
+            throw new Exception(String.format("%s：%s", ErrorCodeEnum.DATA_IS_NULL, "获取探查分析推荐标准数据集参数为空"));
         }
-        List<TableSimilarInfo> dataSimilarInfo = restTemplateHandle.getDataSimilarInfo(dataSimilarParameter);
-        if(dataSimilarInfo.size() == 0){
+        List<TableSimilarInfo> dataSimilarInfo = restTemplateHandle.getDataSimilarInfo(dto);
+        if (dataSimilarInfo.size() == 0) {
             return new ArrayList<>();
         }
-        List<PageSelectOneValue> resultList = new ArrayList<>();
+        List<KeyValueVO> resultList = new ArrayList<>();
         NumberFormat nf = NumberFormat.getPercentInstance();
         nf.setMinimumFractionDigits(2);
-        dataSimilarInfo.stream().forEach( d ->{
-            PageSelectOneValue dataSimilarElement = new PageSelectOneValue(d.getProtocolCode(),d.getObjectName(),nf.format(d.getScore()));
+        dataSimilarInfo.stream().forEach(d -> {
+            KeyValueVO dataSimilarElement = new KeyValueVO(d.getProtocolCode(), d.getObjectName(), nf.format(d.getScore()));
             resultList.add(dataSimilarElement);
         });
         return resultList;
     }
 
     @Override
-    public ObjectRelationManage getDataSetMapping(String tableId) {
-        ObjectRelationManage objectRelationManage = new ObjectRelationManage();
+    public ObjectRelationManageVO getDataSetMapping(String tableId) throws Exception {
+        log.info(">>>>>>开始查询数据集对标信息，传递的参数为:{}", tableId);
+        ObjectRelationManageVO objectRelationManage = new ObjectRelationManageVO();
         //根据tableId查询objectId
-        String objectId = resourceManageAddDao.getObjectIDByTableID(tableId);
-        log.info("查询出的objectId为:{}",objectId);
+        ObjectEntity object = SelectUtil.getObjectEntityByTableId(objectMapper, tableId);
         //查询到原始汇聚的数据集信息
-        if(StringUtils.isBlank(objectId)){
-            throw SystemException.asSystemException(ErrorCode.DATA_IS_NULL, "未知异常，请联系相关人员");
+        if (object.getObjectId() == null) {
+            throw new Exception(String.format("%s：%s", ErrorCodeEnum.DATA_IS_NULL, "未知异常，请联系相关人员"));
         }
-        ObjectRelation originalObjectRelation = dataDefinitionDao.searchObjectRelationByObjectId(objectId);
-        if(originalObjectRelation == null || StringUtils.isBlank(originalObjectRelation.getId())){
+        LambdaQueryWrapper<StandardizeObjectRelationEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(StandardizeObjectRelationEntity::getObjectId, object.getObjectId());
+        StandardizeObjectRelationEntity originalObjectRelation = standardizeObjectRelationMapper.selectOne(wrapper);
+        if (originalObjectRelation == null || StringUtils.isBlank(originalObjectRelation.getId())) {
             return objectRelationManage;
         }
+
         //回填原始汇聚的数据集信息
         objectRelationManage.setOriginalId(originalObjectRelation.getId());
         objectRelationManage.setOriginalObjectId(originalObjectRelation.getObjectId());
         objectRelationManage.setOriginalObjectName(originalObjectRelation.getObjectName());
         objectRelationManage.setOriginalTableId(originalObjectRelation.getTableId());
         objectRelationManage.setOriginalParentId("-1");
+
         //根据原始汇聚的id去查对应的标准层的数据集
-        ObjectRelation standardObjectRelation = dataDefinitionDao.getStandardObjectRelationByParentId(originalObjectRelation.getId());
-        if(standardObjectRelation == null || (StringUtils.isBlank(standardObjectRelation.getId())
-                && !originalObjectRelation.getId().equalsIgnoreCase(standardObjectRelation.getParentId())) ){
-//            throw SystemException.asSystemException(ErrorCode.DATA_IS_NULL, "该数据集的对标标准层查询失败");
+        StandardizeObjectRelationEntity standardObjectRelation = standardizeObjectRelationMapper.selectSORByParentId(originalObjectRelation.getId());
+        if (standardObjectRelation == null || (StringUtils.isBlank(standardObjectRelation.getId())
+                && !originalObjectRelation.getId().equalsIgnoreCase(standardObjectRelation.getParentId()))) {
             return objectRelationManage;
         }
         objectRelationManage.setStandardObjectId(standardObjectRelation.getObjectId());
         objectRelationManage.setStandardObjectName(standardObjectRelation.getObjectName());
         objectRelationManage.setStandardParentId(standardObjectRelation.getParentId());
         objectRelationManage.setStandardTableId(standardObjectRelation.getTableId());
-        String standObjectId = resourceManageAddDao.getObjectIDByTableID(standardObjectRelation.getTableId());
-        List<ObjectField> standFieldList = resourceManageDao.selectObjectFieldByObjectId(Long.valueOf(standObjectId));
-        objectRelationManage.setStandardFieldCount(standFieldList.size());
-        //获取原始汇聚下的数据项信息
-        List<ObjectFieldRelation> originalObjectFieldRelations = dataDefinitionDao.searchObjectFieldById(originalObjectRelation.getId());
-        //获取标准层下的数据项信息
-        List<ObjectFieldRelation> standardObjectFieldRelations = dataDefinitionDao.searchObjectFieldById(standardObjectRelation.getId());
 
-        originalObjectFieldRelations.stream().forEach( d-> {
-            List<ObjectFieldRelation> fieldMapping = new ArrayList<>();
-            standardObjectFieldRelations.stream().forEach(e ->{
-                if("-1".equalsIgnoreCase(d.getParentId()) && d.getId().equalsIgnoreCase(e.getParentId())){
+        //objectFieldList
+        ObjectEntity objectStd = SelectUtil.getObjectEntityByTableId(objectMapper, standardObjectRelation.getTableId());
+        LambdaQueryWrapper<ObjectFieldEntity> wrapperOF = Wrappers.lambdaQuery();
+        wrapperOF.eq(ObjectFieldEntity::getDeleted, 0);
+        wrapperOF.eq(ObjectFieldEntity::getObjectId, objectStd.getObjectId());
+        wrapperOF.orderByAsc(ObjectFieldEntity::getRecno);
+        List<ObjectFieldEntity> objectFieldList = objectFieldMapper.selectList(wrapperOF);
+//        //fieldDeterminerList
+//        LambdaQueryWrapper<FieldDeterminerEntity> wrapperFD = Wrappers.lambdaQuery();
+//        wrapperFD.eq(FieldDeterminerEntity::getDeterminerStateNum, "05");
+//        List<FieldDeterminerEntity> fieldDeterminerEntities = fieldDeterminerMapper.selectList(wrapperFD);
+//        for (ObjectFieldEntity objectField : objectFieldList) {
+//            // 限定词名称
+//            fieldDeterminerEntities.stream().forEach(fd -> {
+//                if (fd.getDeterminerId().equalsIgnoreCase(objectField.getDeterminerId())) {
+//                    objectField.setDeterminerName(fd.getDchinseName());
+//                }
+//            });
+//        }
+        objectRelationManage.setStandardFieldCount(objectFieldList.size());
+
+        //获取原始汇聚下的数据项信息
+        LambdaQueryWrapper<StandardizeObjectfieldRelEntity> wrapperSOFR = Wrappers.lambdaQuery();
+        wrapperSOFR.eq(StandardizeObjectfieldRelEntity::getSetId, originalObjectRelation.getId());
+        List<StandardizeObjectfieldRelEntity> originalObjectFieldRelations = standardizeObjectfieldRelMapper.selectList(wrapperSOFR);
+        //获取标准层下的数据项信息
+        wrapperSOFR = Wrappers.lambdaQuery();
+        wrapperSOFR.eq(StandardizeObjectfieldRelEntity::getSetId, standardObjectRelation.getId());
+        List<StandardizeObjectfieldRelEntity> standardObjectFieldRelations = standardizeObjectfieldRelMapper.selectList(wrapperSOFR);
+
+        originalObjectFieldRelations.stream().forEach(d -> {
+            List<StandardizeObjectfieldRelEntity> fieldMapping = new ArrayList<>();
+            standardObjectFieldRelations.stream().forEach(e -> {
+                if ("-1".equalsIgnoreCase(d.getParentId()) && d.getId().equalsIgnoreCase(e.getParentId())) {
                     fieldMapping.add(e);
                 }
             });
             d.setObjectFieldRelationMapping(fieldMapping);
         });
         objectRelationManage.setObjectFieldRelation(originalObjectFieldRelations);
-
         return objectRelationManage;
     }
 
 
     @Override
-    public ObjectRelationManage getObjectRelation(ObjectRelationManage data) {
-        log.info("开始数据集对标");
-        ObjectRelationManage objectRelationManage = new ObjectRelationManage();
+    public ObjectRelationManageVO getObjectRelation(ObjectRelationManageVO data) {
+        log.info(">>>>>>开始数据集对标");
+        ObjectRelationManageVO objectRelationManage = new ObjectRelationManageVO();
         objectRelationManage.setOriginalObjectName(data.getOriginalObjectName());
         objectRelationManage.setOriginalTableId(data.getOriginalTableId());
-        String objectId = resourceManageAddDao.getObjectIDByTableID(data.getStandardTableId());
-        objectRelationManage.setStandardObjectId(Long.valueOf(objectId));
+        ObjectEntity object = SelectUtil.getObjectEntityByTableId(objectMapper, data.getStandardTableId());
+        objectRelationManage.setStandardObjectId(object.getObjectId());
         objectRelationManage.setStandardObjectName(data.getStandardObjectName());
         objectRelationManage.setStandardTableId(data.getStandardTableId());
-        List<ObjectFieldRelation> originalObjectFieldList = data.getObjectFieldRelation();
-        log.info("探查映射");
-        if("detect".equalsIgnoreCase(data.getType())){
+        List<StandardizeObjectfieldRelEntity> originalObjectFieldList = data.getObjectFieldRelation();
+        log.info(">>>>>>探查映射");
+        if ("detect".equalsIgnoreCase(data.getType())) {
             //创建调用仓库接口的参数
-            DataSimilarParameter dataSimilarParameter = new DataSimilarParameter(data.getResId(), data.getProjectName(), data.getTableNameEn());
+            DataDefinitionDTO dto = new DataDefinitionDTO();
+            dto.setResId(data.getResId());
+            dto.setProjectName(data.getProjectName());
+            dto.setTableNameEn(data.getTableNameEn());
             //获取全部的相似度探查结果
-            List<TableSimilarInfo> dataSimilarListInfo = restTemplateHandle.getDataSimilarInfo(dataSimilarParameter);
-            if(dataSimilarListInfo.size() != 0 && !dataSimilarListInfo.isEmpty()){
+            List<TableSimilarInfo> dataSimilarListInfo = restTemplateHandle.getDataSimilarInfo(dto);
+            if (dataSimilarListInfo.size() != 0 && !dataSimilarListInfo.isEmpty()) {
                 //筛选出相同tableId的探查结果
                 TableSimilarInfo tableSimilarInfo = dataSimilarListInfo.stream().filter(d -> data.getStandardTableId().equalsIgnoreCase(d.getProtocolCode())).findFirst().get();
                 //获取映射字段信息
                 List<SourceFieldMapping> sourceFieldMappingList = JSONObject.parseArray(tableSimilarInfo.getMappingSimilarInfo().getSourceTargetMapping(), SourceFieldMapping.class);
                 List<FieldInfo> targetFieldList = tableSimilarInfo.getMappingSimilarInfo().getTargetFieldList();
-                originalObjectFieldList.stream().forEach(e ->{
-                    List<ObjectFieldRelation> objectFieldRelationMapping = new ArrayList<>();
+                originalObjectFieldList.stream().forEach(e -> {
+                    List<StandardizeObjectfieldRelEntity> objectFieldRelationMapping = new ArrayList<>();
                     sourceFieldMappingList.stream().forEach(d -> {
                         if (e.getFieldName().equalsIgnoreCase(d.getSourceField())) {
                             FieldInfo fieldInfo = targetFieldList.stream().filter(n -> n.getFieldName().equalsIgnoreCase(d.getTargetField())).findFirst().get();
-                            ObjectFieldRelation mappingField = getObjectFieldRelationBySourceField(e, fieldInfo);
+                            StandardizeObjectfieldRelEntity mappingField = getObjectFieldRelationBySourceField(e, fieldInfo);
                             objectFieldRelationMapping.add(mappingField);
                         }
                         e.setObjectFieldRelationMapping(objectFieldRelationMapping);
                     });
-                    if(e.getObjectFieldRelationMapping().size() == 0){
-                        e.getObjectFieldRelationMapping().add(new ObjectFieldRelation());
+                    if (e.getObjectFieldRelationMapping().size() == 0) {
+                        e.getObjectFieldRelationMapping().add(new StandardizeObjectfieldRelEntity());
                     }
                 });
                 objectRelationManage.setStandardFieldCount(targetFieldList.size());
@@ -235,20 +258,34 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
             return objectRelationManage;
         }
         log.info("数据元映射");
-        if("gadsjField".equalsIgnoreCase(data.getType())){
-            List<ObjectFieldRelation> standardObjectField = dataDefinitionDao.searchFieldByObject(Long.valueOf(objectId));
-            if(standardObjectField.size() != 0){
-                objectRelationManage.setStandardFieldCount(standardObjectField.size());
+        if ("gadsjField".equalsIgnoreCase(data.getType())) {
+            LambdaQueryWrapper<ObjectFieldEntity> wrapperOF = Wrappers.lambdaQuery();
+            wrapperOF.eq(ObjectFieldEntity::getDeleted, 0);
+            wrapperOF.eq(ObjectFieldEntity::getObjectId, object.getObjectId());
+            wrapperOF.orderByAsc(ObjectFieldEntity::getRecno);
+            List<ObjectFieldEntity> standardObjectField = objectFieldMapper.selectList(wrapperOF);
+            if (standardObjectField.size() != 0) {
+                List<StandardizeObjectfieldRelEntity> list = new ArrayList<>();
+                standardObjectField.stream().forEach(objectField -> {
+                    StandardizeObjectfieldRelEntity entity = new StandardizeObjectfieldRelEntity();
+                    entity.setRecno(objectField.getRecno());
+                    entity.setColumnName(objectField.getColumnName());
+                    entity.setFieldChineseName(objectField.getFieldChineseName());
+                    entity.setGadsjFieldId(objectField.getGadsjFieldId());
+                    entity.setCreateTime(objectField.getCreateTime());
+                    entity.setUpdateTime(objectField.getUpdateTime());
+                    list.add(entity);
+                });
                 //将gadsjFieldId相同的字段进行对标
-                originalObjectFieldList.stream().forEach( d ->{
-                    standardObjectField.stream().forEach( e ->{
-                        if(StringUtils.isNotBlank(e.getGadsjFieldId()) && d.getGadsjFieldId().equalsIgnoreCase(e.getGadsjFieldId())){
-                            List<ObjectFieldRelation> addList = new ArrayList<>();
+                originalObjectFieldList.stream().forEach(d -> {
+                    list.stream().forEach(e -> {
+                        if (StringUtils.isNotBlank(e.getGadsjFieldId()) && d.getGadsjFieldId().equalsIgnoreCase(e.getGadsjFieldId())) {
+                            List<StandardizeObjectfieldRelEntity> addList = new ArrayList<>();
                             addList.add(e);
                             d.setObjectFieldRelationMapping(addList);
-                        }else {
-                            List<ObjectFieldRelation> objectFieldRelationList = new ArrayList<>();
-                            ObjectFieldRelation objectFieldRelation = new ObjectFieldRelation();
+                        } else {
+                            List<StandardizeObjectfieldRelEntity> objectFieldRelationList = new ArrayList<>();
+                            StandardizeObjectfieldRelEntity objectFieldRelation = new StandardizeObjectfieldRelEntity();
                             objectFieldRelation.setCreateTime(new Date());
                             objectFieldRelationList.add(objectFieldRelation);
                             d.setObjectFieldRelationMapping(objectFieldRelationList);
@@ -265,113 +302,115 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
     }
 
     @Override
-    public List<ObjectFieldRelation> getColumnNameList(String searchText,String tableId) {
-        log.info("开始获取字段名称下拉框,参数为:{}",searchText);
-        String objectId = resourceManageAddDao.getObjectIDByTableID(tableId);
-        if(StringUtils.isNotBlank(objectId)){
-            List<ObjectFieldRelation> objectFieldArrayList = new ArrayList<>();
-            List<ObjectField> resultList = resourceManageDao.getColumnNameList(objectId,searchText);
-            for(ObjectField data : resultList){
-                log.info("开始根据数据元内部标识符查询对应的字典值");
-                if(StringUtils.isNotBlank(data.getGadsjFieldId())){
-                    SynlteFieldObject synlteFieldObject = synlteFieldDao.searchSynlteFieldById(data.getGadsjFieldId());
-                    log.info("数据元信息为:{}",synlteFieldObject);
-                    ObjectFieldRelation objectFieldRelation = new ObjectFieldRelation();
-                    if(synlteFieldObject != null){
-                        String codeId = synlteFieldObject.getCodeId();
-                        String dictionaryName = elementCodeSetManageDao.searchFieldCodeByCodeId(codeId);
-                        log.info("查询到的引用字典内容为:{}",dictionaryName);
+    public List<StandardizeObjectfieldRelEntity> getColumnNameList(String searchText, String tableId) {
+        List<StandardizeObjectfieldRelEntity> objectFieldArrayList = new ArrayList<>();
+        ObjectEntity object = SelectUtil.getObjectEntityByTableId(objectMapper, tableId);
+        if (object.getObjectId() != null) {
+            LambdaQueryWrapper<ObjectFieldEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(ObjectFieldEntity::getObjectId, object.getObjectId());
+            if (StringUtils.isNotBlank(searchText)) {
+                wrapper.nested(wrapper2 -> {
+                    wrapper2.apply("lower(COLUMNNAME) like lower({0})", "%" + searchText.toLowerCase() + "%");
+                    wrapper2.or().apply("lower(FIELDCHINEENAME) like lower({0})", "%" + searchText.toLowerCase() + "%");
+                });
+            }
+            List<ObjectFieldEntity> objectFieldEntities = objectFieldMapper.selectList(wrapper);
+            for (ObjectFieldEntity data : objectFieldEntities) {
+                StandardizeObjectfieldRelEntity objectFieldRelation = new StandardizeObjectfieldRelEntity();
+                if (StringUtils.isNotBlank(data.getGadsjFieldId())) {
+                    LambdaQueryWrapper<SynlteFieldEntity> wrapperSF = Wrappers.lambdaQuery();
+                    wrapperSF.eq(SynlteFieldEntity::getFieldId, data.getGadsjFieldId());
+                    SynlteFieldEntity synlteField = synlteFieldMapper.selectOne(wrapperSF);
+                    if (synlteField != null) {
+                        String codeId = synlteField.getCodeId();
+                        String dictionaryName = fieldCodeMapper.searchFieldCodeByCodeId(codeId);
                         objectFieldRelation.setDictionaryRefId(codeId);
                         objectFieldRelation.setDictionaryRef(dictionaryName);
                     }
-                    objectFieldRelation.setRecno(data.getRecno());
-                    objectFieldRelation.setColumnName(data.getColumnName());
-                    objectFieldRelation.setFieldChineseName(data.getFieldChineseName());
-                    objectFieldRelation.setGadsjFieldId(data.getGadsjFieldId());
-                    objectFieldArrayList.add(objectFieldRelation);
-                }else{
-                    ObjectFieldRelation objectFieldRelation = new ObjectFieldRelation();
-                    objectFieldRelation.setRecno(data.getRecno());
-                    objectFieldRelation.setColumnName(data.getColumnName());
-                    objectFieldRelation.setFieldChineseName(data.getFieldChineseName());
-                    objectFieldRelation.setGadsjFieldId(data.getGadsjFieldId());
-                    objectFieldArrayList.add(objectFieldRelation);
                 }
+                objectFieldRelation.setRecno(data.getRecno());
+                objectFieldRelation.setColumnName(data.getColumnName());
+                objectFieldRelation.setFieldChineseName(data.getFieldChineseName());
+                objectFieldRelation.setGadsjFieldId(data.getGadsjFieldId());
+                objectFieldArrayList.add(objectFieldRelation);
             }
             //根据中文名排序
-            objectFieldArrayList = objectFieldArrayList.stream().filter(d->StringUtils.isNotBlank(d.getFieldChineseName())).
+            objectFieldArrayList = objectFieldArrayList.stream().filter(d -> StringUtils.isNotBlank(d.getFieldChineseName())).
                     distinct().sorted((s1, s2) -> Collator.getInstance(Locale.CHINA)
-                    .compare(s2.getFieldChineseName(), s1.getFieldChineseName()))
+                            .compare(s2.getFieldChineseName(), s1.getFieldChineseName()))
                     .collect(Collectors.toList());
-            log.info("字段名称下拉框查询结束,条数为:{}",objectFieldArrayList.size());
-            return objectFieldArrayList;
-        }else{
-            return new ArrayList<>();
         }
-
+        return objectFieldArrayList;
     }
 
     @Override
-    public ObjectRelationManage dataFieldMapping(ObjectRelationManage param) {
+    public ObjectRelationManageVO dataFieldMapping(ObjectRelationManageVO param) {
         log.info("开始数据集对标字段映射");
-        ObjectRelationManage objectRelationManage = new ObjectRelationManage();
+        ObjectRelationManageVO objectRelationManage = new ObjectRelationManageVO();
         //获取标准的id
-        String objectId = resourceManageAddDao.getObjectIDByTableID(param.getStandardTableId());
+        ObjectEntity object = SelectUtil.getObjectEntityByTableId(objectMapper, param.getStandardTableId());
         //创建调用仓库接口的参数
-        DataSimilarParameter dataSimilarParameter = new DataSimilarParameter(param.getResId(), param.getProjectName(), param.getTableNameEn());
+        DataDefinitionDTO dto = new DataDefinitionDTO();
+        dto.setResId(param.getResId());
+        dto.setProjectName(param.getProjectName());
+        dto.setTableNameEn(param.getTableNameEn());
         //获取全部的相似度探查结果
-        List<TableSimilarInfo> dataSimilarListInfo = restTemplateHandle.getDataSimilarInfo(dataSimilarParameter);
+        List<TableSimilarInfo> dataSimilarListInfo = restTemplateHandle.getDataSimilarInfo(dto);
 
         List<SourceFieldMapping> sourceFieldMappingList = null;
         List<FieldInfo> targetFieldList = null;
-        List<ObjectField> objectFieldList = null;
+        List<ObjectFieldEntity> objectFieldList = null;
         //当仓库返回的接口有数据时,直接用仓库的数据
-        if(dataSimilarListInfo.size() != 0 && !dataSimilarListInfo.isEmpty()){
+        if (dataSimilarListInfo.size() != 0 && !dataSimilarListInfo.isEmpty()) {
             //筛选出相同tableId的探查结果
             TableSimilarInfo tableSimilarInfo = dataSimilarListInfo.stream().filter(d -> param.getStandardTableId().equalsIgnoreCase(d.getProtocolCode())).findFirst().get();
             //获取映射字段信息
             sourceFieldMappingList = JSONObject.parseArray(tableSimilarInfo.getMappingSimilarInfo().getSourceTargetMapping(), SourceFieldMapping.class);
             targetFieldList = tableSimilarInfo.getMappingSimilarInfo().getTargetFieldList();
-        }else{
-            objectFieldList = resourceManageDao.selectObjectFieldByObjectId(Long.valueOf(objectId));
+        } else {
+            LambdaQueryWrapper<ObjectFieldEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(ObjectFieldEntity::getDeleted, 0);
+            wrapper.eq(ObjectFieldEntity::getObjectId, object.getObjectId());
+            wrapper.orderByAsc(ObjectFieldEntity::getRecno);
+            objectFieldList = objectFieldMapper.selectList(wrapper);
         }
 
         //返回值填充
-        objectRelationManage.setOriginalId(StringUtils.isNotBlank(param.getOriginalId())? param.getOriginalId():null);
-        objectRelationManage.setOriginalObjectId(param.getOriginalObjectId() != null ? param.getOriginalObjectId():null);
+        objectRelationManage.setOriginalId(StringUtils.isNotBlank(param.getOriginalId()) ? param.getOriginalId() : null);
+        objectRelationManage.setOriginalObjectId(param.getOriginalObjectId() != null ? param.getOriginalObjectId() : null);
         objectRelationManage.setOriginalObjectName(param.getOriginalObjectName());
         objectRelationManage.setOriginalTableId(param.getOriginalTableId());
         objectRelationManage.setOriginalParentId("-1");
-        objectRelationManage.setStandardObjectId(Long.valueOf(objectId));
+        objectRelationManage.setStandardObjectId(object.getObjectId());
         objectRelationManage.setStandardObjectName(param.getStandardObjectName());
         objectRelationManage.setStandardTableId(param.getStandardTableId());
-        List<ObjectFieldRelation> originalObjectFieldList = param.getObjectFieldRelation();
-        if("detect".equalsIgnoreCase(param.getType())){
+        List<StandardizeObjectfieldRelEntity> originalObjectFieldList = param.getObjectFieldRelation();
+        if ("detect".equalsIgnoreCase(param.getType())) {
             log.info("探查推荐字段映射");
             //字段映射
-            if(dataSimilarListInfo.size() != 0){
+            if (dataSimilarListInfo.size() != 0) {
                 List<FieldInfo> finalTargetFieldList = targetFieldList;
                 List<SourceFieldMapping> finalSourceFieldMappingList = sourceFieldMappingList;
-                originalObjectFieldList.stream().forEach(e ->{
-                    List<ObjectFieldRelation> objectFieldRelationMapping = new ArrayList<>();
+                originalObjectFieldList.stream().forEach(e -> {
+                    List<StandardizeObjectfieldRelEntity> objectFieldRelationMapping = new ArrayList<>();
                     finalSourceFieldMappingList.stream().forEach(d -> {
                         if (e.getFieldName().equalsIgnoreCase(d.getSourceField())) {
                             FieldInfo fieldInfo = finalTargetFieldList.stream().filter(n -> n.getFieldName().equalsIgnoreCase(d.getTargetField())).findFirst().get();
-                            ObjectFieldRelation mappingField = getObjectFieldRelationBySourceField(e, fieldInfo);
+                            StandardizeObjectfieldRelEntity mappingField = getObjectFieldRelationBySourceField(e, fieldInfo);
                             objectFieldRelationMapping.add(mappingField);
                         }
                         e.setObjectFieldRelationMapping(objectFieldRelationMapping);
                     });
-                    if(e.getObjectFieldRelationMapping().size() == 0){
-                        e.getObjectFieldRelationMapping().add(new ObjectFieldRelation());
+                    if (e.getObjectFieldRelationMapping().size() == 0) {
+                        e.getObjectFieldRelationMapping().add(new StandardizeObjectfieldRelEntity());
                     }
                 });
                 objectRelationManage.setStandardFieldCount(targetFieldList.size());
-            }else {
+            } else {
                 originalObjectFieldList.stream().forEach(d -> {
-                    if(d.getObjectFieldRelationMapping() == null){
-                        List<ObjectFieldRelation> objectFieldMapping = new ArrayList<>();
-                        objectFieldMapping.add(new ObjectFieldRelation());
+                    if (d.getObjectFieldRelationMapping() == null) {
+                        List<StandardizeObjectfieldRelEntity> objectFieldMapping = new ArrayList<>();
+                        objectFieldMapping.add(new StandardizeObjectfieldRelEntity());
                         d.setObjectFieldRelationMapping(objectFieldMapping);
                     }
                 });
@@ -380,85 +419,85 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
             objectRelationManage.setObjectFieldRelation(originalObjectFieldList);
             return objectRelationManage;
         }
-        if("gadsjField".equalsIgnoreCase(param.getType())){
+        if ("gadsjField".equalsIgnoreCase(param.getType())) {
             log.info("数据元映射");
-            if(dataSimilarListInfo.size() != 0){
+            if (dataSimilarListInfo.size() != 0) {
                 List<FieldInfo> finalTargetFieldList1 = targetFieldList;
-                originalObjectFieldList.stream().forEach(d ->{
-                    List<ObjectFieldRelation> objectFieldRelations = new ArrayList<>();
+                originalObjectFieldList.stream().forEach(d -> {
+                    List<StandardizeObjectfieldRelEntity> objectFieldRelations = new ArrayList<>();
                     finalTargetFieldList1.stream().forEach(e -> {
-                        if(StringUtils.isNotBlank(d.getGadsjFieldId()) && StringUtils.isNotBlank(e.getSynFieldId()) &&
-                                d.getGadsjFieldId().equalsIgnoreCase(e.getSynFieldId())){
-                            ObjectFieldRelation mappingField = getObjectFieldRelationBySourceField(d, e);
+                        if (StringUtils.isNotBlank(d.getGadsjFieldId()) && StringUtils.isNotBlank(e.getSynFieldId()) &&
+                                d.getGadsjFieldId().equalsIgnoreCase(e.getSynFieldId())) {
+                            StandardizeObjectfieldRelEntity mappingField = getObjectFieldRelationBySourceField(d, e);
                             objectFieldRelations.add(mappingField);
                         }
                     });
                     d.setObjectFieldRelationMapping(objectFieldRelations);
-                    if(d.getObjectFieldRelationMapping().size() == 0){
-                        d.getObjectFieldRelationMapping().add(new ObjectFieldRelation());
+                    if (d.getObjectFieldRelationMapping().size() == 0) {
+                        d.getObjectFieldRelationMapping().add(new StandardizeObjectfieldRelEntity());
                     }
                 });
-            }else {
-                List<ObjectField> finalObjectFieldList = objectFieldList;
-                originalObjectFieldList.stream().forEach(d ->{
-                    List<ObjectFieldRelation> objectFieldRelations = new ArrayList<>();
-                    finalObjectFieldList.stream().forEach(e ->{
-                        if(StringUtils.isNotBlank(d.getGadsjFieldId()) && StringUtils.isNotBlank(e.getGadsjFieldId()) &&
-                                d.getGadsjFieldId().equalsIgnoreCase(e.getGadsjFieldId())){
-                            ObjectFieldRelation mappingField = getObjectFieldRelationByStandField(d, e);
+            } else {
+                List<ObjectFieldEntity> finalObjectFieldList = objectFieldList;
+                originalObjectFieldList.stream().forEach(d -> {
+                    List<StandardizeObjectfieldRelEntity> objectFieldRelations = new ArrayList<>();
+                    finalObjectFieldList.stream().forEach(e -> {
+                        if (StringUtils.isNotBlank(d.getGadsjFieldId()) && StringUtils.isNotBlank(e.getGadsjFieldId()) &&
+                                d.getGadsjFieldId().equalsIgnoreCase(e.getGadsjFieldId())) {
+                            StandardizeObjectfieldRelEntity mappingField = getObjectFieldRelationByStandField(d, e);
                             objectFieldRelations.add(mappingField);
                         }
                     });
                     d.setObjectFieldRelationMapping(objectFieldRelations);
-                    if(d.getObjectFieldRelationMapping().size() == 0){
-                        d.getObjectFieldRelationMapping().add(new ObjectFieldRelation());
+                    if (d.getObjectFieldRelationMapping().size() == 0) {
+                        d.getObjectFieldRelationMapping().add(new StandardizeObjectfieldRelEntity());
                     }
                 });
             }
-            if(dataSimilarListInfo.size() != 0){
+            if (dataSimilarListInfo.size() != 0) {
                 objectRelationManage.setStandardFieldCount(targetFieldList.size());
-            }else {
+            } else {
                 objectRelationManage.setStandardFieldCount(objectFieldList.size());
             }
             objectRelationManage.setObjectFieldRelation(originalObjectFieldList);
             return objectRelationManage;
         }
-        if("recno".equalsIgnoreCase(param.getType())){
+        if ("recno".equalsIgnoreCase(param.getType())) {
             log.info("序号映射");
-            if(dataSimilarListInfo.size() != 0){
+            if (dataSimilarListInfo.size() != 0) {
                 List<FieldInfo> finalTargetFieldList2 = targetFieldList;
                 originalObjectFieldList.stream().forEach(d -> {
-                    List<ObjectFieldRelation> objectFieldRelations = new ArrayList<>();
+                    List<StandardizeObjectfieldRelEntity> objectFieldRelations = new ArrayList<>();
                     finalTargetFieldList2.stream().forEach(e -> {
-                        if(d.getRecno().equals(e.getNo())){
-                            ObjectFieldRelation mappingField = getObjectFieldRelationBySourceField(d, e);
+                        if (d.getRecno().equals(e.getNo())) {
+                            StandardizeObjectfieldRelEntity mappingField = getObjectFieldRelationBySourceField(d, e);
                             objectFieldRelations.add(mappingField);
                         }
                     });
                     d.setObjectFieldRelationMapping(objectFieldRelations);
-                    if(d.getObjectFieldRelationMapping().size() == 0){
-                        d.getObjectFieldRelationMapping().add(new ObjectFieldRelation());
+                    if (d.getObjectFieldRelationMapping().size() == 0) {
+                        d.getObjectFieldRelationMapping().add(new StandardizeObjectfieldRelEntity());
                     }
                 });
-            }else {
-                List<ObjectField> finalObjectFieldList1 = objectFieldList;
-                originalObjectFieldList.stream().forEach(d ->{
-                    List<ObjectFieldRelation> objectFieldRelations = new ArrayList<>();
-                    finalObjectFieldList1.stream().forEach(e->{
-                        if(d.getRecno().equals(e.getRecno())){
-                            ObjectFieldRelation mappingField = getObjectFieldRelationByStandField(d, e);
+            } else {
+                List<ObjectFieldEntity> finalObjectFieldList1 = objectFieldList;
+                originalObjectFieldList.stream().forEach(d -> {
+                    List<StandardizeObjectfieldRelEntity> objectFieldRelations = new ArrayList<>();
+                    finalObjectFieldList1.stream().forEach(e -> {
+                        if (d.getRecno().equals(e.getRecno())) {
+                            StandardizeObjectfieldRelEntity mappingField = getObjectFieldRelationByStandField(d, e);
                             objectFieldRelations.add(mappingField);
                         }
                     });
                     d.setObjectFieldRelationMapping(objectFieldRelations);
-                    if(d.getObjectFieldRelationMapping().size() == 0){
-                        d.getObjectFieldRelationMapping().add(new ObjectFieldRelation());
+                    if (d.getObjectFieldRelationMapping().size() == 0) {
+                        d.getObjectFieldRelationMapping().add(new StandardizeObjectfieldRelEntity());
                     }
                 });
             }
-            if(dataSimilarListInfo.size() != 0){
+            if (dataSimilarListInfo.size() != 0) {
                 objectRelationManage.setStandardFieldCount(targetFieldList.size());
-            }else {
+            } else {
                 objectRelationManage.setStandardFieldCount(objectFieldList.size());
             }
             objectRelationManage.setObjectFieldRelation(originalObjectFieldList);
@@ -469,48 +508,58 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
 
     /**
      * 创建数据集对标字段项信息
+     *
      * @param objectFieldRelation 原始字段项
      * @param fieldInfo
-     * @return
      */
-    private ObjectFieldRelation getObjectFieldRelationBySourceField(ObjectFieldRelation objectFieldRelation,FieldInfo fieldInfo){
-        if(objectFieldRelation == null || fieldInfo == null){
-            throw SystemException.asSystemException(ErrorCode.DATA_IS_NULL, "创建数据集对标字段项的参数为空");
+    private StandardizeObjectfieldRelEntity getObjectFieldRelationBySourceField(StandardizeObjectfieldRelEntity objectFieldRelation, FieldInfo fieldInfo) {
+        StandardizeObjectfieldRelEntity mappingField = new StandardizeObjectfieldRelEntity();
+        try {
+            if (objectFieldRelation == null || fieldInfo == null) {
+                throw new Exception(String.format("%s：%s", ErrorCodeEnum.DATA_IS_NULL, "创建数据集对标字段项的参数为空"));
+            }
+            mappingField.setRecno(fieldInfo.getNo());
+            mappingField.setColumnName(fieldInfo.getFieldName());
+            mappingField.setGadsjFieldId(StringUtils.isNotBlank(fieldInfo.getSynFieldId()) ? fieldInfo.getSynFieldId() : null);
+            mappingField.setDictionaryRef(StringUtils.isNotBlank(fieldInfo.getDataDxnry()) ? fieldInfo.getDataDxnry() : null);
+            mappingField.setDictionaryRefId(StringUtils.isNotBlank(fieldInfo.getDataDxnryId()) ? fieldInfo.getDataDxnryId() : null);
+            mappingField.setParentColumnName(objectFieldRelation.getColumnName());
+            mappingField.setFieldChineseName(StringUtils.isNotBlank(fieldInfo.getComments()) ? fieldInfo.getComments() : null);
+        } catch (Exception e) {
+            log.error(">>>>>>创建数据集对标字段项信息失败：", e);
         }
-        ObjectFieldRelation mappingField = new ObjectFieldRelation();
-        mappingField.setRecno(fieldInfo.getNo());
-        mappingField.setColumnName(fieldInfo.getFieldName());
-        mappingField.setGadsjFieldId(StringUtils.isNotBlank(fieldInfo.getSynFieldId()) ? fieldInfo.getSynFieldId():null);
-        mappingField.setDictionaryRef(StringUtils.isNotBlank(fieldInfo.getDataDxnry())? fieldInfo.getDataDxnry():null);
-        mappingField.setDictionaryRefId(StringUtils.isNotBlank(fieldInfo.getDataDxnryId())? fieldInfo.getDataDxnryId():null);
-        mappingField.setParentColumnName(objectFieldRelation.getColumnName());
-        mappingField.setFieldChineseName(StringUtils.isNotBlank(fieldInfo.getComments())? fieldInfo.getComments():null);
         return mappingField;
     }
 
-    private ObjectFieldRelation getObjectFieldRelationByStandField(ObjectFieldRelation objectFieldRelation,ObjectField objectField){
-        if(objectFieldRelation == null || objectField == null){
-            throw SystemException.asSystemException(ErrorCode.DATA_IS_NULL, "创建数据集对标字段项的参数为空");
-        }
-        ObjectFieldRelation mappingField = new ObjectFieldRelation();
-        mappingField.setRecno(objectField.getRecno());
-        mappingField.setColumnName(objectField.getFieldName());
-        mappingField.setGadsjFieldId(StringUtils.isNotBlank(objectField.getGadsjFieldId()) ? objectField.getGadsjFieldId():null);
-        if(StringUtils.isNotBlank(objectField.getGadsjFieldId())){
-            SynlteFieldObject synlteFieldObject = synlteFieldDao.searchSynlteFieldById(objectField.getGadsjFieldId());
-            if(synlteFieldObject != null){
-                log.info("数据元信息为:{}",synlteFieldObject);
-                String codeId = synlteFieldObject.getCodeId();
-                if(StringUtils.isNotBlank(codeId)){
-                    String dictionaryName = elementCodeSetManageDao.searchFieldCodeByCodeId(codeId);
-                    mappingField.setDictionaryRef(dictionaryName);
-                    mappingField.setDictionaryRefId(codeId);
+    private StandardizeObjectfieldRelEntity getObjectFieldRelationByStandField(StandardizeObjectfieldRelEntity objectFieldRelation, ObjectFieldEntity objectField) {
+        StandardizeObjectfieldRelEntity mappingField = new StandardizeObjectfieldRelEntity();
+        try {
+            if (objectFieldRelation == null || objectField == null) {
+                throw new Exception(String.format("%s：%s", ErrorCodeEnum.DATA_IS_NULL, "创建数据集对标字段项的参数为空"));
+            }
+            mappingField.setRecno(objectField.getRecno());
+            mappingField.setColumnName(objectField.getFieldName());
+            mappingField.setGadsjFieldId(StringUtils.isNotBlank(objectField.getGadsjFieldId()) ? objectField.getGadsjFieldId() : null);
+            if (StringUtils.isNotBlank(objectField.getGadsjFieldId())) {
+                LambdaQueryWrapper<SynlteFieldEntity> wrapper = Wrappers.lambdaQuery();
+                wrapper.eq(SynlteFieldEntity::getFieldId, objectField.getGadsjFieldId());
+                SynlteFieldEntity synlteField = synlteFieldMapper.selectOne(wrapper);
+                if (synlteField != null) {
+                    String codeId = synlteField.getCodeId();
+                    if (StringUtils.isNotBlank(codeId)) {
+                        String dictionaryName = fieldCodeMapper.searchFieldCodeByCodeId(codeId);
+                        mappingField.setDictionaryRef(dictionaryName);
+                        mappingField.setDictionaryRefId(codeId);
+                    }
                 }
             }
+            mappingField.setParentColumnName(objectFieldRelation.getColumnName());
+            mappingField.setFieldChineseName(StringUtils.isNotBlank(objectField.getFieldChineseName()) ? objectField.getFieldChineseName() : null);
+        }catch (Exception e){
+            log.error(">>>>>>getObjectFieldRelationByStandField失败：", e);
         }
-        mappingField.setParentColumnName(objectFieldRelation.getColumnName());
-        mappingField.setFieldChineseName(StringUtils.isNotBlank(objectField.getFieldChineseName())? objectField.getFieldChineseName():null);
         return mappingField;
     }
+
 }
 

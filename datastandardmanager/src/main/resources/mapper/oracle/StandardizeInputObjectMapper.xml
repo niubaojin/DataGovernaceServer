@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeInputObjectMapper">
+
+    <select id="getInputGuidById" resultType="java.lang.String">
+        select f1.IOBJ_GUID
+          from STANDARDIZE_INPUTOBJECT f1
+         inner join STANDARDIZE_OBJECT f2
+            on f1.obj_guid = f2.obj_guid
+         where UPPER(f2.OBJ_ENGNAME) = UPPER(#{inputDataId})
+           and f2.sys_id = #{inputSourceCode}
+           and f1.IOBJ_SOURCE = #{inputSourceFirm, jdbcType = INTEGER}
+    </select>
+
+    <select id="getSourceRelationByTableName" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.InputObjectCreateVO">
+        select obj_chiname as inputObjChiName,
+               t.tablename as tableRealName,
+               sys_id      as inputSysId,
+               sys_source  as inputIobjSource,
+               obj_engname as inputObjEngName,
+               iobj_guid   as objGuid
+          from (select obj_chiname, sys_id, sys_source, obj_engname, iobj_guid
+                  from standardize_inputobject f2
+                 inner join standardize_object f3 on f3.obj_guid = f2.obj_guid
+                 where f2.iobj_status = 1) so
+         right join (select sourceid, tablename
+                       from (select sourceid, tablename
+                               from synlte.object
+                              where deleted = 0
+                                and upper(relate_tablename) = 'OBJECTFIELD'
+                              order by sourceid desc) x
+                      where upper(tablename) = upper(#{tableName,jdbcType=VARCHAR})
+                        and rownum = 1
+                        and sourceid is not null) t on upper(t.sourceid) = upper(so.obj_engname)
+    </select>
+
+</mapper>

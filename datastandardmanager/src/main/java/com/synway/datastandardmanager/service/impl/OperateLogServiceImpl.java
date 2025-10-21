@@ -1,15 +1,12 @@
 package com.synway.datastandardmanager.service.impl;
 
-import com.synway.datastandardmanager.entity.BuildTableInfoVo;
+import com.synway.datastandardmanager.entity.dto.ObjectManageDTO;
+import com.synway.datastandardmanager.entity.pojo.*;
+import com.synway.datastandardmanager.entity.vo.OperatorLogVO;
+import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.enums.OperateLogFailReasonEnum;
 import com.synway.datastandardmanager.enums.OperateLogHandleTypeEnum;
 import com.synway.datastandardmanager.interceptor.AuthorizedUserUtils;
-import com.synway.datastandardmanager.pojo.*;
-import com.synway.datastandardmanager.pojo.buildtable.ObjectStoreInfo;
-import com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer;
-import com.synway.datastandardmanager.pojo.originalDictionary.OriginalDictionaryPojo;
-import com.synway.datastandardmanager.pojo.synltefield.SynlteFieldObject;
-import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationPojo;
 import com.synway.datastandardmanager.util.DateUtil;
 import com.synway.datastandardmanager.util.RestTemplateHandle;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +34,7 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param synlteFieldObject
      */
-    public void synlteFieldSuccessLog(OperateLogHandleTypeEnum handleType, String operateName, SynlteFieldObject synlteFieldObject){
+    public void synlteFieldSuccessLog(OperateLogHandleTypeEnum handleType, String operateName, SynlteFieldEntity synlteFieldObject){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String operateLogParam = String.format("%s数据元[%s]，唯一编码是[%s]",
                 handleType.getMessage(), synlteFieldObject.getFieldChineseName(), synlteFieldObject.getFieldId());
@@ -52,9 +49,9 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param data
      */
-    public void fieldDeterminerSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, FieldDeterminer data){
+    public void fieldDeterminerSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, FieldDeterminerEntity data){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
-        String operateLogParam = String.format("%s限定词%s，内部标识符是%s", handleType.getMessage(), data.getDChinseName(), data.getDeterminerId());
+        String operateLogParam = String.format("%s限定词%s，内部标识符是%s", handleType.getMessage(), data.getDchinseName(), data.getDeterminerId());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "1", null);
     }
@@ -66,9 +63,9 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param standardObjectManage
      */
-    public void standardManageSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, StandardObjectManage standardObjectManage){
+    public void standardManageSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, ObjectManageDTO standardObjectManage){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
-        String operateLogParam = String.format("%s%s，数据集编码为%s", handleType.getMessage(), standardObjectManage.getObjectPojoTable().getDataSourceName(), standardObjectManage.getTableId());
+        String operateLogParam = String.format("%s%s，数据集编码为%s", handleType.getMessage(), standardObjectManage.getObjectPojoTable().getObjectName(), standardObjectManage.getTableId());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "1", null);
     }
@@ -94,7 +91,7 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param objectStoreInfo
      */
-    public void objectStoreInfoSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, ObjectStoreInfo objectStoreInfo){
+    public void objectStoreInfoSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, ObjectStoreInfoEntity objectStoreInfo){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String operateLogParam = String.format("%s[%s]在%s的%s下[%s]表", handleType.getMessage(),
                 objectStoreInfo.getObjectName(), objectStoreInfo.getResName(), objectStoreInfo.getProjectName(), objectStoreInfo.getTableName());
@@ -109,13 +106,13 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param fieldcode
      */
-    public void elementCodeSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, Fieldcode fieldcode){
+    public void elementCodeSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, FieldCodeEntity fieldcode){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String operateLogParam = String.format("%s标准字典%s，代码集为%s", handleType.getMessage(), fieldcode.getCodeText(), fieldcode.getCodeId());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "1", null);
     }
-    public void elementCodeFailLog(OperateLogHandleTypeEnum handleType, OperateLogFailReasonEnum failReason, String operateName, Fieldcode fieldcode){
+    public void elementCodeFailLog(OperateLogHandleTypeEnum handleType, OperateLogFailReasonEnum failReason, String operateName, FieldCodeEntity fieldcode){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String operateLogParam = String.format("%s标准字典%s，代码集为%s", handleType.getMessage(), fieldcode.getCodeText(), fieldcode.getCodeId());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能失败，原因: %s，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), failReason.getMessage(), operateLogParam);
@@ -128,7 +125,7 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param dictionaryPojo
      */
-    public void originalDictSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, OriginalDictionaryPojo dictionaryPojo){
+    public void originalDictSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, StandardizeOriginalDictEntity dictionaryPojo){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String operateLogParam = String.format("%s原始字典[%s]的[%s]。", handleType.getMessage(), dictionaryPojo.getFacturer(), dictionaryPojo.getDictionaryName());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
@@ -142,7 +139,7 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param unitOrganizationPojo
      */
-    public void unitOrganizationSuccessLog(OperateLogHandleTypeEnum handleType, String operateName, UnitOrganizationPojo unitOrganizationPojo){
+    public void unitOrganizationSuccessLog(OperateLogHandleTypeEnum handleType, String operateName, StandardizeUnitManageEntity unitOrganizationPojo){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String operateLogParam = String.format("%s单位机构[%s]，代码为%s。", handleType.getMessage(), unitOrganizationPojo.getUnitName(), unitOrganizationPojo.getUnitCode());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
@@ -184,15 +181,15 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param sameword
      */
-    public void semanticTableSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, Sameword sameword){
+    public void semanticTableSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, SameWordEntity sameword){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
-        String operateLogParam = String.format("%s数据语义[%s]，语义是[%s]", handleType.getMessage(), sameword.getId(), sameword.getWordname());
+        String operateLogParam = String.format("%s数据语义[%s]，语义是[%s]", handleType.getMessage(), sameword.getSameId(), sameword.getWordname());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "1", null);
     }
-    public void semanticTableFailLog(OperateLogHandleTypeEnum handleType, OperateLogFailReasonEnum failReason, String operateName, Sameword sameword){
+    public void semanticTableFailLog(OperateLogHandleTypeEnum handleType, OperateLogFailReasonEnum failReason, String operateName, SameWordEntity sameword){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
-        String operateLogParam = String.format("%s数据语义[%s]，语义是[%s]", handleType.getMessage(), sameword.getId(), sameword.getWordname());
+        String operateLogParam = String.format("%s数据语义[%s]，语义是[%s]", handleType.getMessage(), sameword.getSameId(), sameword.getWordname());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能失败，原因：%s，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), failReason.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "0", failReason);
     }
@@ -203,14 +200,14 @@ public class OperateLogServiceImpl {
      * @param operateName
      * @param buildTableInfoVo
      */
-    public void createTableSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, BuildTableInfoVo buildTableInfoVo){
+    public void createTableSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, BuildTableInfoVO buildTableInfoVo){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String projectName = StringUtils.isBlank(buildTableInfoVo.getProjectName()) ? buildTableInfoVo.getSchema() : buildTableInfoVo.getProjectName();
         String operateLogParam = String.format("在%s的%s新建%s，表中文名为%s", buildTableInfoVo.getDataResourceName(), projectName,buildTableInfoVo.getTableName(), buildTableInfoVo.getTableNameCH());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "1", null);
     }
-    public void createTableFailLog(OperateLogHandleTypeEnum handleType, OperateLogFailReasonEnum failReason, String operateName, BuildTableInfoVo buildTableInfoVo){
+    public void createTableFailLog(OperateLogHandleTypeEnum handleType, OperateLogFailReasonEnum failReason, String operateName, BuildTableInfoVO buildTableInfoVo){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
         String projectName = StringUtils.isBlank(buildTableInfoVo.getProjectName()) ? buildTableInfoVo.getSchema() : buildTableInfoVo.getProjectName();
         String operateLogParam = String.format("在%s的%s新建%s，表中文名为%s", buildTableInfoVo.getDataResourceName(), projectName,buildTableInfoVo.getTableName(), buildTableInfoVo.getTableNameCH());
@@ -225,7 +222,7 @@ public class OperateLogServiceImpl {
                                  String OperateResult,
                                  OperateLogFailReasonEnum failReason){
         try{
-            OperatorLog operatorLog = new OperatorLog();
+            OperatorLogVO operatorLog = new OperatorLogVO();
             operatorLog.setOperateTime(DateUtil.formatDateTimeSimple(new Date()));
             operatorLog.setTerminalId(loginUser.getIp());
             operatorLog.setOperateType(handleType.getCode());

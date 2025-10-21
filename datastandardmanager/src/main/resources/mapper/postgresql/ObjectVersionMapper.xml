@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.ObjectVersionMapper">
+
+    <select id="searchObjectVersionTable"
+            parameterType="com.synway.datastandardmanager.entity.dto.HisVersionInfoDTO"
+            resultType="com.synway.datastandardmanager.entity.pojo.ObjectVersionEntity">
+        select l.objectname as objectName,
+               l.tablename  as tableName,
+               r.version    as version,
+               r.versions   as versions,
+               r.author     as author,
+               r.MEMO       as memo,
+               r.objectId   as objectId,
+               l.UPDATETIME as updateTime
+          from synlte.object_history l
+         inner join synlte.objecte_version r
+            on l.objectid = r.objectid
+        <where>
+            <if test="searchText != null and searchText != ''">
+                l.objectname like concat('%',concat(#{searchText},'%'))
+            </if>
+
+            <if test="versionsList != null and versionsList.size() > 0">
+                and r.versions in (
+                <foreach collection="versionsList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="authorList != null and authorList.size() > 0">
+                and r.AUTHOR in(
+                <foreach collection="authorList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </where>
+        <if test="sort != null and sort != ''">
+            order by ${sort} ${sortOrder}
+        </if>
+    </select>
+
+    <select id="searchVersionsList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select distinct versions as label, versions as value from
+        <if test="table != null and table == 'object'">
+            synlte.objecte_version
+        </if>
+        <if test="table != null and table == 'synlteField'">
+            synlte.synltefield_version
+        </if>
+        <if test="table != null and table == 'determinerField'">
+            synlte.fielddeterminer_version
+        </if>
+    </select>
+
+    <select id="searchAuthorList" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select distinct author as label, author as value from
+        <if test="table != null and table == 'object'">
+            synlte.objecte_version
+        </if>
+
+        <if test="table != null and table == 'synlteField'">
+            synlte.synltefield_version
+        </if>
+
+        <if test="table != null and table == 'determinerField'">
+            synlte.fielddeterminer_version
+        </if>
+    </select>
+
+</mapper>

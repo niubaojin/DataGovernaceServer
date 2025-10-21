@@ -1,6 +1,6 @@
 package com.synway.datastandardmanager.util;
 
-import com.synway.datastandardmanager.pojo.labelmanage.TemplateCodeValue;
+import com.synway.datastandardmanager.entity.vo.TemplateCodeValueVO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,48 +12,48 @@ import java.util.List;
  */
 public class ElementTemplateExcelUtils {
 
-    public static List<TemplateCodeValue> getListData(){
-        List<TemplateCodeValue> list = new ArrayList<>();
-        TemplateCodeValue elementMangeData1 = new TemplateCodeValue();
+    public static List<TemplateCodeValueVO> getListData(){
+        List<TemplateCodeValueVO> list = new ArrayList<>();
+        TemplateCodeValueVO elementMangeData1 = new TemplateCodeValueVO();
         elementMangeData1.setCodeValue("主题类型名称");
         elementMangeData1.setCodeName("标签类型代码");
-        TemplateCodeValue elementMangeData2 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData2 = new TemplateCodeValueVO();
         elementMangeData2.setCodeValue("人员");
         elementMangeData2.setCodeName("1");
-        TemplateCodeValue elementMangeData3 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData3 = new TemplateCodeValueVO();
         elementMangeData3.setCodeValue("物");
         elementMangeData3.setCodeName("2");
-        TemplateCodeValue elementMangeData4 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData4 = new TemplateCodeValueVO();
         elementMangeData4.setCodeValue("组织");
         elementMangeData4.setCodeName("3");
-        TemplateCodeValue elementMangeData5 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData5 = new TemplateCodeValueVO();
         elementMangeData5.setCodeValue("地");
         elementMangeData5.setCodeName("4");
-        TemplateCodeValue elementMangeData6 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData6 = new TemplateCodeValueVO();
         elementMangeData6.setCodeValue("事");
         elementMangeData6.setCodeName("5");
-        TemplateCodeValue elementMangeData7 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData7 = new TemplateCodeValueVO();
         elementMangeData7.setCodeValue("时间");
         elementMangeData7.setCodeName("6");
-        TemplateCodeValue elementMangeData8 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData8 = new TemplateCodeValueVO();
         elementMangeData8.setCodeValue("信息");
         elementMangeData8.setCodeName("7");
-        TemplateCodeValue elementMangeData9 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData9 = new TemplateCodeValueVO();
         elementMangeData9.setCodeValue("生成方式名称");
         elementMangeData9.setCodeName("生成方式代码");
-        TemplateCodeValue elementMangeData10 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData10 = new TemplateCodeValueVO();
         elementMangeData10.setCodeValue("数据元");
         elementMangeData10.setCodeName("1");
-        TemplateCodeValue elementMangeData11 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData11 = new TemplateCodeValueVO();
         elementMangeData11.setCodeValue("数据元+数据字典");
         elementMangeData11.setCodeName("2");
-        TemplateCodeValue elementMangeData12 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData12 = new TemplateCodeValueVO();
         elementMangeData12.setCodeValue("要素来源名称");
         elementMangeData12.setCodeName("要素来源代码");
-        TemplateCodeValue elementMangeData13 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData13 = new TemplateCodeValueVO();
         elementMangeData13.setCodeValue("标准");
         elementMangeData13.setCodeName("1");
-        TemplateCodeValue elementMangeData14 = new TemplateCodeValue();
+        TemplateCodeValueVO elementMangeData14 = new TemplateCodeValueVO();
         elementMangeData14.setCodeValue("私有");
         elementMangeData14.setCodeName("2");
         list.add(elementMangeData1);
@@ -71,9 +71,6 @@ public class ElementTemplateExcelUtils {
         list.add(elementMangeData13);
         list.add(elementMangeData14);
         return list;
-
-
-
-
     }
+
 }

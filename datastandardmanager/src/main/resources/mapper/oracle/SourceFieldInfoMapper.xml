@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.SourceFieldInfoMapper">
+
+    <insert id="insertSourceFieldInfo" parameterType="com.synway.datastandardmanager.entity.pojo.SourceFieldInfoEntity">
+        insert into Source_Field_Info(SourceInfoID,id,tableId,resourceId,fieldName,fieldDescription,fieldType,fieldLength,isNonnull,
+        isDeleted,isPrimarykey,isForeignKey,insertTime,updateTime,databaseUrl,schemeId,FIELDSOURCETYPE,FIELDCODE,GADSJFIELDID,DETERMINERID,ELEMENTID)
+        <foreach collection="sourceFieldInfo" item="item" separator="union all">
+            (select
+                #{item.sourceInfoID,jdbcType=VARCHAR},
+                #{item.recno,jdbcType=VARCHAR},
+                #{item.tableId,jdbcType=VARCHAR},
+                #{item.resourceId,jdbcType=VARCHAR},
+                #{item.fieldName,jdbcType=VARCHAR},
+                #{item.fieldDescription,jdbcType=VARCHAR},
+                #{item.fieldType,jdbcType=VARCHAR},
+                #{item.fieldLength,jdbcType=VARCHAR},
+                #{item.isNonnull,jdbcType=VARCHAR},
+                #{item.isDeleted,jdbcType=VARCHAR},
+                #{item.isPrimarykey,jdbcType=VARCHAR},
+                #{item.isForeignKey,jdbcType=VARCHAR},
+                #{item.insertTime,jdbcType=VARCHAR},
+                #{item.updateTime,jdbcType=VARCHAR},
+                #{item.databaseUrl,jdbcType=VARCHAR},
+                #{item.schemeId,jdbcType=VARCHAR},
+                #{item.fieldSourceType,jdbcType=VARCHAR},
+                #{item.fieldCode,jdbcType=VARCHAR},
+                #{item.gadsjFieldId,jdbcType=VARCHAR},
+                #{item.determinerId,jdbcType=VARCHAR},
+                #{item.elementId,jdbcType=VARCHAR}
+            from dual)
+        </foreach>
+    </insert>
+
+</mapper>

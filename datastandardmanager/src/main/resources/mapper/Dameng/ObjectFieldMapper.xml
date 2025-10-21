@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.ObjectFieldMapper">
+
+    <update id="updateObjectField" parameterType="com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity">
+        update synlte.objectfield
+           set INDEXTYPE          = #{indexType},
+               ISINDEX            = #{isIndex},
+               NEEDVALUE          = #{needValue},
+               ISCONTORL          = #{isContorl},
+               MEMO               = #{memo},
+               TABLEINDEX         = #{tableIndex},
+               ISQUERY            = #{isQuery},
+               COLUMNNAME_STATE   = #{columnNameState},
+               VERSION            = #{version},
+               ISPRIVATE          = #{isPrivate},
+               PARTITION_RECNO    = #{partitionRecno},
+               ORA_SHOW           = #{oraShow},
+               ODPS_PATTITION     = #{odpsPattition},
+               PRO_TYPE           = #{proType},
+               FIELDID            = #{fieldId},
+               FIELDCHINEENAME    = #{fieldChineseName},
+               FIELDTYPE          = #{fieldType},
+               FIELDLEN           = #{fieldLen},
+               DEFAULTVALUE       = #{defaultValue},
+               FIELDDESCRIBE      = #{fieldDescribe},
+               FIELDNAME          = #{fieldName},
+               FIELDSOURCETYPE    = #{fieldSourceType},
+               recno              = #{recno},
+               STANDARD_RECNO     = #{recno},
+               CLUST_RECNO        = #{clustRecno},
+               PK_RECNO           = #{pkRecno},
+               MD5_INDEX          = #{md5Index},
+               DETERMINERID       = #{determinerId},
+               ZDMGDFLDM          = #{zdmgdfldm},
+               GADSJ_FIELDID      = #{gadsjFieldId},
+               DELETED            = 0,
+               ZDFL               = #{fieldClassId},
+               SJLYGCFL           = #{sjlygcfl},
+               RECONCILIATIONTYPE = #{reconciliationType}
+         where OBJECTID = #{objectId}
+           and COLUMNNAME = #{columnName}
+    </update>
+
+    <update id="updateObjectClassify" parameterType="com.synway.datastandardmanager.entity.dto.BatchOperationDTO">
+        update synlte.objectfield
+           set ISQUERY = #{query}, COLUMNNAME_STATE = #{columnNameState}
+         where upper(objectId) = upper(#{objectId})
+           and upper(COLUMNNAME) in (
+        <foreach collection="columnList" item="item" separator="union all" open ="(" close = ")">
+            select #{item} from dual
+        </foreach>
+        )
+    </update>
+
+</mapper>

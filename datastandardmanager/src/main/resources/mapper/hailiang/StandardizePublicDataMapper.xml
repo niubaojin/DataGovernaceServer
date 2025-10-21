@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizePublicDataMapper">
+
+    <update id="updatePublicDataGroup" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizePublicDataEntity">
+        update SYNLTE.STANDARDIZE_PUBLIC_DATA
+           set group_name  = #{groupName},
+               creator     = #{creator},
+               memo        = #{memo},
+               update_time = sysdate
+         where id = #{id}
+    </update>
+
+    <select id="searchGroupNameList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select id as value, group_name as label
+          from SYNLTE.STANDARDIZE_PUBLIC_DATA
+         order by label
+    </select>
+
+</mapper>

@@ -1,8 +1,6 @@
 package com.synway.datastandardmanager.service;
 
-import com.synway.datastandardmanager.pojo.batchoperation.ObjectClassifyEditPojo;
-import com.synway.datastandardmanager.pojo.batchoperation.ObjectFieldEditPojo;
-import com.synway.datastandardmanager.pojo.batchoperation.ObjectStatusEditPojo;
+import com.synway.datastandardmanager.entity.dto.BatchOperationDTO;
 
 /**
  * @author wangdongwei
@@ -11,22 +9,23 @@ public interface BatchOperationService {
 
     /**
      * 修改标准表的状态 启用/停用
-     * @param objectStatusEditPojo
-     * @return
+     *
+     * @param dto
      */
-    String objectStatusEdit(ObjectStatusEditPojo objectStatusEditPojo);
+    String objectStatusEdit(BatchOperationDTO dto);
 
     /**
      * 批量设置框，对获取方式、组织分类、来源分类、资源标签等分类属性进行批量修改。
-     * @param editPojo
-     * @return
+     *
+     * @param dto
      */
-    String objectClassifyEdit(ObjectClassifyEditPojo editPojo);
+    String objectClassifyEdit(BatchOperationDTO dto);
 
     /**
      * 数据定义详情批量操作
+     *
      * @param editPojo
-     * @return
      */
-    String objectFieldEdit(ObjectFieldEditPojo editPojo);
+    String objectFieldEdit(BatchOperationDTO editPojo) throws Exception;
+
 }

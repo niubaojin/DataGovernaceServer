@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeInputObjectRelateMapper">
+
+    <select id="getAllInputObjectRelation" resultType="com.synway.datastandardmanager.entity.vo.InputObjectCreateVO">
+        select inputSysId,
+               inputObjEngName,
+               sourceTableName,
+               dataId,
+               tableId,
+               centerId,
+               inputObjChiName,
+               inputIobjSource,
+               iorStatus,
+               outSysId,
+               outObjEngName,
+               outObjChiName,
+               outOobjSource,
+               insertDate,
+               tableRealName
+          from (select f4.sys_id as inputSysId,
+                       f4.obj_engname as inputObjEngName,
+                       f4.obj_chiname as sourceTableName,
+                       f4.data_id as dataId,
+                       f4.table_id as tableId,
+                       f4.center_Id as centerId,
+                       case
+                         when f4.obj_memo is not null then f4.obj_memo else f4.OBJ_CHINAME
+                       end as inputObjChiName,
+                       f4.iobj_source as inputIobjSource,
+                       f1.IOR_STATUS as iorStatus,
+                       f7.sys_id AS outSysId,
+                       f7.obj_engname AS outObjEngName,
+                       f7.obj_chiname AS outObjChiName,
+                       f7.oobj_source AS outOobjSource,
+                       f4.insert_date as insertDate,
+                       case
+                         when f4.data_id is not null then f4.table_id else f8.tablename
+                       end as tableRealName
+                  from standardize_inputobjectrelate f1
+                 inner join (select sys_id,
+                                   OBJ_ENGNAME,
+                                   data_id,
+                                   table_id,
+                                   OBJ_CHINAME,
+                                   iobj_source,
+                                   iobj_guid,
+                                   insert_date,
+                                   obj_memo,
+                                   center_Id
+                              from standardize_inputobject f2
+                             inner join standardize_object f3 on f3.obj_guid =
+                                                                 f2.obj_guid
+                             where f2.iobj_status = 1) f4 on f1.iobj_guid = f4.iobj_guid
+                 inner join (select oobj_guid,
+                                   sys_id,
+                                   OBJ_ENGNAME,
+                                   OBJ_CHINAME,
+                                   oobj_source
+                              from standardize_outputobject f5
+                             inner join standardize_object f6 on f5.OBJ_GUID = f6.obj_guid
+                             where f5.OOBJ_STATUS = 1) f7 on f1.OOBJ_GUID =
+                                                             f7.oobj_guid
+                  left join (select tablename, tableid from synlte.OBJECT) f8 on f8.tableid = f4.OBJ_ENGNAME)
+        <where>
+            iorStatus = 1
+            <if test="tableId!= null and tableId != ''">
+                and UPPER(outObjEngName) = UPPER(#{tableId})
+            </if>
+        </where>
+        order by insertDate desc
+    </select>
+
+    <select id="queryStdInputObjRelExist" resultType="com.synway.datastandardmanager.entity.vo.CommonVO">
+        select max(decode(typeName, 'used', oneCount, 0)) as usedCount,
+               max(decode(typeName, 'disableUsed', oneCount, 0)) as disableUsedCount
+          from (select 'used' as typeName, count(*) as oneCount
+                  from STANDARDIZE_INPUTOBJECTRELATE
+                 where IOBJ_GUID = #{inputGuid}
+                   and OOBJ_GUID = #{outputGuid}
+                   and IOR_SOURCE = #{inputIobjSource}
+                   and IOR_STATUS = 1
+                union ALL
+                select 'disableUsed' as typeName, count(*) as oneCount
+                  from STANDARDIZE_INPUTOBJECTRELATE
+                 where IOBJ_GUID = #{inputGuid}
+                   and OOBJ_GUID = #{outputGuid}
+                   and IOR_SOURCE = #{inputIobjSource}
+                   and IOR_STATUS = 0)
+    </select>
+
+    <select id="getStdInputObjRelCount" resultType="java.lang.Integer">
+        select count(*)
+          from STANDARDIZE_INPUTOBJECTRELATE F4
+         inner join (select *
+                       from STANDARDIZE_OUTPUTOBJECT F1
+                      inner join STANDARDIZE_OBJECT F2
+                         on F1.OBJ_GUID = F2.OBJ_GUID
+                      where upper(F2.OBJ_ENGNAME) = upper(#{tableId})) F3
+            on F3.OOBJ_GUID = F4.OOBJ_GUID
+         where f4.iobj_guid = #{inputObjGuid}
+    </select>
+
+    <select id="getStandardOutTableIdBySourceIdDao" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select distinct outobjengname as value, objectname as label
+          from (select outobjengname, objectname
+                  from (select f4.sys_id      as inputSysId,
+                               f4.OBJ_ENGNAME as inputObjEngName,
+                               f4.data_id     as dataId,
+                               f4.table_id    as tableId,
+                               f4.OBJ_CHINAME as inputObjChiName,
+                               f4.IOBJ_SOURCE as inputIobjSource,
+                               f1.IOR_STATUS  as iorStatus,
+                               f7.sys_id      as outSysId,
+                               f7.OBJ_ENGNAME as outObjEngName,
+                               f7.OBJ_CHINAME as outObjChiName,
+                               f7.OOBJ_SOURCE as outOobjSource,
+                               f8.tablename   as tableRealName,
+                               f8.objectname  as objectname
+                          from STANDARDIZE_INPUTOBJECTRELATE f1
+                         inner join (select sys_id,
+                                           OBJ_ENGNAME,
+                                           data_id,
+                                           table_id,
+                                           OBJ_CHINAME,
+                                           IOBJ_SOURCE,
+                                           IOBJ_GUID
+                                      from STANDARDIZE_INPUTOBJECT f2
+                                     inner join STANDARDIZE_OBJECT f3
+                                        on f3.OBJ_GUID = f2.obj_guid
+                                     where f2.iobj_status = 1) f4
+                            on upper(f1.IOBJ_GUID) = upper(f4.IOBJ_GUID)
+                         inner join (select sys_id,
+                                           OBJ_ENGNAME,
+                                           OBJ_CHINAME,
+                                           OOBJ_SOURCE,
+                                           oobj_guid
+                                      from STANDARDIZE_OUTPUTOBJECT f5
+                                     inner join STANDARDIZE_OBJECT f6
+                                        on f5.OBJ_GUID = f6.obj_guid
+                                     where f5.OOBJ_STATUS = 1) f7
+                            on upper(f1.OOBJ_GUID) = upper(f7.oobj_guid)
+                         inner join (select tablename, tableid, objectname
+                                      from synlte.OBJECT
+                                     where deleted = 0
+                                       and relate_tablename = 'OBJECTFIELD'
+                                       and upper(sourceid) = upper(#{sourceId})) f8
+                            on upper(f8.tableid) = upper(f7.OBJ_ENGNAME))
+                 where iorStatus = 1) t1
+    </select>
+
+</mapper>

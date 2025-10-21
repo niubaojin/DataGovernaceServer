@@ -15,8 +15,8 @@ public class SpringBeanUtil implements ApplicationContextAware {
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
-        if (com.synway.datastandardmanager.SpringBeanUtil.applicationContext == null) {
-            com.synway.datastandardmanager.SpringBeanUtil.applicationContext = applicationContext;
+        if (SpringBeanUtil.applicationContext == null) {
+            SpringBeanUtil.applicationContext = applicationContext;
         }
     }
 
@@ -24,19 +24,19 @@ public class SpringBeanUtil implements ApplicationContextAware {
         return applicationContext;
     }
 
-    public static Object getBean(String name){
+    public static Object getBean(String name) {
         return applicationContext.getBean(name);
     }
 
-    public static <T> T getBean(Class<T> clazz){
+    public static <T> T getBean(Class<T> clazz) {
         return applicationContext.getBean(clazz);
     }
 
-    public static <T> T getBean(String name,Class<T> clazz){
-        return applicationContext.getBean(name,clazz);
+    public static <T> T getBean(String name, Class<T> clazz) {
+        return applicationContext.getBean(name, clazz);
     }
 
-    public static Environment getEnvironment(){
+    public static Environment getEnvironment() {
         return applicationContext.getEnvironment();
     }
 

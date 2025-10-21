@@ -1,37 +1,32 @@
 package com.synway.datastandardmanager.util;
 
-
-import com.synway.datastandardmanager.pojo.ExportObjectInfo;
-import com.synway.datastandardmanager.pojo.ObjectPojo;
-import com.synway.datastandardmanager.pojo.OfflineTasksMonitorChi;
-import com.synway.datastandardmanager.pojo.OfflineTasksMonitorPar;
+import com.synway.datastandardmanager.entity.pojo.ObjectEntity;
+import com.synway.datastandardmanager.entity.vo.ExportObjectInfoVO;
 import jakarta.servlet.ServletOutputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 
+@Slf4j
 public class ExcelHelper {
-    private static Logger logger = LoggerFactory.getLogger(ExcelHelper.class);
-	public static void export(Object object, String[] titles, String sheetname, List<Object>  list, String[] fieldName, ServletOutputStream out) throws Exception
-	{
-		int sheetCount = 20000;//单个sheet页可存储的数据量
-		try{
-			HSSFWorkbook workbook = new HSSFWorkbook();
-			HSSFCellStyle hssfTitleCellStyle = getHeader(workbook);
-			HSSFCellStyle hssfContentCellStyle = getContext(workbook);
-            
+
+    public static void export(Object object, String[] titles, String sheetname, List<Object> list, String[] fieldName, ServletOutputStream out) throws Exception {
+        int sheetCount = 20000;//单个sheet页可存储的数据量
+        try {
+            HSSFWorkbook workbook = new HSSFWorkbook();
+            HSSFCellStyle hssfTitleCellStyle = getHeader(workbook);
+            HSSFCellStyle hssfContentCellStyle = getContext(workbook);
+
             HSSFSheet hssfSheet = workbook.createSheet(sheetname);
             HSSFRow row = hssfSheet.createRow(0);//创建第一行
             HSSFCell hssfCell = null;
@@ -41,165 +36,56 @@ public class ExcelHelper {
                 hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示              
             }
             for (int i = 0; i < list.size(); i++) {
-                    
-            	    if(i!=0 && i%sheetCount==0){
-            	    	hssfSheet = workbook.createSheet(sheetname+String.valueOf(i/sheetCount));
-            	    	row = hssfSheet.createRow(0);//创建第一行
-            	    	for (int m = 0; m < titles.length; m++) {
-            	                hssfCell = row.createCell(m);//列索引从0开始
-            	                hssfCell.setCellValue(titles[m]);//列名1
-            	                hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示              
-            	        }
-                    }   
-            	    if((i+1)%sheetCount==0){
-            	    	row = hssfSheet.createRow(sheetCount); 
-            	    }else{
-            	    	row = hssfSheet.createRow((i+1)%sheetCount); 
-            	    }
-                    object = list.get(i);
-                    //数据填充
-                    for(int j=0;j<fieldName.length;j++){
-                    	String value = fieldName[j];
-                    	String str = objectToString(getFieldValueByName(value, object));
-                    	hssfCell = row.createCell(j);
-                    	hssfCell.setCellValue(str);
-                    	hssfCell.setCellStyle(hssfContentCellStyle);//列居中显示
-                    }
-                    
-            }
-            try {
-                   workbook.write(out);
-                   out.flush();
-                   out.close();
-            } catch (Exception e) {
-                   logger.error(e.getMessage());
-            }
-        }catch(Exception e){
-           throw new Exception("导出信息失败！");
-        }	
-	}
-	
-	/**
-	 * 支持父子表导出
-	 * @param parObject 父类对象
-	 * @param chiObject 子类对象
-	 * @param parTitles 父标题
-	 * @param chiTitles 子标题
-	 * @param sheetname sheet名称
-	 * @param out 输出流对象
-	 * @throws Exception
-	 */
-	public static void exportParChi(Object parObject, Object chiObject, String[] parTitles, String[] chiTitles, String sheetname, List<OfflineTasksMonitorPar> offlineTasksMonitorParList, List<OfflineTasksMonitorChi> offlineTasksMonitorChiList, String[] parFieldName, String[] chiFieldName, ServletOutputStream out) throws Exception
-	{
-		int sheetCount = 20000;//单个sheet页可存储的数据量
-		try{
-			HSSFWorkbook workbook = new HSSFWorkbook();
-			HSSFCellStyle hssfTitleCellStyle = getHeader(workbook);
-			HSSFCellStyle hssfContentCellStyle = getContext(workbook);          			
-			HSSFSheet hssfSheet=null;
-            HSSFCell hssfCell = null;   
-            
-            /**
-             *  处理 无数据时导出的excel打开报错，创建表头
-             */
-            if(offlineTasksMonitorParList.size()==0){
-            	hssfSheet = workbook.createSheet(sheetname);
-            	HSSFRow rowParKey = hssfSheet.createRow(0);//创建第一行
-                for (int parKey = 0; parKey < parTitles.length; parKey++) {
-                    hssfCell = rowParKey.createCell(parKey);//列索引从0开始
-                    hssfCell.setCellValue(parTitles[parKey]);//列名1
-                    hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
-                }
-            }
-            
-            
-            int index=-1;
-            List<Object> chiObjectList=new ArrayList<Object>();
-            for(int parValue=0;parValue<offlineTasksMonitorParList.size();parValue++){
-            	OfflineTasksMonitorPar par=offlineTasksMonitorParList.get(parValue);
-            	if(parValue%sheetCount==0){
-        	    	hssfSheet = workbook.createSheet(sheetname+String.valueOf(parValue/sheetCount));
-            		index=-1;
-            	}
-            	if(parValue==0||parValue%sheetCount==0){
-            	    index++;
-                    HSSFRow rowParKey = hssfSheet.createRow(index);//创建第一行
-                    for (int parKey = 0; parKey < parTitles.length; parKey++) {
-                        hssfCell = rowParKey.createCell(parKey);//列索引从0开始
-                        hssfCell.setCellValue(parTitles[parKey]);//列名1
+                if (i != 0 && i % sheetCount == 0) {
+                    hssfSheet = workbook.createSheet(sheetname + String.valueOf(i / sheetCount));
+                    row = hssfSheet.createRow(0);//创建第一行
+                    for (int m = 0; m < titles.length; m++) {
+                        hssfCell = row.createCell(m);//列索引从0开始
+                        hssfCell.setCellValue(titles[m]);//列名1
                         hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
                     }
-                    index++;
-            	}
-            	HSSFRow rowParValue = hssfSheet.createRow(index);//创建父内容第一行            
-            	//填写父内容
-            	Object objectPar = offlineTasksMonitorParList.get(parValue);
-            	for(int j=0;j<parFieldName.length;j++){
-                 	String value = parFieldName[j];
-                 	String str = objectToString(getFieldValueByName(value, objectPar));
-                 	hssfCell = rowParValue.createCell(j);
-                 	hssfCell.setCellValue(str);
-                 	hssfCell.setCellStyle(hssfContentCellStyle);//列居中显示
                 }
-            	chiObjectList.clear();
-            	for(int chiValue=0;chiValue<offlineTasksMonitorChiList.size();chiValue++){
-            		OfflineTasksMonitorChi chi=offlineTasksMonitorChiList.get(chiValue);
-            		if(chi.getId().equals(par.getId())){
-            			chiObjectList.add(chi);
-            		}
-            	}
-            	for(int chiValue=0;chiValue<chiObjectList.size();chiValue++){
-            		if(chiValue==0){
-            			index++;
-            			HSSFRow rowChiKey = hssfSheet.createRow(index);//创建第一行
-                		for (int chiKey = 0; chiKey < chiTitles.length; chiKey++) {
-                            hssfCell = rowChiKey.createCell(chiKey+1);//列索引从0开始
-                            hssfCell.setCellValue(chiTitles[chiKey]);//列名1
-                            hssfCell.setCellStyle(hssfContentCellStyle);//列居中显示              
-                        }
-            		}           		
-            		index++;
-                	HSSFRow rowChiValue = hssfSheet.createRow(index);//创建父内容第一行
-                	//填写子内容
-                	Object objectChi = chiObjectList.get(chiValue);
-                	for(int j=0;j<chiFieldName.length;j++){
-                     	String value = chiFieldName[j];
-                     	String str = objectToString(getFieldValueByName(value, objectChi));
-                     	hssfCell = rowChiValue.createCell(j+1);
-                     	hssfCell.setCellValue(str);
-                     	hssfCell.setCellStyle(hssfContentCellStyle);//列居中显示
-                    }                	
-            	}
-            	if(chiObjectList.size()==0){
-            	    index++;
+                if ((i + 1) % sheetCount == 0) {
+                    row = hssfSheet.createRow(sheetCount);
+                } else {
+                    row = hssfSheet.createRow((i + 1) % sheetCount);
+                }
+                object = list.get(i);
+                //数据填充
+                for (int j = 0; j < fieldName.length; j++) {
+                    String value = fieldName[j];
+                    String str = objectToString(getFieldValueByName(value, object));
+                    hssfCell = row.createCell(j);
+                    hssfCell.setCellValue(str);
+                    hssfCell.setCellStyle(hssfContentCellStyle);//列居中显示
                 }
             }
             try {
                 workbook.write(out);
                 out.flush();
                 out.close();
-	         } catch (Exception e) {
-                logger.error(e.getMessage());
-	         }
-        }catch(Exception e){
-           throw new Exception("导出信息失败！");
-        }	
-	}
-
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new Exception("导出信息失败！");
+        }
+    }
 
     /**
-     *  支持多行表头
-     * @param mergeList 合并表格
-     * @param titleList 标题
+     * 支持多行表头
+     *
+     * @param mergeList  合并表格
+     * @param titleList  标题
      * @param fieldNames 需要写入的字段名
-     * @param list 数据集合
-     * @param out 输出流对象
+     * @param list       数据集合
+     * @param out        输出流对象
      * @throws Exception
      */
     public static void export(List<int[]> mergeList, List<String[]> titleList, String[] fieldNames, List<?> list, ServletOutputStream out) throws Exception {
         int sheetCount = 20000;//单个sheet页可存储的数据量
         String sheetName = "sheet";
-        try{
+        try {
             HSSFWorkbook workbook = new HSSFWorkbook();
             HSSFCellStyle hssfTitleCellStyle = getHeader(workbook);
             HSSFCellStyle hssfContentCellStyle = getContext(workbook);
@@ -207,17 +93,17 @@ public class ExcelHelper {
             HSSFRow row = null;
             HSSFCell hssfCell = null;
             Object obj = null;
-            
+
             /**
              *  处理 无数据时导出的excel打开报错，创建表头
              */
-            if(list.size()==0){
-            	hssfSheet = workbook.createSheet(sheetName);
+            if (list.size() == 0) {
+                hssfSheet = workbook.createSheet(sheetName);
                 int merge1[];
-                if(mergeList!=null){
+                if (mergeList != null) {
                     for (int j = 0; j < mergeList.size(); j++) {
                         merge1 = mergeList.get(j);
-                        hssfSheet.addMergedRegion(new CellRangeAddress(merge1[0],merge1[1],merge1[2],merge1[3]));
+                        hssfSheet.addMergedRegion(new CellRangeAddress(merge1[0], merge1[1], merge1[2], merge1[3]));
                     }
                 }
                 String[] title1 = null;
@@ -232,17 +118,17 @@ public class ExcelHelper {
                     }
                 }
             }
-            
+
             for (int i = 0; i < list.size(); i++) {
                 //新建一个Sheet，并设置表头
-                if(i%sheetCount==0){
-                    sheetName = "sheet"+i/sheetCount;
+                if (i % sheetCount == 0) {
+                    sheetName = "sheet" + i / sheetCount;
                     hssfSheet = workbook.createSheet(sheetName);
                     int merge[];
-                    if(mergeList!=null){
+                    if (mergeList != null) {
                         for (int j = 0; j < mergeList.size(); j++) {
                             merge = mergeList.get(j);
-                            hssfSheet.addMergedRegion(new CellRangeAddress(merge[0],merge[1],merge[2],merge[3]));
+                            hssfSheet.addMergedRegion(new CellRangeAddress(merge[0], merge[1], merge[2], merge[3]));
                         }
                     }
                     String[] title = null;
@@ -258,12 +144,12 @@ public class ExcelHelper {
                     }
                 }
                 obj = list.get(i);
-                row = hssfSheet.createRow(i%sheetCount+titleList.size());
-                for(int j=0;j<fieldNames.length;j++){
+                row = hssfSheet.createRow(i % sheetCount + titleList.size());
+                for (int j = 0; j < fieldNames.length; j++) {
                     String fieldName = fieldNames[j];
                     hssfCell = row.createCell(j);
                     hssfCell.setCellStyle(hssfContentCellStyle);//列居中显示
-                    hssfCell.setCellValue(BeanUtils.getProperty(obj,fieldName));
+                    hssfCell.setCellValue(BeanUtils.getProperty(obj, fieldName));
                 }
             }
             try {
@@ -272,9 +158,9 @@ public class ExcelHelper {
                 out.close();
             } catch (Exception e) {
                 out.close();
-                logger.error(e.getMessage());
+                log.error(e.getMessage());
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new Exception("导出信息失败！");
         }
     }
@@ -282,17 +168,15 @@ public class ExcelHelper {
     /**
      * 横向导出excel
      * 2021/12/09
-     * **/
-    public static HSSFWorkbook exportHorizontalExcel(Object object, List list, ObjectPojo objectInfo, List fieldList, String[] titles, String[] standardTableInfoTitles, String[] columnTitles,
+     **/
+    public static HSSFWorkbook exportHorizontalExcel(Object object, List list, ObjectEntity objectInfo, List fieldList, String[] titles, String[] standardTableInfoTitles, String[] columnTitles,
                                                      String sheetName, String standardTableInfoSheetName, String columnSheetName,
                                                      String[] objectFieldName, String[] standardTableInfoName, String[] fieldName,
-                                                     ServletOutputStream out)throws Exception{
+                                                     ServletOutputStream out) throws Exception {
         int sheetCount = 20000;
         HSSFWorkbook workbook = new HSSFWorkbook();
-        try{
-
+        try {
             HSSFCellStyle columnHeadStyle = workbook.createCellStyle();
-
             HSSFCellStyle hssfTitleCellStyle = getHorizontalHeader(workbook);
             HSSFCellStyle hssfContentCellStyle = getContext(workbook);
             HSSFRow row = null;
@@ -317,7 +201,6 @@ public class ExcelHelper {
                     hssfCell.setCellStyle(hssfContentCellStyle);
                 }
             }
-
             //标准表信息sheet页
             HSSFSheet sheet3 = workbook.createSheet(standardTableInfoSheetName);
             sheet3.setDefaultColumnWidth(15);
@@ -336,7 +219,7 @@ public class ExcelHelper {
             }
             standRow = sheet3.createRow(1);
             //数据填充
-            for(int j=0;j<standardTableInfoName.length;j++){
+            for (int j = 0; j < standardTableInfoName.length; j++) {
                 String value = standardTableInfoName[j];
                 String str = objectToString(getFieldValueByName(value, objectInfo));
                 standHssFCell = standRow.createCell(j);
@@ -362,14 +245,14 @@ public class ExcelHelper {
             }
             for (int i = 0; i < fieldList.size(); i++) {
 
-                if((i+1)%sheetCount==0){
+                if ((i + 1) % sheetCount == 0) {
                     columnRow = sheet2.createRow(sheetCount);
-                }else{
-                    columnRow = sheet2.createRow((i+1)%sheetCount);
+                } else {
+                    columnRow = sheet2.createRow((i + 1) % sheetCount);
                 }
                 object = fieldList.get(i);
                 //数据填充
-                for(int j=0;j<fieldName.length;j++){
+                for (int j = 0; j < fieldName.length; j++) {
                     String value = fieldName[j];
                     String str = objectToString(getFieldValueByName(value, object));
                     columnHssFCell = columnRow.createCell(j);
@@ -382,10 +265,10 @@ public class ExcelHelper {
                 out.flush();
                 out.close();
             } catch (Exception e) {
-                logger.error(e.getMessage());
+                log.error(e.getMessage());
             }
-        }catch(Exception e){
-            logger.error("导出信息失败：\n" + ExceptionUtil.getExceptionTrace(e));
+        } catch (Exception e) {
+            log.error("导出信息失败：", e);
             throw new Exception("导出信息失败！");
         }
         return workbook;
@@ -394,12 +277,12 @@ public class ExcelHelper {
     /**
      * 横向导出excel
      * 2021/12/09
-     * **/
-    public static HSSFWorkbook exportHorizontalExcelZip(Object object, ExportObjectInfo exportObjectInfo, ObjectPojo objectPojo, List fieldList, String[] titles, String[] standardTableInfoTitles, String[] columnTitles,
+     **/
+    public static HSSFWorkbook exportHorizontalExcelZip(Object object, ExportObjectInfoVO exportObjectInfo, ObjectEntity objectPojo, List fieldList, String[] titles, String[] standardTableInfoTitles, String[] columnTitles,
                                                         String sheetName, String standardTableInfoSheetName, String columnSheetName,
-                                                        String[] objectFieldName, String[] standardTableInfoName, String[] fieldName)throws Exception{
+                                                        String[] objectFieldName, String[] standardTableInfoName, String[] fieldName) throws Exception {
         int sheetCount = 20000;
-        try{
+        try {
             HSSFWorkbook workbook = new HSSFWorkbook();
 
             HSSFCellStyle columnHeadStyle = workbook.createCellStyle();
@@ -453,7 +336,7 @@ public class ExcelHelper {
             standRow = sheet3.createRow(1);
             //数据填充
 //            standRow = sheet3.createRow(2);
-            for(int j=0;j<standardTableInfoName.length;j++){
+            for (int j = 0; j < standardTableInfoName.length; j++) {
                 String value = standardTableInfoName[j];
                 String str = objectToString(getFieldValueByName(value, objectPojo));
                 standHssFCell = standRow.createCell(j);
@@ -479,14 +362,14 @@ public class ExcelHelper {
             }
             for (int i = 0; i < fieldList.size(); i++) {
 
-                if((i+1)%sheetCount==0){
+                if ((i + 1) % sheetCount == 0) {
                     columnRow = sheet2.createRow(sheetCount);
-                }else{
-                    columnRow = sheet2.createRow((i+1)%sheetCount);
+                } else {
+                    columnRow = sheet2.createRow((i + 1) % sheetCount);
                 }
                 object = fieldList.get(i);
                 //数据填充
-                for(int j=0;j<fieldName.length;j++){
+                for (int j = 0; j < fieldName.length; j++) {
                     String value = fieldName[j];
                     String str = objectToString(getFieldValueByName(value, object));
                     columnHssFCell = columnRow.createCell(j);
@@ -499,10 +382,10 @@ public class ExcelHelper {
 //                out.flush();
 //                out.close();
 //            } catch (Exception e) {
-//                logger.error(e.getMessage());
+//                log.error(e.getMessage());
 //            }
             return workbook;
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new Exception("导出信息失败！");
         }
 
@@ -510,34 +393,33 @@ public class ExcelHelper {
 
     /**
      * Object转成String类型，便于填充单元格
-     * */
-    public static String objectToString(Object object){
+     */
+    public static String objectToString(Object object) {
         String str = "";
-        if(object==null){
-        }else if(object instanceof Date){
-                DateFormat from_type = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");  
-                Date date = (Date)object;
-                str = from_type.format(date);
-        }else if(object instanceof String){
-            str = (String)object;
-        }else if(object instanceof Integer){
-            str = ((Integer)object).intValue()+"";
-        }else if(object instanceof Double){
-            str = ((Double)object).doubleValue()+"";
-        }else if(object instanceof Long){
-            str = Long.toString(((Long)object).longValue());
-        }else if(object instanceof Float){
-            str = Float.toHexString(((Float)object).floatValue());
-        }else if(object instanceof Boolean){
-            str = Boolean.toString((Boolean)object);
-        }else if(object instanceof Short){
-            str = Short.toString((Short)object);
+        if (object == null) {
+        } else if (object instanceof Date) {
+            DateFormat from_type = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date date = (Date) object;
+            str = from_type.format(date);
+        } else if (object instanceof String) {
+            str = (String) object;
+        } else if (object instanceof Integer) {
+            str = ((Integer) object).intValue() + "";
+        } else if (object instanceof Double) {
+            str = ((Double) object).doubleValue() + "";
+        } else if (object instanceof Long) {
+            str = Long.toString(((Long) object).longValue());
+        } else if (object instanceof Float) {
+            str = Float.toHexString(((Float) object).floatValue());
+        } else if (object instanceof Boolean) {
+            str = Boolean.toString((Boolean) object);
+        } else if (object instanceof Short) {
+            str = Short.toString((Short) object);
         }
         return str;
     }
-    
+
     /**
-     * 
      * 根据属性名获取属性值
      * fieldName 属性名 object 属性所属对象
      * 支持Map扩展属性, 不支持List类型属性，
@@ -559,22 +441,22 @@ public class ExcelHelper {
                 }
                 firstLetter = fieldName.substring(0, 1).toUpperCase();
                 getter = "get" + firstLetter + fieldName.substring(1);
-                method = object.getClass().getMethod(getter, new Class[] {});
-                fieldValue = method.invoke(object, new Object[] {});
+                method = object.getClass().getMethod(getter, new Class[]{});
+                fieldValue = method.invoke(object, new Object[]{});
                 if (extraKey != null) {
                     Map<String, Object> map = (Map<String, Object>) fieldValue;
-                    fieldValue = map==null ? "":map.get(extraKey);
+                    fieldValue = map == null ? "" : map.get(extraKey);
                 }
             }
             return fieldValue;
         } catch (Throwable e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             return null;
         }
     }
 
     //标题样式
-    public static HSSFCellStyle getHorizontalHeader(HSSFWorkbook workbook){
+    public static HSSFCellStyle getHorizontalHeader(HSSFWorkbook workbook) {
 
         HSSFCellStyle format = workbook.createCellStyle();
         HSSFFont font = workbook.createFont();
@@ -585,22 +467,22 @@ public class ExcelHelper {
     }
 
     //标题样式
-    public static HSSFCellStyle getHeader(HSSFWorkbook workbook){
-        
+    public static HSSFCellStyle getHeader(HSSFWorkbook workbook) {
+
         HSSFCellStyle format = workbook.createCellStyle();
         HSSFFont font = workbook.createFont();
 //        font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);  //加粗
         font.setBold(true);
         font.setFontName("黑体");
-        font.setFontHeightInPoints((short)10);
+        font.setFontHeightInPoints((short) 10);
 //        format.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 //        format.setAlignment(HSSFCellStyle.ALIGN_CENTER);
         format.setFont(font);
         return format;
     }
-    
+
     //内容样式
-    public static HSSFCellStyle getContext(HSSFWorkbook workbook){
+    public static HSSFCellStyle getContext(HSSFWorkbook workbook) {
         HSSFCellStyle format = workbook.createCellStyle();
         HSSFFont font = workbook.createFont();
         font.setFontName("宋体");
@@ -613,11 +495,10 @@ public class ExcelHelper {
     /**
      * 支持导入两个excel
      * 2019/05/21  12:50
-     * **/
-    public static void exportTwoList(Object object,String[] titles,String[] titles1,String sheetname,List<Object>  list,List<Object>  list1,String[] fieldName,String[] fieldName1,ServletOutputStream out) throws Exception
-    {
+     **/
+    public static void exportTwoList(Object object, String[] titles, String[] titles1, String sheetname, List<Object> list, List<Object> list1, String[] fieldName, String[] fieldName1, ServletOutputStream out) throws Exception {
         int sheetCount = list.size();//单个sheet页可存储的数据量
-        try{
+        try {
             HSSFWorkbook workbook = new HSSFWorkbook();
             HSSFCellStyle hssfTitleCellStyle = getHeader(workbook);
             HSSFCellStyle hssfContentCellStyle = getContext(workbook);
@@ -630,7 +511,7 @@ public class ExcelHelper {
                 hssfCell.setCellValue(titles[i]);//列名1
                 hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
             }
-            for (int i = 0; i <=list.size(); i++) {
+            for (int i = 0; i <= list.size(); i++) {
                 if (i != 0 && i % sheetCount == 0) {
                     hssfSheet = workbook.createSheet(sheetname + String.valueOf(i / sheetCount));
                     row = hssfSheet.createRow(0);//创建第一行
@@ -639,12 +520,12 @@ public class ExcelHelper {
                         hssfCell.setCellValue(titles1[m]);//列名1
                         hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
                     }
-                    sheetCount =list1.size();
-                    for (int t = 0; t< list1.size(); t++) {
+                    sheetCount = list1.size();
+                    for (int t = 0; t < list1.size(); t++) {
                         if (t != 0 && t % sheetCount == 0) {
                             hssfSheet = workbook.createSheet(sheetname + String.valueOf(t / sheetCount));
                             row = hssfSheet.createRow(0);//创建第一行
-                            for (int s= 0; s < titles1.length; s++) {
+                            for (int s = 0; s < titles1.length; s++) {
                                 hssfCell = row.createCell(s);//列索引从0开始
                                 hssfCell.setCellValue(titles1[s]);//列名1
                                 hssfCell.setCellStyle(hssfTitleCellStyle);//列居中显示
@@ -671,7 +552,7 @@ public class ExcelHelper {
                         out.flush();
                         out.close();
                     } catch (Exception e) {
-                        logger.error(e.getMessage());
+                        log.error(e.getMessage());
                     }
                 }
                 if ((i + 1) % sheetCount == 0) {
@@ -695,9 +576,9 @@ public class ExcelHelper {
                 out.flush();
                 out.close();
             } catch (Exception e) {
-                logger.error(e.getMessage());
+                log.error(e.getMessage());
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new Exception("导出信息失败！");
         }
     }

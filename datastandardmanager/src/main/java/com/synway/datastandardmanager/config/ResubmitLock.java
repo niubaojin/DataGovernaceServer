@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 重复提交锁
+ *
  * @author wdw
  * @version 1.0
  * @date 2021/6/16 11:42
@@ -20,13 +21,12 @@ public class ResubmitLock {
     private static final ConcurrentHashMap<String, Object> LOCK_CACHE = new ConcurrentHashMap<>(200);
     private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(5, new ThreadPoolExecutor.DiscardPolicy());
 
-
-
     private ResubmitLock() {
     }
 
     /**
      * 静态内部类 单例模式
+     *
      * @return
      */
     private static class SingletonInstance {
@@ -36,7 +36,6 @@ public class ResubmitLock {
     public static ResubmitLock getInstance() {
         return SingletonInstance.INSTANCE;
     }
-
 
     public static String handleKey(String param) {
         return DigestUtils.md5Hex(param == null ? "" : param);

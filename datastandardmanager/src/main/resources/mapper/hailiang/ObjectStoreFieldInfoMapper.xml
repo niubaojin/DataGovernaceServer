@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.ObjectStoreFieldInfoMapper">
+
+    <delete id="deleteObjectStoreFieldInfos" parameterType="java.lang.String">
+        delete synlte.object_store_fieldinfo a
+         where a.tableinfoid not in
+               (select tableinfoid from synlte.object_store_info)
+    </delete>
+
+    <insert id="saveObjectStoreFieldInfo">
+        insert into synlte.OBJECT_STORE_FIELDINFO
+          (ID,
+           TABLEINFOID,
+           FIELDID,
+           COLUMNNAME,
+           FIELDCHINEENAME,
+           FIELDTYPE,
+           FIELDLEN,
+           DEFAULTVALUE,
+           TABLEINDEX,
+           INDEXTYPE,
+           NEEDVALUE,
+           RECNO,
+           PARTITION_RECNO,
+           CLUST_RECNO,
+           COLUMNFIELDTYPE,
+           COLUMNFIELDLEN)
+          select * from (
+           <foreach collection = "list" item = "item" separator = "union all" open = "(" close = ")" >
+               select #{item.id},
+                      #{item.tableInfoId},
+                      #{item.fieldId, jdbcType = VARCHAR},
+                      #{item.columnName},
+                      #{item.fieldChineseName, jdbcType = VARCHAR},
+                      #{item.fieldType, jdbcType = INTEGER},
+                      #{item.fieldLen, jdbcType = INTEGER},
+                      #{item.defaultValue, jdbcType = VARCHAR},
+                      #{item.tableIndex, jdbcType = INTEGER},
+                      #{item.indexType, jdbcType = INTEGER},
+                      #{item.needValue, jdbcType = INTEGER},
+                      #{item.recno, jdbcType = INTEGER},
+                      #{item.partitionRecno, jdbcType = INTEGER},
+                      #{item.clustRecno, jdbcType = INTEGER},
+                      #{item.columnFieldType, jdbcType = INTEGER},
+                      #{item.columnFieldLen, jdbcType = INTEGER}
+                 from dual
+           </foreach >
+         )
+    </insert>
+
+</mapper>

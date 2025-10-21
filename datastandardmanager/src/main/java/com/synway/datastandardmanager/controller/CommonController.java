@@ -1,43 +1,32 @@
 package com.synway.datastandardmanager.controller;
 
 import com.synway.common.bean.ServerResponse;
-import com.synway.datastandardmanager.interceptor.IgnoreSecurity;
-import com.synway.datastandardmanager.pojo.PageSelectOneValue;
-import com.synway.datastandardmanager.pojo.fielddeterminermanage.FieldDeterminer;
-import com.synway.datastandardmanager.service.FieldCodeValService;
-import lombok.extern.slf4j.Slf4j;
+import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.service.CommonService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 /**
- *
  * 通用Controller，提供需要的接口
- * @author obito
- * @version 1.0
- * @date
+ * @author nbj
+ * @date 2025年8月25日15:19:38
  */
 @RestController
-@Slf4j
 @RequestMapping("/commonData")
 public class CommonController {
 
     @Autowired
-    private FieldCodeValService fieldCodeValService;
+    private CommonService service;
 
     /**
      * 查询数据厂商
-     * @return
      */
     @RequestMapping("/searchValtextInfo")
-    public ServerResponse<List<PageSelectOneValue>> searchValtext(){
-        log.info("开始查询厂商信息");
-        List<PageSelectOneValue> valtextInfoList = fieldCodeValService.searchValtext();
-        log.info("查询的厂商数据为:"+valtextInfoList);
-        return ServerResponse.asSucessResponse(valtextInfoList);
+    public ServerResponse<List<KeyValueVO>> searchValtext() {
+        return ServerResponse.asSucessResponse(service.searchValtext());
     }
 
 }

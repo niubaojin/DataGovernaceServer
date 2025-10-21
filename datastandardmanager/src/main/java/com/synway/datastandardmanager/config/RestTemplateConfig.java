@@ -1,7 +1,6 @@
 package com.synway.datastandardmanager.config;
 
 import com.synway.datastandardmanager.interceptor.RestTemplateTrackInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,14 +14,13 @@ import java.util.Collections;
  */
 @Configuration
 public class RestTemplateConfig {
-   
+
     /**
      * 调用时均衡负载，@LoadBalanced必需要加上
-     * @return
      */
     @LoadBalanced
     @Bean
-    public RestTemplate restTemplate(){
+    public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setInterceptors(Collections.singletonList(new RestTemplateTrackInterceptor()));
         return restTemplate;

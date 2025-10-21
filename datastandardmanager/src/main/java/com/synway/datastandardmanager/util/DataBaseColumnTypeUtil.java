@@ -1,7 +1,5 @@
 package com.synway.datastandardmanager.util;
 
-
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

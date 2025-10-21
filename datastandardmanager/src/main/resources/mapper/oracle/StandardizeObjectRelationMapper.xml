@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeObjectRelationMapper">
+
+    <resultMap id="objectRelationResult" type="com.synway.datastandardmanager.entity.pojo.StandardizeObjectRelationEntity">
+        <result property="id" column="ID"/>
+        <result property="objectId" column="OBJECT_ID"/>
+        <result property="objectName" column="OBJECT_NAME"/>
+        <result property="tableId" column="TABLE_ID"/>
+        <result property="parentId" column="PARENT_ID"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="updateTime" column="UPDATE_TIME"/>
+    </resultMap>
+
+    <select id="selectSORByParentId"
+            parameterType="java.lang.String"
+            resultType="com.synway.datastandardmanager.entity.pojo.StandardizeObjectRelationEntity"
+            resultMap="objectRelationResult">
+        select std.*
+          from standardize_object_relation ori
+         inner join standardize_object_relation std
+            on std.parent_id = ori.id
+           and ori.id = #{id}
+           and rownum = 1
+    </select>
+
+    <insert id="insertOrUpdateStdObjRel" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizeObjectRelationEntity">
+        merge into STANDARDIZE_OBJECT_RELATION a
+        using (select #{objectId} as objectId from dual) b
+        on (upper(a.OBJECT_ID) = upper(b.objectId))
+        when matched then
+          update
+             set ID = #{id}
+                 <if test = "objectName != '' and objectName != null" >
+                     , OBJECT_NAME = #{objectName, jdbcType = VARCHAR}
+                 </if >
+                 <if test = "tableId != '' and tableId != null" >
+                    , TABLE_ID = #{tableId, jdbcType = VARCHAR}
+                 </if>
+                 <if test = "parentId != '' and parentId != null" >
+                    , PARENT_ID = #{parentId, jdbcType = VARCHAR}
+                 </if>
+                 , CREATE_TIME = sysdate
+        when not matched then
+          insert
+          values (#{id}, #{objectId}, #{objectName}, #{tableId}, #{parentId}, sysdate, sysdate)
+    </insert>
+
+</mapper>

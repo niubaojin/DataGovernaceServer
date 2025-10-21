@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.FieldCodeMapper">
+
+    <resultMap id="fieldcodeMap" type="com.synway.datastandardmanager.entity.pojo.FieldCodeEntity">
+        <result property="codeId" column="CODEID"/>
+        <result property="codeName" column="CODENAME"/>
+        <result property="codeText" column="CODETEXT"/>
+        <result property="memo" column="MEMO"/>
+        <result property="parCodeId" column="PARCODEID"/>
+        <result property="deleted" column="DELETED"/>
+        <result property="transRule" column="TRANSRULE"/>
+        <result property="brotherCodeId" column="BROTHERCODEID"/>
+    </resultMap>
+
+    <select id="searchFieldCodeByCodeId" parameterType="java.lang.String" resultType="java.lang.String">
+        select codetext from synlte.fieldcode where codeid = #{codeId,jdbcType=VARCHAR}
+        <if test="codeId =='JZCODE0024'">
+            and codename = 'JZCODE0024'
+        </if>
+    </select>
+
+    <select id="selectOneSysName" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.pojo.FieldCodeEntity">
+        select distinct f1.codeid   as codeId,
+                        f1.codetext as codeText,
+                        f2.valtext  as valText,
+                        f2.valvalue as valValue
+          from synlte.fieldcode f1
+         inner join synlte.fieldcodeval f2
+            on f1.codeid = f2.codeid
+           and f1.parcodeid = 'JZCODE0024'
+         where valvalue = #{value}
+    </select>
+
+    <select id="selectOneSysNames" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.pojo.FieldCodeEntity">
+        select distinct f1.codeid   as codeId,
+                        f1.codetext as codeText,
+                        f2.valtext  as valText,
+                        f2.valvalue as valValue
+          from synlte.fieldcode f1
+         inner join synlte.fieldcodeval f2
+            on f1.codeid = f2.codeid
+           and f1.parcodeid = 'JZCODE0024'
+    </select>
+
+    <select id="queryCodeTable" resultType="List" resultMap="fieldcodeMap" >
+        select distinct *
+          from synlte.fieldcode
+        <where>
+            deleted = 0
+            <if test = "codeId != null and codeId != ''" >
+                and ( codeId in (select parcodeid
+                                  from synlte.fieldcode
+                                 where upper(codeId) = upper(#{codeId})) or
+                    upper(codeId) = upper(#{codeId}) )
+            </if>
+            <if test = "codeName != null and codeName != ''" >
+                and ( upper(codeName) like upper('%${codeName}%')
+                <if test = "codeText != null and codeText != ''" >
+                    or upper(codeText) like upper('%${codeText}%')
+                </if>
+                )
+            </if>
+            <if test = "codeName == null or codeName == ''" >
+                <if test = "codeText != null and codeText != ''" >
+                    and upper(codeText) like upper('%${codeText}%')
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <select id="getCodeValIdListDao" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select distinct codeId as id, codeid as value, codetext as name
+          from synlte.fieldcode
+          <where>
+              <if test = "condition != null and condition != ''">
+                upper(codeId) like upper('%' || #{condition} || '%')
+                or upper(codetext) like upper('%' || #{condition} || '%')
+              </if >
+              and codename != 'JZCODE_0024'
+          </where >
+    </select>
+
+    <select id="searchDictionaryList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO" parameterType="java.lang.String">
+        select distinct codeid as value, codetext as label from synlte.fieldcode
+        <where>
+            codename != 'JZCODE_0024'
+            <if test="searchText != null and searchText != ''">
+                (upper(codetext) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+        </where>
+    </select>
+
+    <select id="getAreaInfo" resultType="com.synway.datastandardmanager.entity.pojo.FieldCodeEntity">
+        select f1.CODEID   as codeId,
+               f1.CODETEXT as codeText,
+               f2.VALTEXT  as valText,
+               f2.valvalue as valValue
+          from synlte.fieldcode f1
+         inner join synlte.fieldcodeval f2
+            on f1.CODEid = f2.CODEID
+           and f1.PARCODEID = 'GBT2260'
+           and valtext is not null
+           and codetext != valtext
+           and f2.valvalue is not null
+    </select>
+
+    <select id="getClassidTypeList" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select distinct codename as id, codetext as name
+          from V_CLASSIFY_INFO
+         where PARCODEID = 'JZCODEGASJZZFL' or PARCODEID = 'JZCODEJZSJZZFL'
+         order by codename
+    </select>
+
+
+</mapper>

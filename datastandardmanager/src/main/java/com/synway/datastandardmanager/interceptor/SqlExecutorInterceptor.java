@@ -1,7 +1,6 @@
 package com.synway.datastandardmanager.interceptor;
 
-import com.synway.datastandardmanager.constant.Common;
-import com.synway.datastandardmanager.pojo.LoginUser;
+import com.synway.datastandardmanager.entity.pojo.LoginUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -70,7 +69,7 @@ public class SqlExecutorInterceptor implements Interceptor {
                 , new DefaultObjectWrapperFactory(), new DefaultReflectorFactory());
         MappedStatement mappedStatement = (MappedStatement) metaObject.getValue("delegate.mappedStatement");
         // 只修改拦截select语句的信息
-        if (!StringUtils.equalsIgnoreCase(Common.SELECT, mappedStatement.getSqlCommandType().toString())) {
+        if (!StringUtils.equalsIgnoreCase("select", mappedStatement.getSqlCommandType().toString())) {
             return invocation.proceed();
         }
         Class<?> classType = Class.forName(mappedStatement.getId().substring(0, mappedStatement.getId().lastIndexOf(".")));

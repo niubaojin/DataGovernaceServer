@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeObjectMapper">
+
+    <select id="getStandardizeObjectCount"  resultType="java.lang.Integer">
+        select count(d.obj_guid)
+          from (select f1.obj_guid
+                  from standardize_object f1
+                 inner join standardize_outputobject f3
+                    on f1.obj_guid = f3.obj_guid
+                 where UPPER(f1.obj_engname) = UPPER(#{tableId})) d
+         where d.obj_guid not in
+               (select f2.obj_guid
+                  from standardize_inputobject f1
+                 inner join standardize_object f2
+                    on f1.obj_guid = f2.obj_guid)
+    </select>
+
+    <select id="getObjGuid" resultType="java.lang.String">
+        select obj_guid
+          from standardize_object f3
+         where f3.obj_guid not in
+               (select f2.obj_guid
+                  from standardize_inputobject f1
+                 inner join standardize_object f2
+                    on f1.obj_guid = f2.obj_guid)
+           and upper(f3.obj_engname) = upper(#{tableId})
+           and f3.sys_id = #{sysId}
+    </select>
+
+    <select id="getOutputGuidNotInInput" resultType="java.lang.String">
+        select d.obj_guid
+          from (select f1.obj_guid
+                  from standardize_object f1
+                  left join standardize_outputobject f3
+                    on f1.obj_guid = f3.obj_guid
+                 where UPPER(OBJ_ENGNAME) = UPPER(#{tableId})) d
+         where d.obj_guid not in
+               (select f2.obj_guid
+                  from standardize_inputobject f1
+                 inner join standardize_object f2
+                    on f1.obj_guid = f2.obj_guid)
+           and rownum = 1
+    </select>
+
+    <select id="getObjGuidByTreeParam" resultType="java.lang.String">
+        select d.obj_guid
+          from (select f1.obj_guid
+                  from STANDARDIZE_OBJECT f1
+                 where UPPER(OBJ_ENGNAME) = UPPER(#{sourceProtocol})
+                   and SYS_ID = #{sourceSystem}
+                   and SYS_SOURCE = #{sourceFirm}) d
+         where d.obj_guid not in
+               (select f2.OBJ_GUID
+                  from STANDARDIZE_OBJECT f2
+                 inner join STANDARDIZE_OUTPUTOBJECT f3
+                    on f2.obj_guid = f3.obj_guid)
+           and rownum = 1
+    </select>
+
+</mapper>

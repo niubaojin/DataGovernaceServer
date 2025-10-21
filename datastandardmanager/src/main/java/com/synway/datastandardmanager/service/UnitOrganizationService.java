@@ -1,70 +1,54 @@
 package com.synway.datastandardmanager.service;
 
-
-import com.synway.common.bean.ServerResponse;
-import com.synway.datastandardmanager.pojo.FilterObject;
-import com.synway.datastandardmanager.pojo.LayuiClassifyPojo;
-import com.synway.datastandardmanager.pojo.labelmanage.LabelTreeNodeVue;
-import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationParameter;
-import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationPojo;
-import com.synway.datastandardmanager.pojo.unitManagement.UnitOrganizationTree;
-
+import com.synway.datastandardmanager.entity.dto.UnitOrganizationDTO;
+import com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity;
+import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.PageVO;
+import com.synway.datastandardmanager.entity.vo.UnitOrganizationTreeVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.List;
-import java.util.Map;
 
-/**
- * 单位机构管理Service
- * @author obito
- */
+import java.util.List;
+
 public interface UnitOrganizationService {
 
     /**
      * 获取左侧树
-     * @return
      */
-    List<UnitOrganizationTree> getLeftTree();
+    List<UnitOrganizationTreeVO> getLeftTree();
 
     /**
      * 查询单位机构管理表格信息
-     * @param unitOrganizationParameter
-     * @return
+     * @param dto
      */
-    Map<String,Object> searchUnitOrganizationTable(UnitOrganizationParameter unitOrganizationParameter);
+    PageVO searchUnitOrganizationTable(UnitOrganizationDTO dto);
 
     /**
      * 增加一条单位机构信息
-     * @param unitOrganizationPojo 单位机构pojo
-     * @return
      */
-    String addOneUnitOrganization(UnitOrganizationPojo unitOrganizationPojo);
+    String addOneUnitOrganization(StandardizeUnitManageEntity standardizeUnitManage);
 
     /**
      * 删除一条单位机构信息
      * @param unitCode 机构代码
-     * @return
      */
     String deleteOneUnitOrganization(String unitCode);
 
     /**
      * 更新一条机构信息
-     * @param unitOrganizationPojo
-     * @return
      */
-    String updateOneUnitOrganization(UnitOrganizationPojo unitOrganizationPojo);
+    String updateOneUnitOrganization(StandardizeUnitManageEntity unitManageEntity);
 
     /**
      * 查询所属地区信息
-     * @return
      */
-    List<LayuiClassifyPojo> getAreaInfo();
+    List<ValueLabelVO> getAreaInfo();
 
     /**
      * 导出单位机构信息
-     * @return
      */
-    void downloadUnitOrganization(HttpServletResponse response, List<UnitOrganizationPojo> unitOrganizationList, String fileName,
-                                  Object object);
+    void downloadUnitOrganization(HttpServletResponse response, List<StandardizeUnitManageEntity> unitOrganizationList, String fileName, Object object);
 
-    List<FilterObject> getFilterObject();
+    List<KeyValueVO> getFilterObject();
+
 }

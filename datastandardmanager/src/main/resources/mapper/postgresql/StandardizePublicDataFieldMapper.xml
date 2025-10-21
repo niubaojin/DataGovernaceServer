@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizePublicDataFieldMapper">
+
+    <insert id="insertPublicDataFieldList">
+        insert into
+        SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD(id,group_id,recno,field_chinese_name,field_id,field_name,determiner_id,determiner_name,
+        is_query,is_contorl,need_value,memo,head_memo,ismd5)
+        select * from(
+        <foreach collection="publicDataFieldList" item="item" separator="union all" open="(" close=")">
+            select #{item.id},#{item.groupId},#{item.recno},#{item.fieldChineseName},#{item.fieldId},#{item.fieldName},
+            #{item.determinerId,jdbcType=VARCHAR},#{item.determinerName,jdbcType=VARCHAR},#{item.isQuery,jdbcType=VARCHAR},
+            #{item.isContorl,jdbcType=VARCHAR},#{item.needValue,jdbcType=VARCHAR},
+            #{item.memo,jdbcType=VARCHAR},#{item.headMemo,jdbcType=VARCHAR},#{item.md5Index,jdbcType=INTEGER}
+        </foreach>
+        )  AS subquery
+    </insert>
+    <insert id="insertPublicDataFieldList" >
+        insert into
+        SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD(id,group_id,recno,field_chinese_name,field_id,field_name,determiner_id,determiner_name,
+        is_query,is_contorl,need_value,memo,head_memo,ismd5)
+        select * from(
+        <foreach collection="publicDataFieldList" item="item" separator="union all" open="(" close=")">
+            select #{item.id},#{item.groupId},#{item.recno},#{item.fieldChineseName},#{item.fieldId},#{item.fieldName},
+            #{item.determinerId,jdbcType=VARCHAR},#{item.determinerName,jdbcType=VARCHAR},#{item.isQuery,jdbcType=VARCHAR},
+            #{item.isContorl,jdbcType=VARCHAR},#{item.needValue,jdbcType=VARCHAR},
+            #{item.memo,jdbcType=VARCHAR},#{item.headMemo,jdbcType=VARCHAR},#{item.md5Index,jdbcType=INTEGER} from dual
+        </foreach>
+        )
+    </insert>
+
+    <select id="searchPublicDataFieldById" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.pojo.StandardizePublicDataFieldEntity">
+        select ID                 as id,
+               GROUP_ID           as groupId,
+               RECNO              as recno,
+               FIELD_ID           as fieldId,
+               FIELD_NAME         as fieldName,
+               DETERMINER_ID      as determinerId,
+               DETERMINER_NAME    as determinerName,
+               IS_QUERY           as isQuery,
+               IS_CONTORL         as isContorl,
+               NEED_VALUE         as needValue,
+               MEMO               as memo,
+               HEAD_MEMO          as headMemo,
+               ISMD5              as isMd5,
+               s.COLUMNNAME       as columnName,
+               s.FIELDCHINESENAME as fieldChineseName,
+               s.FIELDTYPE        as fieldType,
+               s.FIELDLEN         as fieldLen,
+               s.GADSJ_FIELDID    as gadsjFieldId
+          from (select *
+                  from SYNLTE.STANDARDIZE_PUBLIC_DATAFIELD
+                 where group_id = #{groupId}) spd
+          left join (select COLUMNNAME,
+                            FIELDCHINESENAME,
+                            FIELDTYPE,
+                            FIELDLEN,
+                            GADSJ_FIELDID,
+                            FIELDID
+                       from synlte.SYNLTEFIELD) s
+            on s.FIELDID = spd.field_id
+         order by recno
+    </select>
+
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.SourceInfoMapper">
+
+    <select id="findSourceInfo" parameterType="String" resultType="com.synway.datastandardmanager.entity.pojo.SourceInfoEntity">
+        select * from SourceInfo
+        <where>
+            <if test="sourceProtocol != null and sourceProtocol != ''">
+                and upper(sourceProtocol) = upper(#{sourceProtocol})
+            </if>
+            <if test="tableName != null and tableName != ''">
+                and upper(tableName) = upper(#{tableName})
+            </if>
+            <if test="sourceSystem != null and sourceSystem != ''">
+                and sourceSystem = #{sourceSystem}
+            </if>
+            and rownum = 1
+        </where>
+    </select>
+
+    <insert id="insertSourceInfo"  parameterType="com.synway.datastandardmanager.entity.pojo.SourceInfoEntity">
+        merge into SourceInfo a
+        using (select
+            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR} as sourceProtocol,
+            #{sourceInfo.tableName,jdbcType=VARCHAR} as tableName,
+            #{sourceInfo.sourceSystem,jdbcType=VARCHAR} as sourceSystem
+        from dual) b
+        on (
+            upper(a.SOURCEPROTOCOL) = upper(b.sourceProtocol) and
+            upper(a.TABLENAME) = upper(b.tableName) and
+            upper(a.SOURCESYSTEM) = upper(b.sourceSystem))
+        when matched then
+        update
+        set
+            id = #{sourceInfo.id}
+            <if test="sourceInfo.updateTime != null">
+                ,UPDATE_TIME = #{sourceInfo.updateTime}
+            </if>
+            <if test="sourceInfo.sourceFirm != null">
+                ,SOURCEFIRM = #{sourceInfo.sourceFirm,jdbcType=VARCHAR}
+            </if>
+        when not matched then
+            insert values (#{sourceInfo.id},#{sourceInfo.createTime},#{sourceInfo.updateTime},
+            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR},#{sourceInfo.tableName,jdbcType=VARCHAR},
+            #{sourceInfo.sourceSystem,jdbcType=VARCHAR},#{sourceInfo.sourceFirm,jdbcType=VARCHAR},null,null,null,null,null)
+    </insert>
+
+</mapper>

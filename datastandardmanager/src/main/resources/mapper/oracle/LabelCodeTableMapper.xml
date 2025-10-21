@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.LabelCodeTableMapper">
+
+    <select id="searchLabelTotalList" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select case
+                 when ll.value is null then 0
+                 else ll.value end value,
+               rr.label_name as name,
+               rr.label_level as id
+          from (select '1' as id, count(sjzybq1) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq1 is not null
+                union all
+                select '2' as id, count(sjzybq2) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq2 is not null
+                union all
+                select '3' as id, count(sjzybq3) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq3 is not null
+                union all
+                select '4' as id, count(sjzybq4) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq4 is not null
+                union all
+                select '5' as id, count(sjzybq5) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq5 is not null
+                union all
+                select '6' as id, count(sjzybq6) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq6 is not null
+                ) ll
+         right join label_code_table rr ON ll.id = rr.label_level
+         order by rr.label_level asc
+    </select>
+
+    <select id="getLabelTypeList" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select distinct label_level as id, label_name as name
+          from label_code_table
+         order by label_level
+    </select>
+
+</mapper>

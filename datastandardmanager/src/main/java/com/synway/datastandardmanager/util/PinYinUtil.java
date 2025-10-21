@@ -9,6 +9,9 @@ import net.sourceforge.pinyin4j.format.HanyuPinyinVCharType;
 import net.sourceforge.pinyin4j.format.exception.BadHanyuPinyinOutputFormatCombination;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * @author wangdongwei
  */
@@ -17,29 +20,30 @@ public class PinYinUtil {
 
     private static String REGEX_CHINES = "[^\u4e00-\u9fa5]";
 
-    public static String getLockId(String chinese){
-        String lockId=null;
-        try{
+    public static String getLockId(String chinese) {
+        String lockId;
+        try {
             lockId = PinYinUtil.getFirstSpell(chinese);
-        }catch (Exception e){
+        } catch (Exception e) {
             lockId = UUIDUtil.getUUID();
-            log.error("获取拼音首字母报错："+ExceptionUtil.getExceptionTrace(e));
+            log.error("获取拼音首字母报错：", e);
         }
         return lockId;
     }
 
     /**
      * 获取中文拼音首字母小写
+     *
      * @param chinese
      * @return
      * @throws BadHanyuPinyinOutputFormatCombination
      */
     public static String getFirstSpell(String chinese) throws BadHanyuPinyinOutputFormatCombination {
-        if(StringUtils.isBlank(chinese)){
+        if (StringUtils.isBlank(chinese)) {
             return "";
         }
-        chinese = chinese.replaceAll(REGEX_CHINES,"");
-        if(StringUtils.isBlank(chinese)){
+        chinese = chinese.replaceAll(REGEX_CHINES, "");
+        if (StringUtils.isBlank(chinese)) {
             return "";
         }
         StringBuffer pybf = new StringBuffer();
@@ -64,11 +68,12 @@ public class PinYinUtil {
 
     /**
      * 获取中文全拼
+     *
      * @param chinese
      * @return
      */
     public static String getPySpell(String chinese) {
-        try{
+        try {
             StringBuilder pybf = new StringBuilder();
             char[] arr = chinese.toCharArray();
             HanyuPinyinOutputFormat defaultFormat = new HanyuPinyinOutputFormat();
@@ -86,11 +91,19 @@ public class PinYinUtil {
                 }
             }
             return pybf.toString().replaceAll("\\W", "").trim();
-        }catch (Exception e){
-            log.error(ExceptionUtil.getExceptionTrace(e));
-            return "";
+        } catch (Exception e) {
+            log.error("获取中文全拼出错：", e);
         }
+        return "";
+    }
 
+    public static Boolean isContainsPattern(String str, String matcherStr) {
+        Pattern p = Pattern.compile(matcherStr);
+        Matcher m = p.matcher(str);
+        if (m.find()) {
+            return true;
+        }
+        return false;
     }
 
 

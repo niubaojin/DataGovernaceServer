@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.FieldCodeValMapper">
+
+    <select id="queryLabelValueByCodeId" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select valtext as label, valvalue as value, memo as memo
+          from synlte.fieldcodeval
+         where upper(codeid) = upper(#{codeId})
+    </select>
+
+    <insert id="uploadCodeValXlsFileDao">
+        insert into synlte.FIELDCODEVAL (CODEVALID,CODEID,VALTEXT,MEMO,VALVALUE,SORTINDEX,VALTEXTTITLE)
+        select * from(
+        <foreach collection="rcList" item="item" separator="union all">
+            select #{item.codeValId,jdbcType=VARCHAR},
+                   #{item.codeId,jdbcType=VARCHAR},
+                   #{item.valText,jdbcType=VARCHAR},
+                   #{item.memo,jdbcType=VARCHAR},
+                   #{item.valValue,jdbcType=VARCHAR},
+                   #{item.sortIndex,jdbcType=INTEGER},
+                   #{item.valTextTitle,jdbcType=VARCHAR}
+            from dual
+        </foreach>
+        )
+    </insert>
+
+    <select id="getPrimaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select value, label from(
+            <if test="mainClassify == 'dataorganizationclassify' ">
+                select value, label || '(' || tableCount || ')' as label
+                  from (select case
+                                 when a.value is null then '未知'
+                                 else a.value
+                               end as value,
+                               case
+                                 when a.label is null then b.classifyCh
+                                 else a.label
+                               end as label,
+                               case
+                                 when b.tableCount is null then 0
+                                 else b.tableCount
+                               end as tableCount
+                          from (select distinct CODEID as value, CODETEXT as label
+                                  from V_CLASSIFY_INFO
+                                 where PARCODEID = 'JZCODEGASJZZFL') a
+                          full join (select primaryorganizationch as classifyCh,
+                                           count(*) as tableCount
+                                      from classify_interface_all_date
+                                     group by primaryorganizationch) b
+                            on a.label = b.classifyCh)
+            </if>
+            <if test="mainClassify == 'datasourceclassify' ">
+                select value, label || '(' || tableCount || ')' as label
+                  from (select case
+                                 when a.value is null then '未知'
+                                 else a.value
+                               end as value,
+                               case
+                                 when a.label is null then b.classifyCh
+                                 else a.label
+                               end as label,
+                               case
+                                 when b.tableCount is null then 0
+                                 else b.tableCount
+                               end as tableCount
+                          from (select distinct CODEID as value, CODETEXT as label
+                                  from V_CLASSIFY_INFO
+                                 where PARCODEID = 'GACODE000404') a
+                          full join (select primarydatasourcech as classifyCh,
+                                           count(*) as tableCount
+                                      from classify_interface_all_date
+                                     group by primarydatasourcech) b
+                            on a.label = b.classifyCh)
+            </if>
+            )
+        order by value
+    </select>
+
+    <select id="getSecondaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        <if test="mainClassify == 'dataorganizationclassify'  and (primaryClassifyCode =='jzcodegasjzzfl01' or primaryClassifyCode =='jzcodegasjzzfl03')">
+            select value, label || '(' || tableCount || ')' as label
+              from (select case
+                             when a.value is null then '未知'
+                             else a.value
+                           end as value,
+                           case
+                             when a.label is null then '未知'
+                             else a.label
+                           end as label,
+                           case
+                             when b.tableCount is null then 0
+                             else b.tableCount
+                           end as tableCount
+                      from (select distinct CODENAME as value, CODETEXT as label
+                              from V_CLASSIFY_INFO
+                             where PARCODEID = upper(#{primaryClassifyCode})
+                               and CODENAME is not null) a
+                      left join (select SJEJFLCODENAME as codeId, count(*) as tableCount
+                                  from classify_interface_all_date
+                                <where>
+                                    <if test="primaryClassifyCode == '未知'">
+                                        primaryorganizationch = '未知'
+                                    </if>
+                                    <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '未知' and primaryClassifySecondCode != ''">
+                                        sjyjfl = upper(#{primaryClassifySecondCode})
+                                    </if>
+                                </where>
+                                 group by SJEJFLCODENAME) b
+                        on a.value = b.codeId)
+             order by value
+        </if>
+
+        <if test="mainClassify == 'dataorganizationclassify' and primaryClassifyCode !='jzcodegasjzzfl01' and primaryClassifyCode !='jzcodegasjzzfl03'">
+            select value, label || '(' || tableCount || ')' as label
+              from (select case
+                             when a.value is null then '未知'
+                             else a.value
+                           end as value,
+                           case
+                             when a.label is null then '未知'
+                             else a.label
+                           end as label,
+                           case
+                             when b.tableCount is null then 0
+                             else b.tableCount
+                           end as tableCount
+                      from (select distinct CODENAME as value, CODETEXT as label
+                              from V_CLASSIFY_INFO
+                             where PARCODEID = upper(#{primaryClassifyCode})
+                               and CODENAME is not null) a
+                      left join (select SJSJFLCODENAME as codeId, count(*) as tableCount
+                                  from classify_interface_all_date
+                                <where>
+                                    <if test="primaryClassifyCode == '未知'">
+                                        primaryorganizationch = '未知'
+                                    </if>
+                                    <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '未知' and primaryClassifySecondCode != ''">
+                                        sjyjfl = upper(#{primaryClassifySecondCode})
+                                    </if>
+                                </where>
+                                 group by SJSJFLCODENAME) b
+                        on a.value = b.codeId)
+             order by value
+        </if>
+
+        <if test="mainClassify == 'datasourceclassify'">
+            select value, label || '(' || tableCount || ')' as label
+              from (select case
+                             when a.value is null then '未知'
+                             else a.value
+                           end as value,
+                           case
+                             when a.label is null then '未知'
+                             else a.label
+                           end as label,
+                           case
+                             when b.tableCount is null then 0
+                             else b.tableCount
+                           end as tableCount
+                      from (select distinct CODENAME as value, CODETEXT as label
+                              from V_CLASSIFY_INFO
+                             where upper(PARCODEID) = upper(#{primaryClassifyCode})
+                               and CODEID is not null) a
+                      LEFT join (select SJLYEJCODENAME as codeId, count(*) as tableCount
+                                  from classify_interface_all_date
+                                <where>
+                                    <if test="primaryClassifyCode == '未知'">
+                                        primarydatasourcech = '未知'
+                                    </if>
+                                    <if test="primaryClassifySecondCode != 'null' and primaryClassifySecondCode != '未知' and primaryClassifySecondCode != ''">
+                                        upper(sjlyyj) = upper(#{primaryClassifySecondCode})
+                                    </if>
+                                </where>
+                                 group by SJLYEJCODENAME) b
+                        on a.value = b.codeId)
+             order by value
+        </if>
+    </select>
+
+    <select id="getThreeClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select value, label || '(' || tableCount || ')' as label
+          from (select case
+                         when a.value is null then '未知'
+                         else a.value
+                       end as value,
+                       case
+                         when a.label is null then '未知'
+                         else a.label
+                       end as label,
+                       case
+                         when b.tableCount is null then 0
+                         else b.tableCount
+                       end as tableCount
+                  from (select distinct CODENAME as value, CODETEXT as label
+                          from V_CLASSIFY_INFO
+                         where PARCODEID = upper(#{primaryClassifyCode})
+                           and CODENAME is not null) a
+                  left join (select SJSJFLCODENAME as codeId, count(*) as tableCount
+                              from classify_interface_all_date
+                            <where>
+                                <if test="primaryClassifyCode == '未知'">
+                                    primaryorganizationch = '未知'
+                                </if>
+                                <if test="primaryClassifyCode != 'null' and primaryClassifyCode != '未知' and primaryClassifySecondCode != ''">
+                                    SJEJFLCODENAME = upper(#{primaryClassifySecondCode})
+                                </if>
+                            </where>
+                             group by SJSJFLCODENAME) b
+                    on a.value = b.codeId)
+         order by value
+    </select>
+
+    <select id="getAllFieldClassList" resultType="com.synway.datastandardmanager.entity.pojo.FieldCodeValEntity">
+        select CODEID    as codeValId,
+               PARCODEID as codeId,
+               CODETEXT  as valText,
+               CODEID    as valValue
+        from synlte.fieldcode
+        where PARCODEID = 'GACODE000414'
+        union
+        select CODEVALID as codeValId,
+               CODEID    as codeId,
+               VALTEXT   as valText,
+               VALVALUE  as valValue
+        from synlte.fieldcodeval
+        where codeid in
+              (select codeid from synlte.fieldcode where PARCODEID = 'GACODE000414')
+    </select>
+
+
+</mapper>

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.SynlteFieldMapper">
+
+    <select id="getSelectField" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select fieldid as id,
+               fieldchinesename || '(' || fieldid || ')' as value,
+               sameid as sameId,
+               '' as name
+          from synlte.synltefield
+         where fieldid is not null
+           and gadsj_fieldid is not null
+           and upper(substr(fieldid, 0, 3)) != 'WBZ'
+           and STATUS = '05'
+           and field_standard != '99'
+          <if test="searchName != null and searchName != ''">
+              and (upper(fieldid) like upper(concat(#{searchName},'%'))
+              or upper(fieldchinesename) like upper(concat(#{searchName},'%'))
+              )
+          </if>
+    </select>
+
+    <select id="searchSecondField" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select distinct s.codeid as id,
+                        d.codetext || '(' || s.codeid || ')' as value,
+                        '' as sameId,
+                        '' as name
+          from synlte.synltefield s
+          left join (select codeid, CODETEXT from synlte.fieldcode) d
+            on s.codeid = d.codeid
+         where fieldid NOT like 'WB%'
+           and s.codeid is not null
+           and d.codetext is not null
+            <if test="searchName != null and searchName != ''">
+                and upper(d.codetext) like upper(concat('%',concat(#{searchName},'%')))
+            </if>
+    </select>
+
+    <select id="querySynlteFieldList" resultType="com.synway.datastandardmanager.entity.pojo.SynlteFieldEntity"
+            parameterType="com.synway.datastandardmanager.entity.dto.DataSynlteFieldDTO">
+        select s.FIELDID as fieldId,
+               COLUMNNAME as columnName,
+               FIELDNAME as fieldName,
+               FIELDCHINESENAME as fieldChineseName,
+               FIELDDESCRIBE as fieldDescribe,
+               FIELDTYPE as fieldType,
+               FIELDLEN as fieldLen,
+               DEFAULTVALUE as defaultValue,
+               MEMO as memo,
+               s.codeid as codeId,
+               SAMEID as sameId,
+               IS530NEW as is530New,
+               VERSIONS as versions,
+               Releasedate as releaseDate,
+               FULL_CHINSEE as fullChinese,
+               SIM_CHINESE as simChinese,
+               SYNONY_NAME as synonyName,
+               OBJECT_TYPE as objectType,
+               EXPRESSION_WORD as expressionWord,
+               CODEID_DETAIL as codeIdDetail,
+               ISNORMAL as isNorMal,
+               RELATE as relate,
+               UNIT as unit,
+               FUSE_TYPE as fuseType,
+               FUSE_FIELDID as fuseFieldId,
+               STATUS as statusNum,
+               SUB_ORG as subOrg,
+               SUB_AUTHOR as subAuthor,
+               ON_DATE as onDate,
+               REG_ORG as regOrg,
+               FIELD_CLASS as fieldClass,
+               SECRET_CLASS as secretClass,
+               FIELD_STANDARD as fieldStandard,
+               FACTURER as facturer,
+               f.CODETEXT as codeIdStr,
+               case
+                 when o.relatedTablesCount is null then 0
+                 else o.relatedTablesCount
+               end as relatedTablesCount,
+               context,
+               "constraint",
+               CREATETIME as createTime,
+               UPDATETIME as updateTime,
+               CREATOR as creator,
+               UPDATER as updater,
+               GADSJ_FIELDID as gadsjFieldId,
+               FIELD_RELATES as fieldRelates,
+               s.ATTRIBUTE_WORD as attributeWord
+          from synlte.SYNLTEFIELD s
+          left join (select distinct CODEID, CODETEXT from synlte.FIELDCODE) F
+            on UPPER(S.CODEID) = UPPER(F.CODEID)
+          left join (select fieldid, count(distinct objectid) as relatedTablesCount
+                       from (select o1.objectid, o2.fieldid
+                               from synlte.OBJECT o1
+                              inner join synlte.objectfield o2
+                                 on o1.objectid = o2.objectid
+                              where upper(o1.relate_tablename) = 'OBJECTFIELD'
+                                and o2.deleted = 0)
+                      group by fieldid) o
+            on upper(s.FIELDID) = upper(o.fieldid)
+        <where>
+            GADSJ_FIELDID is not null and  S.FIELDID not like 'WBZ%'  and field_standard != '99'
+            <if test="dto.searchName !=null and dto.searchName != ''">
+                and  (
+                upper(s.FIELDID) like upper(concat('%',concat(#{dto.searchName},'%')))
+                or
+                upper(FIELDNAME) like upper(concat('%',concat(#{dto.searchName},'%')))
+                or
+                upper(FIELDCHINESENAME) like upper(concat('%',concat(#{dto.searchName},'%')))
+                )
+            </if>
+            <if test="dto.fieldClassList != null and dto.fieldClassList.size() > 0">
+                and  FIELD_CLASS in (
+                <foreach collection="dto.fieldClassList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+            <if test="dto.secretClassList != null and dto.secretClassList.size() > 0">
+                and SECRET_CLASS in (
+                <foreach collection="dto.secretClassList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+            <if test="dto.statusFilterList != null and dto.statusFilterList.size() > 0">
+                and STATUS in (
+                <foreach collection="dto.statusFilterList" item="item" separator="union all" open ="(" close = ")" >
+                    select #{item} from dual
+                </foreach>
+                )
+            </if>
+        </where>
+        <if test="dto.sort !=null and dto.sort != ''">
+            order by ${dto.sort} ${dto.sortOrder} nulls last
+        </if>
+    </select>
+
+    <select id="getFilterObjectForSF" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select value, label from(select distinct STATUS as value,
+                                                'status' as label from synlte.SYNLTEFIELD where status is not null order by STATUS asc)
+        union all
+        select value, label from (select distinct FIELD_CLASS as value,
+                                                'fieldClass' as label from synlte.SYNLTEFIELD where FIELD_CLASS is not null order by FIELD_CLASS asc)
+        union all
+        select VALUE, label FROM (select distinct SECRET_CLASS as value,
+                                                'securityLevel' as label from synlte.SYNLTEFIELD where SECRET_CLASS is not null order by SECRET_CLASS asc)
+    </select>
+
+    <select id="getSearchNameSuggest" resultType="java.lang.String">
+        select distinct name from(
+                select distinct FIELDCHINESENAME as name from synlte.SYNLTEFIELD
+                <if test="searchName !='' and searchName != null">
+                    where upper(FIELDCHINESENAME) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+            union all
+                select distinct FIELDNAME as name from synlte.SYNLTEFIELD
+                <if test="searchName !='' and searchName != null">
+                    where upper(FIELDNAME) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+            union all
+                select distinct SIM_CHINESE as name from synlte.SYNLTEFIELD
+                <if test="searchName !='' and searchName != null">
+                    where upper(SIM_CHINESE) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+            union all
+                select distinct FIELDID as name from synlte.SYNLTEFIELD
+                <if test="searchName !=''">
+                    where upper(FIELDID) like upper(concat(#{searchName},'%'))
+                    and (deleted =0 or deleted is null)
+                </if>
+       )
+    </select>
+
+    <update id="updateSynlteField" parameterType="com.synway.datastandardmanager.entity.pojo.SynlteFieldEntity">
+        update synlte.SYNLTEFIELD
+           set COLUMNNAME       = upper(#{columnName}),
+               FIELDNAME        = upper(#{fieldName}),
+               FIELDCHINESENAME = #{fieldChineseName},
+               FIELDDESCRIBE    = #{fieldDescribe},
+               FIELDTYPE        = #{fieldType},
+               FIELDLEN         = #{fieldLen},
+               DEFAULTVALUE     = #{defaultValue},
+               MEMO             = #{memo, jdbcType = VARCHAR},
+               CODEID           = #{codeId},
+               SAMEID           = #{sameId},
+               VERSIONS         = #{versions},
+               Releasedate      = #{releaseDate, jdbcType = INTEGER},
+               FULL_CHINSEE     = #{fullChinese},
+               SIM_CHINESE      = #{simChinese},
+               SYNONY_NAME      = #{synonyName},
+               OBJECT_TYPE      = #{objectType},
+               EXPRESSION_WORD  = #{expressionWord},
+               CODEID_DETAIL    = #{codeIdDetail},
+               ISNORMAL         = #{isNorMal},
+               RELATE           = #{relate},
+               UNIT             = #{unit},
+               FUSE_TYPE        = #{fuseType},
+               FUSE_FIELDID     = #{fuseFieldId},
+               STATUS           = #{statusNum},
+               SUB_ORG          = #{subOrg},
+               SUB_AUTHOR       = #{subAuthor},
+               ON_DATE          = #{onDate},
+               REG_ORG          = #{regOrg},
+               FIELD_CLASS      = #{fieldClass},
+               SECRET_CLASS     = #{secretClass},
+               FIELD_STANDARD   = #{fieldStandard},
+               ATTRIBUTE_WORD   = #{attributeWord, jdbcType = VARCHAR},
+               FACTURER         = #{facturer},
+               context          = #{context},
+               constraint       = #{constraint},
+               UPDATETIME       = sysdate,
+               UPDATER          = #{updater},
+               FIELD_RELATES    = #{fieldRelates, jdbcType = VARCHAR}
+         where upper(FIELDID) = upper(#{fieldId})
+        <if test="releaseDate == null">
+            and Releasedate is null
+        </if>
+    </update>
+
+    <select id="getGadsjFieldByText" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select fieldid as value, fieldchinesename as label, gadsj_fieldId as memo
+          from synlte.SYNLTEFIELD
+        <where>
+            GADSJ_FIELDID is not null and  upper(substr(FIELDID,0,3)) != 'WBZ' and STATUS='05' and field_standard != '99'
+            <if test="fieldId != null and fieldId != ''">
+                and fieldid = #{fieldId}
+            </if>
+            <if test="fieldType != null and fieldType == '02'">
+                and field_standard = '2'
+            </if>
+            <if test="fieldType != null and fieldType == '03'">
+                and field_standard = '3'
+            </if>
+            <if test="searchText != null and searchText != ''">
+                and ( (upper(fieldchinesename) like upper(concat('%',concat(#{searchText},'%'))))
+                or (upper(FIELDID) like upper(concat('%',concat(#{searchText},'%'))))
+                or (upper(fieldname) like upper(concat('%',concat(#{searchText},'%')))) )
+            </if>
+        </where>
+    </select>
+
+    <select id="searchFieldChineseList" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select FIELDCHINESENAME as label, FIELDID as value, fieldname as memo
+          from synlte.synltefield
+        <where>
+            FIELDID is not null
+            and GADSJ_FIELDID is not null
+            and upper(substr(FIELDID, 0, 3)) != 'WBZ'
+            and STATUS = '05'
+            and field_standard != '99'
+            <if test="searchText != null and searchText != ''">
+                and (
+                    (upper(FIELDCHINESENAME) like upper(concat('%', concat(#{searchText}, '%'))))
+                    or
+                    (upper(fieldId) like upper(concat('%', concat(#{searchText}, '%'))))
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="queryCodeClassList" resultType="com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity">
+        select codetext as codeText,
+               codeid as codeid,
+               field_class as fieldClassId,
+               valtext as fieldClassCh,
+               m.WORDNAME as sameWordType,
+               fieldid as fieldId
+        from (select s.field_class, e.codetext, e.codeid, b.valtext, s.sameid, s.fieldid
+              from (SELECT CODEID, field_class, sameid, fieldid
+                    FROM synlte.SYNLTEFIELD
+                   ) s
+                       LEFT JOIN synlte.FIELDCODE e on s.codeid = e.codeid
+                       left join (select CODETEXT as valtext, CODEID as valvalue
+                                  from synlte.fieldcode
+                                  where PARCODEID = 'GACODE000414'
+                                  union
+                                  select VALTEXT as valtext, VALVALUE as valvalue
+                                  from synlte.fieldcodeval
+                                  where codeid in
+                                        (select codeid
+                                         from synlte.fieldcode
+                                         where PARCODEID = 'GACODE000414')) b on s.field_class =
+                                                                                 b.valvalue) a
+                 left join synlte.sameword m on a.sameid = m.sameid
+    </select>
+
+    <select id="getGadsjFieldByTexts" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select fieldid as value, fieldchinesename as label, gadsj_fieldId as memo
+        from synlte.SYNLTEFIELD
+        where GADSJ_FIELDID is not null
+          and upper(substr(FIELDID, 0, 3)) != 'WBZ'
+          and STATUS = '05'
+          and field_standard != '99'
+    </select>
+
+</mapper>

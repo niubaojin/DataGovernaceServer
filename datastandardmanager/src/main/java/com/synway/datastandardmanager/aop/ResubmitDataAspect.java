@@ -1,9 +1,9 @@
 package com.synway.datastandardmanager.aop;
 
 import com.alibaba.fastjson.JSONObject;
-import com.synway.datastandardmanager.annotation.Resubmit;
 import com.synway.datastandardmanager.config.ResubmitLock;
 import com.synway.common.bean.ServerResponse;
+import com.synway.datastandardmanager.valid.Resubmit;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -24,7 +24,7 @@ public class ResubmitDataAspect {
 
     private final static Object PRESENT = new Object();
 
-    @Pointcut(value = "@annotation(com.synway.datastandardmanager.annotation.Resubmit)")
+    @Pointcut(value = "@annotation(com.synway.datastandardmanager.valid.Resubmit)")
     public void Resubmit(){
 
     }
