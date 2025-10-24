@@ -44,7 +44,7 @@
                                end as tableCount
                           from (select distinct CODEID as value, CODETEXT as label
                                   from V_CLASSIFY_INFO
-                                 where PARCODEID = 'JZCODEGASJZZFL') a
+                                 where PARCODEID = #{sjzzflCodeId}) a
                           full join (select primaryorganizationch as classifyCh,
                                            count(*) as tableCount
                                       from classify_interface_all_date
@@ -79,7 +79,7 @@
     </select>
 
     <select id="getSecondaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
-        <if test="mainClassify == 'dataorganizationclassify'  and (primaryClassifyCode =='jzcodegasjzzfl01' or primaryClassifyCode =='jzcodegasjzzfl03')">
+        <if test="mainClassify == 'dataorganizationclassify'  and (primaryClassifyCode =='jzcodegasjzzfl01' or primaryClassifyCode =='jzcodegasjzzfl03' or primaryClassifyCode =='jzcodejzsjzzfl01' or primaryClassifyCode =='jzcodejzsjzzfl03')">
             select value, label || '(' || tableCount || ')' as label
               from (select case
                              when a.value is null then '未知'
@@ -112,7 +112,9 @@
              order by value
         </if>
 
-        <if test="mainClassify == 'dataorganizationclassify' and primaryClassifyCode !='jzcodegasjzzfl01' and primaryClassifyCode !='jzcodegasjzzfl03'">
+        <if test="mainClassify == 'dataorganizationclassify' and
+                primaryClassifyCode !='jzcodegasjzzfl01' and primaryClassifyCode !='jzcodegasjzzfl03' and
+                primaryClassifyCode !='jzcodejzsjzzfl01' and primaryClassifyCode !='jzcodejzsjzzfl03'">
             select value, label || '(' || tableCount || ')' as label
               from (select case
                              when a.value is null then '未知'

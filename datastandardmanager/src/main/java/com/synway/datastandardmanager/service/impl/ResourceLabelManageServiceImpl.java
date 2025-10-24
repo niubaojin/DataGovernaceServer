@@ -28,6 +28,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,6 +52,9 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
     private PublicDataInfoMapper publicDataInfoMapper;
     @Resource
     private OperateLogServiceImpl operateLogServiceImpl;
+
+    @Autowired()
+    private Environment env;
 
     @Override
     public List<TreeNodeValueVO> getLabelTreeData() {
@@ -115,6 +120,8 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
                 labelsDTO.setSort("LABELLEVEL");
             }
             // 获取所有的数据
+            String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+            labelsDTO.setSjzzflCodeId(sjzzflCodeId);
             List<LabelsEntity> list = labelsMapper.getAllLabelManageData(labelsDTO);
             // 表头的筛选值；根据查询条件中的筛选值来筛选数据
             List<KeyValueVO> labelLevelFilter = new ArrayList<>();
@@ -205,7 +212,8 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
 
     @Override
     public List<SelectFieldVO> getClassidTypeList() {
-        return fieldCodeMapper.getClassidTypeList();
+        String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+        return fieldCodeMapper.getClassidTypeList(sjzzflCodeId);
     }
 
     @Override
@@ -230,7 +238,10 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
             }
             int delNum = labelsMapper.deleteById(id);
             if (delNum > 0) {
-                List<LabelsEntity> list = labelsMapper.getAllLabelManageData(new LabelsDTO());
+                LabelsDTO labelsDTO = new LabelsDTO();
+                String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+                labelsDTO.setSjzzflCodeId(sjzzflCodeId);
+                List<LabelsEntity> list = labelsMapper.getAllLabelManageData(labelsDTO);
                 // 发送操作日志
                 List<String> lableNames = new ArrayList<>();
                 list.stream().forEach(d -> {

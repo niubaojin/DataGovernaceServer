@@ -18,7 +18,7 @@ public interface FieldCodeValMapper extends BaseMapper<FieldCodeValEntity> {
      * 获取 一级分类信息
      */
     @AuthorControl(tableNames ={"classify_interface_all_date"},columnNames = {"sjxjbm"})
-    List<KeyValueVO> getPrimaryClassifyData(@Param("mainClassify") String mainClassify);
+    List<KeyValueVO> getPrimaryClassifyData(@Param("mainClassify") String mainClassify, @Param("sjzzflCodeId") String sjzzflCodeId);
 
     /**
      * 获取二级分类信息

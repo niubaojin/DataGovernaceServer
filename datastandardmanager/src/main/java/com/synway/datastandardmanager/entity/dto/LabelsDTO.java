@@ -23,4 +23,7 @@ public class LabelsDTO implements Serializable {
     private List<String> labelLevelStrFilter;   //标签类型的筛选中文
     private List<String> classIdStrFilter;      //常用组织分类的筛选中文
 
+    //数据组织分类代码，技侦：JZCODEJZSJZZFL，公安：JZCODEGASJZZFL
+    private String sjzzflCodeId = "JZCODEGASJZZFL";
+
 }

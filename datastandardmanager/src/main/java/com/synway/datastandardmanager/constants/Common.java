@@ -1,5 +1,9 @@
 package com.synway.datastandardmanager.constants;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -8,7 +12,13 @@ import java.util.List;
  *
  * @author nbj
  */
+@Component
 public class Common {
+
+    @Autowired
+    public Common(Environment env) {
+        this.DATA_ORGANIZATION_CODE = env.getProperty("sjzzflCodeId");
+    }
 
     /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>数据库类型>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     public static final String ORACLE = "oracle";
@@ -56,7 +66,7 @@ public class Common {
     //数据来源分类
     public static final String DATA_SOURCE_CLASSIFY = "dataSourceClassify";
     //数据组织分类主码表值
-    public static final String DATA_ORGANIZATION_CODE = "JZCODEGASJZZFL";
+    public static String DATA_ORGANIZATION_CODE = "JZCODEGASJZZFL";
     //数据来源分类码表值
     public static final String DATA_SOURCE_CODE = "GACODE000404";
     //数据标签分类

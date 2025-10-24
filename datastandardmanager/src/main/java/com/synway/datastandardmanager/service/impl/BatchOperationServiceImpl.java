@@ -13,6 +13,7 @@ import com.synway.datastandardmanager.service.BatchOperationService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,9 @@ public class BatchOperationServiceImpl implements BatchOperationService {
     private PublicDataInfoMapper publicDataInfoMapper;
     @Resource
     private SynlteFieldMapper synlteFieldMapper;
+
+    @Resource
+    private Environment env;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -85,7 +89,8 @@ public class BatchOperationServiceImpl implements BatchOperationService {
             if (classIds.contains(",")) {
                 //一、二、三级的组织分类数组
                 String[] list = classIds.split(",");
-                if ("JZCODEGASJZZFL01".equals(list[0]) || "JZCODEGASJZZFL03".equals(list[0])) {
+                String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+                if (list[0].equalsIgnoreCase(sjzzflCodeId + "01") || list[0].equalsIgnoreCase(sjzzflCodeId + "03")){
                     parClassIds = list[0].split(Common.DATA_ORGANIZATION_CODE)[1];
                     secondClassIds = list[1];
                     threeClassIds = list[2].split(secondClassIds)[1];

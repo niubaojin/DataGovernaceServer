@@ -405,7 +405,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             }
             if (Common.DATA_ORGANIZATION_CLASSIFY.equalsIgnoreCase(mainClassify) || Common.DATA_SOURCE_CLASSIFY.equalsIgnoreCase(mainClassify)) {
                 /* 数据组织分类 */
-                oneResultList = fieldCodeValMapper.getPrimaryClassifyData(mainClassify.toLowerCase());
+                String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+                oneResultList = fieldCodeValMapper.getPrimaryClassifyData(mainClassify.toLowerCase(), sjzzflCodeId);
             } else {
                 log.error(">>>>>>查询的参数条件mainClassify不正确");
                 throw new NullPointerException(String.format("查询的参数条件mainClassify【%s】为空", mainClassify));

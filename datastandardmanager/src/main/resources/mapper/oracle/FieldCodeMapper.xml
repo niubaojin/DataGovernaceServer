@@ -110,7 +110,7 @@
     <select id="getClassidTypeList" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
         select distinct codename as id, codetext as name
           from V_CLASSIFY_INFO
-         where PARCODEID = 'JZCODEGASJZZFL' or PARCODEID = 'JZCODEJZSJZZFL'
+         where PARCODEID = #{sjzzflCodeId} or PARCODEID = 'JZCODEJZSJZZFL'
          order by codename
     </select>
 

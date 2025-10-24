@@ -38,6 +38,6 @@ public interface FieldCodeMapper extends BaseMapper<FieldCodeEntity> {
      */
     List<FieldCodeEntity> getAreaInfo();
 
-    List<SelectFieldVO> getClassidTypeList();
+    List<SelectFieldVO> getClassidTypeList(@Param("sjzzflCodeId") String sjzzflCodeId);
 
 }

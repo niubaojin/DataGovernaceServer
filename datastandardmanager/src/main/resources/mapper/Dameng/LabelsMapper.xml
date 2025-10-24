@@ -130,7 +130,7 @@
                         union all
                         select 6 as LABELLEVEL, SJZYBQ6 as labelcode, count(distinct SJXJBM) as tableCount from synlte.PUBLIC_DATA_INFO where SJZYBQ6 is  not null and zyzt = '1'  group by SJZYBQ6
                         )) r1 on l1.LABELLEVEL = r1.LABELLEVEL and upper(l1.LABELCODE) = upper(r1.labelcode)
-                        left join (select distinct codename  ,CODETEXT  from V_CLASSIFY_INFO where PARCODEID ='JZCODEGASJZZFL') r2
+                        left join (select distinct codename  ,CODETEXT  from V_CLASSIFY_INFO where PARCODEID = #{sjzzflCodeId}) r2
                         on l1.CLASSID = r2.codename
         <if test="sort != ''  and  sort != null">
             order by nlssort(${sort},'NLS_SORT=SCHINESE_PINYIN_M')  ${sortOrder} nulls last
