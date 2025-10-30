@@ -2151,12 +2151,15 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 return keyValueVOList;
             }
             //过滤出数据源类型为指定值时的数据源信息
-            ArrayList<KeyValueVO> list = new ArrayList<>();
             for (DataResource data : dataResourcesList) {
                 if (data.getResType().equalsIgnoreCase(type)) {
-                    list.add(new KeyValueVO(data.getResId(), data.getResName()));
+                    keyValueVOList.add(new KeyValueVO(data.getResId(), data.getResName()));
                 }
             }
+//            //debug
+//            if (type.equalsIgnoreCase("adb") || type.equalsIgnoreCase("datahub")){
+//                keyValueVOList.add(new KeyValueVO("adb", "测试"));
+//            }
         } catch (Exception e) {
             log.error(">>>>>>查询仓库数据中心出错：", e);
         }

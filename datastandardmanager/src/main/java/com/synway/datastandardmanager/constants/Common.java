@@ -146,11 +146,13 @@ public class Common {
     /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>数据库类型列表>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     public static final List<String> DATA_TYPE_LIST = Arrays.asList(
             "ADS",
+            "ADB",
             "ODPS",
             "HIVE-CDH",
             "HIVE-HUAWEI",
             "CLICKHOUSE",
-            "ORACLE");
+            "ORACLE",
+            "DATAHUB");
 
     /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>过滤权限接口>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     public static final String ROOT_URL = "distinguishWhatPlatformByLocalWareHoese";

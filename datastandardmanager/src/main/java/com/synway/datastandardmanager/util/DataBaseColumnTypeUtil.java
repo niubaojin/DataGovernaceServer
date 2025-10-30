@@ -129,7 +129,7 @@ public class DataBaseColumnTypeUtil {
     public static Map<String,String> getFieldTypeMap(String dataBaseType)throws Exception{
         if("ODPS".equalsIgnoreCase(dataBaseType)){
             return ODPS_COLUMN;
-        }else if("ADS".equalsIgnoreCase(dataBaseType)){
+        }else if("ADS".equalsIgnoreCase(dataBaseType) || "ADB".equalsIgnoreCase(dataBaseType)){
             return ADS_COLUMN;
         }else if("ORACLE".equalsIgnoreCase(dataBaseType)){
             return ORACLE_COLUMN;

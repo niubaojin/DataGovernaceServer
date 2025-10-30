@@ -9,6 +9,7 @@ package com.synway.datastandardmanager.enums;
 public enum DataBaseTypeEnum {
 
     ADS_ADDCOLUMN("ads_addcolumn", "com.synway.datastandardmanager.service.impl.CreateTableSqlServiceImplAds"),
+    ADB_ADDCOLUMN("adb_addcolumn", "com.synway.datastandardmanager.service.impl.CreateTableSqlServiceImplAdb"),
     CLICKHOUSE_ADDCOLUMN("clickhouse_addcolumn", "com.synway.datastandardmanager.service.impl.CreateTableSqlServiceImplCk"),
     DATAHUB_ADDCOLUMN("datahub_addcolumn", "com.synway.datastandardmanager.service.impl.CreateTableSqlServiceimplDataHub"),
     HBASE_CDH_ADDCOLUMN("hbase-cdh_addcolumn", "com.synway.datastandardmanager.service.impl.CreateTableSqlServiceImplHbase"),

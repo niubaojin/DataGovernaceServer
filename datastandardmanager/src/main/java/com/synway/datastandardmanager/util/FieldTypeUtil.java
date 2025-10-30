@@ -152,7 +152,7 @@ public class FieldTypeUtil {
         String name = orginDbType + "_" + targetDbType;
         if ("oracle_odps".equalsIgnoreCase(name)) {
             return oracle_odps;
-        } else if ("oracle_ads".equalsIgnoreCase(name)) {
+        } else if ("oracle_ads".equalsIgnoreCase(name) || "oracle_adb".equalsIgnoreCase(name)) {
             return oracle_ads;
         } else if ("all_standardize".equalsIgnoreCase(name)) {
             return all_standardize;

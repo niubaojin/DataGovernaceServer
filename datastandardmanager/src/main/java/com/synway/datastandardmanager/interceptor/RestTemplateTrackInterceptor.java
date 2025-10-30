@@ -27,7 +27,7 @@ public class RestTemplateTrackInterceptor implements ClientHttpRequestIntercepto
     public static final String LOGIN_USER = "_login_user_";
 
     @Value("${isStartAuthority}")
-    Boolean isStartAuthority;
+    boolean isStartAuthority;
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {

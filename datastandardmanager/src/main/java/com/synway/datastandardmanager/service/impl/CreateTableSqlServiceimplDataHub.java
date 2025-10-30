@@ -47,7 +47,7 @@ public class CreateTableSqlServiceimplDataHub implements CreateTableSqlService {
             tableColumn.setCloumnLength(objectField.getCreateColumnLen());
             tableColumn.setCloumnName(objectField.getColumnName());
             tableColumn.setCloumnNameCn(objectField.getFieldChineseName());
-            tableColumn.setIsKey(objectField.getPkRecno() >= 1);
+            tableColumn.setIsKey(objectField.getPkRecno() != null && objectField.getPkRecno() >= 1);
             tableColumn.setNo(objectField.getStandardRecno());
             String fieldTypeStr = objectField.getCreateColumnType();
             if (StringUtils.isEmpty(fieldTypeStr)) {
