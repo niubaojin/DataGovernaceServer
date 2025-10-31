@@ -21,4 +21,5 @@ public class RefreshCreateTableDTO {
     private String resId;       //数据源id
     private String projectName; //项目空间
     private String projectId;   //项目空间id
+    private Boolean isOneTableRefresh = false;  //是否单表刷新
 }

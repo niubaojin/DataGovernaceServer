@@ -13,6 +13,7 @@ import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.service.BuildTableInfoManageService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -226,6 +227,14 @@ public class BuildTableInfoManageController {
         } else {
             return ServerResponse.asSucessResponse("false", msg);
         }
+    }
+
+    /**
+     * 下载全部建表信息数据
+     */
+    @RequestMapping(value = "/downloadObjectStoreInfo", produces = "application/json;charset=utf-8")
+    public void downloadObjectStoreInfo(HttpServletResponse response) {
+        service.downloadObjectStoreInfo(response);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.synway.datastandardmanager.service.impl;
 
+import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -22,11 +23,11 @@ import com.synway.datastandardmanager.enums.*;
 import com.synway.datastandardmanager.interceptor.AuthorizedUserUtils;
 import com.synway.datastandardmanager.mapper.*;
 import com.synway.datastandardmanager.service.BuildTableInfoManageService;
-import com.synway.datastandardmanager.util.DateUtil;
 import com.synway.datastandardmanager.util.RestTemplateHandle;
 import com.synway.datastandardmanager.util.SelectUtil;
 import com.synway.datastandardmanager.util.UUIDUtil;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -158,6 +160,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     @Override
     public void refreshCreateTableOneTable(RefreshCreateTableDTO refreshCreateTableDTO) {
         try {
+            refreshCreateTableDTO.setIsOneTableRefresh(true);
             //调用仓库接口获取当前数据源、项目空间下的表信息
             List<DetectedTable> detectedTableList = restTemplateHandle.getTableImformationList();
             detectedTableList = detectedTableList.stream().filter(f -> f.getTableNameEN().equalsIgnoreCase(refreshCreateTableDTO.getTableName())).collect(toList());
@@ -171,7 +174,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         }
     }
 
-    public void refreshTableHandler(RefreshCreateTableDTO refreshCreatedPojo, List<DetectedTable> detectedTableList) {
+    public void refreshTableHandler(RefreshCreateTableDTO dto, List<DetectedTable> detectedTableList) {
         //删除object_store_fieldInfo中tableInfoId不存在于object_store_info中的无效数据
         objectStoreFieldInfoMapper.deleteObjectStoreFieldInfos();
         //查询标准所有表信息
@@ -194,12 +197,15 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             wrapper.eq(ObjectFieldEntity::getDeleted, 0);
             wrapper.eq(ObjectFieldEntity::getObjectId, objectEntity.getObjectId());
             List<ObjectFieldEntity> objectFieldInfo = objectFieldMapper.selectList(wrapper);
+            String comparison = String.format("%s/%s", dataResourceFieldInfo.size(), objectFieldInfo.size());
             if (StringUtils.isBlank(tableInfoId)) {
                 log.info(">>>>>>开始新增object_store_info,object_store_fieldinfo");
                 String tableInfoIdNew = UUIDUtil.getUUID();
                 ObjectStoreInfoEntity objectStoreInfo = createNewObjectStoreInfo(tableInfoIdNew, objectEntity, d, objectEntity.getTableId());
-                objectStoreInfo.setCreater(StringUtils.isBlank(refreshCreatedPojo.getUserName()) ? null : refreshCreatedPojo.getUserName());
-                objectStoreInfo.setCreaterId(StringUtils.isBlank(refreshCreatedPojo.getUserId()) ? null : refreshCreatedPojo.getUserId());
+//                // 20250908：新疆需求，创建者置空
+//                objectStoreInfo.setCreater(StringUtils.isBlank(dto.getUserName()) ? null : dto.getUserName());
+//                objectStoreInfo.setCreaterId(StringUtils.isBlank(dto.getUserId()) ? null : dto.getUserId());
+                objectStoreInfo.setComparison(comparison);
                 //根据tableId查询objectField
                 List<ObjectStoreFieldInfoEntity> objectStoreFieldInfoList = createNewObjectStoreFieldInfo(objectFieldInfo, dataResourceFieldInfo, tableInfoIdNew);
                 //使用编程式事务，对表和字段的保存进行事务管理
@@ -213,18 +219,32 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             } else {
                 // 物理表字段个数与object_store_field_info中字段记录数不一致时，不再验证表的tableinfoid是否已注册（未注销）
                 // 3.6.4(毛加楠)：即使物理表字段个数与object_store_field_info中字段记录数一致，也要更新
+                // 3.8  (毛加楠)：只有在单表刷新已建表信息时候才比对平台表与标准表的字段是否有变化，批量全部刷新时，只比对新加字段
                 log.info(">>>>>>开始新增object_store_fieldinfo");
                 List<ObjectStoreFieldInfoEntity> objectStoreFieldInfoList = createNewObjectStoreFieldInfo(objectFieldInfo, dataResourceFieldInfo, tableInfoId);
-                //使用编程式事务，对表和字段的保存进行事务管理
-                transactionTemplate.execute(transactionStatus -> {
-                    if (objectStoreFieldInfoList.size() > 0) {
-                        LambdaQueryWrapper<ObjectStoreFieldInfoEntity> wrapper1 = Wrappers.lambdaQuery();
-                        wrapper1.eq(ObjectStoreFieldInfoEntity::getTableInfoId, tableInfoId);
-                        objectStoreFieldInfoMapper.delete(wrapper1);
-                        objectStoreFieldInfoMapper.saveObjectStoreFieldInfo(objectStoreFieldInfoList);
+                LambdaQueryWrapper<ObjectStoreFieldInfoEntity> wrapper1 = Wrappers.lambdaQuery();
+                wrapper1.eq(ObjectStoreFieldInfoEntity::getTableInfoId, tableInfoId);
+                if (dto.getIsOneTableRefresh()){
+                    transactionTemplate.execute(transactionStatus -> {
+                        if (objectStoreFieldInfoList.size() > 0) {
+                            objectStoreFieldInfoMapper.delete(wrapper1);
+                            objectStoreFieldInfoMapper.saveObjectStoreFieldInfo(objectStoreFieldInfoList);
+                        }
+                        return Boolean.TRUE;
+                    });
+                }else {
+                    long osfiCount = objectStoreFieldInfoMapper.selectCount(wrapper1);
+                    if (osfiCount != dataResourceFieldInfo.size()){
+                        //使用编程式事务，对表和字段的保存进行事务管理
+                        transactionTemplate.execute(transactionStatus -> {
+                            if (objectStoreFieldInfoList.size() > 0) {
+                                objectStoreFieldInfoMapper.delete(wrapper1);
+                                objectStoreFieldInfoMapper.saveObjectStoreFieldInfo(objectStoreFieldInfoList);
+                            }
+                            return Boolean.TRUE;
+                        });
                     }
-                    return Boolean.TRUE;
-                });
+                }
             }
         });
     }
@@ -939,6 +959,28 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             }
             return Boolean.TRUE;
         });
+    }
+
+    @Override
+    public void downloadObjectStoreInfo(HttpServletResponse response) {
+        try {
+            ObjectStoreInfoDTO objectStoreInfoDTO = new ObjectStoreInfoDTO();
+            if (objectStoreInfoDTO.getSort().equalsIgnoreCase("storeTypeCh")) {
+                objectStoreInfoDTO.setSort("storeType");
+            }
+            List<ObjectStoreInfoEntity> objectStoreInfoList = objectStoreInfoMapper.searchTableInfo(objectStoreInfoDTO);
+            objectStoreInfoList.stream().forEach(d -> {
+                d.setStoreTypeCh(KeyIntEnum.getValueByKeyAndType(d.getStoreType(), Common.DATASTORETYPE));
+            });
+            ObjectStoreInfoEntity objectStoreInfo = new ObjectStoreInfoEntity();
+            response.setContentType("application/x-xls");
+            response.setCharacterEncoding("utf-8");
+            String fileName = URLEncoder.encode("建表信息管理管理", "UTF-8") + ".xlsx";
+            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName);
+            EasyExcel.write(response.getOutputStream(), objectStoreInfo.getClass()).autoCloseStream(Boolean.FALSE).sheet("建表信息管理管理").doWrite(objectStoreInfoList);
+        } catch (Exception e) {
+            log.error(">>>>>>下载建表信息管理出错：", e);
+        }
     }
 
 

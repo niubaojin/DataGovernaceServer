@@ -1,17 +1,23 @@
 package com.synway.datastandardmanager.enums;
 
 public enum SysCodeEnum {
+    //实时表，批量表
     updateTypeOne("1", "实时更新", "UPDATETYPE"),
     updateTypeTwo("2", "批量表", "UPDATETYPE"),
+
+    //分区类型
     partitionTypeOne("1", "按天", "PARTITIONTYPE"),
     partitionTypeTwo("2", "按月", "PARTITIONTYPE"),
     partitionTypeThree("3", "按年", "PARTITIONTYPE"),
+
     isFormalOne("1", "临时表", "ISFORMAL"),
     isFormalTwo("2", "正式表", "ISFORMAL"),
     isFormalThree("3", "中间表", "ISFORMAL"),
+
     registerStateOne("1", "已登记未建表", "REGISTERSTATE"),
     registerStateTwo("2", "未登记已建表", "REGISTERSTATE"),
     registerStateThree("3", "已登记已建表", "REGISTERSTATE"),
+
     productStageOne("01", "标签加工", "PRODUCTSTAGE"),
     productStageTwo("02", "临时使用", "PRODUCTSTAGE"),
     productStageThree("03", "模型加工", "PRODUCTSTAGE"),
@@ -20,6 +26,7 @@ public enum SysCodeEnum {
     productStageSix("06", "数据接入", "PRODUCTSTAGE"),
     productStageSeven("07", "资源提取", "PRODUCTSTAGE"),
     productStageEight("99", "未分配", "PRODUCTSTAGE"),
+
     // 平台类型
     tableType1("1", "odps", "TABLETYPE"),
     tableType2("2", "ads", "TABLETYPE"),
@@ -36,13 +43,16 @@ public enum SysCodeEnum {
     tableType14("14", "Kafka", "TABLETYPE"),
     tableType15("15", "RocketMq", "TABLETYPE"),
     tableType16("16", "Redis", "TABLETYPE"),
-    tableType18("18", "ADB", "TABLETYPE"),
     tableType19("19", "FTP", "TABLETYPE"),
+    tableType21("21", "ADS", "TABLETYPE"),
+    tableType22("22", "ADB", "TABLETYPE"),
+
     // 告警级别
     alarmLevelZero("0","一般","ALARMLEVEL"),
     alarmLevelOne("1","警告","ALARMLEVEL"),
     alarmLevelTwo("2","严重","ALARMLEVEL"),
     alarmLevelThree("3","紧急","ALARMLEVEL"),
+
     // 一级组织分类
     dataOCOne("01","原始库","DATAOC"),
     dataOCTwo("02","资源库","DATAOC"),

@@ -63,8 +63,6 @@ public enum KeyIntEnum {
 
     /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>数据平台类型对应的数字>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     ODPS(1, "odps", Common.DATASTORETYPE),
-    ADS_HC(2, "ads-hc", Common.DATASTORETYPE),
-    ADS_HP(3, "ads-hp", Common.DATASTORETYPE),
     HBASEHUAWEI(4, "hbase-huawei", Common.DATASTORETYPE),
     HIVEHUAWEI(5, "hive-huawei", Common.DATASTORETYPE),
     ES(6, "elasticsearch", Common.DATASTORETYPE),
@@ -81,7 +79,8 @@ public enum KeyIntEnum {
     GBASE(17, "gbase", Common.DATASTORETYPE),
     ADB_HC(18, "adb-hc", Common.DATASTORETYPE),
     FTP(19, "ftp", Common.DATASTORETYPE),
-    ADB_HP(20, "adb-hp", Common.DATASTORETYPE);
+    ADS1(21, "ads", Common.DATASTORETYPE),
+    ADB(22, "adb", Common.DATASTORETYPE);
 
     /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>end>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 

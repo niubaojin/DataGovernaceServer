@@ -12,6 +12,7 @@ import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.warehouse.DetectedTable;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -84,5 +85,7 @@ public interface BuildTableInfoManageService {
      * 建表成功之后将相关信息存储在表OBJECT_STORE_INFO中
      */
     void saveObjectStoreInfoFromHuaWei(BuildTableInfoVO buildTableInfoVo);
+
+    void downloadObjectStoreInfo(HttpServletResponse response);
 
 }

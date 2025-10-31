@@ -13,6 +13,7 @@ import org.apache.ibatis.reflection.factory.DefaultObjectFactory;
 import org.apache.ibatis.reflection.wrapper.DefaultObjectWrapperFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,8 @@ public class SqlExecutorInterceptor implements Interceptor {
 
     private final Environment env;
 
+    @Value("${isStartAuthority}")
+    boolean isStartAuthority;
     private static String PATTERN_SQL = "";
 
     // 通过构造函数注入 Environment
@@ -57,6 +60,12 @@ public class SqlExecutorInterceptor implements Interceptor {
         // 则不进行sql权限拦截和修改
         BoundSql boundSql = statementHandler.getBoundSql();
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
+        if (!isStartAuthority){
+            if (loginUser == null){
+                loginUser.setUserLevel(1);
+            }
+            loginUser.setUserLevel(1);
+        }
         if (loginUser == null) {
             log.info("本次请求:" + Thread.currentThread().getId() + "没有用户信息");
             return invocation.proceed();

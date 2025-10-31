@@ -37,7 +37,7 @@ public class RestTemplateTrackInterceptor implements ClientHttpRequestIntercepto
                 HttpHeaders httpHeaders = request.getHeaders();
                 httpHeaders.add(LOGIN_USER, Base64.getEncoder().encodeToString(JSONObject.toJSONString(loginUser).getBytes()));
             }
-            if (isStartAuthority || (StringUtils.containsIgnoreCase(request.getURI().getPath(), Common.ROOT_URL) && loginUser == null)) {
+            if (!isStartAuthority || (StringUtils.containsIgnoreCase(request.getURI().getPath(), Common.ROOT_URL) && loginUser == null)) {
                 loginUser.setUserId("-1");
                 loginUser.setUserName("测试管理员账号");
                 loginUser.setUserLevel(1);
