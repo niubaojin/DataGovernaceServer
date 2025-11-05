@@ -38,6 +38,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -118,7 +119,9 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
 
     @Override
     public void refreshCreateTableAll(RefreshCreateTableDTO refreshCreateTableDTO) {
-        if (lock == null) lock = new ReentrantLock();
+        if (lock == null) {
+            lock = new ReentrantLock();
+        }
         if (lock.isLocked()) {
             throw new NullPointerException("正在刷新全部的建表信息，请等待别的页面刷新结束后再点击该按钮");
         }
@@ -126,15 +129,9 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         try {
             log.info(">>>>>>刷新全部的建表信息，开始加锁...");
             long startTime = System.currentTimeMillis();
-            //调用仓库接口获取当前数据源、项目空间下的表信息
-            List<DetectedTable> detectedTableList = restTemplateHandle.getTableImformationList();
-            if (!detectedTableList.isEmpty() && detectedTableList.size() > 0) {
-                refreshTableHandler(refreshCreateTableDTO, detectedTableList);
-            } else {
-                throw new Exception(String.format("%s：从当前数据源获取到的表信息为空", ErrorCodeEnum.DATA_IS_NULL));
-            }
+            refreshTableHandler(refreshCreateTableDTO);
             long endTime = System.currentTimeMillis();
-            log.info(String.format(">>>>>>刷新所有表入库完成，用时：%d分钟", ((endTime - startTime) / 1000 / 60)));
+            log.info(String.format(">>>>>>刷新所有表入库完成，用时：%d分钟", (endTime - startTime) / 1000 / 60));
         } catch (Exception e) {
             log.error(">>>>>>刷新全部的建表信息报错：", e);
         } finally {
@@ -145,49 +142,66 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     @Override
     public void refreshCreateTableProject(RefreshCreateTableDTO refreshCreateTableDTO) throws Exception {
         long startTime = System.currentTimeMillis();
-        //调用仓库接口获取当前数据源、项目空间下的表信息
-        List<DetectedTable> detectedTableList = restTemplateHandle.getTablesIncludeDetectedInfo(refreshCreateTableDTO.getResId(), refreshCreateTableDTO.getProjectName());
-
-        if (!detectedTableList.isEmpty() && detectedTableList.size() > 0) {
-            refreshTableHandler(refreshCreateTableDTO, detectedTableList);
-        } else {
-            throw new Exception(String.format("%s：从当前数据源获取到的表信息为空", ErrorCodeEnum.DATA_IS_NULL));
-        }
+        refreshTableHandler(refreshCreateTableDTO);
         long endTime = System.currentTimeMillis();
-        log.info(String.format(">>>>>>刷新%s入库完成，用时：%d", refreshCreateTableDTO.getProjectName(), ((endTime - startTime) / 1000 / 60) + "分钟"));
+        log.info(String.format(">>>>>>刷新%s入库完成，用时：%d分钟", refreshCreateTableDTO.getProjectName(), (endTime - startTime) / 1000 / 60));
     }
 
     @Override
     public void refreshCreateTableOneTable(RefreshCreateTableDTO refreshCreateTableDTO) {
         try {
             refreshCreateTableDTO.setIsOneTableRefresh(true);
-            //调用仓库接口获取当前数据源、项目空间下的表信息
-            List<DetectedTable> detectedTableList = restTemplateHandle.getTableImformationList();
-            detectedTableList = detectedTableList.stream().filter(f -> f.getTableNameEN().equalsIgnoreCase(refreshCreateTableDTO.getTableName())).collect(toList());
-            if (!detectedTableList.isEmpty() && detectedTableList.size() > 0) {
-                refreshTableHandler(refreshCreateTableDTO, detectedTableList);
-            } else {
-                throw new Exception(String.format("%s：从当前数据源获取到的表信息为空", ErrorCodeEnum.DATA_IS_NULL));
-            }
+            refreshTableHandler(refreshCreateTableDTO);
         } catch (Exception e) {
             log.error(">>>>>>刷新单个表失败：", e);
         }
     }
 
-    public void refreshTableHandler(RefreshCreateTableDTO dto, List<DetectedTable> detectedTableList) {
+    public void refreshTableHandler(RefreshCreateTableDTO dto) throws Exception {
+        List<DetectedTable> detectedTableList = new ArrayList<>();
+        if (dto.getIsOneTableRefresh()) {
+            detectedTableList = restTemplateHandle.getTableImformationList();
+            detectedTableList = detectedTableList.stream().filter(f -> f.getTableNameEN().equalsIgnoreCase(dto.getTableName())).collect(toList());
+        } else if (StringUtils.isBlank(dto.getDataCenterId()) && StringUtils.isBlank(dto.getResId())) {
+            detectedTableList = restTemplateHandle.getTableImformationList();
+            // 如果平台中物理表删除（以仓库为准），建表信息刷新时，同步删除表和字段
+            deleteObjectStoreInfo(detectedTableList, null);
+        } else {
+            detectedTableList = restTemplateHandle.getTablesIncludeDetectedInfo(dto.getResId(), dto.getProjectName());
+            // 如果平台中物理表删除（以仓库为准），建表信息刷新时，同步删除表和字段
+            deleteObjectStoreInfo(detectedTableList, dto.getProjectName());
+        }
+        if (detectedTableList.isEmpty() || detectedTableList.size() == 0) {
+            throw new Exception(String.format("%s：从当前数据源获取到的表信息为空", ErrorCodeEnum.DATA_IS_NULL));
+        }
         //删除object_store_fieldInfo中tableInfoId不存在于object_store_info中的无效数据
         objectStoreFieldInfoMapper.deleteObjectStoreFieldInfos();
+
         //查询标准所有表信息
         List<ObjectEntity> objectTableList = objectMapper.selectList(Wrappers.lambdaQuery());
-        List<String> objectTables = objectTableList.stream().map(obj -> obj.getTableName()).collect(toList());
-        detectedTableList = detectedTableList.stream().filter(dt -> objectTables.contains(dt.getTableNameEN())).collect(toList());
+        List<String> objectTables = objectTableList.stream().map(obj -> {
+            if (StringUtils.isNotBlank(obj.getTableName())) {
+                return obj.getTableName().toLowerCase();
+            } else {
+                return "";
+            }
+        }).collect(toList());
+        detectedTableList = detectedTableList.stream().filter(dt -> objectTables.contains(dt.getTableNameEN().toLowerCase())).collect(toList());
 
         detectedTableList.stream().forEach(d -> {
             String tableInfoId = objectStoreInfoMapper.searchObjectStoreInfoId(d.getTableNameEN(), d.getProjectName(), d.getResId());
-            log.info(String.format(">>>>>>开始处理：%s>>>%s>>>%s>>>%s>>>%s，tableInfoId：%s", d.getCenterName(), d.getResName(), d.getResId(), d.getProjectName(), d.getTableNameEN(), tableInfoId));
-            ObjectEntity objectEntity = objectTableList.stream().filter(obj ->
-                            obj.getTableName().equalsIgnoreCase(d.getTableNameEN()) && obj.getRelateTableName().equalsIgnoreCase("OBJECTFIELD"))
-                    .findFirst().orElse(null);
+            log.info(String.format(">>>>>>开始处理：%s->%s->%s->%s，tableInfoId：%s", d.getCenterName(), d.getResName(), d.getProjectName(), d.getTableNameEN(), tableInfoId));
+            ObjectEntity objectEntity = objectTableList.stream().filter(obj -> {
+                        if (d.getTableNameEN() != null
+                                && obj.getTableName() != null
+                                && obj.getTableName().equalsIgnoreCase(d.getTableNameEN())
+                                && obj.getRelateTableName().equalsIgnoreCase("OBJECTFIELD")) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+            ).findFirst().orElse(null);
             if (objectEntity == null) {
                 log.info(String.format(">>>>>>表：%s，在object没有记录，略过", d.getTableNameEN()));
                 return;
@@ -224,7 +238,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                 List<ObjectStoreFieldInfoEntity> objectStoreFieldInfoList = createNewObjectStoreFieldInfo(objectFieldInfo, dataResourceFieldInfo, tableInfoId);
                 LambdaQueryWrapper<ObjectStoreFieldInfoEntity> wrapper1 = Wrappers.lambdaQuery();
                 wrapper1.eq(ObjectStoreFieldInfoEntity::getTableInfoId, tableInfoId);
-                if (dto.getIsOneTableRefresh()){
+                if (dto.getIsOneTableRefresh()) {
                     transactionTemplate.execute(transactionStatus -> {
                         if (objectStoreFieldInfoList.size() > 0) {
                             objectStoreFieldInfoMapper.delete(wrapper1);
@@ -232,9 +246,9 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                         }
                         return Boolean.TRUE;
                     });
-                }else {
+                } else {
                     long osfiCount = objectStoreFieldInfoMapper.selectCount(wrapper1);
-                    if (osfiCount != dataResourceFieldInfo.size()){
+                    if (osfiCount != dataResourceFieldInfo.size()) {
                         //使用编程式事务，对表和字段的保存进行事务管理
                         transactionTemplate.execute(transactionStatus -> {
                             if (objectStoreFieldInfoList.size() > 0) {
@@ -247,6 +261,22 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                 }
             }
         });
+    }
+
+    public void deleteObjectStoreInfo(List<DetectedTable> detectedTableList, String projectName){
+        List<String> tableNameList = detectedTableList.stream().map(d -> d.getTableNameEN().toLowerCase()).collect(Collectors.toList());
+        LambdaQueryWrapper<ObjectStoreInfoEntity> wrapper = Wrappers.lambdaQuery();
+        if (StringUtils.isNotBlank(projectName)){
+            wrapper.eq(ObjectStoreInfoEntity::getProjectName, projectName);
+        }
+        List<ObjectStoreInfoEntity> objectStoreInfos = objectStoreInfoMapper.selectList(wrapper);
+        wrapper = Wrappers.lambdaQuery();
+        for (ObjectStoreInfoEntity data : objectStoreInfos){
+            if (!tableNameList.contains(data.getTableName().toLowerCase())){
+                wrapper.eq(ObjectStoreInfoEntity::getTableInfoId, data.getTableInfoId());
+                objectStoreInfoMapper.delete(wrapper);
+            }
+        }
     }
 
     /**
@@ -388,7 +418,12 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     public List<KeyValueVO> getDataResource(String dataCenterId, String storeType) {
         List<KeyValueVO> resultList = new ArrayList<>();
         try {
-            String storeTypeStr = KeyIntEnum.getValueByKeyAndType(Integer.valueOf(storeType), Common.DATASTORETYPE);
+            String storeTypeStr;
+            if (storeType != null) {
+                storeTypeStr = KeyIntEnum.getValueByKeyAndType(Integer.valueOf(storeType), Common.DATASTORETYPE);
+            } else {
+                storeTypeStr = "";
+            }
             List<DataResource> dataResourceList = restTemplateHandle.getDataResourceByCenterId(dataCenterId, "0");
             dataResourceList.stream().forEach(d -> {
                 if (StringUtils.isBlank(storeType)) {
@@ -585,7 +620,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                     }
                     return Boolean.TRUE;
                 });
-            operateLogServiceImpl.objectStoreInfoSuccessLog(OperateLogHandleTypeEnum.ADD, "建表信息管理", objectStoreInfo);
+                operateLogServiceImpl.objectStoreInfoSuccessLog(OperateLogHandleTypeEnum.ADD, "建表信息管理", objectStoreInfo);
             } else {
                 log.info("开始更新object_store_info");
                 objectStoreInfo = buildObjectStoreInfo(objectStoreInfo, tableInfoId);
@@ -602,7 +637,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                     objectStoreFieldInfoMapper.saveObjectStoreFieldInfo(finalObjectStoreFieldInfoList);
                     return Boolean.TRUE;
                 });
-            operateLogServiceImpl.objectStoreInfoSuccessLog(OperateLogHandleTypeEnum.ALTER, "建表信息管理", objectStoreInfo);
+                operateLogServiceImpl.objectStoreInfoSuccessLog(OperateLogHandleTypeEnum.ALTER, "建表信息管理", objectStoreInfo);
             }
         } catch (Exception e) {
             log.error(">>>>>>保存建表信息出错：", e);

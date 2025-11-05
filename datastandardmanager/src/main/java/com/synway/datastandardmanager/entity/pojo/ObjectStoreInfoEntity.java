@@ -105,8 +105,8 @@ public class ObjectStoreInfoEntity {
     private Integer importFlag;
 
     @ExcelIgnore
-    @TableField("COMPARISON")
-    String comparison;
+    @TableField(exist = false)
+    private String comparison;
 
     //是否为分区表
     @ExcelIgnore

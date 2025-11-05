@@ -35,7 +35,7 @@
                       #{item.tableInfoId},
                       #{item.fieldId, jdbcType = VARCHAR},
                       #{item.columnName},
-                      #{item.fieldChineseName, jdbcType = VARCHAR},
+                      #{item.fieldChineeName, jdbcType = VARCHAR},
                       #{item.fieldType, jdbcType = INTEGER},
                       #{item.fieldLen, jdbcType = INTEGER},
                       #{item.defaultValue, jdbcType = VARCHAR},

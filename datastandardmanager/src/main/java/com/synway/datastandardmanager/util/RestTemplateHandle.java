@@ -42,6 +42,7 @@ public class RestTemplateHandle {
 
 
     //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>仓库接口>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
     /**
      * 20211230 根据数据源ID获取数据源信息
      *
@@ -69,11 +70,13 @@ public class RestTemplateHandle {
     public List<DataResource> getDataCenterVersion(String isLocal, String isApproved) {
         String requestUrl = String.format("%s?isLocal=%s&isApproved=%s", Common.ds_getDataResourceByisLocal, isLocal, isApproved);
         log.info(">>>>>>开始调用接口：" + requestUrl);
-        List<DataResource> dataResources = Arrays.asList(restTemplate.getForObject(requestUrl, DataResource[].class));
-        if (dataResources.isEmpty()) {
-            throw new NullPointerException("接口[获取本地仓的相关数据]返回的结果为空");
+        String result = restTemplate.getForObject(requestUrl, String.class);
+        JSONObject object = JSONObject.parseObject(result);
+        int status = object.getIntValue("status");
+        if (status != 1) {
+            throw new NullPointerException(String.format("接口[获取本地仓的相关数据]返回了个错误:%s", object.getString("message")));
         }
-        return dataResources;
+        return JSONObject.parseArray(object.getString("data"), DataResource.class);
     }
 
     /**
@@ -403,7 +406,7 @@ public class RestTemplateHandle {
             Integer status = object.getInteger("status");
             return status == 1 ? true : false;
         } catch (Exception e) {
-            log.error(">>>>>>调用saveOperatorLog接口失败：",e);
+            log.error(">>>>>>调用saveOperatorLog接口失败：", e);
             return false;
         }
     }
