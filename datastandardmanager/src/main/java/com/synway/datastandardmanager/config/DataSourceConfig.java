@@ -64,6 +64,9 @@ public class DataSourceConfig {
         if(Common.POSTGRESQL.equalsIgnoreCase(dsType)){
             druidDataSource.setDriverClassName("org.postgresql.Driver");
         }
+        if(Common.MYSQL.equalsIgnoreCase(dsType)){
+            druidDataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        }
         druidDataSource.setUrl(environment.getProperty("database.url"));
         druidDataSource.setUsername(environment.getProperty("database.name"));
         druidDataSource.setPassword(environment.getProperty("database.password"));
@@ -113,6 +116,9 @@ public class DataSourceConfig {
         if(Common.POSTGRESQL.equalsIgnoreCase(dsType)){
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath*:mapper/postgresql/*.xml"));
             configuration.setDatabaseId("postgresql");
+        }
+        if(Common.MYSQL.equalsIgnoreCase(dsType)){
+            bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath*:/mapper/mysql/*.xml"));
         }
         bean.setConfiguration(configuration);
 
@@ -173,6 +179,5 @@ public class DataSourceConfig {
         sqlSessionFactory.getConfiguration().addInterceptor(new SqlExecutorInterceptor(environment));
         return "interceptor";
     }
-
 
 }

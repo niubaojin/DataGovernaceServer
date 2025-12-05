@@ -5,7 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.entity.dto.DataSetManageDTO;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
-import com.synway.datastandardmanager.entity.pojo.SourceFieldInfoEntity;
+import com.synway.datastandardmanager.entity.pojo.DsmSourceFieldInfoEntity;
 import com.synway.datastandardmanager.entity.vo.DataResourceRawInformationVO;
 import com.synway.datastandardmanager.entity.vo.DataSetManageVO;
 import com.synway.datastandardmanager.entity.vo.KeyValueVO;
@@ -130,9 +130,9 @@ public class DataSetManageController {
      */
     @RequestMapping("/initSourceFieldTable")
     @ResponseBody
-    public ServerResponse<List<SourceFieldInfoEntity>> initSourceFieldTable(String sourceProtocol, String tableName, String sourceSystem,
-                                                                            String sourceFirm, String tableId) {
-        List<SourceFieldInfoEntity> result = service.initSourceFieldTable(sourceProtocol, tableName, sourceSystem, sourceFirm, tableId);
+    public ServerResponse<List<DsmSourceFieldInfoEntity>> initSourceFieldTable(String sourceProtocol, String tableName, String sourceSystem,
+                                                                               String sourceFirm, String tableId) {
+        List<DsmSourceFieldInfoEntity> result = service.initSourceFieldTable(sourceProtocol, tableName, sourceSystem, sourceFirm, tableId);
         return ServerResponse.asSucessResponse(result);
     }
 

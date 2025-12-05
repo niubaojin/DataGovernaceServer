@@ -22,7 +22,7 @@ public class ObjectEntity {
 
     //表中文名称（dataSourceName）                             前端需要替换的项
     @TableField("OBJECTNAME")
-    private String objectName;
+    private String dataSourceName;
 
     //表状态
     @TableField("OBJECTSTATE")
@@ -30,7 +30,7 @@ public class ObjectEntity {
 
     //表状态(显示)（存储表状态：storageTableStatus）             前端需要替换的项
     @TableField(exist = false)
-    private String objectStateVo;
+    private String storageTableStatus;
 
     //表描述信息
     @TableField("OBJECTMEMO")
@@ -40,13 +40,10 @@ public class ObjectEntity {
     @TableField("TABLEID")
     private String tableId;
 
+    //[物理表名]长度不能超过80
     //表英文名称（realTablename）                              前端需要替换的项
     @TableField("TABLENAME")
-    private String tableName;
-
-    //[物理表名]长度不能超过80
-    @TableField(exist = false)
-    private String realTablename="";
+    private String realTablename;
 
     //最近天数
     @TableField("RECENTDAYS")
@@ -70,7 +67,7 @@ public class ObjectEntity {
 
     //表所在的数据库类型(显示)（存储方式：storageDataMode）       前端需要替换的项
     @TableField(exist = false)
-    private String storeTypeVo;
+    private String storageDataMode;
 
     //表类型名称
     @TableField("DBSOURCE")
@@ -90,15 +87,15 @@ public class ObjectEntity {
 
     //表数据来源的系统（源应用系统名称二级：codeTextTd/codeTextCh）  前端需要替换的项
     @TableField("DATA_SOURCE")
-    private String dataSource;
+    private String codeTextTd;
 
     //对应的数据协议 系统代码的中文名称（codeTextCh）
     @TableField(exist = false)
-    private String dataSourceCh;
+    private String codeTextCh;
 
     //对应新版数据定义的源应用系统名称的1级（parentCodeTextId）
     @TableField(exist = false)
-    private String dataSourceOne;
+    private String parentCodeTextId;
 
     //HIVE下存储的EX表名称
     @TableField("EXHIVETABLENAME")
@@ -130,11 +127,11 @@ public class ObjectEntity {
 
     //数据分级（dataLevel）                                       前端需要替换的项
     @TableField("SECRETLEVEL")
-    private String secretLevel;
+    private String dataLevel;
 
     //20210915，数据分级中文名称：dataLevelCh
     @TableField(exist = false)
-    private String secretLevelCh;
+    private String dataLevelCh;
 
     //表字段定义存放的表名
     @TableField("RELATE_TABLENAME")

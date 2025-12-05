@@ -1,7 +1,9 @@
 package com.synway.datastandardmanager.controller;
 
 import com.synway.common.bean.ServerResponse;
+import com.synway.datastandardmanager.entity.dto.GetTreeReqDTO;
 import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 import com.synway.datastandardmanager.service.ApiInterfceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -34,13 +36,12 @@ public class ApiInterfaceController {
      * @param sourceId       来源协议id
      * @param sourceCode     来源系统代码
      * @param sourceFirmCode 来源厂商代码
-     * @return
      */
     @RequestMapping(value = "/getStandardOutTableIdBySourceId")
     @ResponseBody
     public ServerResponse<List<KeyValueVO>> getStandardOutTableIdBySourceId(@RequestParam("sourceId") @NotBlank String sourceId,
-                                                                                    @RequestParam("sourceCode") @NotBlank String sourceCode,
-                                                                                    @RequestParam("sourceFirmCode") @NotBlank String sourceFirmCode) {
+                                                                            @RequestParam("sourceCode") @NotBlank String sourceCode,
+                                                                            @RequestParam("sourceFirmCode") @NotBlank String sourceFirmCode) {
         return ServerResponse.asSucessResponse(apiInterfceServiceImpl.getStandardOutTableIdBySourceIdService(sourceId, sourceCode, sourceFirmCode));
     }
 
@@ -54,6 +55,19 @@ public class ApiInterfaceController {
     @ResponseBody
     public ServerResponse<List<Map<String, String>>> getStandardTableBySourceId(@RequestParam("sourceId") @NotBlank String sourceId) {
         return ServerResponse.asSucessResponse(apiInterfceServiceImpl.getStandardTableBySourceId(sourceId));
+    }
+
+    /**
+     * 提供给数据组织资产的接口，只精确到最后一个分类
+     * 左侧组织树-数据组织资产
+     *
+     * @param req 参数接口 查询分类树
+     */
+//    @IgnoreSecurity
+    @RequestMapping(value = "/getTableOrganizationTreeForOrgPage")
+    @ResponseBody
+    public ServerResponse<List<TreeNodeValueVO>> getTableOrganizationTreeForOrgPage(@RequestBody GetTreeReqDTO req) {
+        return ServerResponse.asSucessResponse(apiInterfceServiceImpl.externalgetTableOrganizationTree(req, false, true));
     }
 
 }

@@ -2,15 +2,14 @@ package com.synway.datastandardmanager.entity.pojo;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.synway.datastandardmanager.entity.vo.SourceFieldInfoVO;
 import lombok.Data;
 
 /**
  * 来源字段信息表
  */
 @Data
-@TableName("SOURCE_FIELD_INFO")
-public class SourceFieldInfoEntity {
+@TableName("DSM_SOURCE_FIELD_INFO")
+public class DsmSourceFieldInfoEntity {
 
     //表id
     @TableField("ID")
@@ -111,11 +110,11 @@ public class SourceFieldInfoEntity {
     private String fieldTypeCode;
 
 
-    public SourceFieldInfoEntity(){};
-    public SourceFieldInfoEntity(String sourceInfoID, int id, String tableId, String fieldName, String fieldDescription,
-                             String fieldType, String fieldLength, String isNonnull,
-                             String isPrimarykey, String isForeignKey, String fieldCode,
-                             String gadsjFieldId, String determinerId, String elementId, String fieldChineseName, String fieldLen) {
+    public DsmSourceFieldInfoEntity(){};
+    public DsmSourceFieldInfoEntity(String sourceInfoID, int id, String tableId, String fieldName, String fieldDescription,
+                                    String fieldType, String fieldLength, String isNonnull,
+                                    String isPrimarykey, String isForeignKey, String fieldCode,
+                                    String gadsjFieldId, String determinerId, String elementId, String fieldChineseName, String fieldLen) {
         this.sourceInfoID = sourceInfoID;
         this.recno = String.valueOf(id);
         this.tableId = tableId;

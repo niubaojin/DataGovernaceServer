@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
-import com.synway.datastandardmanager.entity.pojo.StandardTableCreatedEntity;
+import com.synway.datastandardmanager.entity.pojo.DsmStandardTableCreatedEntity;
 import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CreateTableVO;
@@ -75,7 +75,7 @@ public class CreateTableController {
      */
     @RequestMapping(value = "/getAllStandardTableCreatedList", method = {RequestMethod.GET})
     @ResponseBody
-    public ServerResponse<List<StandardTableCreatedEntity>> getAllStandardTableCreatedList(String tableId) {
+    public ServerResponse<List<DsmStandardTableCreatedEntity>> getAllStandardTableCreatedList(String tableId) {
         return ServerResponse.asSucessResponse(createTableService.getAllStandardTableCreatedList(tableId));
     }
 

@@ -65,7 +65,7 @@ public class OperateLogServiceImpl {
      */
     public void standardManageSuccessLog(OperateLogHandleTypeEnum handleType,String operateName, ObjectManageDTO standardObjectManage){
         LoginUser loginUser = AuthorizedUserUtils.getInstance().getAuthor();
-        String operateLogParam = String.format("%s%s，数据集编码为%s", handleType.getMessage(), standardObjectManage.getObjectPojoTable().getObjectName(), standardObjectManage.getTableId());
+        String operateLogParam = String.format("%s%s，数据集编码为%s", handleType.getMessage(), standardObjectManage.getObjectPojoTable().getDataSourceName(), standardObjectManage.getTableId());
         String operateCondition = String.format("用户[%s]执行%s[%s]功能成功，操作参数为：%s", loginUser.getUserName(), operateName, handleType.getMessage(), operateLogParam);
         sendOperatorLog(loginUser, handleType, operateName, operateCondition, "1", null);
     }

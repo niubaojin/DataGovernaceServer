@@ -12,8 +12,8 @@ import java.util.Date;
  * 通过标准管理页面已经创建的表
  */
 @Data
-@TableName("STANDARD_TABLE_CREATED")
-public class StandardTableCreatedEntity {
+@TableName("DSM_STANDARD_TABLE_CREATED")
+public class DsmStandardTableCreatedEntity {
 
     //在数据库中创建的表名
     @TableField("TABLE_NAME")

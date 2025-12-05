@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="3.8.0.20251124.01" author="nbj" >
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="STANDARDIZE_INPUTOBJECT" />
+            </not>
+        </preConditions>
+        <sqlFile relativeToChangelogFile="true" path="V3.8.0.20251124.01_DSM_TABLE.sql"/>
+        <sqlFile relativeToChangelogFile="true" path="V3.8.0.20251124.01_DSM_VIEW.sql"/>
+        <sqlFile relativeToChangelogFile="true" path="V3.8.0.20251124.01_DSM_INIT.sql" />
+    </changeSet>
+
+    <changeSet id="V3.8.0.20251124.02" author="nbj">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SOURCEINFO" />
+            <sqlCheck expectedResult="0">
+                select count(*) from DSM_SOURCEINFO
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            insert into MODULE_CREATED_OBJECT select * from DSM_MODULE_CREATED_OBJECT;
+            insert into SOURCEINFO select * from DSM_SOURCEINFO;
+            insert into SOURCE_FIELD_INFO select * from DSM_SOURCE_FIELD_INFO;
+            insert into STANDARD_TABLE_CREATED select * from DSM_STANDARD_TABLE_CREATED;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

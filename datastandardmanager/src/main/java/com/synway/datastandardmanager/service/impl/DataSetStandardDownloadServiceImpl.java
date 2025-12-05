@@ -109,7 +109,7 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                             //数据集标准不存在直接插入
                             ObjectEntity addObjectInfo = injectObject(objectTableSheet);
                             if (objectMapper.insert(addObjectInfo) != 1) {
-                                throw SystemException.asSystemException(ErrorCodeEnum.INSERT_ERROR, "数据集信息[" + addObjectInfo.getObjectName() + "]插入失败");
+                                throw SystemException.asSystemException(ErrorCodeEnum.INSERT_ERROR, "数据集信息[" + addObjectInfo.getDataSourceName() + "]插入失败");
                             }
 //                            // 导入数据成功后，将信息插入或更新到用户权限表 USER_AUTHORITY 中
 //                            ObjectManageDTO standardObjectManage = new ObjectManageDTO();
@@ -123,7 +123,7 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                             ObjectEntity oldObjectInfo = SelectUtil.getObjectEntityByObjectId(objectMapper, objectId);
                             ObjectEntity objectInfo = injectObject(objectTableSheet);
                             if (objectMapper.updateObjectByObjectId(objectInfo) != 1) {
-                                throw SystemException.asSystemException(ErrorCodeEnum.INSERT_ERROR, "数据集信息[" + objectInfo.getObjectName() + "]更新失败");
+                                throw SystemException.asSystemException(ErrorCodeEnum.INSERT_ERROR, "数据集信息[" + objectInfo.getDataSourceName() + "]更新失败");
                             }
                             //将旧的标准信息存储到历史表
                             ObjectVersionEntity objectVersion = createObjectVersion(oldObjectInfo);
@@ -220,12 +220,12 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
         ObjectHisEntity objectHisEntity = new ObjectHisEntity();
         objectHisEntity.setObjectIdVersion(uuid);
         objectHisEntity.setObjectId(objectEntity.getObjectId());
-        objectHisEntity.setObjectName(objectEntity.getObjectName());
+        objectHisEntity.setObjectName(objectEntity.getDataSourceName());
         objectHisEntity.setObjectState(objectEntity.getObjectState());
         objectHisEntity.setTableId(objectEntity.getTableId());
-        objectHisEntity.setTableName(objectEntity.getTableName());
+        objectHisEntity.setTableName(objectEntity.getRealTablename());
         objectHisEntity.setStoreType(objectEntity.getStoreType());
-        objectHisEntity.setDataSource(objectEntity.getDataSource());
+        objectHisEntity.setCodeTextTd(objectEntity.getCodeTextTd());
         objectHisEntity.setDbSource(objectEntity.getDbSource());
         objectHisEntity.setSourceId(objectEntity.getSourceId());
         objectHisEntity.setObjectMemo(objectEntity.getObjectMemo());
@@ -240,7 +240,7 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
         Integer version = Integer.valueOf(DateUtil.formatDateTime(new Date(), DateUtil.DEFAULT_PATTERN_DATE_SIMPLE));
         objectHisEntity.setVersion(objectEntity.getVersion() != null ? objectEntity.getVersion() : version);
         objectHisEntity.setVersions(StringUtils.isNotBlank(objectEntity.getVersions()) ? objectEntity.getVersions() : "1.0");
-        objectHisEntity.setSecretLevel(Integer.valueOf(objectEntity.getSecretLevel()));
+        objectHisEntity.setDataLevel(Integer.valueOf(objectEntity.getDataLevel()));
         objectHisEntity.setStandardType(0);
         objectHisEntity.setSjzybq1(objectEntity.getSjzybq1());
         objectHisEntity.setSjzybq2(objectEntity.getSjzybq2());
@@ -252,7 +252,7 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
         objectHisEntity.setSjzzejflvalue(objectEntity.getSjzzejflValue());
         objectHisEntity.setSjzylylxvalue(objectEntity.getSjzylylxValue());
         objectHisEntity.setObjectState(-1);
-        objectHisEntity.setObjectStateVo("停用");
+        objectHisEntity.setStorageDataMode("停用");
 
         return objectHisEntity;
     }
@@ -290,16 +290,16 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
     private ObjectEntity injectObject(ObjectTableSheetVO objectTableSheet) throws ParseException {
         ObjectEntity addObjectInfo = new ObjectEntity();
         addObjectInfo.setObjectId(objectTableSheet.getObjectId());
-        addObjectInfo.setObjectName(objectTableSheet.getObjectName());
-        addObjectInfo.setObjectStateVo(String.valueOf(objectTableSheet.getObjectState()));
+        addObjectInfo.setDataSourceName(objectTableSheet.getObjectName());
+        addObjectInfo.setStorageTableStatus(String.valueOf(objectTableSheet.getObjectState()));
         addObjectInfo.setTableId(objectTableSheet.getTableId());
         addObjectInfo.setRealTablename(objectTableSheet.getTableName());
-        addObjectInfo.setDataSource(objectTableSheet.getDataSource());
+        addObjectInfo.setCodeTextTd(objectTableSheet.getDataSource());
         addObjectInfo.setSourceId(objectTableSheet.getSourceId());
         addObjectInfo.setObjectMemo(objectTableSheet.getObjectMemo());
         addObjectInfo.setIsActiveTable(objectTableSheet.getIsActiveTable() != null ? objectTableSheet.getIsActiveTable() : 0);
         addObjectInfo.setDataType(0);
-        addObjectInfo.setStoreTypeVo("0");
+        addObjectInfo.setStorageDataMode("0");
         // 2022年11月29日15:39:45 导入时version换成当前日期
         String todayStr = DateUtil.formatDateTime(new Date(), DateUtil.DEFAULT_PATTERN_DATE_SIMPLE);
         addObjectInfo.setVersion(Integer.valueOf(todayStr));
@@ -326,8 +326,8 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
             addObjectInfo.setCreateTime(new Date());
         }
         // 数据分级
-        if (StringUtils.isNotBlank(objectTableSheet.getSecretLevel())) {
-            addObjectInfo.setSecretLevel(objectTableSheet.getSecretLevel());
+        if (StringUtils.isNotBlank(objectTableSheet.getDataLevel())) {
+            addObjectInfo.setDataLevel(objectTableSheet.getDataLevel());
         }
         addObjectInfo.setCreator(objectTableSheet.getCreator());
         addObjectInfo.setUpdater(objectTableSheet.getUpdater());
@@ -417,8 +417,8 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                     }
                     // fieldCodeVal
                     FieldCodeEntity fieldCodeVal = new FieldCodeEntity();
-                    if (objectInfo.getTableId() != null && objectInfo.getDataSource() != null) {
-                        fieldCodeVal = fieldCodeVals.stream().filter(d -> d.getValValue().equalsIgnoreCase(objectInfo.getDataSource())).findFirst().orElse(new FieldCodeEntity());
+                    if (objectInfo.getTableId() != null && objectInfo.getCodeTextTd() != null) {
+                        fieldCodeVal = fieldCodeVals.stream().filter(d -> d.getValValue().equalsIgnoreCase(objectInfo.getCodeTextTd())).findFirst().orElse(new FieldCodeEntity());
                     }
                     // 字段信息
                     ObjectEntity classifyOne = classifyOnes.stream().filter(d -> d.getTableId().equalsIgnoreCase(tableId)).findFirst().orElse(new ObjectEntity());
@@ -512,7 +512,7 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
         ArrayList<String> clustRecnoList = new ArrayList<>();
         ExportObjectInfoVO exportObjectInfo = new ExportObjectInfoVO();
         exportObjectInfo.setObjectId(String.valueOf(objectPojoTable.getObjectId()));
-        exportObjectInfo.setObjectName(objectPojoTable.getObjectName());
+        exportObjectInfo.setObjectName(objectPojoTable.getDataSourceName());
         exportObjectInfo.setTableName(objectPojoTable.getRealTablename());
         exportObjectInfo.setTableId(objectPojoTable.getTableId());
         exportObjectInfo.setSourceId(objectPojoTable.getSourceId());
@@ -660,34 +660,34 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
             if (objectInfo == null) {
                 return oneObjectPojoTable;
             }
-            if (!StringUtils.isEmpty(objectInfo.getSecretLevel())) {
-                objectInfo.setSecretLevelCh(KeyStrEnum.getKeyByNameAndType("1_" + objectInfo.getSecretLevel(), Common.DATASECURITYLEVEL));
+            if (!StringUtils.isEmpty(objectInfo.getDataLevel())) {
+                objectInfo.setDataLevelCh(KeyStrEnum.getKeyByNameAndType("1_" + objectInfo.getDataLevel(), Common.DATASECURITYLEVEL));
             }
             // 拼接对应的数据 object 这个表里面存在的数据
             // 序号
             oneObjectPojoTable.setObjectId(objectInfo.getObjectId());
             // 数据名
-            oneObjectPojoTable.setObjectName(objectInfo.getObjectName());
+            oneObjectPojoTable.setDataSourceName(objectInfo.getDataSourceName());
             // 真实表名
-            oneObjectPojoTable.setRealTablename(objectInfo.getTableName());
+            oneObjectPojoTable.setRealTablename(objectInfo.getRealTablename());
 
             //源应用系统名称二级
-            oneObjectPojoTable.setDataSource(String.valueOf(objectInfo.getDataSource()));
+            oneObjectPojoTable.setCodeTextTd(String.valueOf(objectInfo.getCodeTextTd()));
             //根据二级去码表回填一级
-            if (objectInfo.getDataSource() == null) {
+            if (objectInfo.getCodeTextTd() == null) {
                 log.info("源应用系统名称（DATA_SOUCE）为空");
             } else {
-                oneObjectPojoTable.setDataSourceOne(fieldCodeVal.getCodeId());
+                oneObjectPojoTable.setParentCodeTextId(fieldCodeVal.getCodeId());
             }
 
             oneObjectPojoTable.setTableId(objectInfo.getTableId());
             // 存储表状态
             if (objectInfo.getObjectState() != null) {
-                oneObjectPojoTable.setObjectStateVo(KeyIntEnum.getValueByKeyAndType(objectInfo.getObjectState(), Common.OBJECT_STATE));
+                oneObjectPojoTable.setStorageTableStatus(KeyIntEnum.getValueByKeyAndType(objectInfo.getObjectState(), Common.OBJECT_STATE));
             }
             // 存储方式
             if (objectInfo.getStoreType() != null) {
-                oneObjectPojoTable.setStoreTypeVo(KeyIntEnum.getValueByKeyAndType(objectInfo.getStoreType(), Common.STORETYPE));
+                oneObjectPojoTable.setStorageDataMode(KeyIntEnum.getValueByKeyAndType(objectInfo.getStoreType(), Common.STORETYPE));
             }
             //更新表类型 20200507 majia添加
             if (objectInfo.getIsActiveTable() != null) {
@@ -700,15 +700,15 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
             // 注释的字段信息
             oneObjectPojoTable.setObjectMemo(objectInfo.getObjectMemo());
             //数据分级
-            if (!StringUtils.isEmpty(objectInfo.getSecretLevel()) && objectInfo.getSecretLevel() != null) {
-                if (objectInfo.getSecretLevel().length() == 1) {
-                    oneObjectPojoTable.setSecretLevel("0" + objectInfo.getSecretLevel());
+            if (!StringUtils.isEmpty(objectInfo.getDataLevel()) && objectInfo.getDataLevel() != null) {
+                if (objectInfo.getDataLevel().length() == 1) {
+                    oneObjectPojoTable.setDataLevel("0" + objectInfo.getDataLevel());
                 } else {
-                    oneObjectPojoTable.setSecretLevel(objectInfo.getSecretLevel());
+                    oneObjectPojoTable.setDataLevel(objectInfo.getDataLevel());
                 }
             }
-            if (!StringUtils.isEmpty(objectInfo.getSecretLevelCh()) && objectInfo.getSecretLevelCh() != null) {
-                oneObjectPojoTable.setSecretLevelCh(objectInfo.getSecretLevelCh());
+            if (!StringUtils.isEmpty(objectInfo.getDataLevelCh()) && objectInfo.getDataLevelCh() != null) {
+                oneObjectPojoTable.setDataLevelCh(objectInfo.getDataLevelCh());
             }
             if (objectInfo.getVersion() != null) {
                 oneObjectPojoTable.setVersion(objectInfo.getVersion());
@@ -749,13 +749,13 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
             }
             // TODO 存储数据源信息
             // 根据 codeTextTd的值获取对应的中文翻译
-            if (StringUtils.isEmpty(oneObjectPojoTable.getDataSource())) {
-                oneObjectPojoTable.setDataSourceCh("");
+            if (StringUtils.isEmpty(oneObjectPojoTable.getCodeTextTd())) {
+                oneObjectPojoTable.setCodeTextCh("");
             } else {
                 if (StringUtils.isEmpty(fieldCodeVal.getValText())) {
-                    oneObjectPojoTable.setDataSourceCh("错误协议代码");
+                    oneObjectPojoTable.setCodeTextCh("错误协议代码");
                 } else {
-                    oneObjectPojoTable.setDataSourceCh(fieldCodeVal.getValText());
+                    oneObjectPojoTable.setCodeTextCh(fieldCodeVal.getValText());
                 }
             }
             //  获取这个tableid在 数据组织 ， 数据来源的分级分类信息。
@@ -882,8 +882,8 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                         }
                     }
                     List<ObjectFieldEntity> objectFieldList = selectObjectFieldByObjectIdNew(objectInfo, objectFieldList1, synlteFieldInfoMap, elementNames, list);
-                    String tableNameCh = objectInfo.getObjectName().replace("/", "、");
-                    zipOutputStream.putNextEntry(new ZipEntry(String.format("%s@%s.sql", objectInfo.getTableName(), tableNameCh)));
+                    String tableNameCh = objectInfo.getDataSourceName().replace("/", "、");
+                    zipOutputStream.putNextEntry(new ZipEntry(String.format("%s@%s.sql", objectInfo.getRealTablename(), tableNameCh)));
                     //生成object的sql
                     StringBuffer sql = jointSql(objectInfo);
                     //生成objectField的sql
@@ -972,15 +972,15 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
 //                "STORETYPE,DATA_SOURCE,SECRETLEVEL,RELATE_TABLENAME,SOURCEID,ISACTIVETABLE,DELETED,SJZYBQ1,SJZYBQ2,SJZYBQ3," +
 //                "SJZYBQ4,SJZYBQ5,SJZYLYLXVALUE,SJZZYJFLVALLUE,SJZZEJFLVALUE,CREATETIME,UPDATETIME,CREATOR,UPDATER," +
 //                "VERSION,VERSIONS,STANDARD_TYPE)values(");
-        baseSql.append("'" + data.getObjectId() + "'," + "'" + data.getObjectName() + "',");
+        baseSql.append("'" + data.getObjectId() + "'," + "'" + data.getDataSourceName() + "',");
         baseSql.append(StringUtils.isNotBlank(data.getObjectMemo()) ? "'" + data.getObjectMemo() + "'," : "'',");
         baseSql.append("'" + data.getObjectState() + "',");
         baseSql.append(StringUtils.isNotBlank(data.getTableId()) ? "'" + data.getTableId() + "'," : "'',");
-        baseSql.append(StringUtils.isNotBlank(data.getTableName()) ? "'" + data.getTableName() + "'," : "'',");
+        baseSql.append(StringUtils.isNotBlank(data.getRealTablename()) ? "'" + data.getRealTablename() + "'," : "'',");
         baseSql.append(data.getDataType() != null ? "'" + data.getDataType() + "'," : "null,");
         baseSql.append(data.getStoreType() != null ? "'" + data.getStoreType() + "'," : "null,");
-        baseSql.append(StringUtils.isNotBlank(data.getDataSource()) ? "'" + data.getDataSource() + "'," : "'',");
-        baseSql.append(StringUtils.isNotBlank(data.getSecretLevel()) ? "'" + data.getSecretLevel() + "'," : "'',");
+        baseSql.append(StringUtils.isNotBlank(data.getCodeTextTd()) ? "'" + data.getCodeTextTd() + "'," : "'',");
+        baseSql.append(StringUtils.isNotBlank(data.getDataLevel()) ? "'" + data.getDataLevel() + "'," : "'',");
         baseSql.append("'OBJECTFIELD',");
         baseSql.append(StringUtils.isNotBlank(data.getSourceId()) ? "'" + data.getSourceId() + "'," : "'',");
         baseSql.append(data.getIsActiveTable() != null ? "'" + data.getIsActiveTable() + "'," : "null,");
@@ -1218,8 +1218,8 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
         jsonObject.put("columnData", columnList);
         columnList = createTableService.columnCorrespondClick(jsonObject);
         buildTableInfoVO.setColumnData(columnList);
-        buildTableInfoVO.setTableName(objectEntity.getTableName());
-        buildTableInfoVO.setTableNameCH(objectEntity.getObjectName());
+        buildTableInfoVO.setTableName(objectEntity.getRealTablename());
+        buildTableInfoVO.setTableNameCH(objectEntity.getDataSourceName());
         buildTableInfoVO.setDsType(dsType);
         switch (dsType.toUpperCase()) {
             case "ADS":

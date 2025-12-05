@@ -48,9 +48,9 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     @Resource
     private StandardizeInputObjectRelateMapper standardizeInputObjectRelateMapper;
     @Resource
-    private SourceInfoMapper sourceInfoMapper;
+    private DsmSourceInfoMapper dsmSourceInfoMapper;
     @Resource
-    private SourceFieldInfoMapper sourceFieldInfoMapper;
+    private DsmSourceFieldInfoMapper dsmSourceFieldInfoMapper;
     @Resource
     private SynlteFieldMapper synlteFieldMapper;
     @Resource
@@ -58,7 +58,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     @Resource
     private PublicDataInfoMapper publicDataInfoMapper;
     @Resource
-    private AllCodeDataMapper allCodeDataMapper;
+    private DsmAllCodeDataMapper allCodeDataMapper;
 
     @Autowired
     private RestTemplateHandle restTemplateHandle;
@@ -528,16 +528,16 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<SourceFieldInfoEntity> initSourceFieldTable(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm, String tableId) {
-        List<SourceFieldInfoEntity> resultList = new ArrayList<>();
+    public List<DsmSourceFieldInfoEntity> initSourceFieldTable(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm, String tableId) {
+        List<DsmSourceFieldInfoEntity> resultList = new ArrayList<>();
         try {
             log.info(">>>>>>源字段列表");
             //检查，如果已经有记录，则返回数据库中已经保存的内容
-            SourceInfoEntity sourceInfo = sourceInfoMapper.findSourceInfo(sourceProtocol, tableName, sourceSystem, sourceFirm);
+            DsmSourceInfoEntity sourceInfo = dsmSourceInfoMapper.findSourceInfo(sourceProtocol, tableName, sourceSystem, sourceFirm);
             if (sourceInfo != null) {
-                LambdaQueryWrapper<SourceFieldInfoEntity> wrapperSFI = Wrappers.lambdaQuery();
-                wrapperSFI.eq(SourceFieldInfoEntity::getSourceInfoID, sourceInfo.getId());
-                resultList = sourceFieldInfoMapper.selectList(wrapperSFI);
+                LambdaQueryWrapper<DsmSourceFieldInfoEntity> wrapperSFI = Wrappers.lambdaQuery();
+                wrapperSFI.eq(DsmSourceFieldInfoEntity::getSourceInfoID, sourceInfo.getId());
+                resultList = dsmSourceFieldInfoMapper.selectList(wrapperSFI);
 
                 LambdaQueryWrapper<FieldDeterminerEntity> wrapperFD = Wrappers.lambdaQuery();
                 wrapperFD.eq(FieldDeterminerEntity::getDeterminerStateNum, "05");
@@ -562,8 +562,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                 }
             } else {
                 //还没有数据的时候，就需要入库dwParams
-                sourceInfo = new SourceInfoEntity(sourceProtocol, tableName, sourceSystem, sourceFirm);
-                sourceInfoMapper.insertSourceInfo(sourceInfo);
+                sourceInfo = new DsmSourceInfoEntity(sourceProtocol, tableName, sourceSystem, sourceFirm);
+                dsmSourceInfoMapper.insertSourceInfo(sourceInfo);
             }
             if (!StringUtils.isBlank(tableId)) {
                 //如果不是流程的，也不是已经保存过的，那么就拿协议当源协议，到objectField中查找字段
@@ -579,7 +579,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                         // 将数字转换成 字段类型
                         fieldTypeStr = SynlteFieldTypeEnum.getSynlteFieldType(Integer.valueOf(objectField.getFieldType()));
                     }
-                    SourceFieldInfoEntity sourceFieldInfo = new SourceFieldInfoEntity(sourceInfo.getId(),
+                    DsmSourceFieldInfoEntity sourceFieldInfo = new DsmSourceFieldInfoEntity(sourceInfo.getId(),
                             objectField.getRecno(), tableId,
                             objectField.getFieldName(),
                             objectField.getFieldDescribe(), fieldTypeStr, String.valueOf(objectField.getFieldLen()), objectField.getNeedv(),
@@ -592,7 +592,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                 }
             }
             if (!resultList.isEmpty()) {
-                sourceFieldInfoMapper.insertSourceFieldInfo(resultList);
+                dsmSourceFieldInfoMapper.insertSourceFieldInfo(resultList);
             }
         } catch (Exception e) {
             log.error(">>>>>>获取源字段列表失败：", e);
@@ -612,16 +612,16 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             if (StringUtils.isNotBlank(tableName) && tableName.contains(".") && !project.contains("/")) {
                 tableName = tableName.split("[.]")[1];
             }
-            SourceInfoEntity sourceInfo = sourceInfoMapper.findSourceInfo(sourceProtocol.toUpperCase(), tableName, sourceSystem, sourceFirm);
+            DsmSourceInfoEntity sourceInfo = dsmSourceInfoMapper.findSourceInfo(sourceProtocol.toUpperCase(), tableName, sourceSystem, sourceFirm);
             if (sourceInfo == null) {
                 //还没有数据的时候，就需要入库dwParams
-                sourceInfo = new SourceInfoEntity(sourceProtocol.toUpperCase(), tableName, sourceSystem, sourceFirm, dataName, resourceId, project, centerName, centerId);
-                sourceInfoMapper.insert(sourceInfo);
+                sourceInfo = new DsmSourceInfoEntity(sourceProtocol.toUpperCase(), tableName, sourceSystem, sourceFirm, dataName, resourceId, project, centerName, centerId);
+                dsmSourceInfoMapper.insert(sourceInfo);
             }
             // 20200818 获取的字段信息变成这个接口 因为新增了元素编码的字段
             List<FieldInfo> fieldInfos = restTemplateHandle.requestGetTableStructure(resourceId, project, tableName);
             if (fieldInfos != null) {
-                List<SourceFieldInfoEntity> sourceFieldInfoEntities = new ArrayList<>();
+                List<DsmSourceFieldInfoEntity> sourceFieldInfoEntities = new ArrayList<>();
                 for (FieldInfo tableField : fieldInfos) {
                     if (StringUtils.isEmpty(String.valueOf(tableField.getLength())) && tableField.getType().contains("(")) {
                         tableField.setLength(Integer.parseInt(tableField.getType().split("\\(")[1].split("\\)")[0]));
@@ -631,7 +631,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                     }
                     // 如果字段名或备注为空，则回填数据元名称
                     String tableNameCh = StringUtils.isNotBlank(tableField.getComments()) ? tableField.getComments() : tableField.getSynFieldName();
-                    SourceFieldInfoEntity sourceFieldInfo = new SourceFieldInfoEntity(sourceInfo.getId(), tableField.getNo(), tableId, tableField.getFieldName(),
+                    DsmSourceFieldInfoEntity sourceFieldInfo = new DsmSourceFieldInfoEntity(sourceInfo.getId(), tableField.getNo(), tableId, tableField.getFieldName(),
                             tableNameCh, tableField.getType(), String.valueOf(tableField.getLength()),
                             String.valueOf(tableField.getNullAble()), String.valueOf(tableField.getIsPrimaryKey()),
                             StringUtils.isEmpty(String.valueOf(tableField.getIsForeignKey())) ? "否" : String.valueOf(tableField.getIsForeignKey()),
@@ -648,12 +648,12 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                 }
                 if (sourceFieldInfoEntities.size() > 0) {
                     //先删除字段表中指定的数据，然后再插入  根据 tableid来删除
-                    log.info(">>>>>>开始删除Source_Field_Info中字段信息");
-                    LambdaQueryWrapper<SourceFieldInfoEntity> wrapper = Wrappers.lambdaQuery();
-                    wrapper.eq(SourceFieldInfoEntity::getSourceInfoID, sourceInfo.getId());
-                    sourceFieldInfoMapper.delete(wrapper);
-                    log.info(">>>>>>开始向表Source_Field_Info中插入字段信息");
-                    sourceFieldInfoMapper.insertSourceFieldInfo(sourceFieldInfoEntities);
+                    log.info(">>>>>>开始删除Dsm_Source_Field_Info中字段信息");
+                    LambdaQueryWrapper<DsmSourceFieldInfoEntity> wrapper = Wrappers.lambdaQuery();
+                    wrapper.eq(DsmSourceFieldInfoEntity::getSourceInfoID, sourceInfo.getId());
+                    dsmSourceFieldInfoMapper.delete(wrapper);
+                    log.info(">>>>>>开始向表Dsm_Source_Field_Info中插入字段信息");
+                    dsmSourceFieldInfoMapper.insertSourceFieldInfo(sourceFieldInfoEntities);
                 }
             }
             return Common.ADD_SUCCESS;
@@ -669,7 +669,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         try {
             log.info(">>>>>>传入的参数为：" + JSONObject.toJSONString(jsonObject));
             JSONArray jsonArray = jsonObject.getJSONArray("sourceFieldInfo");
-            List<SourceFieldInfoEntity> sourceFieldInfos = jsonArray.toJavaList(SourceFieldInfoEntity.class);
+            List<DsmSourceFieldInfoEntity> sourceFieldInfos = jsonArray.toJavaList(DsmSourceFieldInfoEntity.class);
             JSONArray pageJsonArray = jsonObject.getJSONArray("pageColumnList");
             List<ObjectFieldEntity> objectFieldList = pageJsonArray.toJavaList(ObjectFieldEntity.class);
 
@@ -686,7 +686,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             log.info(">>>>>>最大字段顺序为: " + maxRecnoInt);
             //用于过滤已经添加的字段
             Map<String, ObjectFieldEntity> map = new HashMap<>();
-            for (SourceFieldInfoEntity sourceFieldInfo : sourceFieldInfos) {
+            for (DsmSourceFieldInfoEntity sourceFieldInfo : sourceFieldInfos) {
                 ObjectFieldEntity objectField = new ObjectFieldEntity();
                 if (StringUtils.isNotBlank(sourceFieldInfo.getFieldName())) {
                     // 如果 fieldCode 里面的值不为空，则从数据库中查询对应的标准字段信息，
@@ -951,7 +951,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         try {
             log.info(String.format(">>>>>>传入的参数为，realTableName：%s，objectId：%s", realTableName, objectId));
             LambdaQueryWrapper<ObjectEntity> wrapper = Wrappers.lambdaQuery();
-            wrapper.eq(ObjectEntity::getTableName, realTableName);
+            wrapper.eq(ObjectEntity::getRealTablename, realTableName);
             ObjectEntity objectEntity = objectMapper.selectOne(wrapper);
             if (StringUtils.isBlank(objectId)) {
                 return objectEntity == null ? 0 : 1;
@@ -1142,16 +1142,16 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         List<KeyValueVO> list = new ArrayList<>();
         try {
             log.info(">>>>>>开始获取字段定义中的安全分级信息");
-            LambdaQueryWrapper<AllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
-            wrapper.eq(AllCodeDataEntity::getCodeId, "SECURITYLEVEL");
+            LambdaQueryWrapper<DsmAllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(DsmAllCodeDataEntity::getCodeId, "SECURITYLEVEL");
             if (StringUtils.isNotBlank(codeId)) {
-                wrapper.eq(AllCodeDataEntity::getId, codeId);
+                wrapper.eq(DsmAllCodeDataEntity::getId, codeId);
             }
-            List<AllCodeDataEntity> allCodeDataEntities = allCodeDataMapper.selectList(wrapper);
+            List<DsmAllCodeDataEntity> allCodeDataEntities = allCodeDataMapper.selectList(wrapper);
             if (allCodeDataEntities == null || allCodeDataEntities.isEmpty()) {
                 return list;
             }
-            for (AllCodeDataEntity data : allCodeDataEntities) {
+            for (DsmAllCodeDataEntity data : allCodeDataEntities) {
                 list.add(new KeyValueVO(data.getCodeValue(), data.getCodeText()));
             }
         } catch (Exception e) {

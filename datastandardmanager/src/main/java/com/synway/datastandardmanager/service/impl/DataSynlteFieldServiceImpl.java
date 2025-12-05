@@ -66,7 +66,7 @@ public class DataSynlteFieldServiceImpl implements DataSynlteFieldService {
     private FieldCodeValMapper fieldCodeValMapper;
 
     @Resource
-    private AllCodeDataMapper allCodeDataMapper;
+    private DsmAllCodeDataMapper allCodeDataMapper;
 
     @Resource
     private ObjectMapper objectMapper;

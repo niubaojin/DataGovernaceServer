@@ -10,8 +10,8 @@ import lombok.Data;
  * @date 2025年5月13日14:01:44
  */
 @Data
-@TableName("ALL_CODE_DATA")
-public class AllCodeDataEntity {
+@TableName("DSM_ALL_CODE_DATA")
+public class DsmAllCodeDataEntity {
     //每个码值的唯一uuid
     @TableField("ID")
     private String id;

@@ -1,6 +1,6 @@
 package com.synway.datastandardmanager.entity.dto;
 
-import com.synway.datastandardmanager.entity.pojo.StandardTableCreatedEntity;
+import com.synway.datastandardmanager.entity.pojo.DsmStandardTableCreatedEntity;
 import lombok.Data;
 
 import java.util.List;
@@ -17,6 +17,6 @@ public class CreateTableInfoDTO {
     private String localIp;                         // 浏览器上的ip地址
     private String approvalId;                      // 审批信息标识
     private boolean createdTableIsPartition;        // 是否分区
-    private StandardTableCreatedEntity createdTableData;
+    private DsmStandardTableCreatedEntity createdTableData;
     private List<CreateTableColumnDTO> columnList;
 }

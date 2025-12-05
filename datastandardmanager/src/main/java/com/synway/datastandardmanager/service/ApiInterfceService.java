@@ -1,6 +1,8 @@
 package com.synway.datastandardmanager.service;
 
+import com.synway.datastandardmanager.entity.dto.GetTreeReqDTO;
 import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 
 import java.util.List;
 import java.util.Map;
@@ -27,5 +29,13 @@ public interface ApiInterfceService {
      * @param sourceId
      */
     List<Map<String, String>> getStandardTableBySourceId(String sourceId);
+
+    /**
+     *  提供给vue页面的接口，查询分级分类的tree树
+     * @param req
+     * @param isQueryTable
+     * @param showLabel
+     */
+    List<TreeNodeValueVO> externalgetTableOrganizationTree(GetTreeReqDTO req, Boolean isQueryTable, Boolean showLabel);
 
 }

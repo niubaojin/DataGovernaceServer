@@ -2,7 +2,7 @@ package com.synway.datastandardmanager.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
-import com.synway.datastandardmanager.entity.pojo.StandardTableCreatedEntity;
+import com.synway.datastandardmanager.entity.pojo.DsmStandardTableCreatedEntity;
 import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CreateTableVO;
@@ -22,7 +22,7 @@ public interface CreateTableService {
 
     String showCreateTableSql(BuildTableInfoVO buildTableInfoVo);
 
-    List<StandardTableCreatedEntity> getAllStandardTableCreatedList(String tableId);
+    List<DsmStandardTableCreatedEntity> getAllStandardTableCreatedList(String tableId);
 
     /**
      * 创建 hive/hbase/clickhouse

@@ -57,7 +57,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     @Resource
     ZcConfigFieldControlMapper zcConfigFieldControlMapper;
     @Resource
-    AllCodeDataMapper allCodeDataMapper;
+    DsmAllCodeDataMapper allCodeDataMapper;
     @Resource
     PublicDataInfoMapper publicDataInfoMapper;
 
@@ -180,8 +180,8 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         //查询标准所有表信息
         List<ObjectEntity> objectTableList = objectMapper.selectList(Wrappers.lambdaQuery());
         List<String> objectTables = objectTableList.stream().map(obj -> {
-            if (StringUtils.isNotBlank(obj.getTableName())) {
-                return obj.getTableName().toLowerCase();
+            if (StringUtils.isNotBlank(obj.getRealTablename())) {
+                return obj.getRealTablename().toLowerCase();
             } else {
                 return "";
             }
@@ -193,8 +193,8 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             log.info(String.format(">>>>>>开始处理：%s->%s->%s->%s，tableInfoId：%s", d.getCenterName(), d.getResName(), d.getProjectName(), d.getTableNameEN(), tableInfoId));
             ObjectEntity objectEntity = objectTableList.stream().filter(obj -> {
                         if (d.getTableNameEN() != null
-                                && obj.getTableName() != null
-                                && obj.getTableName().equalsIgnoreCase(d.getTableNameEN())
+                                && obj.getRealTablename() != null
+                                && obj.getRealTablename().equalsIgnoreCase(d.getTableNameEN())
                                 && obj.getRelateTableName().equalsIgnoreCase("OBJECTFIELD")) {
                             return true;
                         } else {
@@ -293,7 +293,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         objectStoreInfo.setTableId(tableId);
         String tableName = StringUtils.isNotBlank(detectedTable.getTableNameEN()) ? detectedTable.getTableNameEN() : "";
         objectStoreInfo.setTableName(tableName);
-        String objectName = StringUtils.isNotBlank(objectEntity.getObjectName()) ? objectEntity.getObjectName() : objectEntity.getTableName();
+        String objectName = StringUtils.isNotBlank(objectEntity.getDataSourceName()) ? objectEntity.getDataSourceName() : objectEntity.getRealTablename();
         objectStoreInfo.setObjectName(objectName);
         //storetype
         String tableBase = detectedTable.getResType();
@@ -776,9 +776,9 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     public List<KeyValueVO> getStoreTypeList() {
         List<KeyValueVO> resultList = new ArrayList<>();
         try {
-            LambdaQueryWrapper<AllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
+            LambdaQueryWrapper<DsmAllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
             wrapper.apply("lower(CODE_ID) = {0}", "store_type");
-            List<AllCodeDataEntity> dataEntities = allCodeDataMapper.selectList(wrapper);
+            List<DsmAllCodeDataEntity> dataEntities = allCodeDataMapper.selectList(wrapper);
             dataEntities.stream().forEach(data -> {
                 resultList.add(new KeyValueVO(data.getCodeValue(), data.getCodeText()));
             });
@@ -955,7 +955,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     public void insertObjectStoreFieldinfoByCreateTable(BuildTableInfoVO buildTableInfoVo, String tableInfoId) {
         // 查询标准表信息
         LambdaQueryWrapper<ObjectEntity> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(ObjectEntity::getTableName, buildTableInfoVo.getTableName());
+        wrapper.eq(ObjectEntity::getRealTablename, buildTableInfoVo.getTableName());
         wrapper.eq(ObjectEntity::getRelateTableName, "OBJECTFIELD");
         ObjectEntity objectEntity = objectMapper.selectOne(wrapper);
         if (objectEntity == null) {

@@ -101,7 +101,7 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
         List<KeyValueVO> resultList = new ArrayList<>();
         if (objectEntities.size() > 0) {
             for (ObjectEntity data : objectEntities) {
-                resultList.add(new KeyValueVO(data.getTableId(), data.getObjectName(), data.getObjectId().toString()));
+                resultList.add(new KeyValueVO(data.getTableId(), data.getDataSourceName(), data.getObjectId().toString()));
             }
         } else {
             return resultList;

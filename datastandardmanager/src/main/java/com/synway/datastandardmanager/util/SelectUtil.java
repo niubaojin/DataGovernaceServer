@@ -35,7 +35,7 @@ public class SelectUtil {
     public static Long countObjectByTableId(ObjectMapper objectMapper, String tableId, String tableName){
         LambdaQueryWrapper<ObjectEntity> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(ObjectEntity::getTableId, tableId);
-        wrapper.eq(ObjectEntity::getTableName, tableName);
+        wrapper.eq(ObjectEntity::getRealTablename, tableName);
         return objectMapper.selectCount(wrapper);
     }
 

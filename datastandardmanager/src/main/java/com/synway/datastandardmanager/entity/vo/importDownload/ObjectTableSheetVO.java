@@ -86,7 +86,7 @@ public class ObjectTableSheetVO {
      * 数据分级
      */
     @ExcelProperty(index = 9, value = "数据级别")
-    private String secretLevel;
+    private String dataLevel;
 
     /**
      * 数据组织1级

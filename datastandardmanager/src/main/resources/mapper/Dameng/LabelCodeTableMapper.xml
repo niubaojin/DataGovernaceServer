@@ -23,13 +23,13 @@
                 union all
                 select '6' as id, count(sjzybq6) as value from synlte.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD' and sjzybq6 is not null
                 ) ll
-         right join label_code_table rr ON ll.id = rr.label_level
+         right join DSM_LABEL_CODE_TABLE rr ON ll.id = rr.label_level
          order by rr.label_level asc
     </select>
 
     <select id="getLabelTypeList" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
         select distinct label_level as id, label_name as name
-          from label_code_table
+          from DSM_LABEL_CODE_TABLE
          order by label_level
     </select>
 

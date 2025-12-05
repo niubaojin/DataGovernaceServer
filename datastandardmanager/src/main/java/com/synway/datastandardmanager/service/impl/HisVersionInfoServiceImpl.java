@@ -161,11 +161,11 @@ public class HisVersionInfoServiceImpl implements HisVersionInfoService {
                 throw new NullPointerException("查询出的数据有误或是参数异常");
             }
             //翻译表状态、表所在数据库的类型、表类型、数据分级
-            objectPojo.setObjectStateVo(KeyIntEnum.getValueByKeyAndType(objectPojo.getObjectState(), Common.OBJECT_STATE));
-            objectPojo.setStoreTypeVo(KeyIntEnum.getValueByKeyAndType(objectPojo.getStoreType(), Common.STORETYPE));
+            objectPojo.setStorageTableStatus(KeyIntEnum.getValueByKeyAndType(objectPojo.getObjectState(), Common.OBJECT_STATE));
+            objectPojo.setStorageDataMode(KeyIntEnum.getValueByKeyAndType(objectPojo.getStoreType(), Common.STORETYPE));
             objectPojo.setDataTypeVo(KeyIntEnum.getValueByKeyAndType(objectPojo.getDataType(), Common.OBJECT_DATATYPE));
-            if (objectPojo.getSecretLevel() != null) {
-                objectPojo.setSecretLevelVo(KeyStrEnum.getValueByKeyAndType("1_" + objectPojo.getSecretLevel(), Common.DATASECURITYLEVEL));
+            if (objectPojo.getDataLevel() != null) {
+                objectPojo.setDataLevelCh(KeyStrEnum.getValueByKeyAndType("1_" + objectPojo.getDataLevel(), Common.DATASECURITYLEVEL));
             }
 
             // 拼接对应的数据
@@ -202,15 +202,15 @@ public class HisVersionInfoServiceImpl implements HisVersionInfoService {
         // objectId
         objectEntity.setObjectId(objectHisEntity.getObjectId());
         // 数据名
-        objectEntity.setObjectName(objectHisEntity.getObjectName());
+        objectEntity.setDataSourceName(objectHisEntity.getObjectName());
         // 真实表名
         objectEntity.setRealTablename(objectHisEntity.getTableName());
-        objectEntity.setDataSource(objectHisEntity.getDataSource());
+        objectEntity.setCodeTextTd(objectHisEntity.getCodeTextTd());
         objectEntity.setTableId(objectHisEntity.getTableId());
         // 存储表状态
-        objectEntity.setObjectStateVo(objectHisEntity.getObjectStateVo());
+        objectEntity.setStorageTableStatus(objectHisEntity.getDataLevelCh());
         // 存储方式
-        objectEntity.setStoreTypeVo(objectHisEntity.getStoreTypeVo());
+        objectEntity.setStorageDataMode(objectHisEntity.getStorageDataMode());
         //更新表类型 20200507 majia添加
         objectEntity.setIsActiveTable(objectHisEntity.getIsActiveTable());
         // 源表ID  sourceId 的值 20191118号新增需求
@@ -218,11 +218,11 @@ public class HisVersionInfoServiceImpl implements HisVersionInfoService {
         // 注释的字段信息
         objectEntity.setObjectMemo(objectHisEntity.getObjectMemo());
         //数据分级
-        if (objectHisEntity.getSecretLevel() != null) {
-            objectEntity.setSecretLevel(String.valueOf(objectHisEntity.getSecretLevel()));
+        if (objectHisEntity.getDataLevel() != null) {
+            objectEntity.setDataLevel(String.valueOf(objectHisEntity.getDataLevel()));
         }
-        if (!StringUtils.isEmpty(objectHisEntity.getSecretLevelVo()) && objectHisEntity.getSecretLevelVo() != null) {
-            objectEntity.setSecretLevelCh(objectHisEntity.getSecretLevelVo());
+        if (!StringUtils.isEmpty(objectHisEntity.getDataLevelCh()) && objectHisEntity.getDataLevelCh() != null) {
+            objectEntity.setDataLevelCh(objectHisEntity.getDataLevelCh());
         }
         // 厂商 存储方式 存储的数据源
         List<String> outOobjSourceCodeList = new ArrayList<>();
@@ -242,15 +242,15 @@ public class HisVersionInfoServiceImpl implements HisVersionInfoService {
             objectEntity.setOwnerFactory("全部");
         }
         //  根据 codeTextTd的值获取对应的中文翻译
-        if (StringUtils.isNotBlank(objectEntity.getDataSource())) {
+        if (StringUtils.isNotBlank(objectEntity.getCodeTextTd())) {
             LambdaQueryWrapper<FieldCodeValEntity> queryWrapperFC = Wrappers.lambdaQuery();
             queryWrapperFC.like(FieldCodeValEntity::getCodeId, "JZCODE0024");
-            queryWrapperFC.eq(FieldCodeValEntity::getValValue, objectEntity.getDataSource());
+            queryWrapperFC.eq(FieldCodeValEntity::getValValue, objectEntity.getCodeTextTd());
             FieldCodeValEntity fieldCodeVal = fieldCodeValMapper.selectOne(queryWrapperFC);
             if (fieldCodeVal.getValText() != null) {
-                objectEntity.setDataSourceCh("错误协议代码");
+                objectEntity.setCodeTextCh("错误协议代码");
             } else {
-                objectEntity.setDataSourceCh(fieldCodeVal.getValText());
+                objectEntity.setCodeTextCh(fieldCodeVal.getValText());
             }
         }
         //  获取这个tableId在 数据组织,数据来源的分级分类信息。

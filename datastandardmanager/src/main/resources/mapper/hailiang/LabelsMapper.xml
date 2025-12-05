@@ -15,7 +15,7 @@
           from (select labellevel as id, count(distinct labelcode) as value
                   from synlte.labels
                  group by labellevel) ll
-         right join label_code_table rr
+         right join DSM_LABEL_CODE_TABLE rr
             on ll.id = rr.label_level
          order by rr.label_level asc
     </select>
@@ -112,7 +112,7 @@
                 label_name as labelLevelStr,
                 moddate
                 FROM
-                    ( SELECT l.*,r.label_name ,row_number () over ( PARTITION BY LABELCODE ORDER BY moddate DESC ) AS num FROM synlte.LABELS l left join LABEL_CODE_TABLE r on
+                    ( SELECT l.*,r.label_name ,row_number () over ( PARTITION BY LABELCODE ORDER BY moddate DESC ) AS num FROM synlte.LABELS l left join DSM_LABEL_CODE_TABLE r on
                     l.LABELLEVEL = r.label_level) t
                     WHERE
                     t.num = 1) l1

@@ -71,7 +71,7 @@ public class PublicDataServiceImpl implements PublicDataService {
 //                // 添加公共数据项数据后，将信息插入或更新到用户权限表USER_AUTHORITY中
 //                ObjectManageDTO objectManageDTO = new ObjectManageDTO();
 //                ObjectEntity objectEntity = new ObjectEntity();
-//                objectEntity.setObjectName(publicData.getMemo());
+//                objectEntity.setDataSourceName(publicData.getMemo());
 //                objectManageDTO.setObjectPojoTable(objectEntity);
 //                objectManageDTO.setTableId(publicData.getGroupName());
 //                userAuthorityService.addUserAuthorityData(objectManageDTO);

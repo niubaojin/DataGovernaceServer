@@ -80,11 +80,11 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
     @Resource
     private FieldCodeValMapper fieldCodeValMapper;
     @Resource
-    private SourceInfoMapper sourceInfoMapper;
+    private DsmSourceInfoMapper dsmSourceInfoMapper;
     @Resource
     private DgnCommonSettingMapper dgnCommonSettingMapper;
     @Resource
-    private StandardTableCreatedMapper standardTableCreatedMapper;
+    private DsmStandardTableCreatedMapper dsmStandardTableCreatedMapper;
 
     @Autowired
     RestTemplateHandle restTemplateHandle;
@@ -189,22 +189,22 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             if (objectInfo == null) {
                 return new ObjectEntity();
             }
-            objectInfo.setObjectStateVo(KeyIntEnum.getValueByKeyAndType(objectInfo.getObjectState(), Common.OBJECT_STATE));
-            objectInfo.setStoreTypeVo(KeyIntEnum.getValueByKeyAndType(objectInfo.getStoreType(), Common.STORETYPE));
+            objectInfo.setStorageTableStatus(KeyIntEnum.getValueByKeyAndType(objectInfo.getObjectState(), Common.OBJECT_STATE));
+            objectInfo.setStorageDataMode(KeyIntEnum.getValueByKeyAndType(objectInfo.getStoreType(), Common.STORETYPE));
             objectInfo.setDataTypeVo(KeyIntEnum.getValueByKeyAndType(objectInfo.getDataType(), Common.OBJECT_DATATYPE));
-            if (!StringUtils.isEmpty(objectInfo.getSecretLevel())) {
-                objectInfo.setSecretLevelCh(KeyStrEnum.getValueByKeyAndType("1_" + objectInfo.getStoreType(), Common.DATASECURITYLEVEL));
+            if (!StringUtils.isEmpty(objectInfo.getDataLevel())) {
+                objectInfo.setDataLevelCh(KeyStrEnum.getValueByKeyAndType("1_" + objectInfo.getStoreType(), Common.DATASECURITYLEVEL));
             }
             //数据分级
-            if (objectInfo.getSecretLevel() != null && objectInfo.getSecretLevel().length() == 1) {
-                objectInfo.setSecretLevel("0" + objectInfo.getSecretLevel());
+            if (objectInfo.getDataLevel() != null && objectInfo.getDataLevel().length() == 1) {
+                objectInfo.setDataLevel("0" + objectInfo.getDataLevel());
             }
             //根据二级去码表回填一级
-            if (objectInfo.getDataSource() == null) {
+            if (objectInfo.getCodeTextTd() == null) {
                 log.info(">>>>>>源应用系统名称（DATA_SOUCE）为空");
             } else {
-                FieldCodeEntity fieldCodeVal = fieldCodeMapper.selectOneSysName(objectInfo.getDataSource());
-                objectInfo.setDataSourceOne(fieldCodeVal.getCodeId());
+                FieldCodeEntity fieldCodeVal = fieldCodeMapper.selectOneSysName(objectInfo.getCodeTextTd());
+                objectInfo.setParentCodeTextId(fieldCodeVal.getCodeId());
             }
             // 获取输入和输出的对应关系
             List<InputObjectCreateVO> inputObjectAll = standardizeOutputObjectMapper.getAllInputObject(tableId);
@@ -218,12 +218,12 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 objectInfo.setOwnerFactory("全部");
             }
             // TODO 存储数据源信息，根据 codeTextTd的值获取对应的中文翻译
-            if (StringUtils.isNotEmpty(objectInfo.getDataSource())) {
-                FieldCodeValEntity fieldCodeVal = getFieldCodeVal(objectInfo.getDataSource());
+            if (StringUtils.isNotEmpty(objectInfo.getCodeTextTd())) {
+                FieldCodeValEntity fieldCodeVal = getFieldCodeVal(objectInfo.getCodeTextTd());
                 if (fieldCodeVal.getValText() != null) {
-                    objectInfo.setDataSourceCh(fieldCodeVal.getValText());
+                    objectInfo.setCodeTextCh(fieldCodeVal.getValText());
                 } else {
-                    objectInfo.setDataSourceCh("错误协议代码");
+                    objectInfo.setCodeTextCh("错误协议代码");
                 }
             }
             // 获取这个tableid在数据组织、数据来源的分级分类信息。
@@ -365,11 +365,11 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 sourceRelationShip.setSourceSystem(String.valueOf(inputObjectCreate.getInputSysId()));
                 sourceRelationShip.setStorageTableStatus(objectStateType);
                 //回填数据中心中文和数据源中文
-                LambdaQueryWrapper<SourceInfoEntity> queryWrapperSI = Wrappers.lambdaQuery();
-                queryWrapperSI.eq(SourceInfoEntity::getSourceProtocol, sourceRelationShip.getSourceProtocol());
-                queryWrapperSI.eq(SourceInfoEntity::getTableName, sourceRelationShip.getRealTableName());
-                queryWrapperSI.eq(SourceInfoEntity::getSourceSystem, sourceRelationShip.getSourceSystem());
-                SourceInfoEntity sourceInfo = sourceInfoMapper.selectOne(queryWrapperSI);
+                LambdaQueryWrapper<DsmSourceInfoEntity> queryWrapperSI = Wrappers.lambdaQuery();
+                queryWrapperSI.eq(DsmSourceInfoEntity::getSourceProtocol, sourceRelationShip.getSourceProtocol());
+                queryWrapperSI.eq(DsmSourceInfoEntity::getTableName, sourceRelationShip.getRealTableName());
+                queryWrapperSI.eq(DsmSourceInfoEntity::getSourceSystem, sourceRelationShip.getSourceSystem());
+                DsmSourceInfoEntity sourceInfo = dsmSourceInfoMapper.selectOne(queryWrapperSI);
                 DataResource dataResource = restTemplateHandle.getResourceById(sourceRelationShip.getDataId());
                 sourceRelationShip.setCenterId(dataResource.getCenterId());
                 sourceRelationShip.setCenterName(dataResource.getCenterName());
@@ -636,13 +636,13 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         List<SourceRelationShipVO> sourceRelationShipListPage = objectManageDTO.getSourceRelationShipList();
         if (sourceRelationShipListPage != null && sourceRelationShipListPage.size() != 0) {
             SourceRelationShipVO realSourceRelationShip = sourceRelationShipListPage.get(0);
-            LambdaQueryWrapper<SourceInfoEntity> queryWrapper = Wrappers.lambdaQuery();
-            queryWrapper.eq(SourceInfoEntity::getSourceProtocol, realSourceRelationShip.getSourceProtocol());
-            queryWrapper.eq(SourceInfoEntity::getTableName, realSourceRelationShip.getDataSourceName());
-            queryWrapper.eq(SourceInfoEntity::getDataId, realSourceRelationShip.getResourceId());
-            sourceInfoMapper.selectCount(queryWrapper);
-            if (sourceInfoMapper.selectCount(queryWrapper) == 0) {
-                SourceInfoEntity sourceInfo = new SourceInfoEntity();
+            LambdaQueryWrapper<DsmSourceInfoEntity> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(DsmSourceInfoEntity::getSourceProtocol, realSourceRelationShip.getSourceProtocol());
+            queryWrapper.eq(DsmSourceInfoEntity::getTableName, realSourceRelationShip.getDataSourceName());
+            queryWrapper.eq(DsmSourceInfoEntity::getDataId, realSourceRelationShip.getResourceId());
+            dsmSourceInfoMapper.selectCount(queryWrapper);
+            if (dsmSourceInfoMapper.selectCount(queryWrapper) == 0) {
+                DsmSourceInfoEntity sourceInfo = new DsmSourceInfoEntity();
                 sourceInfo.setSourceProtocol(realSourceRelationShip.getSourceProtocol());
                 sourceInfo.setTableName(realSourceRelationShip.getRealTableName());
                 sourceInfo.setSourceSystem(realSourceRelationShip.getSourceSystem());
@@ -654,7 +654,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 sourceInfo.setCenterId(realSourceRelationShip.getCenterId());
                 sourceInfo.setCreateTime(new Date());
                 sourceInfo.setUpdateTime(new Date());
-                sourceInfoMapper.insert(sourceInfo);
+                dsmSourceInfoMapper.insert(sourceInfo);
             }
         }
     }
@@ -1233,7 +1233,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                     int updateCount = objectMapper.update(updateWrapper);
                     log.info(String.format(">>>>>>将数据库中的tableid：%s修改为：%s", tableId, objectEntity.getTableId()));
                     // 判断在standardize_outputobject表中的数据是否已经存在，如果存在，先获取到obj_guid，然后根据该值获取到更新tableid
-                    String objGuidString = standardizeOutputObjectMapper.getOutPutObjGuidByTableId(tableId, objectEntity.getDataSource(), factory);
+                    String objGuidString = standardizeOutputObjectMapper.getOutPutObjGuidByTableId(tableId, objectEntity.getCodeTextTd(), factory);
                     if (!StringUtils.isEmpty(objGuidString)) {
                         LambdaUpdateWrapper<StandardizeObjectEntity> updateWrapper1 = Wrappers.lambdaUpdate();
                         updateWrapper1.set(StandardizeObjectEntity::getObjEngName, objectEntity.getTableId()).eq(StandardizeObjectEntity::getObjGuid, objGuidString);
@@ -1265,9 +1265,9 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                     throw new Exception(">>>>>>该tableId已经存在，不能重复新增");
                 } else {
                     // 流程中的判断
-                    if (StringUtils.isNotEmpty(objectEntity.getTableName())) {
+                    if (StringUtils.isNotEmpty(objectEntity.getRealTablename())) {
                         // 如果真实表名和tableId对应得上，则表示可以更新该数据，否则依然报错
-                        int objectCount = objectEntities.stream().filter(d -> d.getTableName().equalsIgnoreCase(objectEntity.getTableName())).collect(toList()).size();
+                        int objectCount = objectEntities.stream().filter(d -> d.getRealTablename().equalsIgnoreCase(objectEntity.getRealTablename())).collect(toList()).size();
                         if (objectCount > 0) {
                             objectMapper.updateObjectByTableId(objectEntity);
                             objectManageDTO.setOperateType(3);
@@ -1333,13 +1333,13 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 List<SourceRelationShipVO> sourceRelationShipList = objectManageDTO.getSourceRelationShipList();
                 SourceRelationShipVO sourceRelationShip = sourceRelationShipList.size() > 0 ? sourceRelationShipList.get(0) : null;
                 // 先判断在standardize_object中是否存在，如果存在，不管，如果不存在，则插入
-                String objGuid = standardizeObjectMapper.getObjGuid(objectEntity.getTableId(), objectEntity.getDataSource());
+                String objGuid = standardizeObjectMapper.getObjGuid(objectEntity.getTableId(), objectEntity.getCodeTextTd());
                 if (StringUtils.isEmpty(objGuid) && sourceRelationShip != null) {
                     StandardizeObjectEntity standardizeObject = injectStdObject(sourceRelationShip, objectEntity);
                     standardizeObjectMapper.insert(standardizeObject);
                     log.info(String.format(">>>>>>对象（协议）表standardize_object新增完成：\n%s", JSONObject.toJSONString(standardizeObject)));
                 }
-                String objGuidNew = standardizeObjectMapper.getObjGuid(objectEntity.getTableId(), objectEntity.getDataSource());
+                String objGuidNew = standardizeObjectMapper.getObjGuid(objectEntity.getTableId(), objectEntity.getCodeTextTd());
                 if (StringUtils.isNotEmpty(objGuidNew)) {
                     standardizeOutputObjectMapper.insert(injectStdOutputObj(objGuidNew, 1, 1, Integer.valueOf(objectEntity.getOwnerFactoryCode())));
                     log.info(">>>>>>输出对象（协议）表standardize_outputobject新增完成");
@@ -1347,7 +1347,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             } else if (objectCount == 1) {
                 String objGuid = standardizeObjectMapper.getOutputGuidNotInInput(objectEntity.getTableId());
                 LambdaUpdateWrapper<StandardizeObjectEntity> updateWrapper = Wrappers.lambdaUpdate();
-                updateWrapper.set(StandardizeObjectEntity::getSysId, objectEntity.getDataSource()).set(StandardizeObjectEntity::getObjChiName, objectEntity.getObjectName()).set(StandardizeObjectEntity::getSysSource, objectEntity.getOwnerFactoryCode()).eq(StandardizeObjectEntity::getObjGuid, objGuid);
+                updateWrapper.set(StandardizeObjectEntity::getSysId, objectEntity.getCodeTextTd()).set(StandardizeObjectEntity::getObjChiName, objectEntity.getDataSourceName()).set(StandardizeObjectEntity::getSysSource, objectEntity.getOwnerFactoryCode()).eq(StandardizeObjectEntity::getObjGuid, objGuid);
                 int updateCount = standardizeObjectMapper.update(updateWrapper);
                 log.info(">>>>>>对象（协议）表standardize_object更新完成：{}", updateCount);
             } else {
@@ -1426,7 +1426,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             objectVersion.setTableName(objectEntity.getRealTablename());
         }
         StringBuffer stringBuffer = new StringBuffer();
-        if (!objectEntityOld.getObjectName().equals(objectEntity.getObjectName())) {
+        if (!objectEntityOld.getDataSourceName().equals(objectEntity.getDataSourceName())) {
             stringBuffer.append("数据中文名属性,");
         }
         if (!(objectEntityOld.getDataType().equals(objectEntity.getDataType()))) {
@@ -1446,7 +1446,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         if (!(objectEntityOld.getObjectMemo() != null && objectEntityOld.getObjectMemo().equals(objectEntity.getObjectMemo()))) {
             stringBuffer.append("数据描述属性,");
         }
-        if (!(objectEntityOld.getSecretLevel().equals(objectEntity.getSecretLevel()))) {
+        if (!(objectEntityOld.getDataLevel().equals(objectEntity.getDataLevel()))) {
             stringBuffer.append("数据分级属性,");
         }
         if (objectEntityOld.getSjzybq1() != null && objectEntity.getSjzybq1() != null && !objectEntityOld.getSjzybq1().equalsIgnoreCase(objectEntity.getSjzybq1())) {
@@ -1487,12 +1487,12 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         ObjectHisEntity objectHisEntity = new ObjectHisEntity();
         objectHisEntity.setObjectIdVersion(uuid);
         objectHisEntity.setObjectId(objectEntity.getObjectId());
-        objectHisEntity.setObjectName(objectEntity.getObjectName());
+        objectHisEntity.setObjectName(objectEntity.getDataSourceName());
         objectHisEntity.setObjectState(objectEntity.getObjectState());
         objectHisEntity.setTableId(objectEntity.getTableId());
-        objectHisEntity.setTableName(objectEntity.getTableName());
+        objectHisEntity.setTableName(objectEntity.getRealTablename());
         objectHisEntity.setStoreType(objectEntity.getStoreType());
-        objectHisEntity.setDataSource(objectEntity.getDataSource());
+        objectHisEntity.setCodeTextTd(objectEntity.getCodeTextTd());
         objectHisEntity.setDbSource(objectEntity.getDbSource());
         objectHisEntity.setSourceId(objectEntity.getSourceId());
         objectHisEntity.setObjectMemo(objectEntity.getObjectMemo());
@@ -1507,7 +1507,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         Integer version = Integer.valueOf(DateUtil.formatDateTime(new Date(), DateUtil.DEFAULT_PATTERN_DATE_SIMPLE));
         objectHisEntity.setVersion(objectEntity.getVersion() != null ? objectEntity.getVersion(): version);
         objectHisEntity.setVersions(StringUtils.isNotBlank(objectEntity.getVersions()) ? objectEntity.getVersions() : "1.0");
-        objectHisEntity.setSecretLevel(Integer.valueOf(objectEntity.getSecretLevel()));
+        objectHisEntity.setDataLevel(Integer.valueOf(objectEntity.getDataLevel()));
         objectHisEntity.setStandardType(objectEntity.getStandardType());
         objectHisEntity.setSjzybq1(objectEntity.getSjzybq1());
         objectHisEntity.setSjzybq2(objectEntity.getSjzybq2());
@@ -1524,7 +1524,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
 
     private StandardizeObjectEntity injectStdObject(SourceRelationShipVO sourceRelationShip, ObjectEntity objectEntity) {
         StandardizeObjectEntity standardizeObject = new StandardizeObjectEntity();
-        String sysId = objectEntity.getDataSource() != null ? objectEntity.getDataSource() : sourceRelationShip.getSourceSystem();
+        String sysId = objectEntity.getCodeTextTd() != null ? objectEntity.getCodeTextTd() : sourceRelationShip.getSourceSystem();
         String tableId = objectEntity.getSourceId() != null ? objectEntity.getSourceId() : sourceRelationShip.getSourceProtocol();
         String tableNameEn = sourceRelationShip.getTableNameEN() != null ? sourceRelationShip.getTableNameEN() : sourceRelationShip.getRealTableName();
         Integer ownerFactory = objectEntity.getOwnerFactory() != null ? Integer.valueOf(objectEntity.getOwnerFactory()) : 0;
@@ -1543,12 +1543,12 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
 
     private boolean checkIsUpdate(ObjectEntity objectEntityOld, ObjectEntity objectEntity) {
         boolean isUpdate = false;
-        if (objectEntityOld.getObjectName().equalsIgnoreCase(objectEntity.getObjectName())
+        if (objectEntityOld.getDataSourceName().equalsIgnoreCase(objectEntity.getDataSourceName())
                 && objectEntityOld.getDataType() == objectEntity.getDataType()
-                && objectEntityOld.getTableName().equalsIgnoreCase(objectEntity.getTableName())
+                && objectEntityOld.getRealTablename().equalsIgnoreCase(objectEntity.getRealTablename())
                 && objectEntityOld.getIsActiveTable().equals(objectEntity.getIsActiveTable())
                 && objectEntityOld.getObjectState().equals(objectEntity.getObjectState())
-                && objectEntityOld.getSecretLevel().equalsIgnoreCase(objectEntity.getSecretLevel())
+                && objectEntityOld.getDataLevel().equalsIgnoreCase(objectEntity.getDataLevel())
                 && objectEntityOld.getSjzybq1() != null && objectEntityOld.getSjzybq1().equalsIgnoreCase(objectEntity.getSjzybq1())
                 && objectEntityOld.getSjzybq2() != null && objectEntityOld.getSjzybq2().equalsIgnoreCase(objectEntity.getSjzybq2())
                 && objectEntityOld.getSjzybq3() != null && objectEntityOld.getSjzybq3().equalsIgnoreCase(objectEntity.getSjzybq3())
@@ -1572,8 +1572,8 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
      */
     private void injectObjectPojoTable(ObjectEntity objectEntity, int factory, String versions) {
         // 如果是hive平台 则保存的 storageDataMode 的值为 hbase 如果是odps平台 则是 ads
-        objectEntity.setStoreTypeVo(getResType());
-        objectEntity.setStoreType(KeyIntEnum.getKeyByNameAndType(objectEntity.getStoreTypeVo(), Common.STORETYPE));
+        objectEntity.setStorageDataMode(getResType());
+        objectEntity.setStoreType(KeyIntEnum.getKeyByNameAndType(objectEntity.getStorageDataMode(), Common.STORETYPE));
         if (objectEntity.getCreateTime() == null) {
             objectEntity.setCreateTime(new Date());
         }
@@ -1581,10 +1581,10 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             objectEntity.setUpdateTime(new Date());
         }
         objectEntity.setOwnerFactory(String.valueOf(factory));
-        if (objectEntity.getObjectId() != null && StringUtils.isBlank(objectEntity.getObjectStateVo())) {
+        if (objectEntity.getObjectId() != null && StringUtils.isBlank(objectEntity.getStorageTableStatus())) {
             objectEntity.setObjectState(KeyIntEnum.getKeyByNameAndType("未发布", Common.OBJECT_STATE));
         } else {
-            objectEntity.setObjectState(KeyIntEnum.getKeyByNameAndType(objectEntity.getObjectStateVo(), Common.OBJECT_STATE));
+            objectEntity.setObjectState(KeyIntEnum.getKeyByNameAndType(objectEntity.getStorageTableStatus(), Common.OBJECT_STATE));
         }
         if (objectEntity.getIsActiveTable() == null) {
             objectEntity.setIsActiveTable(1);
@@ -1847,10 +1847,10 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             // 然后tableId获取对应的 详细的 数据信息
             ObjectEntity objectEntity = queryObjectDetail(tableId);
             standardFieldJson.setType(1);
-            standardFieldJson.setSys(objectEntity.getDataSource());
-            standardFieldJson.setSyscnname(objectEntity.getDataSourceCh());
+            standardFieldJson.setSys(objectEntity.getCodeTextTd());
+            standardFieldJson.setSyscnname(objectEntity.getCodeTextCh());
             standardFieldJson.setProtocolengname(objectEntity.getTableId());
-            standardFieldJson.setProtocolcnname(objectEntity.getObjectName());
+            standardFieldJson.setProtocolcnname(objectEntity.getDataSourceName());
             standardFieldJson.setSource(objectEntity.getOwnerFactoryCode());
             standardFieldJson.setTablename(objectEntity.getRealTablename());
             standardFieldJson.setDb(0);
@@ -1885,7 +1885,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 Integer objectID = objectEntity.getObjectId();
                 if (objectID != null) {
                     dataResourceRawInformation.setObjectId(String.valueOf(objectID));
-                    dataResourceRawInformation.setTableNameObject(objectEntity.getTableName());
+                    dataResourceRawInformation.setTableNameObject(objectEntity.getRealTablename());
                 } else {
                     dataResourceRawInformation.setObjectId("");
                     dataResourceRawInformation.setTableNameObject("");
@@ -2220,9 +2220,9 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             }).count();
             long assetsCount = Long.bitCount(countCreated);
 
-            LambdaQueryWrapper<StandardTableCreatedEntity> wrapper = Wrappers.lambdaQuery();
-            wrapper.eq(StandardTableCreatedEntity::getTableName, tableName);
-            assetsCount += standardTableCreatedMapper.selectCount(wrapper);
+            LambdaQueryWrapper<DsmStandardTableCreatedEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(DsmStandardTableCreatedEntity::getTableName, tableName);
+            assetsCount += dsmStandardTableCreatedMapper.selectCount(wrapper);
             if (assetsCount > 0) {
                 exitsFlag = true;
             }

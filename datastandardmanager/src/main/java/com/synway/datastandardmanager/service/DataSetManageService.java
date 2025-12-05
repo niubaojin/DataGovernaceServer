@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.datastandardmanager.entity.dto.DataSetManageDTO;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
-import com.synway.datastandardmanager.entity.pojo.SourceFieldInfoEntity;
+import com.synway.datastandardmanager.entity.pojo.DsmSourceFieldInfoEntity;
 import com.synway.datastandardmanager.entity.vo.DataResourceRawInformationVO;
 import com.synway.datastandardmanager.entity.vo.DataSetManageVO;
 import com.synway.datastandardmanager.entity.vo.KeyValueVO;
@@ -63,7 +63,7 @@ public interface DataSetManageService {
     /**
      * 导入原始库的时候需要这个 查询数据库中的字段信息
      */
-    List<SourceFieldInfoEntity> initSourceFieldTable(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm, String tableId);
+    List<DsmSourceFieldInfoEntity> initSourceFieldTable(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm, String tableId);
 
     /**
      * 插入表的字段信息

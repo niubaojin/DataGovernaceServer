@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class DataElementServiceImpl implements DataElementService {
 
     @Resource
-    private AllCodeDataMapper allCodeDataMapper;
+    private DsmAllCodeDataMapper allCodeDataMapper;
     @Resource
     private EntityElementMapper elementMapper;
     @Resource
@@ -229,9 +229,9 @@ public class DataElementServiceImpl implements DataElementService {
 
     @Override
     public List<SelectFieldVO> searchAllObject() {
-        LambdaQueryWrapper<AllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(AllCodeDataEntity::getCodeId, "ELEMENTOBJECT");
-        List<AllCodeDataEntity> entities = allCodeDataMapper.selectList(wrapper);
+        LambdaQueryWrapper<DsmAllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(DsmAllCodeDataEntity::getCodeId, "ELEMENTOBJECT");
+        List<DsmAllCodeDataEntity> entities = allCodeDataMapper.selectList(wrapper);
         if (entities.isEmpty()) {
             throw SystemException.asSystemException(ErrorCodeEnum.QUERY_SQL_ERROR, "synlte.fieldcodeval表中没有数据");
         }

@@ -37,7 +37,7 @@ public class ObjectHisEntity {
     private Integer objectState;
 
     @TableField(exist = false)
-    private String objectStateVo;
+    private String storageTableStatus;
 
     //表ID
     @TableField("TABLEID")
@@ -67,7 +67,7 @@ public class ObjectHisEntity {
     private Integer storeType;
 
     @TableField(exist = false)
-    private String storeTypeVo;
+    private String storageDataMode;
 
     //表类型名称
     @TableField("DBSOURCE")
@@ -87,7 +87,7 @@ public class ObjectHisEntity {
 
     //表数据来源的系统
     @TableField("DATA_SOURCE")
-    private String dataSource;
+    private String codeTextTd;
 
     //HIVE下存储的EX表名称
     @TableField("EXHIVETABLENAME")
@@ -99,10 +99,10 @@ public class ObjectHisEntity {
 
     //数据分级
     @TableField("SECRETLEVEL")
-    private Integer secretLevel;
+    private Integer dataLevel;
 
     @TableField(exist = false)
-    private String secretLevelVo;
+    private String dataLevelCh;
 
     //对应的数据协议代码
     @TableField("ELLEMENTNAME")

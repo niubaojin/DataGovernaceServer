@@ -204,8 +204,8 @@ public class CreateTableServiceImpl implements CreateTableService {
     }
 
     @Override
-    public List<StandardTableCreatedEntity> getAllStandardTableCreatedList(String tableId) {
-        List<StandardTableCreatedEntity> resultAll = new ArrayList<>();
+    public List<DsmStandardTableCreatedEntity> getAllStandardTableCreatedList(String tableId) {
+        List<DsmStandardTableCreatedEntity> resultAll = new ArrayList<>();
         try {
             log.info(">>>>>>开始获取已经创建的表信息");
             if (StringUtils.isEmpty(tableId)) {
@@ -213,7 +213,7 @@ public class CreateTableServiceImpl implements CreateTableService {
             }
             // 先根据tableId获取对应的表名
             ObjectEntity objectEntity = SelectUtil.getObjectEntityByTableId(objectMapper, tableId);
-            if (objectEntity == null || StringUtils.isEmpty(objectEntity.getTableName())) {
+            if (objectEntity == null || StringUtils.isEmpty(objectEntity.getRealTablename())) {
                 throw new Exception(String.format("传入的tableId：%s,从OBJECT表中获取到的英文表名为空", tableId));
             }
             String objectId = String.valueOf(objectEntity.getObjectId());
@@ -222,7 +222,7 @@ public class CreateTableServiceImpl implements CreateTableService {
             wrapper.orderByDesc(ObjectStoreInfoEntity::getStoreType);
             List<ObjectStoreInfoEntity> objectStoreInfoEntities = objectStoreInfoMapper.selectList(wrapper);
             for (ObjectStoreInfoEntity objectStoreInfo : objectStoreInfoEntities) {
-                StandardTableCreatedEntity createdEntity = new StandardTableCreatedEntity();
+                DsmStandardTableCreatedEntity createdEntity = new DsmStandardTableCreatedEntity();
                 String tableType = KeyIntEnum.getValueByKeyAndType(objectStoreInfo.getStoreType(), Common.DATASTORETYPE);
                 createdEntity.setObjectId(objectId);
                 createdEntity.setTableBase(StringUtils.isNotBlank(tableType) ? tableType : "");

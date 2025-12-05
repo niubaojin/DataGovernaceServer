@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.CommonMapper">
+
+    <select id="getOrganizationZTreeNodesAll" resultType="com.synway.datastandardmanager.entity.vo.StandardTableRelationVO">
+        select '' as primaryClassifyId,
+               t1.PRIMARY_ORGANIZATION_CH as primaryClassifyCh,
+               '' as secondaryClassifyId,
+               t1.SECONDARY_ORGANIZATION_CH as secondaryClassifyCh, --  二级分类中文名
+               t1.SJXJBM as tableId, --  表id
+               t1.TABLE_NAME_EN as tableNameEn, -- 表英文名
+               t1.NAME as tableNameCh, --  表中文名
+               t1.STATISTICS_TIME as INSERT_DATE
+          from (select *
+                  from (select j.*,
+                               row_number() over(partition by lower(TABLE_PROJECT), upper(TABLE_NAME_EN) order by STATISTICS_TIME desc) as rnn
+                          from DP_TABLE_ORGANIZATION_ASSETS j
+                         where STATISTICS_TIME > trunc(sysdate)) h
+                 where h.rnn = 1) t1
+        <if test="name != null and name != ''">
+            where
+            (primaryClassifyCh like '%' || #{name} || '%'
+             or secondaryClassifyCh like '%' || #{name} || '%'
+             or upper(tableNameCh) like upper('%' || #{name} ||'%')
+             or upper(tableNameEn) like upper('%' || #{name} ||'%')
+             or upper(tableId) like upper('%' || #{name} ||'%') )
+        </if>
+    </select>
+
+</mapper>

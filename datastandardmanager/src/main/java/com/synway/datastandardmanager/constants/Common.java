@@ -28,9 +28,9 @@ public class Common {
     public static final String HAILIANG = "hailiang";
     public static final String POSTGRESQL = "postgresql";
     public static final String POLAR_DB = "polardb";
+    public static final String MYSQL = "mysql";
 
     //未适配
-    public static final String MYSQL = "mysql";
     public static final String HIGHGO = "highgo";
     public static final String GAUSS = "gauss";
 

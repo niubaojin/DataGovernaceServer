@@ -13,8 +13,8 @@ import java.util.Date;
  * 来源信息表
  */
 @Data
-@TableName("SOURCEINFO")
-public class SourceInfoEntity {
+@TableName("DSM_SOURCEINFO")
+public class DsmSourceInfoEntity {
 
     //id
     @TableField("ID")
@@ -68,10 +68,10 @@ public class SourceInfoEntity {
     @TableField("CENTER_ID")
     private String centerId;
 
-    public SourceInfoEntity() {
+    public DsmSourceInfoEntity() {
     }
 
-    public SourceInfoEntity(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm) {
+    public DsmSourceInfoEntity(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm) {
         Date now = new Date();
         this.sourceProtocol = sourceProtocol;
         this.tableName = tableName;
@@ -82,8 +82,8 @@ public class SourceInfoEntity {
         this.id = UUIDUtil.getUUID();
     }
 
-    public SourceInfoEntity(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm, String dataName,
-                            String dataId, String projectName, String centerName, String centerId) {
+    public DsmSourceInfoEntity(String sourceProtocol, String tableName, String sourceSystem, String sourceFirm, String dataName,
+                               String dataId, String projectName, String centerName, String centerId) {
         Date now = new Date();
         this.sourceProtocol = sourceProtocol;
         this.tableName = tableName;

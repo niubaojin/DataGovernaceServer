@@ -170,7 +170,7 @@ public class OriginalDictionaryServiceImpl implements OriginalDictionaryService 
         private void insertOrUpdateUserAuthority(StandardizeOriginalDictEntity originalDictionaryPojo, OperateLogHandleTypeEnum operationType) throws Exception {
             ObjectManageDTO standardObjectManage = new ObjectManageDTO();
             ObjectEntity objectPojoTable = new ObjectEntity();
-            objectPojoTable.setObjectName(StringUtils.isBlank(originalDictionaryPojo.getMemo()) ? "" : originalDictionaryPojo.getMemo());
+            objectPojoTable.setDataSourceName(StringUtils.isBlank(originalDictionaryPojo.getMemo()) ? "" : originalDictionaryPojo.getMemo());
             standardObjectManage.setObjectPojoTable(objectPojoTable);
             String tableId = originalDictionaryPojo.getFacturer() + "_" + originalDictionaryPojo.getDictionaryName();
             standardObjectManage.setTableId(tableId);

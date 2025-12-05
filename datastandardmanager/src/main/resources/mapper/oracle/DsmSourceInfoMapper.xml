@@ -3,9 +3,9 @@
         "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.synway.datastandardmanager.mapper.SourceInfoMapper">
+<mapper namespace="com.synway.datastandardmanager.mapper.DsmSourceInfoMapper">
 
-    <select id="findSourceInfo" parameterType="String" resultType="com.synway.datastandardmanager.entity.pojo.SourceInfoEntity">
+    <select id="findSourceInfo" parameterType="String" resultType="com.synway.datastandardmanager.entity.pojo.DsmSourceInfoEntity">
         select * from SourceInfo
         <where>
             <if test="sourceProtocol != null and sourceProtocol != ''">
@@ -21,7 +21,7 @@
         </where>
     </select>
 
-    <insert id="insertSourceInfo"  parameterType="com.synway.datastandardmanager.entity.pojo.SourceInfoEntity">
+    <insert id="insertSourceInfo"  parameterType="com.synway.datastandardmanager.entity.pojo.DsmSourceInfoEntity">
         merge into SourceInfo a
         using (select
             #{sourceInfo.sourceProtocol,jdbcType=VARCHAR} as sourceProtocol,

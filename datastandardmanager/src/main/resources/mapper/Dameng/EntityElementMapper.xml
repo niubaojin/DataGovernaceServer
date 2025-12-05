@@ -36,7 +36,7 @@
                         createmode   as createMode,
                         l.code_value AS elementobjectType
           from synlte.ENTITY_ELEMENT r
-          left join all_code_data l
+          left join DSM_ALL_CODE_DATA l
             on r.elemntObject = l.code_value
             <where>
                 <if test="searchText != null and searchText != ''">
@@ -60,7 +60,7 @@
 
     <select id="selectElementObject" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
         select l.code_text as id, count(e.elemntobject) as value
-          from all_code_data l
+          from DSM_ALL_CODE_DATA l
           left join synlte.ENTITY_ELEMENT e
             on e.elemntobject = l.code_value
          where l.code_id = 'ELEMENTOBJECT'
@@ -89,7 +89,7 @@
                                                                                ee.fieldid) x on o.objectid =
                                                                                                 x.objectid) where label is not null
                  group by elemntobject) l
-         right join all_code_data r on l.id = r.code_value
+         right join DSM_ALL_CODE_DATA r on l.id = r.code_value
          where r.code_id = 'ELEMENTOBJECT'
          order by r.code_value
     </select>

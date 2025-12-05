@@ -30,7 +30,8 @@ insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values 
 insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('10016', 'store_type', '16', 'Redis', 'Redis');
 insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('10019', 'store_type', '19', 'FTP', 'FTP');
 insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('SYNLTEFIELD_STATUS01', 'SYNLTEFIELD_STATUS', '01', '新建', '数据元页面中的状态-新建');
-insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('SYNLTEFIELD_STATUS02', 'SYNLTEFIELD_STATUS', '05', '发布', '数据元页面中的状态-发布');
+insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('SYNLTEFIELD_STATUS05', 'SYNLTEFIELD_STATUS', '05', '发布', '数据元页面中的状态-发布');
+insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('SYNLTEFIELD_STATUS07', 'SYNLTEFIELD_STATUS', '07', '停用', '数据元页面中的状态-停用');
 insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('field_type0', 'field_type', '0', 'integer', '整数型');
 insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('field_type1', 'field_type', '1', 'float', '浮点型');
 insert into DSM_ALL_CODE_DATA (ID, CODE_ID, CODE_VALUE, CODE_TEXT, MEMO) values ('field_type2', 'field_type', '2', 'string', '字符串型');

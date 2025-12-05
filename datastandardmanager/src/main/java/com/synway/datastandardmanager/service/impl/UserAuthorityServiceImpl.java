@@ -41,7 +41,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             userAuthority.setId(objectManageDTO.getTableId().toUpperCase());
             userAuthority.setUserId(Integer.valueOf(authorizedUser.getUserId()));
             userAuthority.setUserName(authorizedUser.getUserName());
-            userAuthority.setCmnName(objectManageDTO.getObjectPojoTable().getObjectName());
+            userAuthority.setCmnName(objectManageDTO.getObjectPojoTable().getDataSourceName());
             userAuthority.setCreateTime(new Date());
             userAuthority.setOrganId(authorizedUser.getOrganId());
             userAuthority.setOrganName(authorizedUser.getOrganName());

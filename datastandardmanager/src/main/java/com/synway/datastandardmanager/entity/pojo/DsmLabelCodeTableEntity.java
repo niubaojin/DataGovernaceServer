@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 @Data
-@TableName("LABEL_CODE_TABLE")
-public class LabelCodeTableEntity {
+@TableName("DSM_LABEL_CODE_TABLE")
+public class DsmLabelCodeTableEntity {
 
     // 标签代号
     @TableField("LABEL_LEVEL")

@@ -89,7 +89,7 @@ public class CreateTableSqlServiceImplAds implements CreateTableSqlService {
             ObjectMapper objectMapper = SpringBeanUtil.getBean(ObjectMapper.class);
             LambdaQueryWrapper<ObjectEntity> wrapper = Wrappers.lambdaQuery();
             wrapper.eq(ObjectEntity::getRelateTableName, "OBJECTFIELD");
-            wrapper.eq(ObjectEntity::getTableName, tableName);
+            wrapper.eq(ObjectEntity::getRealTablename, tableName);
             ObjectEntity objectEntity = objectMapper.selectOne(wrapper);
             Integer isActiveTable = objectEntity == null ? 0 : objectEntity.getIsActiveTable();
             if (buildTableInfoVo.getIsCreatTableTool()) {
