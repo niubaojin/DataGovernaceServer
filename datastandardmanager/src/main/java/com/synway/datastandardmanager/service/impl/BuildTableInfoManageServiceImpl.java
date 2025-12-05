@@ -73,6 +73,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     private static ReentrantLock lock = new ReentrantLock();
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateColumnToInfo(CreateTableInfoDTO data, int updateFlag) {
         try {
             ObjectStoreInfoEntity objectStoreInfo = new ObjectStoreInfoEntity();
@@ -305,8 +306,9 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         projectName = projectName.length() > 50 ? projectName.substring(0, 50) : projectName;
         objectStoreInfo.setProjectName(projectName);
         objectStoreInfo.setMemo("");
-        //import_flag字段写入默认值0
-        objectStoreInfo.setImportFlag(1);
+        // 先查询数据库中，如果数据库中这个表的数据量(IMPORT_FLAG = 1)为0，则这个值为1，如果为1 ，则该值为0
+        long tableCount = getObjectStoreInfoCountByTableName(objectStoreInfo);
+        objectStoreInfo.setImportFlag(tableCount > 0 ? 0 : 1);
         objectStoreInfo.setIsPartition(detectedTable.getIsPartitioned() == 1 ? 0 : 1);
         //是否实时表默认为1
         objectStoreInfo.setIsActiveTable(1);
@@ -859,14 +861,8 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             objectStoreInfo.setLifeCycle(buildTableInfoVo.getLifeCycle());
             objectStoreInfo.setDataId(StringUtils.isNotBlank(buildTableInfoVo.getDataId()) ? buildTableInfoVo.getDataId() : " ");
             objectStoreInfo.setTableCreateTime(new Date());
-//            // 先查询数据库中，如果数据库中这个表的数据量(IMPORT_FLAG = 1)为0，则这个值为1，如果为1 ，则该值为0
-//            if(Common.ODPS.equalsIgnoreCase(buildTableInfoVo.getDsType())){
-//                int tableCount = objectStoreInfoDao.queryCountByTableName(objectStoreInfo.getStoreType(),objectStoreInfo.getTableName());
-//                objectStoreInfo.setImportFlag(tableCount>0?0:1);
-//            }else{
-//                objectStoreInfo.setImportFlag(1);
-//            }
-            objectStoreInfo.setImportFlag(1);
+            long tableCount = getObjectStoreInfoCountByTableName(objectStoreInfo);
+            objectStoreInfo.setImportFlag(tableCount > 0 ? 0 : 1);
             if (objectStoreInfo.getStoreType() == 2 || objectStoreInfo.getStoreType() == 3) {
                 objectStoreInfo.setImportFlag(0);
             }
@@ -880,6 +876,14 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         } else {
             log.info(String.format(">>>>>>数据库类型为：%s不需要将数据插入到表OBJECT_STORE_INFO中", buildTableInfoVo.getDsType()));
         }
+    }
+
+    public long getObjectStoreInfoCountByTableName(ObjectStoreInfoEntity objectStoreInfo){
+        LambdaQueryWrapper<ObjectStoreInfoEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(ObjectStoreInfoEntity::getStoreType, objectStoreInfo.getStoreType());
+        wrapper.eq(ObjectStoreInfoEntity::getTableName, objectStoreInfo.getTableName());
+        wrapper.eq(ObjectStoreInfoEntity::getImportFlag, 1);
+        return objectStoreInfoMapper.selectCount(wrapper);
     }
 
     @Override
@@ -931,14 +935,8 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             objectStoreInfo.setPartitionCount(buildTableInfoVo.getPartitionCount());
             objectStoreInfo.setLifeCycle(buildTableInfoVo.getLifeCycle() == null ? 0 : buildTableInfoVo.getLifeCycle());
             objectStoreInfo.setTableCreateTime(new Date());
-//            if(Common.HIVECDH.equalsIgnoreCase(buildTableInfoVo.getDsType())
-//                    || Common.HIVEHUAWEI.equalsIgnoreCase(buildTableInfoVo.getDsType())){
-//                int tableCount = objectStoreInfoDao.queryCountByTableName(objectStoreInfo.getStoreType(),objectStoreInfo.getTableName());
-//                objectStoreInfo.setImportFlag(tableCount>0?0:1);
-//            }else{
-//                objectStoreInfo.setImportFlag(1);
-//            }
-            objectStoreInfo.setImportFlag(1);
+            long tableCount = getObjectStoreInfoCountByTableName(objectStoreInfo);
+            objectStoreInfo.setImportFlag(tableCount > 0 ? 0 : 1);
             objectStoreInfo.setDataId(StringUtils.isNotBlank(buildTableInfoVo.getDataId()) ? buildTableInfoVo.getDataId() : " ");
             // 可能在插入时数据库中已经存在了这一条数据
             log.info(">>>>>>表存储的信息为：" + JSONObject.toJSONString(objectStoreInfo));

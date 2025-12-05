@@ -1574,11 +1574,9 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         // 如果是hive平台 则保存的 storageDataMode 的值为 hbase 如果是odps平台 则是 ads
         objectEntity.setStorageDataMode(getResType());
         objectEntity.setStoreType(KeyIntEnum.getKeyByNameAndType(objectEntity.getStorageDataMode(), Common.STORETYPE));
+        objectEntity.setUpdateTime(new Date());
         if (objectEntity.getCreateTime() == null) {
             objectEntity.setCreateTime(new Date());
-        }
-        if (objectEntity.getUpdateTime() == null) {
-            objectEntity.setUpdateTime(new Date());
         }
         objectEntity.setOwnerFactory(String.valueOf(factory));
         if (objectEntity.getObjectId() != null && StringUtils.isBlank(objectEntity.getStorageTableStatus())) {
