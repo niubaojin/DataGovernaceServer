@@ -96,7 +96,7 @@ public class DeterminerServiceImpl implements DeterminerService {
                     determinerTypeFilter.add(new ValueLabelVO(String.valueOf(d), KeyStrEnum.getValueByKeyAndType("2_" + d, Common.DETERMINER_ENUM)))
             );
             List<ValueLabelVO> versionFilter = new ArrayList<>();
-            list.stream().map(FieldDeterminerEntity::getVersions).distinct().forEach(d ->
+            list.stream().filter(d -> StringUtils.isNotBlank(d.getVersions())).map(FieldDeterminerEntity::getVersions).distinct().forEach(d ->
                     versionFilter.add(new ValueLabelVO(d, d))
             );
             List<ValueLabelVO> regOrgFilter = new ArrayList<>();
