@@ -318,7 +318,7 @@ public class DataSetStandardController {
 
     /**
      * 查看表是否已经存在
-     * 1：从table_organization_assets统计表中查询该表是否已经存在（该表可能在数据库中不存在）
+     * 1：从dp_table_organization_assets统计表中查询该表是否已经存在（该表可能在数据库中不存在）
      * 2：从STANDARD_TABLE_CREATED中查询该表是否已经存在
      */
     @RequestMapping("/queryTableIsExist")

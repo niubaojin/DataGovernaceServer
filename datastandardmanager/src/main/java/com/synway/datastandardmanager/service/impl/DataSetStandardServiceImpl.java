@@ -1323,7 +1323,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                     objectHisMapper.insert(objectHisEntity);
                     log.info(String.format(">>>>>>数据标准表备份表object_history新增完成：\n%s", JSONObject.toJSONString(objectHisEntity)));
 
-                    // 修改table_organization_assets表中的分级分类数据
+                    // 修改dp_table_organization_assets表中的分级分类数据
                     updateAssetsClassify(objectEntity);
                 }
             }
@@ -1368,12 +1368,12 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
     }
 
     /**
-     * 修改table_organization_assets表中的分级分类数据：目前修改数据组织分类和数据来源分类信息
+     * 修改dp_table_organization_assets表中的分级分类数据：目前修改数据组织分类和数据来源分类信息
      *
      * @param objectEntity
      */
     public void updateAssetsClassify(ObjectEntity objectEntity) {
-        log.info(">>>>>>开始修改table_organization_assets表中分类信息");
+        log.info(">>>>>>开始修改dp_table_organization_assets表中分类信息");
         // 数据组织分类
         String sourceClassifyCh = objectEntity.getSourceClassify();
         // 数据来源分类

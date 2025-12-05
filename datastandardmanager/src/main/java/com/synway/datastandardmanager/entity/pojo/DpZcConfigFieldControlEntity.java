@@ -11,8 +11,8 @@ import lombok.Data;
  * @date 2025年8月14日13:49:24
  */
 @Data
-@TableName("ZC_CONFIG_FIELD_CONTROL")
-public class ZcConfigFieldControlEntity {
+@TableName("DP_ZC_CONFIG_FIELD_CONTROL")
+public class DpZcConfigFieldControlEntity {
 
     //页面名
     @TableField("NAME")

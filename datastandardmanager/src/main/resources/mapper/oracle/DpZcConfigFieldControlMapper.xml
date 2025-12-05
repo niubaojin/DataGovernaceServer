@@ -3,10 +3,10 @@
         "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.synway.datastandardmanager.mapper.ZcConfigFieldControlMapper">
+<mapper namespace="com.synway.datastandardmanager.mapper.DpZcConfigFieldControlMapper">
 
     <update id="updateBuildTableShowField">
-        merge into ZC_CONFIG_FIELD_CONTROL a
+        merge into DP_ZC_CONFIG_FIELD_CONTROL a
         using (select 'TABLE_BUILDTABLE' as NAME,
                       #{userName, jdbcType = VARCHAR} as USERNAME
                  FROM dual) b

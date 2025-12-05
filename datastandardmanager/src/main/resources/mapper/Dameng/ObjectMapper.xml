@@ -297,7 +297,7 @@
     </select>
 
     <update id="updateAssetsClassify">
-        update table_organization_assets
+        update dp_table_organization_assets
            set PRIMARY_DATASOURCE_CH      = #{oneSourceClassifyCh},
                SECONDARY_DATASOURCE_CH    = #{twoSourceClassifyCh},
                PRIMARY_ORGANIZATION_CH    = #{oneOrganizationClassifyCh},
@@ -307,7 +307,7 @@
     </update>
 
     <update id="updateAssetsTempClassify">
-        update TABLE_ORGANIZATION_ASSETS_TEMP
+        update DP_TABLE_ORGANIZATION_ASSETS_TEMP
            set PRIMARY_DATASOURCE_CH     = #{oneSourceClassifyCh},
                SECONDARY_DATASOURCE_CH   = #{twoSourceClassifyCh},
                PRIMARY_ORGANIZATION_CH   = #{oneOrganizationClassifyCh},

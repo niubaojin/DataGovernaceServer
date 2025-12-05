@@ -55,7 +55,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     @Resource
     ObjectFieldMapper objectFieldMapper;
     @Resource
-    ZcConfigFieldControlMapper zcConfigFieldControlMapper;
+    DpZcConfigFieldControlMapper dpZcConfigFieldControlMapper;
     @Resource
     DsmAllCodeDataMapper allCodeDataMapper;
     @Resource
@@ -746,7 +746,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             if (StringUtils.isBlank(showFieldStr)) {
                 showFieldStr = "notNull";
             }
-            zcConfigFieldControlMapper.updateBuildTableShowField(showFieldStr, authorizedUser.getUserName());
+            dpZcConfigFieldControlMapper.updateBuildTableShowField(showFieldStr, authorizedUser.getUserName());
             return Common.UPDATE_SUCCESS;
         } catch (Exception e) {
             log.error(">>>>>>更新建表信息管理页面显示字段报错：", e);
@@ -759,10 +759,10 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         List<String> listReturn = new ArrayList<>(0);
         try {
             LoginUser authorizedUser = AuthorizedUserUtils.getInstance().getAuthor();
-            LambdaQueryWrapper<ZcConfigFieldControlEntity> wrapper = Wrappers.lambdaQuery();
-            wrapper.eq(ZcConfigFieldControlEntity::getName, "TABLE_BUILDTABLE");
-            wrapper.eq(ZcConfigFieldControlEntity::getUserName, authorizedUser.getUserName());
-            ZcConfigFieldControlEntity fieldControl = zcConfigFieldControlMapper.selectOne(wrapper);
+            LambdaQueryWrapper<DpZcConfigFieldControlEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(DpZcConfigFieldControlEntity::getName, "TABLE_BUILDTABLE");
+            wrapper.eq(DpZcConfigFieldControlEntity::getUserName, authorizedUser.getUserName());
+            DpZcConfigFieldControlEntity fieldControl = dpZcConfigFieldControlMapper.selectOne(wrapper);
             if (fieldControl != null && fieldControl.getShowFieldList() != null) {
                 listReturn = Arrays.asList(fieldControl.getShowFieldList().split(","));
             }
