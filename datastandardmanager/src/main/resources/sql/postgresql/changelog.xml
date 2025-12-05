@@ -50,10 +50,10 @@
             </sqlCheck>
         </preConditions>
         <sql>
-            insert into MODULE_CREATED_OBJECT select * from DSM_MODULE_CREATED_OBJECT;
-            insert into SOURCEINFO select * from DSM_SOURCEINFO;
-            insert into SOURCE_FIELD_INFO select * from DSM_SOURCE_FIELD_INFO;
-            insert into STANDARD_TABLE_CREATED select * from DSM_STANDARD_TABLE_CREATED;
+            insert into DSM_MODULE_CREATED_OBJECT select * from MODULE_CREATED_OBJECT;
+            insert into DSM_SOURCEINFO select * from SOURCEINFO;
+            insert into DSM_SOURCE_FIELD_INFO select * from SOURCE_FIELD_INFO;
+            insert into DSM_STANDARD_TABLE_CREATED select * from STANDARD_TABLE_CREATED;
         </sql>
     </changeSet>
 
