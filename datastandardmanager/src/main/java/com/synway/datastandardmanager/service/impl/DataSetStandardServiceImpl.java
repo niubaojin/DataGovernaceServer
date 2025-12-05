@@ -2020,14 +2020,14 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             if (StringUtils.isEmpty(fieldName)) {
                 throw new Exception("fieldName值为空，不是标准库中的标准列名");
             }
+//            queryWrapper.eq(SynlteFieldEntity::getFieldId, fieldId);
+//            long fieldIdCount = synlteFieldMapper.selectCount(queryWrapper);
+//            if (fieldIdCount == 0) {
+//                message = String.format("元素编码错误：【%s】不是标准库中的元素编码,不能保存", fieldId);
+//                throw new Exception(message);
+//            }
+//            queryWrapper = Wrappers.lambdaQuery();
             LambdaQueryWrapper<SynlteFieldEntity> queryWrapper = Wrappers.lambdaQuery();
-            queryWrapper.eq(SynlteFieldEntity::getFieldId, fieldId);
-            long fieldIdCount = synlteFieldMapper.selectCount(queryWrapper);
-            if (fieldIdCount == 0) {
-                message = String.format("元素编码错误：【%s】不是标准库中的元素编码,不能保存", fieldId);
-                throw new Exception(message);
-            }
-            queryWrapper = Wrappers.lambdaQuery();
             queryWrapper.eq(SynlteFieldEntity::getFieldName, fieldName);
             long fieldNameCount = synlteFieldMapper.selectCount(queryWrapper);
             if (fieldNameCount == 0) {
