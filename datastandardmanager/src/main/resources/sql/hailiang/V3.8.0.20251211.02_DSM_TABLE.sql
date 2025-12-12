@@ -6,34 +6,34 @@ create table DSM_LABEL_CODE_TABLE
 );
 -- Add comments to the columns
 comment on column DSM_LABEL_CODE_TABLE.LABEL_LEVEL
-  is '标签代号';
+    is '标签代号';
 comment on column DSM_LABEL_CODE_TABLE.LABEL_NAME
-  is '标签名称';
+    is '标签名称';
 
 -- Create table
 create table DSM_ALL_CODE_DATA
 (
     ID         VARCHAR2(100) default SYS_GUID() not null,
-    CODE_ID    VARCHAR2(100) not null,
-    CODE_VALUE VARCHAR2(100) not null,
-    CODE_TEXT  VARCHAR2(100) not null,
+    CODE_ID    VARCHAR2(100)                    not null,
+    CODE_VALUE VARCHAR2(100)                    not null,
+    CODE_TEXT  VARCHAR2(100)                    not null,
     MEMO       VARCHAR2(100)
 );
 -- Add comments to the table
 comment on table DSM_ALL_CODE_DATA
-  is '所有的代码信息';
+    is '所有的代码信息';
 -- Add comments to the columns
 comment on column DSM_ALL_CODE_DATA.ID
-  is '每个码值的唯一uuid';
+    is '每个码值的唯一uuid';
 comment on column DSM_ALL_CODE_DATA.CODE_ID
-  is '每种码值的id值';
+    is '每种码值的id值';
 comment on column DSM_ALL_CODE_DATA.MEMO
-  is '注释';
+    is '注释';
 
 create table DSM_MODULE_CREATED_OBJECT
 (
-    TABLEID      VARCHAR2(200) not null,
-    MODULE_NAME  VARCHAR2(500) not null,
+    TABLEID      VARCHAR2(200)        not null,
+    MODULE_NAME  VARCHAR2(500)        not null,
     CREATED_TIME DATE default sysdate not null,
     OBJECTID     NUMBER
 );
@@ -46,15 +46,15 @@ create table DSM_DD_BDDM
     DMMC    VARCHAR2(128)
 );
 comment on table DSM_DD_BDDM
-  is '地标';
+    is '地标';
 comment on column DSM_DD_BDDM.DMZD
-  is '代码字段';
+    is '代码字段';
 comment on column DSM_DD_BDDM.DMZDZWM
-  is '代码字段中文名';
+    is '代码字段中文名';
 comment on column DSM_DD_BDDM.DM
-  is '代码';
+    is '代码';
 comment on column DSM_DD_BDDM.DMMC
-  is '代码名称';
+    is '代码名称';
 
 -- Create table
 create table DSM_SOURCEINFO
@@ -73,26 +73,26 @@ create table DSM_SOURCEINFO
     CENTER_ID      VARCHAR2(256)
 );
 comment on table DSM_SOURCEINFO
-  is '来源信息表';
+    is '来源信息表';
 -- Add comments to the columns
 comment on column DSM_SOURCEINFO.SOURCEPROTOCOL
-  is '来源数据协议';
+    is '来源数据协议';
 comment on column DSM_SOURCEINFO.TABLENAME
-  is '来源数据名(表英文名)';
+    is '来源数据名(表英文名)';
 comment on column DSM_SOURCEINFO.SOURCESYSTEM
-  is '来源系统代码';
+    is '来源系统代码';
 comment on column DSM_SOURCEINFO.SOURCEFIRM
-  is '来源厂商';
+    is '来源厂商';
 comment on column DSM_SOURCEINFO.DATANAME
-  is '来源数据名(表中文名)';
+    is '来源数据名(表中文名)';
 comment on column DSM_SOURCEINFO.DATA_ID
-  is '数据源';
+    is '数据源';
 comment on column DSM_SOURCEINFO.PROJECT_NAME
-  is '项目空间';
+    is '项目空间';
 comment on column DSM_SOURCEINFO.CENTER_NAME
-  is '数据中心名称';
+    is '数据中心名称';
 comment on column DSM_SOURCEINFO.CENTER_ID
-  is '数据中心id';
+    is '数据中心id';
 
 -- Create table
 create table DSM_SOURCE_FIELD_INFO
@@ -120,46 +120,46 @@ create table DSM_SOURCE_FIELD_INFO
     ELEMENTID        VARCHAR2(128)
 );
 comment on table DSM_SOURCE_FIELD_INFO
-  is '来源字段信息表';
+    is '来源字段信息表';
 -- Add comments to the columns
 comment on column DSM_SOURCE_FIELD_INFO.SOURCEINFOID
-  is 'DSM_SOURCEINFOID表的ID';
+    is 'DSM_SOURCEINFOID表的ID';
 comment on column DSM_SOURCE_FIELD_INFO.TABLEID
-  is '表英文名';
+    is '表英文名';
 comment on column DSM_SOURCE_FIELD_INFO.FIELDNAME
-  is '字段英文名';
+    is '字段英文名';
 comment on column DSM_SOURCE_FIELD_INFO.FIELDDESCRIPTION
-  is '字段中文名（描述）';
+    is '字段中文名（描述）';
 comment on column DSM_SOURCE_FIELD_INFO.FIELDTYPE
-  is '字段类型';
+    is '字段类型';
 comment on column DSM_SOURCE_FIELD_INFO.FIELDLENGTH
-  is '字段长度';
+    is '字段长度';
 comment on column DSM_SOURCE_FIELD_INFO.ISNONNULL
-  is '是否为空';
+    is '是否为空';
 comment on column DSM_SOURCE_FIELD_INFO.ISDELETED
-  is '是否已经删除';
+    is '是否已经删除';
 comment on column DSM_SOURCE_FIELD_INFO.ISPRIMARYKEY
-  is '是否为主键';
+    is '是否为主键';
 comment on column DSM_SOURCE_FIELD_INFO.ISFOREIGNKEY
-  is '是否为外键';
+    is '是否为外键';
 comment on column DSM_SOURCE_FIELD_INFO.INSERTTIME
-  is '插入时间';
+    is '插入时间';
 comment on column DSM_SOURCE_FIELD_INFO.UPDATETIME
-  is '更新时间';
+    is '更新时间';
 comment on column DSM_SOURCE_FIELD_INFO.DATABASEURL
-  is '数据库的URL';
+    is '数据库的URL';
 comment on column DSM_SOURCE_FIELD_INFO.SCHEMEID
-  is '数据库/项目名';
+    is '数据库/项目名';
 comment on column DSM_SOURCE_FIELD_INFO.FIELDSOURCETYPE
-  is '1：是 0：否 默认值：0';
+    is '1：是 0：否 默认值：0';
 comment on column DSM_SOURCE_FIELD_INFO.FIELDCODE
-  is '相似度分析获取到的元素编码 add20200818';
+    is '相似度分析获取到的元素编码 add20200818';
 comment on column DSM_SOURCE_FIELD_INFO.GADSJFIELDID
-  is '数据元内部标识符';
+    is '数据元内部标识符';
 comment on column DSM_SOURCE_FIELD_INFO.DETERMINERID
-  is '限定词id';
+    is '限定词id';
 comment on column DSM_SOURCE_FIELD_INFO.ELEMENTID
-  is '数据要素id';
+    is '数据要素id';
 
 -- Create table
 create table DSM_OBJECT_MANAGE_STANDARD
@@ -173,54 +173,54 @@ create table DSM_OBJECT_MANAGE_STANDARD
     TEXT    VARCHAR2(200)
 );
 comment on table DSM_OBJECT_MANAGE_STANDARD
-  is '数据库对象管理规范';
+    is '数据库对象管理规范';
 comment on column DSM_OBJECT_MANAGE_STANDARD.ID
-  is '组织分类ID';
+    is '组织分类ID';
 comment on column DSM_OBJECT_MANAGE_STANDARD.VALUE
-  is '规范值';
+    is '规范值';
 comment on column DSM_OBJECT_MANAGE_STANDARD.TYPE
-  is '规范类型';
+    is '规范类型';
 comment on column DSM_OBJECT_MANAGE_STANDARD.REMARKS
-  is '备注';
+    is '备注';
 comment on column DSM_OBJECT_MANAGE_STANDARD.DELETED
-  is '是否已删除(0:否;1:是)';
+    is '是否已删除(0:否;1:是)';
 comment on column DSM_OBJECT_MANAGE_STANDARD.PARID
-  is '父级组织分类ID';
+    is '父级组织分类ID';
 comment on column DSM_OBJECT_MANAGE_STANDARD.TEXT
-  is '组织分类名称';
+    is '组织分类名称';
 
 create table DSM_STANDARD_TABLE_CREATED
 (
-    TABLE_NAME         VARCHAR2(100) not null,
-    TABLE_PROJECT      VARCHAR2(100) not null,
-    TABLE_BASE         VARCHAR2(100) not null,
+    TABLE_NAME         VARCHAR2(100)        not null,
+    TABLE_PROJECT      VARCHAR2(100)        not null,
+    TABLE_BASE         VARCHAR2(100)        not null,
     OBJECT_ID          VARCHAR2(100),
-    ID                 VARCHAR2(100) not null,
+    ID                 VARCHAR2(100)        not null,
     CREATE_TIME        DATE default sysdate not null,
     TABLE_NAME_CH      VARCHAR2(100),
     DATA_CENTER_NAME   VARCHAR2(100),
     DATA_RESOURCE_NAME VARCHAR2(100)
 );
 comment on table DSM_STANDARD_TABLE_CREATED
-  is '通过标准管理页面已经创建的表';
+    is '通过标准管理页面已经创建的表';
 comment on column DSM_STANDARD_TABLE_CREATED.TABLE_NAME
-  is '在数据库中创建的表名';
+    is '在数据库中创建的表名';
 comment on column DSM_STANDARD_TABLE_CREATED.TABLE_PROJECT
-  is '在数据库中创建的表对应的项目名';
+    is '在数据库中创建的表对应的项目名';
 comment on column DSM_STANDARD_TABLE_CREATED.TABLE_BASE
-  is '对应的数据库类型';
+    is '对应的数据库类型';
 comment on column DSM_STANDARD_TABLE_CREATED.OBJECT_ID
-  is 'objectId';
+    is 'objectId';
 comment on column DSM_STANDARD_TABLE_CREATED.ID
-  is '自增主键ID';
+    is '自增主键ID';
 comment on column DSM_STANDARD_TABLE_CREATED.CREATE_TIME
-  is '表的创建时间';
+    is '表的创建时间';
 comment on column DSM_STANDARD_TABLE_CREATED.TABLE_NAME_CH
-  is '表中文名';
+    is '表中文名';
 comment on column DSM_STANDARD_TABLE_CREATED.DATA_CENTER_NAME
-  is '数据中心名';
+    is '数据中心名';
 comment on column DSM_STANDARD_TABLE_CREATED.DATA_RESOURCE_NAME
-  is '数据源名称';
+    is '数据源名称';
 
 -- Create table 表组织资产的相关数据
 create table DP_TABLE_ORGANIZATION_ASSETS_TEMP
@@ -263,75 +263,75 @@ create table DP_TABLE_ORGANIZATION_ASSETS_TEMP
 );
 -- Add comments to the table
 comment on table DP_TABLE_ORGANIZATION_ASSETS_TEMP
-  is '表组织资产的相关数据';
+    is '表组织资产的相关数据';
 -- Add comments to the columns
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.SJXJBM
-  is '表协议名';
+    is '表协议名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.NAME
-  is '表中文名';
+    is '表中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.TABLE_NAME_EN
-  is '表英文名';
+    is '表英文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.PRIMARY_DATASOURCE_CH
-  is '数据来源一级分类中文名';
+    is '数据来源一级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.SECONDARY_DATASOURCE_CH
-  is '数据来源二级分类中文名';
+    is '数据来源二级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.PRIMARY_ORGANIZATION_CH
-  is '数据组织一级分类中文名';
+    is '数据组织一级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.SECONDARY_ORGANIZATION_CH
-  is '数据组织二级分类中文名';
+    is '数据组织二级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.FACTOR_ONE_NAME
-  is '数据资源要素一级分类中文名';
+    is '数据资源要素一级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.FACTOR_TWO_NAME
-  is '数据资源要素二级分类中文名';
+    is '数据资源要素二级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.FACTOR_DETAILED_NAME
-  is '数据资源要素细目分类代码名称';
+    is '数据资源要素细目分类代码名称';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.FACTOR_ATTRIBUTES_NAME
-  is '数据资源属性分类代码名称';
+    is '数据资源属性分类代码名称';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.TABLE_ALL_COUNT
-  is '表数据总行数 到昨天分区';
+    is '表数据总行数 到昨天分区';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.TABLE_SIZE
-  is '表数据总大小 到昨天分区 byte';
+    is '表数据总大小 到昨天分区 byte';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.TABLE_PROJECT
-  is '表的项目名';
+    is '表的项目名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.LIFE_CYCLE
-  is '表的生命周期';
+    is '表的生命周期';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.TABLE_TYPE
-  is '表类型 odps/ads/''''';
+    is '表类型 odps/ads/''''';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.YESTERDAY_COUNT
-  is '昨天分区的数据量';
+    is '昨天分区的数据量';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.PARTITION_MESSAGE
-  is '是否为分区表  0:分区表  1:不是分区表  -1：不确定是否为分区表';
+    is '是否为分区表  0:分区表  1:不是分区表  -1：不确定是否为分区表';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.AVERAGE_DAILY_VOLUME
-  is '日均数据量';
+    is '日均数据量';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.VALUE_RATE
-  is '有值率';
+    is '有值率';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.NULL_RATE
-  is '空值率';
+    is '空值率';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.TABLE_STATE
-  is '状态  正常/异常';
+    is '状态  正常/异常';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.UPDATE_TYPE
-  is '全量/增量/';
+    is '全量/增量/';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.STATISTICS_TIME
-  is '统计时间';
+    is '统计时间';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.FREQUENCY
-  is '最近一个月使用次数/总使用次数';
+    is '最近一个月使用次数/总使用次数';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.LIVETYPE
-  is 'NONLIVING：死表 LIVING：活表';
+    is 'NONLIVING：死表 LIVING：活表';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.REGISTER_STATE
-  is '注册状态 -1:未注册 1:已注册';
+    is '注册状态 -1:未注册 1:已注册';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.OBJECT_ID
-  is 'object表中的objectid';
+    is 'object表中的objectid';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.AVERAGE_DAILY_SIZE
-  is '日均数据大小';
+    is '日均数据大小';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.OBJECT_STATE
-  is '停用，启用状态，1为启用';
+    is '停用，启用状态，1为启用';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.THREE_ORGANIZATION_CH
-  is '数据组织三级分类中文名';
+    is '数据组织三级分类中文名';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.LABELS
-  is '数据资源标签';
+    is '数据资源标签';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.UPDATE_PERIOD
-  is '更新批次';
+    is '更新批次';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.UPDATE_DATE
-  is '更新周期';
+    is '更新周期';
 comment on column DP_TABLE_ORGANIZATION_ASSETS_TEMP.DATARESOURCE_CODE
-  is '资源服务平台组织机构代码';
+    is '资源服务平台组织机构代码';
