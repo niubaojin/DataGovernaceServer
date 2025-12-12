@@ -58,11 +58,11 @@ public class ObjectFieldEntity {
 
     //索引类型
     @TableField("INDEXTYPE")
-    private Integer indexType;
+    private Integer indexType = 0;
 
     //标准中是否存在索引
     @TableField("ISINDEX")
-    private Integer isIndex;
+    private Integer isIndex = 0;
     @TableField(exist = false)
     private String isIndexStr;
 

@@ -354,7 +354,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             dataSetTableInfoVO.setObjectStateStr(KeyIntEnum.getValueByKeyAndType(Integer.parseInt(dataSetTableInfoVO.getObjectState()), Common.OBJECT_STATE));
         }
         List<KeyValueVO> creatorFilter = new ArrayList<>();
-        listAll.stream().map(DataSetTableInfoVO::getCreator).distinct().forEach(d -> {
+        listAll.stream().filter(d -> d.getCreator() != null).map(DataSetTableInfoVO::getCreator).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
                         creatorFilter.add(new KeyValueVO(d, d));
                     }
@@ -362,7 +362,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         );
         // 2:获取修改人的筛选值
         List<KeyValueVO> updaterFilter = new ArrayList<>();
-        listAll.stream().map(DataSetTableInfoVO::getUpdater).distinct().forEach(d -> {
+        listAll.stream().filter(d -> d.getUpdater() != null).map(DataSetTableInfoVO::getUpdater).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
                         updaterFilter.add(new KeyValueVO(d, d));
                     }
@@ -370,7 +370,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         );
         // 3: 数据状态的筛选
         List<KeyValueVO> objectStatesFilter = new ArrayList<>();
-        listAll.stream().map(DataSetTableInfoVO::getObjectStateStr).distinct().forEach(d -> {
+        listAll.stream().filter(d -> d.getObjectStateStr() != null).map(DataSetTableInfoVO::getObjectStateStr).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
                         objectStatesFilter.add(new KeyValueVO(d, d));
                     }
@@ -378,7 +378,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         );
         // 应用系统的筛选
         List<KeyValueVO> dataSourceFilter = new ArrayList<>();
-        listAll.stream().map(DataSetTableInfoVO::getDataSourceCh).distinct().forEach(d -> {
+        listAll.stream().filter(d -> d.getDataSourceCh() != null).map(DataSetTableInfoVO::getDataSourceCh).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
                         dataSourceFilter.add(new KeyValueVO(d, d));
                     }

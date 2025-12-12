@@ -155,7 +155,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                     }
                     // 获取表字段信息的字段分类信息 synltefield.FIELD_CLASS 这个字段里面
                     List<ObjectFieldEntity> codeList = codeClassMap.get(objectField.getFieldId());
-                    if (!codeList.isEmpty()) {
+                    if (codeList != null && !codeList.isEmpty()) {
                         ObjectFieldEntity entity1 = codeList.get(0);
                         if (entity1 == null) {
                             continue;

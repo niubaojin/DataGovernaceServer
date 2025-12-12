@@ -227,11 +227,11 @@
     <update id="updateObjectByTableId" parameterType="com.synway.datastandardmanager.entity.pojo.ObjectEntity">
         <if test="realTablename != null and realTablename != ''">
             update synlte."object"
-               set OBJECTNAME     = #{objectName},
+               set OBJECTNAME     = #{dataSourceName},
                    OBJECTSTATE    = #{objectState},
                    OBJECTMEMO     = #{objectMemo},
                    sourceid       = #{sourceId},
-                   TABLENAME      = #{tableName},
+                   TABLENAME      = #{realTablename},
                    STORETYPE      = #{storeType},
                    DATA_SOURCE    = #{dataSource},
                    ISACTIVETABLE  = #{isActiveTable},
@@ -261,11 +261,11 @@
 
     <update id="updateObjectByObjectId" parameterType="com.synway.datastandardmanager.entity.pojo.ObjectEntity">
         update synlte."object"
-           set OBJECTNAME     = #{objectName},
+           set OBJECTNAME     = #{dataSourceName},
                OBJECTSTATE    = #{objectState},
-               TABLENAME      = #{tableName},
+               TABLENAME      = #{realTablename},
                STORETYPE      = #{storeType},
-               DATA_SOURCE    = #{dataSource},
+               DATA_SOURCE    = #{codeTextTd},
                sourceid       = #{sourceId},
                OBJECTMEMO     = #{objectMemo},
                HIVETABLENAME  = #{realTablename},
@@ -278,7 +278,7 @@
                UPDATER        = #{updater},
                CREATOR        = #{creator},
                VERSION        = #{version},
-               SECRETLEVEL    = #{secretLevel},
+               SECRETLEVEL    = #{dataLevel},
                SJZYBQ1        = #{sjzybq1},
                SJZYBQ2        = #{sjzybq2},
                SJZYBQ3        = #{sjzybq3},
