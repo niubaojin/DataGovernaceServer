@@ -5,45 +5,6 @@
 
 <mapper namespace="com.synway.datastandardmanager.mapper.ObjectStoreInfoMapper">
 
-    <insert id="updateObjectStoreInfoTime" parameterType="com.synway.datastandardmanager.entity.pojo.ObjectStoreInfoEntity">
-        merge into synlte.OBJECT_STORE_INFO a
-        using (select #{item.tableId, jdbcType = VARCHAR} as tableId,
-                      #{item.tableName, jdbcType = VARCHAR} as tableName,
-                      #{item.storeType, jdbcType = INTEGER} as storeType,
-                      #{item.projectName, jdbcType = VARCHAR} as projectName,
-                      #{item.dataId, jdbcType = VARCHAR} as dataid
-                 from dual) b
-        on (upper(a.TABLEID) = upper(b.tableId)
-                and a.STORE_TYPE = b.storeType
-                and upper(a.TABLENAME) = upper(b.tableName)
-                and upper(a.PROJECT_NAME) = upper(b.projectName)
-                and upper(a.dataid) = upper(b.dataid))
-        when matched then
-          update
-             set TABLE_MOD_TIME = to_date(#{item.tableModTime, jdbcType = VARCHAR}, 'yyyy-MM-dd HH24:mi:ss')
-        when not matched then
-          insert
-            (TABLEID, TABLENAME, OBJECTNAME, STORE_TYPE, PROJECT_NAME, PROJECT_NAME_CN, MEMO, CREATER, CREATER_ID, TABLE_CREATE_TIME, TABLE_MOD_TIME,
-             IMPORT_FLAG, DATAID, TABLEINFOID, ISPARTITION, SEARCHFLAG)
-          values
-            (#{item.tableId, jdbcType = VARCHAR},
-             #{item.tableName, jdbcType = VARCHAR},
-             #{item.objectName, jdbcType = VARCHAR},
-             #{item.storeType, jdbcType = INTEGER},
-             #{item.projectName, jdbcType = VARCHAR},
-             #{item.projectNameCh, jdbcType = VARCHAR},
-             #{item.memo, jdbcType = VARCHAR},
-             #{item.creater, jdbcType = VARCHAR},
-             #{item.createrId, jdbcType = VARCHAR},
-             to_date(#{item.tableCreateTime, jdbcType = VARCHAR}, 'yyyy-MM-dd HH24:mi:ss'),
-             to_date(#{item.tableModTime, jdbcType = VARCHAR}, 'yyyy-MM-dd HH24:mi:ss'),
-             #{item.importFlag, jdbcType = INTEGER},
-             #{item.dataId, jdbcType = VARCHAR},
-             #{item.tableInfoId, jdbcType = VARCHAR},
-             #{item.isPartition, jdbcType = VARCHAR},
-             #{item.searchFlag, jdbcType = VARCHAR})
-    </insert>
-
     <select id="searchObjectStoreInfoId" parameterType="java.lang.String" resultType="java.lang.String">
         select distinct TABLEINFOID
           from synlte.OBJECT_STORE_INFO

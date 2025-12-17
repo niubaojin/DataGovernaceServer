@@ -13,6 +13,6 @@ public interface StandardizeObjectRelationMapper extends BaseMapper<StandardizeO
      * @param objectRelation
      * @return
      */
-    int insertOrUpdateStdObjRel(StandardizeObjectRelationEntity objectRelation);
+    int updateStdObjRel(StandardizeObjectRelationEntity objectRelation);
 
 }

@@ -11,12 +11,7 @@ import java.util.List;
 
 public interface ObjectStoreInfoMapper extends BaseMapper<ObjectStoreInfoEntity> {
 
-    /**
-     * 当新增字段的时候 需要修改更新时间
-     */
-    int updateObjectStoreInfoTime(@Param("item") ObjectStoreInfoEntity column);
-
-    /**
+     /**
      * 查询object_store_info表中是否存在记录
      *
      * @param tableName   表英文名

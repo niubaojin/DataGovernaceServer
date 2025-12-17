@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.DsmSourceFieldInfoMapper">
+
+    <insert id="insertSourceFieldInfo" parameterType="com.synway.datastandardmanager.entity.pojo.DsmSourceFieldInfoEntity">
+        insert into DSM_SOURCE_FIELD_INFO (SourceInfoID, id, tableId, resourceId, fieldName, fieldDescription,
+        fieldType, fieldLength, isNonnull, isDeleted, isPrimarykey,
+        isForeignKey, insertTime, updateTime, databaseUrl, schemeId, fieldSourceType, fieldCode, gadsjFieldId,
+        determinerId, elementId)
+        <foreach collection="sourceFieldInfo" item="item" separator=",">
+            (#{item.sourceInfoID}, #{item.recno}, #{item.tableId}, #{item.resourceId}, #{item.fieldName},
+            #{item.fieldDescription}, #{item.fieldType}, #{item.fieldLength}, #{item.isNonnull}, #{item.isDeleted},
+            #{item.isPrimarykey}, #{item.isForeignKey}, #{item.insertTime}, #{item.updateTime}, #{item.databaseUrl},
+            #{item.schemeId}, #{item.fieldSourceType}, #{item.fieldCode}, #{item.gadsjFieldId}, #{item.determinerId},
+            #{item.elementId})
+        </foreach>
+    </insert>
+
+</mapper>

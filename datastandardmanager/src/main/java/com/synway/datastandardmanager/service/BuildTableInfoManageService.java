@@ -65,7 +65,7 @@ public interface BuildTableInfoManageService {
     ObjectStoreInfoEntity getCreateTableInfo(ObjectStoreInfoEntity objectStoreInfo);
 
     // 保存显示字段
-    String updateBuildTableShowField(CommonDTO showField);
+    boolean updateBuildTableShowField(CommonDTO showField);
 
     // 获取显示字段
     List<String> getBuildTableShowField();

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.EntityElementMapper">
+
+    <select id="queryEntityElementList" resultType="com.synway.datastandardmanager.entity.pojo.EntityElementEntity">
+        select
+            elemntcode as elemntcode,
+            elemntchname as elementChname,
+            iselemnt as isElement,
+            sameid as sameId,
+            elemntobject as elementObject,
+            elemntrule as elementRule,
+            createmode as createMode,
+            author as author,
+            moddate as modDate
+        from
+            synlte.entity_element
+        <where>
+            <if test="searchText != null and searchText != ''">
+                (upper(elemntchname) like upper(concat('%',concat(#{searchText},'%'))))
+            </if>
+        </where>
+    </select>
+
+    <select id="getDataElementList" resultType="com.synway.datastandardmanager.entity.vo.EntityElementVO">
+        select distinct elemntObject as elementObject,
+                        elemntchname as elementchname,
+                        elemntcode   as elementCode,
+                        elemntrule   as elementRule,
+                        moddate      as modDate,
+                        author       as author,
+                        iselemnt     as isElement,
+                        sameid       as sameId,
+                        createmode   as createMode,
+                        l.code_value AS elementobjectType
+          from synlte.ENTITY_ELEMENT r
+          left join DSM_ALL_CODE_DATA l
+            on r.elemntObject = l.code_value
+            <where>
+                <if test="searchText != null and searchText != ''">
+                    (upper(r.elemntchname) like upper(concat('%',concat(#{searchText},'%'))))
+                </if>
+                <if test="isElementList != null and isElementList.size() > 0">
+                    and iselemnt in (
+                    <foreach collection="isElementList" item="item" separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+                <if test="elementObject != null and elementObject != ''">
+                    and  l.code_text = #{elementObject}
+                </if>
+            </where>
+            <if test="sort !=null and sort != ''">
+                order by ${sort} ${sortOrder}
+            </if>
+    </select>
+
+    <select id="selectElementObject" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select l.code_text as id, count(e.elemntobject) as value
+          from DSM_ALL_CODE_DATA l
+          left join synlte.ENTITY_ELEMENT e
+            on e.elemntobject = l.code_value
+         where l.code_id = 'ELEMENTOBJECT'
+         group by l.code_text
+    </select>
+
+    <select id="searchElementTotal" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select r.code_value as id,
+               r.code_text as name,
+               case
+                 when l.value is null then 0 else l.value
+               end value
+          from (select elemntobject as id, count(*) as value
+                  from (select distinct o.objectid, x.label, x.elemntobject
+                          from synlte.object o
+                         left join (select distinct objf.objectid,
+                                                    ee.fieldid,
+                                                    ee.label,
+                                                    ee.elemntobject
+                                      from synlte.objectfield objf
+                                     right join (select elemntobject,
+                                                       elemntcode as fieldid,
+                                                       elemntchname as label
+                                                  from synlte.ENTITY_ELEMENT
+                                                 where createmode = '1') ee on objf.fieldid =
+                                                                               ee.fieldid) x on o.objectid =
+                                                                                                x.objectid) tt where label is not null
+                 group by elemntobject) l
+         right join DSM_ALL_CODE_DATA r on l.id = r.code_value
+         where r.code_id = 'ELEMENTOBJECT'
+         order by r.code_value
+    </select>
+
+    <select id="searchSecondElementName" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+        select elemntcode as value,
+               case
+                 when x.value is null then elemntchname || '(' || 0 || ')'
+                 else elemntchname || '(' || x.value || ')'
+               end as label
+          from (select *
+                  from synlte.entity_element
+                 where elemntobject = #{elementObject}
+                   and createmode = '1') ente
+          left join (select label, count(*) as value
+                       from (select distinct o.objectid, x.label
+                               from synlte.object o
+                               left join (select distinct objf.objectid,
+                                                         ee.fieldid,
+                                                         ee.label
+                                           from synlte.objectfield objf
+                                          right join (select elemntcode   as fieldid,
+                                                            elemntchname as label
+                                                       from synlte.ENTITY_ELEMENT
+                                                      where createmode = '1') ee on objf.fieldid =
+                                                                                    ee.fieldid) x on o.objectid =
+                                                                                                     x.objectid
+                                                                                                 and x.label is not null) tt
+                      where label is not null
+                      group by label) x on ente.elemntchname = x.label
+    </select>
+
+
+</mapper>

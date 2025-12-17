@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.ObjectStoreFieldInfoMapper">
+
+    <delete id="deleteObjectStoreFieldInfos" parameterType="java.lang.String">
+        delete synlte.object_store_fieldinfo a
+         where a.tableinfoid not in
+               (select tableinfoid from synlte.object_store_info)
+    </delete>
+
+    <insert id="saveObjectStoreFieldInfo">
+        INSERT INTO synlte.OBJECT_STORE_FIELDINFO
+          (ID, TABLEINFOID, FIELDID, COLUMNNAME, FIELDCHINEENAME, FIELDTYPE, FIELDLEN,
+           DEFAULTVALUE, TABLEINDEX, INDEXTYPE, NEEDVALUE, RECNO, PARTITION_RECNO, CLUST_RECNO,
+           COLUMNFIELDTYPE, COLUMNFIELDLEN)
+        VALUES
+          <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.tableInfoId}, #{item.fieldId,jdbcType=VARCHAR},
+             #{item.columnName}, #{item.fieldChineeName,jdbcType=VARCHAR},
+             #{item.fieldType,jdbcType=INTEGER}, #{item.fieldLen,jdbcType=INTEGER}, #{item.defaultValue,jdbcType=VARCHAR},
+             #{item.tableIndex,jdbcType=INTEGER}, #{item.indexType,jdbcType=INTEGER},
+             #{item.needValue,jdbcType=INTEGER}, #{item.recno,jdbcType=INTEGER}, #{item.partitionRecno,jdbcType=INTEGER},
+             #{item.clustRecno,jdbcType=INTEGER},
+             #{item.columnFieldType,jdbcType=INTEGER},
+             #{item.columnFieldLen,jdbcType=INTEGER})
+          </foreach>
+    </insert>
+
+</mapper>

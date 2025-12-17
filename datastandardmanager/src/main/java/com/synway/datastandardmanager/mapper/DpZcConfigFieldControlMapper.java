@@ -5,6 +5,4 @@ import com.synway.datastandardmanager.entity.pojo.DpZcConfigFieldControlEntity;
 
 public interface DpZcConfigFieldControlMapper extends BaseMapper<DpZcConfigFieldControlEntity> {
 
-    void updateBuildTableShowField(String showField, String userName);
-
 }

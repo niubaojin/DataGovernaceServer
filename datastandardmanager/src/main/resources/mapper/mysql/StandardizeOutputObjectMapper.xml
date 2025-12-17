@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeOutputObjectMapper">
+
+    <select id="getAllInputObject" resultType="com.synway.datastandardmanager.entity.vo.InputObjectCreateVO">
+        select s2.sys_id as outSysId, s2.SYS_SOURCE as outOobjSource
+          from STANDARDIZE_OUTPUTOBJECT s1
+         inner join STANDARDIZE_OBJECT s2
+            on s1.OBJ_GUID = s2.obj_guid
+        <where>
+            s1.OOBJ_STATUS = 1
+            <if test="tableId!= null and tableId != ''">
+                and upper(obj_engname) = upper(#{tableId})
+            </if>
+        </where>
+    </select>
+
+    <select id="getOutputGuidByTableId" resultType="java.lang.String">
+        select f1.oobj_guid
+          from STANDARDIZE_OUTPUTOBJECT f1
+         inner join STANDARDIZE_OBJECT f2
+            on f1.obj_guid = f2.obj_guid
+         where UPPER(f2.OBJ_ENGNAME) = UPPER(#{tableId})
+           limit 1
+    </select>
+
+    <select id="getOutPutObjGuidByTableId" resultType="java.lang.String">
+        select f2.OBJ_GUID
+          from STANDARDIZE_OUTPUTOBJECT f1
+         inner join STANDARDIZE_OBJECT f2
+            ON f1.OBJ_GUID = f2.OBJ_GUID
+         WHERE upper(f2.OBJ_ENGNAME) = upper(#{tableId})
+           and f2.SYS_ID = #{sysId}
+           and f2.SYS_SOURCE = #{ownerFactoryNum}
+            limit 1
+    </select>
+
+    <select id="getOObjGuidByTableId" resultType="java.lang.String">
+        select oobj_guid
+          from STANDARDIZE_OUTPUTOBJECT F1
+         inner join STANDARDIZE_OBJECT F2
+            ON F1.OBJ_GUID = F2.OBJ_GUID
+         WHERE upper(F2.OBJ_ENGNAME) = upper(#{tableId})
+            limit 1
+    </select>
+
+    <select id="getAllInputObjects" resultType="com.synway.datastandardmanager.entity.vo.InputObjectCreateVO">
+        select
+            f6.sys_id as outSysId ,
+            f6.SYS_SOURCE as outOobjSource,
+            obj_engname as outObjEngName
+        from
+            STANDARDIZE_OUTPUTOBJECT f5
+                inner join STANDARDIZE_OBJECT f6 on
+                f5.OBJ_GUID = f6.obj_guid
+        where f5.OOBJ_STATUS = 1
+    </select>
+
+</mapper>

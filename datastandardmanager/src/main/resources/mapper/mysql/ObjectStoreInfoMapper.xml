@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.ObjectStoreInfoMapper">
+
+    <select id="searchObjectStoreInfoId" parameterType="java.lang.String" resultType="java.lang.String">
+        select distinct TABLEINFOID
+          from synlte.OBJECT_STORE_INFO
+         where upper(TABLENAME) = upper(#{tableName})
+           and upper(PROJECT_NAME) = upper(#{projectName})
+           and DATAID = #{dataId}
+           and rownum = 1
+    </select>
+
+    <select id="searchObjectStoreInfoIdByTableId" parameterType="java.lang.String" resultType="java.lang.String">
+        select distinct TABLEINFOID
+          from synlte.OBJECT_STORE_INFO
+         where upper(TABLENAME) = upper(#{tableName})
+           and upper(TABLEID) = upper(#{tableId})
+           and DATAID = #{dataId}
+           and rownum = 1
+    </select>
+
+    <select id="searchTableInfo" parameterType="com.synway.datastandardmanager.entity.dto.ObjectStoreInfoDTO"
+            resultType="com.synway.datastandardmanager.entity.pojo.ObjectStoreInfoEntity">
+        SELECT
+            O.TABLEINFOID AS tableInfoId,
+            o2.objectname AS objectName,
+            o2.tablename AS tableName,
+            o.TABLEID AS tableId,
+            o2.SJZZYJFLVALLUE AS organizationClassificationId,
+            o.store_type AS storeType,
+            PROJECT_NAME AS projectName,
+            o.import_flag AS importFlag,
+            o.partitiontype AS partitionType,
+            o.lifecycle AS lifeCycle,
+            o2.tablename AS standTableName,
+            v.CENTER_NAME AS centerName,
+            v.res_name AS resName,
+            v.res_id AS resId,
+            o.TABLENAME AS realTableName,
+            CASE
+                WHEN n.REGISTERCOUNT IS NULL THEN 0
+                ELSE n.REGISTERCOUNT
+            END AS registerCount,
+            TABLE_CREATE_TIME AS tableCreateTime,
+            O.CREATER AS creater
+        FROM SYNLTE.OBJECT_STORE_INFO O
+        LEFT JOIN
+            (SELECT ds.RES_ID, ds.RES_NAME, dc.CENTER_NAME
+             FROM SYNDG.DS_DATA_RESOURCE ds
+             LEFT JOIN syndg.ds_data_center dc ON ds.CENTER_ID = dc.CENTER_ID) v
+            ON o.dataid = v.RES_ID
+        LEFT JOIN
+            (SELECT TABLEINFOID, COUNT(TABLEINFOID) AS REGISTERCOUNT
+             FROM synlte.public_data_info
+             GROUP BY TABLEINFOID) n
+            ON o.TABLEINFOID = n.TABLEINFOID
+        LEFT JOIN synlte.object o2 ON o2.tableid = o.tableid
+        <where>
+            <if test="searchType != null and searchType == 'objectName' and searchText != null">
+                (upper(o.OBJECTNAME) LIKE CONCAT('%', UPPER(#{searchText}), '%'))
+            </if>
+            <if test="searchType != null and searchType == 'standTableName' and searchText != null">
+                (upper(o2.tablename) LIKE CONCAT('%', UPPER(#{searchText}), '%'))
+            </if>
+            <if test="searchType != null and searchType == 'tableId' and searchText != null">
+                (upper(o.TABLEID) LIKE CONCAT('%', UPPER(#{searchText}), '%'))
+            </if>
+            <if test="searchType != null and searchType == 'realTableName' and searchText != null">
+                (upper(o.TABLENAME) LIKE CONCAT('%', UPPER(#{searchText}), '%'))
+            </if>
+            <if test="searchType != null and searchType == 'all' and searchText != null">
+                (upper(o.OBJECTNAME) LIKE CONCAT('%', UPPER(#{searchText}), '%') OR
+                 upper(o2.tablename) LIKE CONCAT('%', UPPER(#{searchText}), '%') OR
+                 upper(o.TABLEID) LIKE CONCAT('%', UPPER(#{searchText}), '%') OR
+                 upper(o.TABLENAME) LIKE CONCAT('%', UPPER(#{searchText}), '%'))
+            </if>
+            <if test="storeTypeList != null and storeTypeList.size() > 0">
+                AND o.store_type IN (
+                    <foreach collection="storeTypeList" item="item" separator=",">
+                        #{item}
+                    </foreach>
+                )
+            </if>
+            <if test="dataIdList != null and dataIdList.size() > 0">
+                AND v.res_id IN (
+                    <foreach collection="dataIdList" item="item" separator=",">
+                        #{item}
+                    </foreach>
+                )
+            </if>
+            <if test="projectNameList != null and projectNameList.size() > 0">
+                AND PROJECT_NAME IN (
+                    <foreach collection="projectNameList" item="item" separator=",">
+                        #{item}
+                    </foreach>
+                )
+            </if>
+            <if test="creatorList != null and creatorList.size() > 0">
+                AND O.CREATER IN (
+                    <foreach collection="creatorList" item="item" separator=",">
+                        #{item}
+                    </foreach>
+                )
+            </if>
+        </where>
+        <if test="sort != null and sort != ''">
+            ORDER BY ${sort} ${sortOrder}
+        </if>
+    </select>
+
+    <select id="getFilterInfo" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+        select value, label
+          from (select distinct cast(store_type as CHAR) COLLATE utf8mb4_unicode_ci as value,
+                                'storeType' COLLATE utf8mb4_unicode_ci as label
+                  from synlte.object_store_info
+                 where store_type is not null
+                 order by value asc) a
+        union all
+        select value, label
+          from (select distinct project_name COLLATE utf8mb4_unicode_ci as value, 'projectName' COLLATE utf8mb4_unicode_ci as label
+                  from synlte.object_store_info
+                 where project_name is not null
+                 order by value asc) b
+        union all
+        select value, label
+          from (select distinct CREATER COLLATE utf8mb4_unicode_ci as value, 'CREATER' COLLATE utf8mb4_unicode_ci as label
+                  from synlte.object_store_info
+                 where CREATER is not null
+                 order by value asc) c
+        union all
+        select value, label
+          from (select distinct dataid COLLATE utf8mb4_unicode_ci as value, 'dataid' COLLATE utf8mb4_unicode_ci as label
+                  from synlte.object_store_info
+                 where dataid is not null
+                 order by value asc) d
+    </select>
+
+    <update id="updateObjectStoreInfo" parameterType="com.synway.datastandardmanager.entity.pojo.ObjectStoreInfoEntity">
+        update synlte.OBJECT_STORE_INFO
+           set TABLEID        = #{item.tableId, jdbcType=VARCHAR},
+               OBJECTNAME     = #{item.objectName, jdbcType=VARCHAR},
+               IMPORT_FLAG    = #{item.importFlag, jdbcType=INTEGER},
+               ISPARTITION    = #{item.isPartition, jdbcType=INTEGER},
+               <if test="item.partitionType != '' and item.partitionType != null">
+                   PARTITIONTYPE = #{item.partitionType,jdbcType=INTEGER},
+               </if>
+               <if test="item.partitionCount != '' and item.partitionCount != null">
+                   PARTITIONCOUNT = #{item.partitionCount,jdbcType=INTEGER},
+               </if>
+               LIFECYCLE      = #{item.lifeCycle, jdbcType=INTEGER},
+               TABLE_MOD_TIME = sysdate
+         where upper(TABLENAME)    = upper(#{item.tableName, jdbcType=VARCHAR})
+           and upper(PROJECT_NAME) = upper(#{item.projectName, jdbcType=VARCHAR})
+           and upper(DATAID)       = upper(#{item.dataId, jdbcType=VARCHAR})
+           and upper(TABLEINFOID)  = upper(#{item.tableInfoId, jdbcType=VARCHAR})
+    </update>
+
+    <select id="searchAllTableId" resultType="java.lang.String">
+        select TABLEID
+          from synlte.object_store_info
+         where dataid in (select res_id from ds_data_resource)
+    </select>
+
+</mapper>

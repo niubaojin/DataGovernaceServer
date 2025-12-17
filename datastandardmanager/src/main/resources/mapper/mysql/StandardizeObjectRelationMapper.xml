@@ -24,7 +24,7 @@
          inner join standardize_object_relation std
             on std.parent_id = ori.id
            and ori.id = #{id}
-           and rownum = 1
+              limit 1
     </select>
 
     <insert id="updateStdObjRel" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizeObjectRelationEntity">
@@ -39,7 +39,7 @@
                <if test = "parentId != '' and parentId != null" >
                   , PARENT_ID = #{parentId, jdbcType = VARCHAR}
                </if>
-               , CREATE_TIME = sysdate
+               , CREATE_TIME = now()
         where OBJECT_ID = #{objectId}
     </insert>
 

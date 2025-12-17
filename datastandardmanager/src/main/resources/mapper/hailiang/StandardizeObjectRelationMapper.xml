@@ -27,26 +27,20 @@
            and rownum = 1
     </select>
 
-    <insert id="insertOrUpdateStdObjRel" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizeObjectRelationEntity">
-        merge into STANDARDIZE_OBJECT_RELATION a
-        using (select #{objectId} as objectId from dual) b
-        on (upper(a.OBJECT_ID) = upper(b.objectId))
-        when matched then
-          update
-             set ID = #{id}
-                 <if test = "objectName != '' and objectName != null" >
-                     , OBJECT_NAME = #{objectName, jdbcType = VARCHAR}
-                 </if >
-                 <if test = "tableId != '' and tableId != null" >
-                    , TABLE_ID = #{tableId, jdbcType = VARCHAR}
-                 </if>
-                 <if test = "parentId != '' and parentId != null" >
-                    , PARENT_ID = #{parentId, jdbcType = VARCHAR}
-                 </if>
-                 , CREATE_TIME = sysdate
-        when not matched then
-          insert
-          values (#{id}, #{objectId}, #{objectName}, #{tableId}, #{parentId}, sysdate, sysdate)
+    <insert id="updateStdObjRel" parameterType="com.synway.datastandardmanager.entity.pojo.StandardizeObjectRelationEntity">
+        update STANDARDIZE_OBJECT_RELATION
+           set ID = #{id}
+               <if test = "objectName != '' and objectName != null" >
+                   , OBJECT_NAME = #{objectName, jdbcType = VARCHAR}
+               </if >
+               <if test = "tableId != '' and tableId != null" >
+                  , TABLE_ID = #{tableId, jdbcType = VARCHAR}
+               </if>
+               <if test = "parentId != '' and parentId != null" >
+                  , PARENT_ID = #{parentId, jdbcType = VARCHAR}
+               </if>
+               , CREATE_TIME = sysdate
+        where OBJECT_ID = #{objectId}
     </insert>
 
 </mapper>

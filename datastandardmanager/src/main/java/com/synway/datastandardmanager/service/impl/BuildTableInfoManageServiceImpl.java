@@ -111,7 +111,26 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             }
             if (updateFlag == 1) {
                 log.info(">>>>>>修改是否自动入库的参数请求信息：" + JSONObject.toJSONString(objectStoreInfo));
-                objectStoreInfoMapper.updateObjectStoreInfoTime(objectStoreInfo);
+                LambdaQueryWrapper<ObjectStoreInfoEntity> wrapper = Wrappers.lambdaQuery();
+                wrapper.eq(ObjectStoreInfoEntity::getTableId, objectStoreInfo.getTableId());
+                wrapper.eq(ObjectStoreInfoEntity::getStoreType, objectStoreInfo.getStoreType());
+                wrapper.eq(ObjectStoreInfoEntity::getTableName, objectStoreInfo.getTableName());
+                wrapper.eq(ObjectStoreInfoEntity::getObjectName, objectStoreInfo.getObjectName());
+                wrapper.eq(ObjectStoreInfoEntity::getProjectName, objectStoreInfo.getProjectName());
+                wrapper.eq(ObjectStoreInfoEntity::getDataId, objectStoreInfo.getDataId());
+                if (objectStoreInfoMapper.selectCount(wrapper) > 0){
+                    LambdaUpdateWrapper<ObjectStoreInfoEntity> updateWrapper = Wrappers.lambdaUpdate();
+                    updateWrapper.set(ObjectStoreInfoEntity::getTableModTime, objectStoreInfo.getTableModTime());
+                    updateWrapper.eq(ObjectStoreInfoEntity::getTableId, objectStoreInfo.getTableId());
+                    updateWrapper.eq(ObjectStoreInfoEntity::getStoreType, objectStoreInfo.getStoreType());
+                    updateWrapper.eq(ObjectStoreInfoEntity::getTableName, objectStoreInfo.getTableName());
+                    updateWrapper.eq(ObjectStoreInfoEntity::getObjectName, objectStoreInfo.getObjectName());
+                    updateWrapper.eq(ObjectStoreInfoEntity::getProjectName, objectStoreInfo.getProjectName());
+                    updateWrapper.eq(ObjectStoreInfoEntity::getDataId, objectStoreInfo.getDataId());
+                    objectStoreInfoMapper.update(updateWrapper);
+                }else{
+                    objectStoreInfoMapper.insert(objectStoreInfo);
+                }
             }
         } catch (Exception e) {
             log.error(">>>>>>修改是否自动入库失败：", e);
@@ -264,16 +283,16 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         });
     }
 
-    public void deleteObjectStoreInfo(List<DetectedTable> detectedTableList, String projectName){
+    public void deleteObjectStoreInfo(List<DetectedTable> detectedTableList, String projectName) {
         List<String> tableNameList = detectedTableList.stream().map(d -> d.getTableNameEN().toLowerCase()).collect(Collectors.toList());
         LambdaQueryWrapper<ObjectStoreInfoEntity> wrapper = Wrappers.lambdaQuery();
-        if (StringUtils.isNotBlank(projectName)){
+        if (StringUtils.isNotBlank(projectName)) {
             wrapper.eq(ObjectStoreInfoEntity::getProjectName, projectName);
         }
         List<ObjectStoreInfoEntity> objectStoreInfos = objectStoreInfoMapper.selectList(wrapper);
         wrapper = Wrappers.lambdaQuery();
-        for (ObjectStoreInfoEntity data : objectStoreInfos){
-            if (!tableNameList.contains(data.getTableName().toLowerCase())){
+        for (ObjectStoreInfoEntity data : objectStoreInfos) {
+            if (!tableNameList.contains(data.getTableName().toLowerCase())) {
                 wrapper.eq(ObjectStoreInfoEntity::getTableInfoId, data.getTableInfoId());
                 objectStoreInfoMapper.delete(wrapper);
             }
@@ -740,7 +759,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     }
 
     @Override
-    public String updateBuildTableShowField(CommonDTO showField) {
+    public boolean updateBuildTableShowField(CommonDTO showField) {
         try {
             log.info(">>>>>>更新建表信息管理页面显示字段的参数为：" + JSONObject.toJSONString(showField));
             LoginUser authorizedUser = AuthorizedUserUtils.getInstance().getAuthor();
@@ -748,11 +767,27 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             if (StringUtils.isBlank(showFieldStr)) {
                 showFieldStr = "notNull";
             }
-            dpZcConfigFieldControlMapper.updateBuildTableShowField(showFieldStr, authorizedUser.getUserName());
-            return Common.UPDATE_SUCCESS;
+            DpZcConfigFieldControlEntity entity = new DpZcConfigFieldControlEntity();
+            entity.setName("TABLE_BUILDTABLE");
+            entity.setOverTimeDays(90);
+            entity.setShowFieldList(showFieldStr);
+            entity.setUserName(authorizedUser.getUserName());
+            LambdaQueryWrapper<DpZcConfigFieldControlEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(DpZcConfigFieldControlEntity::getName, entity.getName());
+            wrapper.eq(DpZcConfigFieldControlEntity::getUserName, entity.getUserName());
+            if (dpZcConfigFieldControlMapper.selectCount(wrapper) > 0) {
+                LambdaUpdateWrapper<DpZcConfigFieldControlEntity> updateWrapper = Wrappers.lambdaUpdate();
+                updateWrapper.set(DpZcConfigFieldControlEntity::getShowFieldList, entity.getShowFieldList())
+                        .eq(DpZcConfigFieldControlEntity::getName, entity.getName())
+                        .eq(DpZcConfigFieldControlEntity::getUserName, entity.getUserName());
+                dpZcConfigFieldControlMapper.update(updateWrapper);
+            } else {
+                dpZcConfigFieldControlMapper.insert(entity);
+            }
+            return true;
         } catch (Exception e) {
             log.error(">>>>>>更新建表信息管理页面显示字段报错：", e);
-            return Common.UPDATE_FAIL;
+            return false;
         }
     }
 
@@ -878,7 +913,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
         }
     }
 
-    public long getObjectStoreInfoCountByTableName(ObjectStoreInfoEntity objectStoreInfo){
+    public long getObjectStoreInfoCountByTableName(ObjectStoreInfoEntity objectStoreInfo) {
         LambdaQueryWrapper<ObjectStoreInfoEntity> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(ObjectStoreInfoEntity::getStoreType, objectStoreInfo.getStoreType());
         wrapper.eq(ObjectStoreInfoEntity::getTableName, objectStoreInfo.getTableName());

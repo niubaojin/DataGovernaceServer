@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.UserAuthorityMapper">
+
+    <update id="updateUserAuthority" parameterType="com.synway.datastandardmanager.entity.pojo.UserAuthorityEntity">
+        update USER_AUTHORITY
+           set CMN_MEMO    = #{cmnMemo},
+               MODULECODE  = #{moduleCode},
+               MODULENAME  = #{moduleName},
+               ISCREATER   = #{isCreater},
+               USERNAME    = #{userName},
+               CMN_NAME    = #{cmnName},
+               CREATE_TIME = now(),
+               USERID      = #{userId}
+         where ORGANID = #{organId}
+           and ID = #{id}
+    </update>
+
+</mapper>

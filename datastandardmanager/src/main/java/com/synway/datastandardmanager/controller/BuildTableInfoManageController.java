@@ -201,7 +201,11 @@ public class BuildTableInfoManageController {
     @RequestMapping("/updateBuildTableShowField")
     @ResponseBody
     public ServerResponse updateBuildTableShowField(@RequestBody CommonDTO showField) {
-        return ServerResponse.asErrorResponse(service.updateBuildTableShowField(showField));
+        if (service.updateBuildTableShowField(showField)){
+            return ServerResponse.asSucessResponse(Common.UPDATE_SUCCESS);
+        }else {
+            return ServerResponse.asErrorResponse(Common.UPDATE_FAIL);
+        }
     }
 
     @RequestMapping("/getBuildTableShowField")

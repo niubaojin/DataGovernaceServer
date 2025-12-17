@@ -563,7 +563,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             } else {
                 //还没有数据的时候，就需要入库dwParams
                 sourceInfo = new DsmSourceInfoEntity(sourceProtocol, tableName, sourceSystem, sourceFirm);
-                dsmSourceInfoMapper.insertSourceInfo(sourceInfo);
+                dsmSourceInfoMapper.insert(sourceInfo);
             }
             if (!StringUtils.isBlank(tableId)) {
                 //如果不是流程的，也不是已经保存过的，那么就拿协议当源协议，到objectField中查找字段

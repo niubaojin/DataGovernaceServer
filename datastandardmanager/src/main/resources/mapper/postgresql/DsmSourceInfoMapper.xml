@@ -6,7 +6,7 @@
 <mapper namespace="com.synway.datastandardmanager.mapper.DsmSourceInfoMapper">
 
     <select id="findSourceInfo" parameterType="String" resultType="com.synway.datastandardmanager.entity.pojo.DsmSourceInfoEntity">
-        select * from SourceInfo
+        select * from DSM_SOURCEINFO
         <where>
             <if test="sourceProtocol != null and sourceProtocol != ''">
                 and upper(sourceProtocol) = upper(#{sourceProtocol})
@@ -20,32 +20,5 @@
             and rownum = 1
         </where>
     </select>
-
-    <insert id="insertSourceInfo"  parameterType="com.synway.datastandardmanager.entity.pojo.DsmSourceInfoEntity">
-        merge into SourceInfo a
-        using (select
-            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR} as sourceProtocol,
-            #{sourceInfo.tableName,jdbcType=VARCHAR} as tableName,
-            #{sourceInfo.sourceSystem,jdbcType=VARCHAR} as sourceSystem
-        from dual) b
-        on (
-            upper(a.SOURCEPROTOCOL) = upper(b.sourceProtocol) and
-            upper(a.TABLENAME) = upper(b.tableName) and
-            upper(a.SOURCESYSTEM) = upper(b.sourceSystem))
-        when matched then
-        update
-        set
-            id = #{sourceInfo.id}
-            <if test="sourceInfo.updateTime != null">
-                ,UPDATE_TIME = #{sourceInfo.updateTime}
-            </if>
-            <if test="sourceInfo.sourceFirm != null">
-                ,SOURCEFIRM = #{sourceInfo.sourceFirm,jdbcType=VARCHAR}
-            </if>
-        when not matched then
-            insert values (#{sourceInfo.id},#{sourceInfo.createTime},#{sourceInfo.updateTime},
-            #{sourceInfo.sourceProtocol,jdbcType=VARCHAR},#{sourceInfo.tableName,jdbcType=VARCHAR},
-            #{sourceInfo.sourceSystem,jdbcType=VARCHAR},#{sourceInfo.sourceFirm,jdbcType=VARCHAR},null,null,null,null,null)
-    </insert>
 
 </mapper>

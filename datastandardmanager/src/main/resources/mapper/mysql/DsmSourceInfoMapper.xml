@@ -6,7 +6,7 @@
 <mapper namespace="com.synway.datastandardmanager.mapper.DsmSourceInfoMapper">
 
     <select id="findSourceInfo" parameterType="String" resultType="com.synway.datastandardmanager.entity.pojo.DsmSourceInfoEntity">
-        select * from SourceInfo
+        select * from DSM_SOURCEINFO
         <where>
             <if test="sourceProtocol != null and sourceProtocol != ''">
                 and upper(sourceProtocol) = upper(#{sourceProtocol})
@@ -17,8 +17,8 @@
             <if test="sourceSystem != null and sourceSystem != ''">
                 and sourceSystem = #{sourceSystem}
             </if>
-            and rownum = 1
         </where>
+        limit 1
     </select>
 
 </mapper>

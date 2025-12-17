@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.SynlteFieldVersionMapper">
+
+    <select id="searchSynlteFieldVersionTable"
+            resultType="com.synway.datastandardmanager.entity.pojo.SynlteFieldVersionEntity"
+            parameterType="com.synway.datastandardmanager.entity.dto.HisVersionInfoDTO">
+        select distinct l.UPDATETIME       as updateTime,
+                        r.FIELDCHINESENAME as fieldChineseName,
+                        r.FIELDID          as fieldId,
+                        l.version          as version,
+                        l.versions         as versions,
+                        l.AUTHOR           as author,
+                        l.MEMO             as memo
+          from synlte.synltefield_version l
+         inner join synlte.synltefield_history r
+            on l.fiedid = r.fieldid
+           and l.updatetime = r.updatetime
+        <where>
+            <if test="searchText != null and searchText != ''">
+                r.FIELDCHINESENAME like concat('%',concat(#{searchText},'%'))
+            </if>
+
+            <if test="versionsList != null and versionsList.size() > 0">
+                and l.versions in (
+                <foreach collection="versionsList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="authorList != null and authorList.size() > 0">
+                and l.AUTHOR in(
+                <foreach collection="authorList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </where>
+        <if test="sort !=null and sort != ''">
+            order by ${sort} ${sortOrder}
+        </if>
+    </select>
+
+</mapper>

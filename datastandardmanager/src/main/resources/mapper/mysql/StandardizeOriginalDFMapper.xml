@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.StandardizeOriginalDFMapper">
+
+    <insert id="insertOriginalDictionaryFieldList">
+        insert into STANDARDIZE_ORIGINAL_D_F
+        (GROUP_ID,
+        ID,
+        RECNO,
+        CODE_VALTEXT,
+        CODE_VALVALUE,
+        STANDARD_CODE_VALTEXT,
+        STANDARD_CODE_VALVALUE,
+        CREATE_TIME)
+        values
+        <foreach collection="standardizeOriginalDFEntities" item="item" separator=",">
+            (#{item.groupId},
+            #{item.id},
+            #{item.recno},
+            #{item.codeValText},
+            #{item.codeValValue},
+            #{item.standardCodeValText},
+            #{item.standardCodeValValue, jdbcType = VARCHAR},
+            now() )
+        </foreach>
+    </insert>
+
+</mapper>

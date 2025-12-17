@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.FieldDeterminerMapper">
+
+    <select id="getFieldDeterminerTable" resultType="com.synway.datastandardmanager.entity.pojo.FieldDeterminerEntity"
+            parameterType="com.synway.datastandardmanager.entity.dto.DeterminerDTO">
+        select determinerId,
+               dChinseName,
+               dName,
+               memo,
+               author,
+               modDate,
+               determinerState as determinerStateNum,
+               determinerType  as determinerTypeNum,
+               versions,
+               releaseDate,
+               facturer,
+               REG_ORG         as regOrg,
+               on_Date         as onDate
+          from synlte.FieldDeterminer
+        <where>
+            <if test="searchName != null and searchName != ''">
+                (upper(DChinseNAME)) like upper(concat('%',concat(#{searchName},'%')))
+                or upper(DNAME) like upper(concat('%',concat(#{searchName},'%')))
+            </if>
+            <if test="determinerTypeList != null and determinerTypeList.size() > 0">
+                and determinerType in (
+                <foreach collection="determinerTypeList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="determinerStateList != null and determinerStateList.size() > 0">
+                and determinerState in (
+                <foreach collection="determinerStateList" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="versionList != null and versionList.size() > 0">
+                and versions in (
+                <foreach collection="versionList" item="item" separator=",">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+                )
+            </if>
+            <if test="regOrgList != null and regOrgList.size() > 0">
+                and reg_org in (
+                <foreach collection="regOrgList" item="item" separator=",">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+                )
+            </if>
+        </where>
+        <if test="sort != null and sort != ''">
+            order by ${sort} ${sortOrder}
+        </if>
+    </select>
+
+    <update id="upOneData" parameterType="com.synway.datastandardmanager.entity.pojo.FieldDeterminerEntity">
+        update synlte.FieldDeterminer
+           set DCHINSENAME     = #{dchinseName},
+               DNAME           = #{dname},
+               MEMO            = #{memo},
+               AUTHOR          = #{author},
+               MODDATE         = sysdate,
+               DETERMINERTYPE  = #{determinerTypeNum},
+               VERSIONS        = #{versions},
+               RELEASEDATE     = #{releaseDate},
+               FACTURER        = #{facturer},
+               REG_ORG         = #{regOrg},
+               ON_DATE         = #{onDate},
+               DETERMINERSTATE = #{determinerStateNum}
+         where upper(DETERMINERID) = upper(#{determinerId})
+           and MODDATE = #{modDate}
+    </update>
+
+    <update id="updateDeterminerState">
+        update synlte.FieldDeterminer set DETERMINERSTATE = #{state},MODDATE = NOW(),RELEASEDATE = #{releaseDate}
+        where upper(DETERMINERID) = upper(#{id}) and MODDATE = STR_TO_DATE(#{modDate}, '%Y-%m-%d %H:%i:%s')
+    </update>
+
+    <select id="getCountByIdModDate" resultType="java.lang.Integer">
+        select count(0) from synlte.FieldDeterminer
+        where upper(DETERMINERID) = upper(#{id}) and MODDATE = STR_TO_DATE(#{modDate}, '%Y-%m-%d %H:%i:%s')
+    </select>
+
+    <select id="findAllDBNameList" resultType="java.lang.String">
+        select distinct dname  from synlte.FieldDeterminer  where upper(dname) like upper(concat(#{name},'%'))
+    </select>
+
+    <select id="getDeterminerIdList" resultType="java.lang.String">
+        select distinct determinerid from synlte.FieldDeterminer
+    </select>
+
+    <select id="searchFieldDeterminerNameList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select DISTINCT DCHINSENAME as label, determinerId as value
+          from synlte.fielddeterminer
+         where determinerstate = '05'
+        <if test="searchName != null and searchName != ''">
+            and upper(DCHINSENAME) like upper(concat('%',concat(#{searchName},'%')))
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.datastandardmanager.mapper.LabelsMapper">
+
+    <select id="getAllLabelTreeDataDao" resultType="com.synway.datastandardmanager.entity.vo.SelectFieldVO">
+        select case
+                 when ll.value is null then 0
+                 else ll.value
+               end value,
+               rr.label_name as name,
+               rr.label_level as id
+          from (select labellevel as id, count(distinct labelcode) as value
+                  from synlte.labels
+                 group by labellevel) ll
+         right join DSM_LABEL_CODE_TABLE rr
+            on ll.id = rr.label_level
+         order by rr.label_level asc
+    </select>
+
+    <select id="searchSecondLabelList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+        SELECT CASE
+                 WHEN o.cnt IS NOT NULL AND o.cnt > 0 THEN
+                  labelname || '(' || o.cnt || ')'
+                 ELSE
+                  labelname || '(0)'
+               END AS label,
+               labelcode AS value
+          FROM (SELECT * FROM synlte.labels WHERE labellevel = #{labelLevel}) l
+          LEFT JOIN (SELECT value, cnt
+                       FROM (SELECT value, COUNT(*) AS cnt
+                               FROM (SELECT CASE
+                                              WHEN LENGTH(sjzybq1) = '1' THEN
+                                               '100' || sjzybq1
+                                              ELSE
+                                               sjzybq1
+                                            END AS value
+                                       FROM synlte.object
+                                      WHERE deleted = 0
+                                        AND UPPER(relate_tablename) = 'OBJECTFIELD'
+                                        AND sjzybq1 IS NOT NULL) t
+                              GROUP BY value
+                              ORDER BY value) a
+                     UNION ALL
+                     SELECT value, cnt
+                       FROM (SELECT value, COUNT(*) AS cnt
+                               FROM (SELECT CASE
+                                              WHEN LENGTH(sjzybq2) = '1' THEN
+                                               '200' || sjzybq2
+                                              ELSE
+                                               sjzybq2
+                                            END AS value
+                                       FROM synlte.object
+                                      WHERE deleted = 0
+                                        AND UPPER(relate_tablename) = 'OBJECTFIELD'
+                                        AND sjzybq2 IS NOT NULL) t
+                              GROUP BY value
+                              ORDER BY value) b
+                     UNION ALL
+                     SELECT value, cnt
+                       FROM (SELECT value, COUNT(*) AS cnt
+                               FROM (SELECT CASE
+                                              WHEN LENGTH(sjzybq3) = '1' THEN
+                                               '300' || sjzybq3
+                                              ELSE
+                                               sjzybq3
+                                            END AS value
+                                       FROM synlte.object
+                                      WHERE deleted = 0
+                                        AND UPPER(relate_tablename) = 'OBJECTFIELD'
+                                        AND sjzybq3 IS NOT NULL) t
+                              GROUP BY value
+                              ORDER BY value) c
+                     UNION ALL
+                     SELECT value, cnt
+                       FROM (SELECT value, COUNT(*) AS cnt
+                               FROM (SELECT CASE
+                                              WHEN LENGTH(sjzybq4) = '1' THEN
+                                               '400' || sjzybq4
+                                              ELSE
+                                               sjzybq4
+                                            END AS value
+                                       FROM synlte.object
+                                      WHERE deleted = 0
+                                        AND UPPER(relate_tablename) = 'OBJECTFIELD'
+                                        AND sjzybq4 IS NOT NULL) t
+                              GROUP BY value
+                              ORDER BY value) d
+                     UNION ALL
+                     SELECT value, cnt
+                       FROM (SELECT value, COUNT(*) AS cnt
+                               FROM (SELECT CASE
+                                              WHEN LENGTH(sjzybq5) = '1' THEN
+                                               '500' || sjzybq5
+                                              ELSE
+                                               sjzybq5
+                                            END AS value
+                                       FROM synlte.object
+                                      WHERE deleted = 0
+                                        AND UPPER(relate_tablename) = 'OBJECTFIELD'
+                                        AND sjzybq5 IS NOT NULL) t
+                              GROUP BY value
+                              ORDER BY value) e
+                     UNION ALL
+                     SELECT value, cnt
+                       FROM (SELECT value, COUNT(*) AS cnt
+                               FROM (SELECT CASE
+                                              WHEN LENGTH(sjzybq6) = '1' THEN
+                                               '600' || sjzybq6
+                                              ELSE
+                                               sjzybq6
+                                            END AS value
+                                       FROM synlte.object
+                                      WHERE deleted = 0
+                                        AND UPPER(relate_tablename) = 'OBJECTFIELD'
+                                        AND sjzybq6 IS NOT NULL) t
+                              GROUP BY value
+                              ORDER BY value) f) o
+            ON l.labelcode = o.value
+    </select>
+
+    <select id="getAllLabelManageData" resultType="com.synway.datastandardmanager.entity.pojo.LabelsEntity">
+        SELECT
+            l1.ID,
+            l1.LABELNAME,
+            l1.LABELCODE,
+            l1.LABELLEVEL,
+            l1.CLASSID,
+            l1.LABELDESCRIBE,
+            l1.AUTHOR,
+            l1.labelLevelStr,
+            CASE
+                WHEN r1.tableCount IS NULL THEN 0
+                ELSE r1.tableCount
+            END AS tableCount,
+            r2.CODETEXT AS classIdStr,
+            l1.moddate,
+            DATE_FORMAT(l1.moddate, '%Y-%m-%d %H:%i:%s') AS moddateStr
+        FROM
+            (
+                SELECT
+                    ID,
+                    LABELNAME,
+                    LABELCODE,
+                    LABELLEVEL,
+                    CLASSID,
+                    LABELDESCRIBE,
+                    AUTHOR,
+                    label_name AS labelLevelStr,
+                    moddate
+                FROM
+                    (
+                        SELECT
+                            l.*,
+                            r.label_name,
+                            ROW_NUMBER() OVER (PARTITION BY LABELCODE ORDER BY moddate DESC) AS num
+                        FROM
+                            synlte.LABELS l
+                        LEFT JOIN DSM_LABEL_CODE_TABLE r ON l.LABELLEVEL = r.label_level
+                    ) t
+                WHERE
+                    t.num = 1
+            ) l1
+        LEFT JOIN
+            (
+                SELECT
+                    LABELLEVEL,
+                    labelcode,
+                    tableCount
+                FROM
+                    (
+                        SELECT 1 AS LABELLEVEL, SJZYBQ1 AS labelcode, COUNT(DISTINCT SJXJBM) AS tableCount
+                        FROM synlte.PUBLIC_DATA_INFO
+                        WHERE SJZYBQ1 IS NOT NULL AND zyzt = '1'
+                        GROUP BY SJZYBQ1
+                        UNION ALL
+                        SELECT 2 AS LABELLEVEL, SJZYBQ2 AS labelcode, COUNT(DISTINCT SJXJBM) AS tableCount
+                        FROM synlte.PUBLIC_DATA_INFO
+                        WHERE SJZYBQ2 IS NOT NULL AND zyzt = '1'
+                        GROUP BY SJZYBQ2
+                        UNION ALL
+                        SELECT 3 AS LABELLEVEL, SJZYBQ3 AS labelcode, COUNT(DISTINCT SJXJBM) AS tableCount
+                        FROM synlte.PUBLIC_DATA_INFO
+                        WHERE SJZYBQ3 IS NOT NULL AND zyzt = '1'
+                        GROUP BY SJZYBQ3
+                        UNION ALL
+                        SELECT 4 AS LABELLEVEL, SJZYBQ4 AS labelcode, COUNT(DISTINCT SJXJBM) AS tableCount
+                        FROM synlte.PUBLIC_DATA_INFO
+                        WHERE SJZYBQ4 IS NOT NULL AND zyzt = '1'
+                        GROUP BY SJZYBQ4
+                        UNION ALL
+                        SELECT 5 AS LABELLEVEL, SJZYBQ5 AS labelcode, COUNT(DISTINCT SJXJBM) AS tableCount
+                        FROM synlte.PUBLIC_DATA_INFO
+                        WHERE SJZYBQ5 IS NOT NULL AND zyzt = '1'
+                        GROUP BY SJZYBQ5
+                        UNION ALL
+                        SELECT 6 AS LABELLEVEL, SJZYBQ6 AS labelcode, COUNT(DISTINCT SJXJBM) AS tableCount
+                        FROM synlte.PUBLIC_DATA_INFO
+                        WHERE SJZYBQ6 IS NOT NULL AND zyzt = '1'
+                        GROUP BY SJZYBQ6
+                    ) t
+            ) r1 ON l1.LABELLEVEL = r1.LABELLEVEL AND UPPER(l1.LABELCODE) = UPPER(r1.labelcode)
+        LEFT JOIN
+            (SELECT DISTINCT codename, CODETEXT FROM V_CLASSIFY_INFO WHERE PARCODEID = #{sjzzflCodeId}) r2
+            ON l1.CLASSID = r2.codename
+        <if test="sort != '' and sort != null">
+            ORDER BY ${sort} ${sortOrder}
+        </if>
+        <if test="sort == '' or sort == null">
+            ORDER BY moddate DESC
+        </if>
+    </select>
+
+    <select id="getLabelManageDataByClassId" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+        select labelname as label, labelcode as value
+          from (select labelname,
+                       labelcode,
+                       classid,
+                       labellevel,
+                       row_number() over(partition by upper(labelcode) order by moddate desc) rn
+                  from synlte.LABELS
+                  <where>
+                      labellevel = #{labelLevel}
+                      <if test="classId != null and classId != ''">
+                          and  upper(classid) = upper(#{classId})
+                      </if>
+                  </where>
+                ) tt
+         where rn = 1
+    </select>
+
+    <select id="getLabelManageByLabelCode" resultType="com.synway.datastandardmanager.entity.pojo.LabelsEntity">
+        select labelname, labelcode, labellevel, classid
+          from (select labelname,
+                       labelcode,
+                       labellevel,
+                       classid,
+                       row_number() over(partition by upper(labelcode) order by moddate desc) rn
+                  from synlte.LABELS
+                 where labelcode in (
+                                    <foreach collection="list" item="item" separator=",">
+                                        #{item,jdbcType=VARCHAR}
+                                    </foreach>
+                                     )) tt
+         where rn = 1
+         order by labellevel asc
+    </select>
+
+</mapper>

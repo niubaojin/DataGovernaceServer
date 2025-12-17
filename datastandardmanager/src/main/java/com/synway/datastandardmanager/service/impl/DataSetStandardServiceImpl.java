@@ -857,7 +857,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             originalObject.setUpdateTime(new Date());
             log.info(">>>>>>原始汇聚数据集信息为:", JSONObject.toJSONString(originalObject));
             if (StringUtils.isNotBlank(originalObject.getObjectName()) && StringUtils.isNotBlank(originalObject.getTableId())) {
-                standardizeObjectRelationMapper.insertOrUpdateStdObjRel(originalObject);
+                insertOrUpdateStdObjRel(originalObject);
             }
             //标准的数据集信息
             StandardizeObjectRelationEntity standardObject = new StandardizeObjectRelationEntity();
@@ -868,7 +868,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             //关联的原始汇聚标的id
             standardObject.setParentId(originalId);
             log.info(">>>>>>标准的数据集信息为:", JSONObject.toJSONString(standardObject));
-            standardizeObjectRelationMapper.insertOrUpdateStdObjRel(standardObject);
+            insertOrUpdateStdObjRel(standardObject);
 
             List<StandardizeObjectfieldRelEntity> originalObjectFieldList = new ArrayList<>();
             List<StandardizeObjectfieldRelEntity> standardObjectFieldList = new ArrayList<>();
@@ -912,7 +912,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 standObject.setObjectId(objectEntityOld.getObjectId());
                 standObject.setParentId(objectRelationManage.getOriginalId());
                 //插入更新后的标准数据集
-                insertOrUpdateStdObjRelCount = standardizeObjectRelationMapper.insertOrUpdateStdObjRel(standObject);
+                insertOrUpdateStdObjRelCount = insertOrUpdateStdObjRel(standObject);
                 log.info(">>>>>>插入STANDARDIZE_OBJECT_RELATION数据集条数为:{}", insertOrUpdateStdObjRelCount);
             } else {
                 insertOrUpdateStdObjRelCount = 0;
@@ -949,6 +949,16 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                     standardizeObjectfieldRelMapper.insertList(objectFieldRelationMapping);
                 }
             }
+        }
+    }
+
+    public int insertOrUpdateStdObjRel(StandardizeObjectRelationEntity standObject){
+        LambdaQueryWrapper<StandardizeObjectRelationEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(StandardizeObjectRelationEntity::getObjectId, standObject.getObjectId());
+        if (standardizeObjectRelationMapper.selectCount(wrapper) > 0){
+            return standardizeObjectRelationMapper.updateStdObjRel(standObject);
+        }else {
+            return standardizeObjectRelationMapper.insert(standObject);
         }
     }
 

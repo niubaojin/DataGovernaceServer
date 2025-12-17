@@ -11,6 +11,4 @@ public interface DsmSourceInfoMapper extends BaseMapper<DsmSourceInfoEntity> {
                                        @Param("sourceSystem") String sourceSystem,
                                        @Param("dataName") String dataName);
 
-    void insertSourceInfo(@Param("sourceInfo") DsmSourceInfoEntity sourceInfo);
-
 }
