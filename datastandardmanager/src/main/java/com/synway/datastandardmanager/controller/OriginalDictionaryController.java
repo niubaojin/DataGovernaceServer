@@ -5,7 +5,7 @@ import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.entity.dto.StandardDictionaryDTO;
 import com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDFEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDictEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
 import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 import com.synway.datastandardmanager.service.OriginalDictionaryService;
@@ -96,7 +96,7 @@ public class OriginalDictionaryController {
      * @param codeId 字典codeId
      */
     @RequestMapping(value = "/searchDictionaryValueListByCodeId")
-    public ServerResponse<List<KeyValueVO>> searchDictionaryValueListByCodeId(@RequestParam("codeId") String codeId) {
+    public ServerResponse<List<ValueLabelVO>> searchDictionaryValueListByCodeId(@RequestParam("codeId") String codeId) {
         return ServerResponse.asSucessResponse(service.searchDictionaryValueListByCodeId(codeId));
     }
 
@@ -133,7 +133,7 @@ public class OriginalDictionaryController {
      * 仓库探查分析中字段探查原始字典的下拉内容
      */
     @RequestMapping(value = "/getOriginalDictionaryNameList")
-    public ServerResponse<List<KeyValueVO>> getOriginalDictionaryNameList() {
+    public ServerResponse<List<ValueLabelVO>> getOriginalDictionaryNameList() {
         return ServerResponse.asSucessResponse(service.getOriginalDictionaryNameList());
     }
 

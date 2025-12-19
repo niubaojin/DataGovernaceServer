@@ -44,7 +44,7 @@
         </if>
     </select>
 
-    <select id="searchVersionsList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="searchVersionsList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select distinct versions as label, versions as value from
         <if test="table != null and table == 'object'">
             synlte.objecte_version
@@ -57,7 +57,7 @@
         </if>
     </select>
 
-    <select id="searchAuthorList" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="searchAuthorList" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select distinct author as label, author as value from
         <if test="table != null and table == 'object'">
             synlte.objecte_version

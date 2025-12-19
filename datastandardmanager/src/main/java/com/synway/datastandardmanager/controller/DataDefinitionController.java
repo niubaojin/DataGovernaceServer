@@ -3,7 +3,7 @@ package com.synway.datastandardmanager.controller;
 import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.entity.dto.DataDefinitionDTO;
 import com.synway.datastandardmanager.entity.pojo.StandardizeObjectfieldRelEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.ObjectRelationManageVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.service.DataDefinitionService;
@@ -61,7 +61,7 @@ public class DataDefinitionController {
      * @param dto 调用仓库所需参数
      */
     @RequestMapping(value = "/getDataSetDetectSimilarResult")
-    public ServerResponse<List<KeyValueVO>> getDatasetDetectSimilarResult(@RequestBody DataDefinitionDTO dto) throws Exception {
+    public ServerResponse<List<ValueLabelVO>> getDatasetDetectSimilarResult(@RequestBody DataDefinitionDTO dto) throws Exception {
         return ServerResponse.asSucessResponse(dataDefinitionService.getDataSetDetectSimilarResult(dto));
     }
 
@@ -71,7 +71,7 @@ public class DataDefinitionController {
      * @param searchText 关键字内容
      */
     @RequestMapping(value = "/searchAllDataSetStandard")
-    public ServerResponse<List<KeyValueVO>> searchAllDataSetStandard(String searchText) {
+    public ServerResponse<List<ValueLabelVO>> searchAllDataSetStandard(String searchText) {
         return ServerResponse.asSucessResponse(dataDefinitionService.searchAllDataStandard(searchText));
     }
 

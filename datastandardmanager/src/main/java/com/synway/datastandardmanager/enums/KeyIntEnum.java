@@ -27,6 +27,7 @@ public enum KeyIntEnum {
 
     /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>厂商名称>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     ALL(0, "全部", Common.MANUFACTURER_NAME),      //Source_ALL
+    ALL0(0, "", Common.MANUFACTURER_NAME),        //Source_ALL
     PT(1, "普天", Common.MANUFACTURER_NAME),       //Source_PT
     HZ(2, "汇智", Common.MANUFACTURER_NAME),       //Source_HZ
     SS(3, "三所", Common.MANUFACTURER_NAME),       //Source_SS

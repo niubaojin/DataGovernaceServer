@@ -3,7 +3,7 @@ package com.synway.datastandardmanager.service;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
 import com.synway.datastandardmanager.entity.pojo.DsmStandardTableCreatedEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CreateTableVO;
 
@@ -16,7 +16,7 @@ public interface CreateTableService {
      */
     CreateTableVO buildAdsOrOdpsTable(BuildTableInfoVO buildTableInfoVo);
 
-    List<KeyValueVO> getColumnType(String dataBaseType);
+    List<ValueLabelVO> getColumnType(String dataBaseType);
 
     List<ObjectFieldEntity> columnCorrespondClick(JSONObject jsonObject);
 
@@ -37,6 +37,6 @@ public interface CreateTableService {
     /**
      * 获取分区类型下拉列表
      */
-    List<KeyValueVO> getPartitionType();
+    List<ValueLabelVO> getPartitionType();
 
 }

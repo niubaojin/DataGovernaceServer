@@ -3,7 +3,7 @@ package com.synway.datastandardmanager.service;
 import com.synway.datastandardmanager.entity.dto.StandardDictionaryDTO;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeEntity;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeValEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
 import jakarta.servlet.http.HttpServletResponse;
@@ -57,6 +57,6 @@ public interface StandardDictionaryService {
      * 模糊搜索数据字典下拉框
      * @param searchText
      */
-    List<KeyValueVO> searchDictionaryList(String searchText);
+    List<ValueLabelVO> searchDictionaryList(String searchText);
 
 }

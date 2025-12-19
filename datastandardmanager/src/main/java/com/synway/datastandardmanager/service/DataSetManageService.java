@@ -7,8 +7,8 @@ import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
 import com.synway.datastandardmanager.entity.pojo.DsmSourceFieldInfoEntity;
 import com.synway.datastandardmanager.entity.vo.DataResourceRawInformationVO;
 import com.synway.datastandardmanager.entity.vo.DataSetManageVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ public interface DataSetManageService {
     /**
      * 根据选择的数据资源目录的两大分类之一获取对应的一级分类信息
      */
-    List<KeyValueVO> getPrimaryClassifyData(String mainClassify);
+    List<ValueLabelVO> getPrimaryClassifyData(String mainClassify);
 
     /**
      * 根据选择的数据资源目录的三大分类之一和 一级分类信息 来获取二级分类信息
@@ -30,7 +30,7 @@ public interface DataSetManageService {
      * @param mainClassify        主类名称
      * @param primaryClassifyCode 一级分类code
      */
-    List<KeyValueVO> getSecondaryClassifyData(String mainClassify, String primaryClassifyCode);
+    List<ValueLabelVO> getSecondaryClassifyData(String mainClassify, String primaryClassifyCode);
 
     /**
      * 根据选择的二级分类来获取三级分类信息
@@ -38,12 +38,12 @@ public interface DataSetManageService {
      * @param primaryClassifyCode 二级分类码表
      * @param secondClassifyCode  三级分类码表
      */
-    List<KeyValueVO> getThreeClassifyData(String primaryClassifyCode, String secondClassifyCode);
+    List<ValueLabelVO> getThreeClassifyData(String primaryClassifyCode, String secondClassifyCode);
 
     /**
      * 获取资源状态的信息
      */
-    List<KeyValueVO> getResourceStatus();
+    List<ValueLabelVO> getResourceStatus();
 
     /**
      * 搜索提示框的内容，支持数据名、真实表名、资源标识模糊匹配
@@ -84,7 +84,7 @@ public interface DataSetManageService {
     /**
      * 获取二级分类的相关信息
      */
-    List<ValueLabelVO> getSecondaryClassLayuiService(String mainClassify, String primaryClassifyCh);
+    List<ValueLabelChildrenVO> getSecondaryClassLayuiService(String mainClassify, String primaryClassifyCh);
 
     /**
      * 获取初始化的表名信息
@@ -104,7 +104,7 @@ public interface DataSetManageService {
     /**
      * 获取所有的分类信息
      */
-    List<ValueLabelVO> getAllClassifyLayuiService(String mainClassifyCh);
+    List<ValueLabelChildrenVO> getAllClassifyLayuiService(String mainClassifyCh);
 
     String getDatabaseType();
 
@@ -115,9 +115,9 @@ public interface DataSetManageService {
      */
     String getNewSourceIdById(String sourceId, String dataSourceClassify, String code);
 
-    List<KeyValueVO> searchSecurityLevel();
+    List<ValueLabelVO> searchSecurityLevel();
 
-    List<KeyValueVO> searchFieldSecurityLevelList(String codeId);
+    List<ValueLabelVO> searchFieldSecurityLevelList(String codeId);
 
 
 }

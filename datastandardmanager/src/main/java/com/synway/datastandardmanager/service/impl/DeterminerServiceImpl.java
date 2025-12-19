@@ -9,8 +9,8 @@ import com.synway.datastandardmanager.entity.pojo.FieldDeterminerEntity;
 import com.synway.datastandardmanager.entity.pojo.FieldDeterminerHisEntity;
 import com.synway.datastandardmanager.entity.pojo.FieldDeterminerVersionEntity;
 import com.synway.datastandardmanager.entity.vo.FieldDeterminerFilterVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.ValueTextVO;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
 import com.synway.datastandardmanager.enums.KeyStrEnum;
 import com.synway.datastandardmanager.enums.OperateLogHandleTypeEnum;
@@ -87,27 +87,27 @@ public class DeterminerServiceImpl implements DeterminerService {
                                                 data.getVersions() != null &&
                                                 data.getRegOrg() != null).collect(Collectors.toList());
             // 进行筛选
-            List<ValueLabelVO> determinerStateFilter = new ArrayList<>();
+            List<ValueTextVO> determinerStateFilter = new ArrayList<>();
             list.stream().map(FieldDeterminerEntity::getDeterminerStateNum).distinct().forEach(d ->
-                    determinerStateFilter.add(new ValueLabelVO(d, KeyStrEnum.getValueByKeyAndType(d, Common.DETERMINER_ENUM)))
+                    determinerStateFilter.add(new ValueTextVO(d, KeyStrEnum.getValueByKeyAndType(d, Common.DETERMINER_ENUM)))
             );
-            List<ValueLabelVO> determinerTypeFilter = new ArrayList<>();
+            List<ValueTextVO> determinerTypeFilter = new ArrayList<>();
             list.stream().map(FieldDeterminerEntity::getDeterminerTypeNum).distinct().forEach(d ->
-                    determinerTypeFilter.add(new ValueLabelVO(String.valueOf(d), KeyStrEnum.getValueByKeyAndType("2_" + d, Common.DETERMINER_ENUM)))
+                    determinerTypeFilter.add(new ValueTextVO(String.valueOf(d), KeyStrEnum.getValueByKeyAndType("2_" + d, Common.DETERMINER_ENUM)))
             );
-            List<ValueLabelVO> versionFilter = new ArrayList<>();
+            List<ValueTextVO> versionFilter = new ArrayList<>();
             list.stream().filter(d -> StringUtils.isNotBlank(d.getVersions())).map(FieldDeterminerEntity::getVersions).distinct().forEach(d ->
-                    versionFilter.add(new ValueLabelVO(d, d))
+                    versionFilter.add(new ValueTextVO(d, d))
             );
-            List<ValueLabelVO> regOrgFilter = new ArrayList<>();
+            List<ValueTextVO> regOrgFilter = new ArrayList<>();
             list.stream().map(FieldDeterminerEntity::getRegOrg).distinct().forEach(d ->
-                    regOrgFilter.add(new ValueLabelVO(d, d))
+                    regOrgFilter.add(new ValueTextVO(d, d))
             );
             // 排序后插入进去
-            determinerStateFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
-            determinerTypeFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
-            versionFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
-            regOrgFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
+            determinerStateFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getText(), s2.getText()));
+            determinerTypeFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getText(), s2.getText()));
+            versionFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getText(), s2.getText()));
+            regOrgFilter.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getText(), s2.getText()));
             filterVO.setDeterminerStateFilter(determinerStateFilter);
             filterVO.setDeterminerTypeFilter(determinerTypeFilter);
             filterVO.setVersionFilter(versionFilter);
@@ -390,8 +390,8 @@ public class DeterminerServiceImpl implements DeterminerService {
     }
 
     @Override
-    public List<KeyValueVO> searchDeterminerNameList(String searchName) {
-        List<KeyValueVO> list = new ArrayList<>();
+    public List<ValueLabelVO> searchDeterminerNameList(String searchName) {
+        List<ValueLabelVO> list = new ArrayList<>();
         try {
             list = fieldDeterminerMapper.searchFieldDeterminerNameList(searchName);
             if (list == null || list.isEmpty()) {

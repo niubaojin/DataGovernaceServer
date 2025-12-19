@@ -25,6 +25,7 @@
             <if test="searchName != null and searchName != ''">
                 (upper(DChinseNAME)) like upper(concat('%',concat(#{searchName},'%')))
                 or upper(DNAME) like upper(concat('%',concat(#{searchName},'%')))
+                or upper(determinerId) like upper(concat('%', concat(#{searchName}, '%')))
             </if>
             <if test="determinerTypeList != null and determinerTypeList.size() > 0">
                 and determinerType in (
@@ -96,7 +97,7 @@
         select distinct determinerid from synlte.FieldDeterminer
     </select>
 
-    <select id="searchFieldDeterminerNameList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="searchFieldDeterminerNameList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select DISTINCT DCHINSENAME as label, determinerId as value
           from synlte.fielddeterminer
          where determinerstate = '05'

@@ -5,7 +5,7 @@ import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
 import com.synway.datastandardmanager.entity.pojo.DsmStandardTableCreatedEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CreateTableVO;
 import com.synway.datastandardmanager.service.CreateTableService;
@@ -111,7 +111,7 @@ public class CreateTableController {
      */
     @RequestMapping(value = "/getPartitionType")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getPartitionType() {
+    public ServerResponse<List<ValueLabelVO>> getPartitionType() {
         return ServerResponse.asSucessResponse(createTableService.getPartitionType());
     }
 

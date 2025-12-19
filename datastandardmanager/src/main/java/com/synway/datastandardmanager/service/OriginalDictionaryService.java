@@ -3,7 +3,7 @@ package com.synway.datastandardmanager.service;
 import com.synway.datastandardmanager.entity.dto.StandardDictionaryDTO;
 import com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDFEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDictEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
 import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,7 +51,7 @@ public interface OriginalDictionaryService {
      *
      * @param codeId 码表id
      */
-    List<KeyValueVO> searchDictionaryValueListByCodeId(String codeId);
+    List<ValueLabelVO> searchDictionaryValueListByCodeId(String codeId);
 
     /**
      * 下载原始字典表
@@ -81,6 +81,6 @@ public interface OriginalDictionaryService {
     /**
      * 仓库探查分析中字段探查原始字典的下拉内容
      */
-    List<KeyValueVO> getOriginalDictionaryNameList();
+    List<ValueLabelVO> getOriginalDictionaryNameList();
 
 }

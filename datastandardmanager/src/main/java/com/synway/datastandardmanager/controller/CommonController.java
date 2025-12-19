@@ -1,7 +1,7 @@
 package com.synway.datastandardmanager.controller;
 
 import com.synway.common.bean.ServerResponse;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.service.CommonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +25,7 @@ public class CommonController {
      * 查询数据厂商
      */
     @RequestMapping("/searchValtextInfo")
-    public ServerResponse<List<KeyValueVO>> searchValtext() {
+    public ServerResponse<List<ValueLabelVO>> searchValtext() {
         return ServerResponse.asSucessResponse(service.searchValtext());
     }
 

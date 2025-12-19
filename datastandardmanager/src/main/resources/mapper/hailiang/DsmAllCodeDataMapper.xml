@@ -4,8 +4,8 @@
 
 <mapper namespace="com.synway.datastandardmanager.mapper.DsmAllCodeDataMapper">
 
-    <select id="getSelectObjectByName" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
-        select code_value as value, code_text as label
+    <select id="getSelectObjectByName" resultType="com.synway.datastandardmanager.entity.vo.ValueTextVO">
+        select code_value as value, code_text as text
           from DSM_ALL_CODE_DATA
          where upper(CODE_ID) = upper(#{name})
     </select>

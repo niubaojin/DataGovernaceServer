@@ -4,7 +4,7 @@
 
 <mapper namespace="com.synway.datastandardmanager.mapper.SameWordMapper">
 
-    <select id="getSameWordList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getSameWordList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select distinct sameid as value, wordname as text
           from synlte.sameword
          where deleted = 0

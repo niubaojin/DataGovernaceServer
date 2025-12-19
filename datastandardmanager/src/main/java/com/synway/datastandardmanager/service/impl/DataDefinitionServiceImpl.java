@@ -90,7 +90,7 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
     }
 
     @Override
-    public List<KeyValueVO> searchAllDataStandard(String searchText) {
+    public List<ValueLabelVO> searchAllDataStandard(String searchText) {
         //查询全部的数据集标准信息
         LambdaQueryWrapper<ObjectEntity> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(ObjectEntity::getObjectState, 1);
@@ -98,10 +98,10 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
             wrapper.apply("lower(objectname) like lower({0})", "%" + searchText.toLowerCase() + "%");
         }
         List<ObjectEntity> objectEntities = objectMapper.selectList(wrapper);
-        List<KeyValueVO> resultList = new ArrayList<>();
+        List<ValueLabelVO> resultList = new ArrayList<>();
         if (objectEntities.size() > 0) {
             for (ObjectEntity data : objectEntities) {
-                resultList.add(new KeyValueVO(data.getTableId(), data.getDataSourceName(), data.getObjectId().toString()));
+                resultList.add(new ValueLabelVO(data.getTableId(), data.getDataSourceName(), data.getObjectId().toString()));
             }
         } else {
             return resultList;
@@ -113,7 +113,7 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
     }
 
     @Override
-    public List<KeyValueVO> getDataSetDetectSimilarResult(DataDefinitionDTO dto) throws Exception {
+    public List<ValueLabelVO> getDataSetDetectSimilarResult(DataDefinitionDTO dto) throws Exception {
         log.info(">>>>>>开始获取探查分析推荐标准数据集");
         if (StringUtils.isBlank(dto.getResId()) && StringUtils.isBlank(dto.getProjectName())
                 && StringUtils.isBlank(dto.getTableNameEn())) {
@@ -123,11 +123,11 @@ public class DataDefinitionServiceImpl implements DataDefinitionService {
         if (dataSimilarInfo.size() == 0) {
             return new ArrayList<>();
         }
-        List<KeyValueVO> resultList = new ArrayList<>();
+        List<ValueLabelVO> resultList = new ArrayList<>();
         NumberFormat nf = NumberFormat.getPercentInstance();
         nf.setMinimumFractionDigits(2);
         dataSimilarInfo.stream().forEach(d -> {
-            KeyValueVO dataSimilarElement = new KeyValueVO(d.getProtocolCode(), d.getObjectName(), nf.format(d.getScore()));
+            ValueLabelVO dataSimilarElement = new ValueLabelVO(d.getProtocolCode(), d.getObjectName(), nf.format(d.getScore()));
             resultList.add(dataSimilarElement);
         });
         return resultList;

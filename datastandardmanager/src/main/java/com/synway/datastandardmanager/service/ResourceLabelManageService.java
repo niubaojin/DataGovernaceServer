@@ -18,7 +18,7 @@ public interface ResourceLabelManageService {
     /**
      * 获取标签名称的统计列表
      */
-    List<ValueLabelVO> getLabelTotalList();
+    List<ValueLabelChildrenVO> getLabelTotalList();
 
     /**
      * 获取标签表的相关信息

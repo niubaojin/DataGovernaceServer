@@ -8,7 +8,7 @@ import com.synway.datastandardmanager.entity.dto.ObjectManageDTO;
 import com.synway.datastandardmanager.entity.pojo.*;
 import com.synway.datastandardmanager.entity.vo.FilterListVO;
 import com.synway.datastandardmanager.entity.vo.InputObjectCreateVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.enums.KeyIntEnum;
 import com.synway.datastandardmanager.enums.KeyStrEnum;
 import com.synway.datastandardmanager.mapper.*;
@@ -319,9 +319,9 @@ public class HisVersionInfoServiceImpl implements HisVersionInfoService {
                 return filterList;
             }
             log.info("开始查询过滤信息:");
-            List<KeyValueVO> versionsList = objectVersionMapper.searchVersionsList(table);
+            List<ValueLabelVO> versionsList = objectVersionMapper.searchVersionsList(table);
             versionsList.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
-            List<KeyValueVO> authorList = objectVersionMapper.searchAuthorList(table);
+            List<ValueLabelVO> authorList = objectVersionMapper.searchAuthorList(table);
             authorList.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
             filterList.setVersionsList(versionsList);
             filterList.setAuthorList(authorList);

@@ -3,10 +3,7 @@ package com.synway.datastandardmanager.controller;
 import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.entity.dto.UnitOrganizationDTO;
 import com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
-import com.synway.datastandardmanager.entity.vo.PageVO;
-import com.synway.datastandardmanager.entity.vo.UnitOrganizationTreeVO;
-import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.*;
 import com.synway.datastandardmanager.service.UnitOrganizationService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -91,7 +88,7 @@ public class UnitOrganizationController {
      * 获取所属地区信息
      */
     @RequestMapping(value = "/getAreaInfo")
-    public ServerResponse<List<ValueLabelVO>> getAreaInfo() {
+    public ServerResponse<List<ValueLabelChildrenVO>> getAreaInfo() {
         return ServerResponse.asSucessResponse(unitOrganizationService.getAreaInfo());
     }
 
@@ -109,7 +106,7 @@ public class UnitOrganizationController {
      * 获取表格的筛选内容
      */
     @RequestMapping(value = "/getFilterObject")
-    public ServerResponse<List<KeyValueVO>> getFilterObject() {
+    public ServerResponse<List<ValueTextVO>> getFilterObject() {
         return ServerResponse.asSucessResponse(unitOrganizationService.getFilterObject());
     }
 

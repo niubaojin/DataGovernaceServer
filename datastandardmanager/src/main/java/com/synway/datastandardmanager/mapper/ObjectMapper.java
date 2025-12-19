@@ -48,10 +48,10 @@ public interface ObjectMapper extends BaseMapper<ObjectEntity> {
 
     ObjectEntity getClassifyByTableid(@Param("tableId") String tableId);
 
-    List<KeyValueVO> getFirstClassModeByMain(@Param("mainValue") String mainValue);
+    List<ValueLabelVO> getFirstClassModeByMain(@Param("mainValue") String mainValue);
 
-    List<KeyValueVO> getSecondaryClassModeByFirst(@Param("mainValue") String mainValue,
-                                                  @Param("firstClassValue") String firstClassValue);
+    List<ValueLabelVO> getSecondaryClassModeByFirst(@Param("mainValue") String mainValue,
+                                                    @Param("firstClassValue") String firstClassValue);
 
     int updateObjectByTableId(ObjectEntity objectEntity);
 
@@ -95,7 +95,7 @@ public interface ObjectMapper extends BaseMapper<ObjectEntity> {
      * 获取资源状态
      */
     @AuthorControl(tableNames ={"synlte.object","synlte.\"OBJECT\""},columnNames = {"tableid","tableid"})
-    List<KeyValueVO> getResourceStatus();
+    List<ValueLabelVO> getResourceStatus();
 
     /**
      * 搜索提示内容

@@ -172,7 +172,7 @@ public class DataElementController {
      * 查询数据来源码表值
      */
     @RequestMapping(value = "/searchIsElement")
-    public ServerResponse<List<KeyValueVO>> searchIsElement() {
+    public ServerResponse<List<ValueLabelVO>> searchIsElement() {
         log.info(">>>>>>查询数据来源码表值信息");
         return ServerResponse.asSucessResponse(elementService.searchIsElement());
     }
@@ -189,11 +189,11 @@ public class DataElementController {
      * 数据定义页面数据要素筛选条件
      */
     @RequestMapping(value = "/searchElementFilter")
-    public ServerResponse<List<ValueLabelVO>> searchElementToTalFilter() {
+    public ServerResponse<List<ValueLabelChildrenVO>> searchElementToTalFilter() {
         log.info(">>>>>>开始查询【数据要素筛选条件】分类信息");
-        ServerResponse<List<ValueLabelVO>> serverResponse = null;
+        ServerResponse<List<ValueLabelChildrenVO>> serverResponse = null;
         try {
-            List<ValueLabelVO> list = elementService.searchElementTotal();
+            List<ValueLabelChildrenVO> list = elementService.searchElementTotal();
             serverResponse = ServerResponse.asSucessResponse(list);
             log.info(">>>>>>查询【数据要素筛选条件】分类信息结束");
         } catch (Exception e) {

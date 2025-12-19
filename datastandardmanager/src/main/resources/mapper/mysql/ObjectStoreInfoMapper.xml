@@ -112,7 +112,7 @@
         </if>
     </select>
 
-    <select id="getFilterInfo" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+    <select id="getFilterInfo" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO">
         select value, label
           from (select distinct cast(store_type as CHAR) COLLATE utf8mb4_unicode_ci as value,
                                 'storeType' COLLATE utf8mb4_unicode_ci as label

@@ -9,7 +9,7 @@ import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.pojo.*;
 import com.synway.datastandardmanager.entity.vo.ExportObjectInfoVO;
 import com.synway.datastandardmanager.entity.vo.InputObjectCreateVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CkColumnVO;
 import com.synway.datastandardmanager.entity.vo.importDownload.ObjectFieldSheetVO;
@@ -397,8 +397,8 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                 wrapperOF.eq(ObjectFieldEntity::getDeleted, 0);
                 List<ObjectFieldEntity> objectFieldLists = objectFieldMapper.selectList(wrapperOF);
                 Map<Integer, List<ObjectFieldEntity>> objectFieldMap = objectFieldLists.stream().collect(Collectors.groupingBy(ObjectFieldEntity::getObjectId));
-                List<KeyValueVO> synlteFieldInfos = synlteFieldMapper.getGadsjFieldByTexts();
-                Map<String, List<KeyValueVO>> synlteFieldInfoMap = synlteFieldInfos.stream().collect(Collectors.groupingBy(KeyValueVO::getValue));
+                List<ValueLabelVO> synlteFieldInfos = synlteFieldMapper.getGadsjFieldByTexts();
+                Map<String, List<ValueLabelVO>> synlteFieldInfoMap = synlteFieldInfos.stream().collect(Collectors.groupingBy(ValueLabelVO::getValue));
                 LambdaQueryWrapper<EntityElementEntity> wrapperEE = Wrappers.lambdaQuery();
                 wrapperEE.eq(EntityElementEntity::getCreateMode, 1);
                 List<EntityElementEntity> elementNames = entityElementMapper.selectList(wrapperEE);
@@ -578,7 +578,7 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
 
     public List<ObjectFieldEntity> selectObjectFieldByObjectIdNew(ObjectEntity objectFieldDemo,
                                                                   List<ObjectFieldEntity> objectFieldList,
-                                                                  Map<String, List<KeyValueVO>> synlteFieldInfoMap,
+                                                                  Map<String, List<ValueLabelVO>> synlteFieldInfoMap,
                                                                   List<EntityElementEntity> elementVOList,
                                                                   List<ObjectFieldEntity> list) {
         // 先根据 tableId获取对应的objectId
@@ -592,14 +592,14 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                 if (objectField.getFieldId().indexOf("_") != -1) {
                     fieldId = objectField.getFieldId().split("_")[1];
                 }
-                List<KeyValueVO> synlteFieldInfo = new ArrayList<>();
+                List<ValueLabelVO> synlteFieldInfo = new ArrayList<>();
                 for (String fieldId1 : synlteFieldInfoMap.keySet()) {
                     if (fieldId1.equalsIgnoreCase(fieldId)) {
                         synlteFieldInfo = synlteFieldInfoMap.get(fieldId);
                     }
                 }
                 if (synlteFieldInfo.size() > 0) {
-                    KeyValueVO value = synlteFieldInfo.get(0);
+                    ValueLabelVO value = synlteFieldInfo.get(0);
                     objectField.setSynlteFieldMemo(value.getMemo());
                     objectField.setLabel(value.getLabel());
                 }
@@ -864,8 +864,8 @@ public class DataSetStandardDownloadServiceImpl implements DataSetStandardDownlo
                 wrapperOF.eq(ObjectFieldEntity::getDeleted, 0);
                 List<ObjectFieldEntity> objectFieldLists = objectFieldMapper.selectList(wrapperOF);
                 Map<Integer, List<ObjectFieldEntity>> objectFieldMap = objectFieldLists.stream().collect(Collectors.groupingBy(ObjectFieldEntity::getObjectId));
-                List<KeyValueVO> synlteFieldInfos = synlteFieldMapper.getGadsjFieldByTexts();
-                Map<String, List<KeyValueVO>> synlteFieldInfoMap = synlteFieldInfos.stream().collect(Collectors.groupingBy(KeyValueVO::getValue));
+                List<ValueLabelVO> synlteFieldInfos = synlteFieldMapper.getGadsjFieldByTexts();
+                Map<String, List<ValueLabelVO>> synlteFieldInfoMap = synlteFieldInfos.stream().collect(Collectors.groupingBy(ValueLabelVO::getValue));
                 LambdaQueryWrapper<EntityElementEntity> wrapperEE = Wrappers.lambdaQuery();
                 wrapperEE.eq(EntityElementEntity::getCreateMode, 1);
                 List<EntityElementEntity> elementNames = entityElementMapper.selectList(wrapperEE);

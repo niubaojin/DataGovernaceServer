@@ -261,15 +261,15 @@ public class DataElementServiceImpl implements DataElementService {
     }
 
     @Override
-    public List<KeyValueVO> searchIsElement() {
+    public List<ValueLabelVO> searchIsElement() {
         List<EntityElementEntity> entities = elementMapper.queryEntityElementList("");
         if (entities.isEmpty()) {
             return new ArrayList<>();
         } else {
-            List<KeyValueVO> lists = new ArrayList<>();
+            List<ValueLabelVO> lists = new ArrayList<>();
             for (EntityElementEntity data : entities) {
                 String isElement = data.getIsElement();
-                KeyValueVO field = new KeyValueVO(isElement, KeyStrEnum.getValueByKeyAndType("2_" + isElement, Common.DATAELEMENTCODE));
+                ValueLabelVO field = new ValueLabelVO(isElement, KeyStrEnum.getValueByKeyAndType("2_" + isElement, Common.DATAELEMENTCODE));
                 lists.add(field);
             }
             return lists.stream().distinct().collect(Collectors.toList());
@@ -286,16 +286,16 @@ public class DataElementServiceImpl implements DataElementService {
     }
 
     @Override
-    public List<ValueLabelVO> searchElementTotal() {
+    public List<ValueLabelChildrenVO> searchElementTotal() {
         List<SelectFieldVO> elementTotalList = elementMapper.searchElementTotal();
         if (elementTotalList == null || elementTotalList.isEmpty()) {
             return new ArrayList<>();
         }
-        List<ValueLabelVO> listData = new ArrayList<>();
+        List<ValueLabelChildrenVO> listData = new ArrayList<>();
         for (SelectFieldVO data : elementTotalList) {
-            List<ValueLabelVO> secondElementList = elementMapper.searchSecondElementName(data.getId());
+            List<ValueLabelChildrenVO> secondElementList = elementMapper.searchSecondElementName(data.getId());
             String label = String.format("%s(%s)", data.getName(), data.getValue());
-            ValueLabelVO parentElement = new ValueLabelVO(data.getId(), label, secondElementList);
+            ValueLabelChildrenVO parentElement = new ValueLabelChildrenVO(data.getId(), label, secondElementList);
             listData.add(parentElement);
         }
         return listData;

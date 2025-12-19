@@ -14,7 +14,7 @@
          where id = #{id}
     </update>
 
-    <select id="searchGroupNameList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="searchGroupNameList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select id as value, group_name as label
           from SYNLTE.STANDARDIZE_PUBLIC_DATA
          order by label

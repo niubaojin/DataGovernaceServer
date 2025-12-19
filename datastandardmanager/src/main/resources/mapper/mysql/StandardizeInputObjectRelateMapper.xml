@@ -103,7 +103,7 @@
          where f4.iobj_guid = #{inputObjGuid}
     </select>
 
-    <select id="getStandardOutTableIdBySourceIdDao" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getStandardOutTableIdBySourceIdDao" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select distinct outobjengname as value, objectname as label
           from (select outobjengname, objectname
                   from (select f4.sys_id      as inputSysId,

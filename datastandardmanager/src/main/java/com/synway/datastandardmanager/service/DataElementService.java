@@ -30,11 +30,11 @@ public interface DataElementService {
 
     List<String> searchElementChname(String searchName);
 
-    List<KeyValueVO> searchIsElement();
+    List<ValueLabelVO> searchIsElement();
 
     String searchSameWord(String sameId);
 
-    List<ValueLabelVO> searchElementTotal();
+    List<ValueLabelChildrenVO> searchElementTotal();
 
     void downloadAllElementTableExcel(HttpServletResponse response,
                                       List<EntityElementEntity> elementList,

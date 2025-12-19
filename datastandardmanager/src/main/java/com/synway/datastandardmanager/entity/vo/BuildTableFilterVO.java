@@ -12,11 +12,11 @@ import java.util.List;
 @Data
 public class BuildTableFilterVO {
     //平台类型筛选
-    private List<ValueLabelVO> storeTypeList;
+    private List<ValueLabelChildrenVO> storeTypeList;
     //存储数据源筛选
-    private List<ValueLabelVO> resNameList;
+    private List<ValueLabelChildrenVO> resNameList;
     //项目空间筛选
-    private List<ValueLabelVO> projectList;
+    private List<ValueLabelChildrenVO> projectList;
     //创建人
-    private List<ValueLabelVO> creatorList;
+    private List<ValueLabelChildrenVO> creatorList;
 }

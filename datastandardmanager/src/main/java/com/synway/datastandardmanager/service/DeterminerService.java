@@ -3,7 +3,7 @@ package com.synway.datastandardmanager.service;
 import com.synway.datastandardmanager.entity.dto.DeterminerDTO;
 import com.synway.datastandardmanager.entity.pojo.FieldDeterminerEntity;
 import com.synway.datastandardmanager.entity.vo.FieldDeterminerFilterVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 
 import java.util.List;
 
@@ -25,6 +25,6 @@ public interface DeterminerService {
 
     String getDeterminerId();
 
-    List<KeyValueVO> searchDeterminerNameList(String searchName);
+    List<ValueLabelVO> searchDeterminerNameList(String searchName);
 
 }

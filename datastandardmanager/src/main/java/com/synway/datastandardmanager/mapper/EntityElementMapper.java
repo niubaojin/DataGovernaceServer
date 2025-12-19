@@ -5,7 +5,7 @@ import com.synway.datastandardmanager.entity.dto.EntityElementDTO;
 import com.synway.datastandardmanager.entity.pojo.EntityElementEntity;
 import com.synway.datastandardmanager.entity.vo.EntityElementVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
-import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -23,6 +23,6 @@ public interface EntityElementMapper extends BaseMapper<EntityElementEntity> {
 
     List<SelectFieldVO> searchElementTotal();
 
-    List<ValueLabelVO> searchSecondElementName(@Param("elementObject") String elementObject);
+    List<ValueLabelChildrenVO> searchSecondElementName(@Param("elementObject") String elementObject);
 
 }

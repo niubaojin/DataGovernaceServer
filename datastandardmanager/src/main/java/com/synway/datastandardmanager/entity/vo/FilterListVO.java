@@ -16,7 +16,7 @@ public class FilterListVO implements Serializable {
     private static final long serialVersionUID = 421264681424681476L;
 
     //大版本号的筛选值
-    private List<KeyValueVO> versionsList;
+    private List<ValueLabelVO> versionsList;
     //修订人的筛选值
-    private List<KeyValueVO> authorList;
+    private List<ValueLabelVO> authorList;
 }

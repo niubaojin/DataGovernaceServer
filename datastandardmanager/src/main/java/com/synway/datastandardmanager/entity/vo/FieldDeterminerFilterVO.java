@@ -20,21 +20,21 @@ public class FieldDeterminerFilterVO implements Serializable {
     /**
      *  状态 的筛选  01：新建  05：发布  07：停用
      */
-    private List<ValueLabelVO>  determinerStateFilter;
+    private List<ValueTextVO>  determinerStateFilter;
 
     /**
      *  部标标准的筛选   1：是  0：否
      */
-    private List<ValueLabelVO>  determinerTypeFilter;
+    private List<ValueTextVO>  determinerTypeFilter;
 
     /**
      *  版本的筛选
      */
-    private List<ValueLabelVO>  versionFilter;
+    private List<ValueTextVO>  versionFilter;
 
     /**
      * 提交机构 的筛选
      */
-    private List<ValueLabelVO> regOrgFilter;
+    private List<ValueTextVO> regOrgFilter;
 
 }

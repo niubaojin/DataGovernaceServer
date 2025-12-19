@@ -49,7 +49,7 @@ public class ResourceLabelManageController {
      * 数据定义页面筛选条件信息
      */
     @RequestMapping("/getLabelTotal")
-    public ServerResponse<List<ValueLabelVO>> getLabelTotalList() {
+    public ServerResponse<List<ValueLabelChildrenVO>> getLabelTotalList() {
         return ServerResponse.asSucessResponse(service.getLabelTotalList());
     }
 

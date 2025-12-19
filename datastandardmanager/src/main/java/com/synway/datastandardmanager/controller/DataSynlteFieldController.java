@@ -86,7 +86,8 @@ public class DataSynlteFieldController {
 //            throw SystemException.asSystemException(ErrorCodeEnum.CHECK_PARAMETER_ERROR,
 //                    Objects.requireNonNull(bindingResult.getFieldError()).getDefaultMessage());
 //        }
-        return ServerResponse.asSucessResponse(synlteFieldService.addSynlteField(synlteField));
+        String msg = synlteFieldService.addSynlteField(synlteField);
+        return ServerResponse.asSucessResponse(msg, msg);
     }
 
     /**
@@ -111,7 +112,7 @@ public class DataSynlteFieldController {
      * @return
      */
     @RequestMapping(value = "/getSameWordList")
-    public ServerResponse<List<KeyValueVO>> getSameWordList(String searchName) {
+    public ServerResponse<List<ValueLabelVO>> getSameWordList(String searchName) {
         return ServerResponse.asSucessResponse(synlteFieldService.getSameWordList(searchName));
     }
 
@@ -133,7 +134,7 @@ public class DataSynlteFieldController {
      * @param name EXPRESSION_WORD：表示词，SYNLTEFIELD_STATUS: 状态，field_type:字段类型
      */
     @RequestMapping(value = "/getSelectObjectByName")
-    public ServerResponse<List<KeyValueVO>> getSelectObjectByName(String name) {
+    public ServerResponse<List<ValueTextVO>> getSelectObjectByName(String name) {
         return ServerResponse.asSucessResponse(synlteFieldService.getSelectObjectByName(name));
     }
 
@@ -152,7 +153,7 @@ public class DataSynlteFieldController {
      * 从码表查询数据安全分级的列表
      */
     @RequestMapping(value = "/searchDataSecurityLevelList")
-    public ServerResponse<List<KeyValueVO>> searchDataSecurityLevelList() {
+    public ServerResponse<List<ValueLabelVO>> searchDataSecurityLevelList() {
         return ServerResponse.asSucessResponse(synlteFieldService.searchDataSecurityLevel());
     }
 
@@ -172,7 +173,7 @@ public class DataSynlteFieldController {
      * @param searchText 关键字
      */
     @RequestMapping(value = "/getGadsjFieldByText")
-    public ServerResponse<List<KeyValueVO>> getGadsjFieldByText(String searchText, String fieldType) {
+    public ServerResponse<List<ValueLabelVO>> getGadsjFieldByText(String searchText, String fieldType) {
         return ServerResponse.asSucessResponse(synlteFieldService.getGadsjFieldByText(searchText, fieldType));
     }
 

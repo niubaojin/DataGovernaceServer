@@ -121,27 +121,27 @@ public class DataSynlteFieldServiceImpl implements DataSynlteFieldService {
     public SynlteFieldFilterVO getFilterObjectForSF() {
         log.info(">>>>>>查询数据元的表格筛选内容");
         SynlteFieldFilterVO data = new SynlteFieldFilterVO();
-        List<KeyValueVO> list = synlteFieldMapper.getFilterObjectForSF();
+        List<ValueTextVO> list = synlteFieldMapper.getFilterObjectForSF();
         if (list == null || list.isEmpty()) {
             return data;
         }
-        List<KeyValueVO> listStatus = new ArrayList<>();
-        List<KeyValueVO> listFieldClass = new ArrayList<>();
-        List<KeyValueVO> securityLevelList = new ArrayList<>();
+        List<ValueTextVO> listStatus = new ArrayList<>();
+        List<ValueTextVO> listFieldClass = new ArrayList<>();
+        List<ValueTextVO> securityLevelList = new ArrayList<>();
         list.stream().forEach(d -> {
-            if (StringUtils.equalsIgnoreCase(d.getLabel(), Common.STATUS)) {
+            if (StringUtils.equalsIgnoreCase(d.getText(), Common.STATUS)) {
                 d.setValue(StringUtils.isBlank(d.getValue()) ? "" : d.getValue());
-                d.setLabel(KeyStrEnum.getValueByKeyAndType(d.getValue(), Common.SYNLTEFIELDSTATUS));
+                d.setText(KeyStrEnum.getValueByKeyAndType(d.getValue(), Common.SYNLTEFIELDSTATUS));
                 listStatus.add(d);
             }
-            if (StringUtils.equalsIgnoreCase(d.getLabel(), Common.FIELDCLASS)) {
+            if (StringUtils.equalsIgnoreCase(d.getText(), Common.FIELDCLASS)) {
                 d.setValue(StringUtils.isBlank(d.getValue()) ? "" : d.getValue());
-                d.setLabel(SynlteFieldClassEnum.getValueById(d.getValue()));
+                d.setText(SynlteFieldClassEnum.getValueById(d.getValue()));
                 listFieldClass.add(d);
             }
-            if (StringUtils.equalsIgnoreCase(d.getLabel(), Common.SECURITYLEVEL)) {
+            if (StringUtils.equalsIgnoreCase(d.getText(), Common.SECURITYLEVEL)) {
                 d.setValue(StringUtils.isBlank(d.getValue()) ? "" : d.getValue());
-                d.setLabel(KeyStrEnum.getValueByKeyAndType("2_" + d.getValue(), Common.DATASECURITYLEVEL));
+                d.setText(KeyStrEnum.getValueByKeyAndType("2_" + d.getValue(), Common.DATASECURITYLEVEL));
                 securityLevelList.add(d);
             }
         });
@@ -302,7 +302,7 @@ public class DataSynlteFieldServiceImpl implements DataSynlteFieldService {
         synlteFieldHis.setObjectType(synlteFieldOld.getObjectType());
         synlteFieldHis.setExpressionWord(synlteFieldOld.getExpressionWord());
         synlteFieldHis.setCodeIdDetail(synlteFieldOld.getCodeIdDetail());
-        synlteFieldHis.setIsNormal(synlteFieldOld.getIsNorMal());
+        synlteFieldHis.setIsNormal(synlteFieldOld.getIsNorMal() == null ? 0 : synlteFieldOld.getIsNorMal());
         synlteFieldHis.setRelate(synlteFieldOld.getRelate());
         synlteFieldHis.setUnit(synlteFieldOld.getUnit());
         synlteFieldHis.setFuseType(synlteFieldOld.getFuseType());
@@ -545,8 +545,8 @@ public class DataSynlteFieldServiceImpl implements DataSynlteFieldService {
      * @return
      */
     @Override
-    public List<KeyValueVO> getSameWordList(String searchName) {
-        List<KeyValueVO> list = sameWordMapper.getSameWordList(searchName);
+    public List<ValueLabelVO> getSameWordList(String searchName) {
+        List<ValueLabelVO> list = sameWordMapper.getSameWordList(searchName);
         if (list == null || list.isEmpty()) {
             return new ArrayList<>();
         }
@@ -615,14 +615,14 @@ public class DataSynlteFieldServiceImpl implements DataSynlteFieldService {
     }
 
     @Override
-    public List<KeyValueVO> getSelectObjectByName(String searchName) {
+    public List<ValueTextVO> getSelectObjectByName(String searchName) {
         return allCodeDataMapper.getSelectObjectByName(searchName);
     }
 
     @Override
-    public List<KeyValueVO> searchDataSecurityLevel() {
+    public List<ValueLabelVO> searchDataSecurityLevel() {
         log.info(">>>>>>开始查询数据安全分级列表");
-        List<KeyValueVO> securityLevelList = fieldCodeValMapper.queryLabelValueByCodeId("GACODE000415");
+        List<ValueLabelVO> securityLevelList = fieldCodeValMapper.queryLabelValueByCodeId("GACODE000415");
         if (securityLevelList.size() == 0 || securityLevelList.isEmpty()) {
             throw SystemException.asSystemException(ErrorCodeEnum.CHECK_ERROR, "数据安全分类查询失败");
         }
@@ -641,12 +641,12 @@ public class DataSynlteFieldServiceImpl implements DataSynlteFieldService {
     }
 
     @Override
-    public List<KeyValueVO> getGadsjFieldByText(String searchText, String fieldType) {
+    public List<ValueLabelVO> getGadsjFieldByText(String searchText, String fieldType) {
         log.info(">>>>>>查询数据元下拉框的参数为:{}", searchText);
         if (StringUtils.isNotBlank(fieldType) && fieldType.indexOf(",") != -1) {
             fieldType = null;
         }
-        List<KeyValueVO> resultList = synlteFieldMapper.getGadsjFieldByText(searchText, fieldType, null);
+        List<ValueLabelVO> resultList = synlteFieldMapper.getGadsjFieldByText(searchText, fieldType, null);
         if (resultList == null || resultList.isEmpty()) {
             return new ArrayList<>();
         }

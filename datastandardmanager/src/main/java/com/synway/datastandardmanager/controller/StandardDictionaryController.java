@@ -4,7 +4,7 @@ import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.entity.dto.StandardDictionaryDTO;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeEntity;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeValEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
 import com.synway.datastandardmanager.service.StandardDictionaryService;
@@ -191,7 +191,7 @@ public class StandardDictionaryController {
      */
     @RequestMapping("/searchDictionaryList")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> searchDictionaryList(String searchText) {
+    public ServerResponse<List<ValueLabelVO>> searchDictionaryList(String searchText) {
         return ServerResponse.asSucessResponse(service.searchDictionaryList(searchText));
     }
 

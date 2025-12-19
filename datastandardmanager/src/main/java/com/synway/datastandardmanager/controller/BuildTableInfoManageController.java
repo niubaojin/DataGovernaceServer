@@ -9,7 +9,7 @@ import com.synway.datastandardmanager.entity.dto.ObjectStoreInfoDTO;
 import com.synway.datastandardmanager.entity.dto.RefreshCreateTableDTO;
 import com.synway.datastandardmanager.entity.pojo.ObjectStoreInfoEntity;
 import com.synway.datastandardmanager.entity.vo.BuildTableFilterVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.service.BuildTableInfoManageService;
 import jakarta.annotation.Resource;
@@ -110,7 +110,7 @@ public class BuildTableInfoManageController {
      */
     @RequestMapping(value = "/getDataResource", method = {RequestMethod.GET})
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getDataResource(String dataCenterId, String storeType) {
+    public ServerResponse<List<ValueLabelVO>> getDataResource(String dataCenterId, String storeType) {
         return ServerResponse.asSucessResponse(service.getDataResource(dataCenterId, storeType));
     }
 

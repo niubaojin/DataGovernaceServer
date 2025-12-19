@@ -12,5 +12,5 @@ import java.util.List;
 @Data
 public class LabelManageSelectVO {
     private int labelLevel;
-    private List<KeyValueVO> list;
+    private List<ValueLabelVO> list;
 }

@@ -9,10 +9,7 @@ import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.dto.UnitOrganizationDTO;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
-import com.synway.datastandardmanager.entity.vo.PageVO;
-import com.synway.datastandardmanager.entity.vo.UnitOrganizationTreeVO;
-import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.*;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
 import com.synway.datastandardmanager.enums.OperateLogHandleTypeEnum;
 import com.synway.datastandardmanager.mapper.FieldCodeMapper;
@@ -253,8 +250,8 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
     }
 
     @Override
-    public List<ValueLabelVO> getAreaInfo() {
-        List<ValueLabelVO> resultList = new ArrayList<>();
+    public List<ValueLabelChildrenVO> getAreaInfo() {
+        List<ValueLabelChildrenVO> resultList = new ArrayList<>();
         try {
             //查询所属地区信息
             List<FieldCodeEntity> searchList = fieldCodeMapper.getAreaInfo();
@@ -262,10 +259,10 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
             Map<String, List<FieldCodeEntity>> primaryListMap = searchList.stream().filter(d -> StringUtils.isNotEmpty(d.getCodeText()))
                     .collect(Collectors.groupingBy(d -> (d.getCodeId() + "&&" + d.getCodeText())));
             for (String data : primaryListMap.keySet()) {
-                ValueLabelVO parentPojo = new ValueLabelVO();
+                ValueLabelChildrenVO parentPojo = new ValueLabelChildrenVO();
                 parentPojo.setValue(data.split("&&")[0]);
                 parentPojo.setLabel(data.split("&&")[1]);
-                List<ValueLabelVO> childrenSecond = new ArrayList<>();
+                List<ValueLabelChildrenVO> childrenSecond = new ArrayList<>();
                 //获取当前地区下的数据
                 List<FieldCodeEntity> fieldCodeValsSecond = primaryListMap.get(data);
                 //市级列表
@@ -273,7 +270,7 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
                                 StringUtils.isNotEmpty(d.getValText()) && d.getValValue().substring(d.getValValue().length() - 2).equalsIgnoreCase("00"))
                         .collect(toList());
                 for (FieldCodeEntity fieldCodeVal : secondList) {
-                    ValueLabelVO secondaryLayuiClassifyPojo = new ValueLabelVO();
+                    ValueLabelChildrenVO secondaryLayuiClassifyPojo = new ValueLabelChildrenVO();
                     secondaryLayuiClassifyPojo.setValue(fieldCodeVal.getValValue());
                     secondaryLayuiClassifyPojo.setLabel(fieldCodeVal.getValText());
                     List<FieldCodeEntity> fieldCodeValsThree = fieldCodeValsSecond.stream().filter(d -> {
@@ -287,9 +284,9 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
                         }
                     }).collect(toList());
                     //注入地区三级数据
-                    List<ValueLabelVO> threeChildrenList = new ArrayList<>();
+                    List<ValueLabelChildrenVO> threeChildrenList = new ArrayList<>();
                     for (FieldCodeEntity threeChild : fieldCodeValsThree) {
-                        ValueLabelVO threeLayuiClassifyPojo = new ValueLabelVO();
+                        ValueLabelChildrenVO threeLayuiClassifyPojo = new ValueLabelChildrenVO();
                         threeLayuiClassifyPojo.setValue(threeChild.getValValue());
                         threeLayuiClassifyPojo.setLabel(threeChild.getValText());
                         threeChildrenList.add(threeLayuiClassifyPojo);
@@ -332,13 +329,13 @@ public class UnitOrganizationServiceImpl implements UnitOrganizationService {
     }
 
     @Override
-    public List<KeyValueVO> getFilterObject() {
-        List<KeyValueVO> list = new ArrayList<>();
+    public List<ValueTextVO> getFilterObject() {
+        List<ValueTextVO> list = new ArrayList<>();
         try {
             list = synlteFieldMapper.getFilterObjectForSF();
             if (list != null && !list.isEmpty()) {
                 list.stream().forEach(d -> {
-                    d.setLabel(d.getValue());
+                    d.setText(d.getValue());
                 });
             }
         } catch (Exception e) {

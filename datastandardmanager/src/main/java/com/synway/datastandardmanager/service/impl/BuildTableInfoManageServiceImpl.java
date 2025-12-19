@@ -436,8 +436,8 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     }
 
     @Override
-    public List<KeyValueVO> getDataResource(String dataCenterId, String storeType) {
-        List<KeyValueVO> resultList = new ArrayList<>();
+    public List<ValueLabelVO> getDataResource(String dataCenterId, String storeType) {
+        List<ValueLabelVO> resultList = new ArrayList<>();
         try {
             String storeTypeStr;
             if (storeType != null) {
@@ -448,11 +448,11 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             List<DataResource> dataResourceList = restTemplateHandle.getDataResourceByCenterId(dataCenterId, "0");
             dataResourceList.stream().forEach(d -> {
                 if (StringUtils.isBlank(storeType)) {
-                    KeyValueVO pageSelectOneValue = new KeyValueVO(d.getResId(), d.getResName(), d.getResType());
+                    ValueLabelVO pageSelectOneValue = new ValueLabelVO(d.getResId(), d.getResName(), d.getResType());
                     resultList.add(pageSelectOneValue);
                 } else {
                     if (storeTypeStr.toUpperCase().contains(d.getResType().toUpperCase())) {
-                        KeyValueVO pageSelectOneValue = new KeyValueVO(d.getResId(), d.getResName(), d.getResType());
+                        ValueLabelVO pageSelectOneValue = new ValueLabelVO(d.getResId(), d.getResName(), d.getResType());
                         resultList.add(pageSelectOneValue);
                     }
                 }
@@ -481,7 +481,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     @Override
     public BuildTableFilterVO getFilterInfo() {
         BuildTableFilterVO buildTableFilterObject = new BuildTableFilterVO();
-        List<ValueLabelVO> filterObjectList = objectStoreInfoMapper.getFilterInfo();
+        List<ValueLabelChildrenVO> filterObjectList = objectStoreInfoMapper.getFilterInfo();
         if (filterObjectList == null || filterObjectList.isEmpty()) {
             buildTableFilterObject.setStoreTypeList(new ArrayList<>());
             buildTableFilterObject.setResNameList(new ArrayList<>());
@@ -489,7 +489,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             buildTableFilterObject.setCreatorList(new ArrayList<>());
         } else {
             // label里面为storeType需要进行枚举类来筛选
-            List<ValueLabelVO> storeTypeList = new ArrayList<>();
+            List<ValueLabelChildrenVO> storeTypeList = new ArrayList<>();
             filterObjectList.stream().filter(d -> StringUtils.isNotBlank(d.getValue()) && StringUtils.equalsIgnoreCase(d.getLabel(), Common.STORETYPE))
                     .forEach(d -> {
                         d.setValue(StringUtils.isBlank(d.getValue()) ? "" : d.getValue());
@@ -500,7 +500,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
             buildTableFilterObject.setStoreTypeList(storeTypeList);
 
             //存储数据源的设置
-            List<ValueLabelVO> resNameList = new ArrayList<>();
+            List<ValueLabelChildrenVO> resNameList = new ArrayList<>();
             filterObjectList.stream().filter(d -> StringUtils.isNotBlank(d.getValue()) && StringUtils.equalsIgnoreCase(d.getLabel(), "dataid"))
                     .forEach(d -> {
                         DataResource dataResource = restTemplateHandle.getResourceById(d.getValue());
@@ -512,7 +512,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                     });
             buildTableFilterObject.setResNameList(resNameList);
             //label里面为project的直接获取就可以了
-            List<ValueLabelVO> projectList = new ArrayList<>();
+            List<ValueLabelChildrenVO> projectList = new ArrayList<>();
             filterObjectList.stream().filter(d -> StringUtils.isNotBlank(d.getValue()) && StringUtils.equalsIgnoreCase(d.getLabel(), "projectName"))
                     .forEach(d -> {
                         d.setValue(StringUtils.isBlank(d.getValue()) ? "" : d.getValue());
@@ -521,7 +521,7 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
                     });
             buildTableFilterObject.setProjectList(projectList);
             //label里面为创建人的直接获取就可以了
-            List<ValueLabelVO> creatorList = new ArrayList<>();
+            List<ValueLabelChildrenVO> creatorList = new ArrayList<>();
             filterObjectList.stream().filter(d -> StringUtils.isNotBlank(d.getValue()) && StringUtils.equalsIgnoreCase(d.getLabel(), "creater"))
                     .forEach(d -> {
                         d.setValue(StringUtils.isBlank(d.getValue()) ? "" : d.getValue());
@@ -810,14 +810,14 @@ public class BuildTableInfoManageServiceImpl implements BuildTableInfoManageServ
     }
 
     @Override
-    public List<KeyValueVO> getStoreTypeList() {
-        List<KeyValueVO> resultList = new ArrayList<>();
+    public List<ValueLabelVO> getStoreTypeList() {
+        List<ValueLabelVO> resultList = new ArrayList<>();
         try {
             LambdaQueryWrapper<DsmAllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
             wrapper.apply("lower(CODE_ID) = {0}", "store_type");
             List<DsmAllCodeDataEntity> dataEntities = allCodeDataMapper.selectList(wrapper);
             dataEntities.stream().forEach(data -> {
-                resultList.add(new KeyValueVO(data.getCodeValue(), data.getCodeText()));
+                resultList.add(new ValueLabelVO(data.getCodeValue(), data.getCodeText()));
             });
         } catch (Exception e) {
             log.error(">>>>>>获取平台类型列表出错：", e);

@@ -5,11 +5,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.synway.datastandardmanager.constants.Common;
-import com.synway.datastandardmanager.entity.dto.ObjectManageDTO;
-import com.synway.datastandardmanager.entity.pojo.ObjectEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizePublicDataEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizePublicDataFieldEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
 import com.synway.datastandardmanager.enums.KeyStrEnum;
 import com.synway.datastandardmanager.enums.OperateLogHandleTypeEnum;
@@ -141,8 +139,8 @@ public class PublicDataServiceImpl implements PublicDataService {
     }
 
     @Override
-    public List<KeyValueVO> searchFieldChineseList(String searchText) {
-        List<KeyValueVO> resultList = new ArrayList<>();
+    public List<ValueLabelVO> searchFieldChineseList(String searchText) {
+        List<ValueLabelVO> resultList = new ArrayList<>();
         try {
             log.info(">>>>>>开始查询数据项中文名称列表");
             if (StringUtils.isBlank(searchText)) {
@@ -190,7 +188,7 @@ public class PublicDataServiceImpl implements PublicDataService {
     }
 
     @Override
-    public List<KeyValueVO> searchGroupNameList() {
+    public List<ValueLabelVO> searchGroupNameList() {
         try {
             return standardizePublicDataMapper.searchGroupNameList();
         } catch (Exception e) {

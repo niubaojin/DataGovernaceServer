@@ -3,10 +3,7 @@ package com.synway.datastandardmanager.service;
 import com.synway.datastandardmanager.entity.dto.DataSynlteFieldDTO;
 import com.synway.datastandardmanager.entity.dto.SynlteFieldStatusDTO;
 import com.synway.datastandardmanager.entity.pojo.SynlteFieldEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
-import com.synway.datastandardmanager.entity.vo.PageVO;
-import com.synway.datastandardmanager.entity.vo.SynlteFieldFilterVO;
-import com.synway.datastandardmanager.entity.vo.TableInfoVO;
+import com.synway.datastandardmanager.entity.vo.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,17 +23,17 @@ public interface DataSynlteFieldService {
 
     String updateSynlteField(SynlteFieldEntity synlteField);
 
-    List<KeyValueVO> getSameWordList(String searchName);
+    List<ValueLabelVO> getSameWordList(String searchName);
 
-    List<KeyValueVO> getSelectObjectByName(String searchName);
+    List<ValueTextVO> getSelectObjectByName(String searchName);
 
     String getSimChinese(String name, List<String> oldSimList);
 
-    List<KeyValueVO> searchDataSecurityLevel();
+    List<ValueLabelVO> searchDataSecurityLevel();
 
     SynlteFieldEntity searchSynlteFieldById(String fieldId);
 
-    List<KeyValueVO> getGadsjFieldByText(String searchText, String fieldType);
+    List<ValueLabelVO> getGadsjFieldByText(String searchText, String fieldType);
 
     /**
      * 下载(导出)数据元

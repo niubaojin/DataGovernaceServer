@@ -83,7 +83,7 @@
           </where >
     </select>
 
-    <select id="searchDictionaryList" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO" parameterType="java.lang.String">
+    <select id="searchDictionaryList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO" parameterType="java.lang.String">
         select distinct codeid as value, codetext as label from synlte.fieldcode
         <where>
             codename != 'JZCODE_0024'

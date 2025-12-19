@@ -2,10 +2,7 @@ package com.synway.datastandardmanager.service;
 
 import com.synway.datastandardmanager.entity.dto.UnitOrganizationDTO;
 import com.synway.datastandardmanager.entity.pojo.StandardizeUnitManageEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
-import com.synway.datastandardmanager.entity.vo.PageVO;
-import com.synway.datastandardmanager.entity.vo.UnitOrganizationTreeVO;
-import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.*;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
@@ -42,13 +39,13 @@ public interface UnitOrganizationService {
     /**
      * 查询所属地区信息
      */
-    List<ValueLabelVO> getAreaInfo();
+    List<ValueLabelChildrenVO> getAreaInfo();
 
     /**
      * 导出单位机构信息
      */
     void downloadUnitOrganization(HttpServletResponse response, List<StandardizeUnitManageEntity> unitOrganizationList, String fileName, Object object);
 
-    List<KeyValueVO> getFilterObject();
+    List<ValueTextVO> getFilterObject();
 
 }

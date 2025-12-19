@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.synway.datastandardmanager.entity.pojo.StandardizeInputObjectRelateEntity;
 import com.synway.datastandardmanager.entity.vo.CommonVO;
 import com.synway.datastandardmanager.entity.vo.InputObjectCreateVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.interceptor.AuthorControl;
 import org.apache.ibatis.annotations.Param;
 
@@ -28,8 +28,8 @@ public interface StandardizeInputObjectRelateMapper extends BaseMapper<Standardi
      *  根据输入协议获取到输出协议的相关信息
      */
     @AuthorControl(tableNames ={"synlte.object","synlte.\"OBJECT\""},columnNames = {"tableid","tableid"})
-    List<KeyValueVO> getStandardOutTableIdBySourceIdDao(@Param("sourceId")String sourceId,
-                                                        @Param("sourceCode")String sourceCode,
-                                                        @Param("sourceFirmCode")String sourceFirmCode);
+    List<ValueLabelVO> getStandardOutTableIdBySourceIdDao(@Param("sourceId")String sourceId,
+                                                          @Param("sourceCode")String sourceCode,
+                                                          @Param("sourceFirmCode")String sourceFirmCode);
 
 }

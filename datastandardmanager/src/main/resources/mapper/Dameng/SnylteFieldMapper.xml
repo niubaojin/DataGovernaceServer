@@ -138,15 +138,15 @@
         </if>
     </select>
 
-    <select id="getFilterObjectForSF" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
-        select value, label from(select distinct STATUS as value,
-                                                'status' as label from synlte.SYNLTEFIELD where status is not null order by STATUS asc)
+    <select id="getFilterObjectForSF" resultType="com.synway.datastandardmanager.entity.vo.ValueTextVO">
+        select value, text from(select distinct STATUS as value,
+                                                'status' as text from synlte.SYNLTEFIELD where status is not null order by STATUS asc)
         union all
-        select value, label from (select distinct FIELD_CLASS as value,
-                                                'fieldClass' as label from synlte.SYNLTEFIELD where FIELD_CLASS is not null order by FIELD_CLASS asc)
+        select value, text from (select distinct FIELD_CLASS as value,
+                                                'fieldClass' as text from synlte.SYNLTEFIELD where FIELD_CLASS is not null order by FIELD_CLASS asc)
         union all
-        select VALUE, label FROM (select distinct SECRET_CLASS as value,
-                                                'securityLevel' as label from synlte.SYNLTEFIELD where SECRET_CLASS is not null order by SECRET_CLASS asc)
+        select VALUE, text FROM (select distinct SECRET_CLASS as value,
+                                                'securityLevel' as text from synlte.SYNLTEFIELD where SECRET_CLASS is not null order by SECRET_CLASS asc)
     </select>
 
     <select id="getSearchNameSuggest" resultType="java.lang.String">
@@ -223,7 +223,7 @@
         </if>
     </update>
 
-    <select id="getGadsjFieldByText" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getGadsjFieldByText" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select fieldid as value, fieldchinesename as label, gadsj_fieldId as memo
           from synlte.SYNLTEFIELD
         <where>
@@ -245,7 +245,7 @@
         </where>
     </select>
 
-    <select id="searchFieldChineseList" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="searchFieldChineseList" parameterType="java.lang.String" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select FIELDCHINESENAME as label, FIELDID as value, fieldname as memo
           from synlte.synltefield
         <where>
@@ -290,7 +290,7 @@
                  left join synlte.sameword m on a.sameid = m.sameid
     </select>
 
-    <select id="getGadsjFieldByTexts" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getGadsjFieldByTexts" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select fieldid as value, fieldchinesename as label, gadsj_fieldId as memo
         from synlte.SYNLTEFIELD
         where GADSJ_FIELDID is not null

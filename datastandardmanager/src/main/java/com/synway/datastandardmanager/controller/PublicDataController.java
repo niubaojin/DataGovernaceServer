@@ -4,7 +4,7 @@ import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.pojo.StandardizePublicDataEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizePublicDataFieldEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
 import com.synway.datastandardmanager.service.PublicDataService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -64,7 +64,7 @@ public class PublicDataController {
      * @param searchName 搜索内容
      */
     @RequestMapping(value = "/searchFieldChineseList")
-    public ServerResponse<List<KeyValueVO>> searchFieldChineseList(String searchName) {
+    public ServerResponse<List<ValueLabelVO>> searchFieldChineseList(String searchName) {
         return ServerResponse.asSucessResponse(publicDataService.searchFieldChineseList(searchName));
     }
 
@@ -82,7 +82,7 @@ public class PublicDataController {
      * 查询数据项分组名称列表
      */
     @RequestMapping(value = "/searchGroupName")
-    public ServerResponse<List<KeyValueVO>> searchGroupName() {
+    public ServerResponse<List<ValueLabelVO>> searchGroupName() {
         return ServerResponse.asSucessResponse(publicDataService.searchGroupNameList());
     }
 

@@ -8,7 +8,7 @@ import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
 import com.synway.datastandardmanager.entity.pojo.ObjectStoreInfoEntity;
 import com.synway.datastandardmanager.entity.vo.BuildTableFilterVO;
 import com.synway.datastandardmanager.entity.vo.DetectedFieldInfoVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.warehouse.DetectedTable;
@@ -40,7 +40,7 @@ public interface BuildTableInfoManageService {
     /**
      * 根据数据中心获取数据源信息
      */
-    List<KeyValueVO> getDataResource(String dataCenterId, String storeType);
+    List<ValueLabelVO> getDataResource(String dataCenterId, String storeType);
 
     List<String> getProjectList(String resId) throws Exception;
 
@@ -71,7 +71,7 @@ public interface BuildTableInfoManageService {
     List<String> getBuildTableShowField();
 
     // 获取平台类型列表
-    List<KeyValueVO> getStoreTypeList();
+    List<ValueLabelVO> getStoreTypeList();
 
     // 删除ObjectStore相关信息
     String deleteObjectStore(ObjectStoreInfoEntity objectStoreInfo);

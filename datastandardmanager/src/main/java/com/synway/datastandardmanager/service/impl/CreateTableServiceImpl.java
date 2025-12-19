@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.pojo.*;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.createTable.BuildTableInfoVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CreateTableDataVO;
 import com.synway.datastandardmanager.entity.vo.createTable.CreateTableVO;
@@ -111,14 +111,14 @@ public class CreateTableServiceImpl implements CreateTableService {
     }
 
     @Override
-    public List<KeyValueVO> getColumnType(String dataBaseType) {
-        List<KeyValueVO> resultList = new ArrayList<>();
+    public List<ValueLabelVO> getColumnType(String dataBaseType) {
+        List<ValueLabelVO> resultList = new ArrayList<>();
         try {
             log.info(">>>>>>开始获取数据库【" + dataBaseType + "】的字段类型");
             Map<String, String> columnType = DataBaseColumnTypeUtil.getFieldTypeMap(dataBaseType);
             for (String keyName : columnType.keySet()) {
-                KeyValueVO keyValueVO = new KeyValueVO(keyName, columnType.get(keyName));
-                resultList.add(keyValueVO);
+                ValueLabelVO valueLabelVO = new ValueLabelVO(keyName, columnType.get(keyName));
+                resultList.add(valueLabelVO);
             }
         } catch (Exception e) {
             log.error(">>>>>>获取数据库字段类型失败：", e);
@@ -333,12 +333,12 @@ public class CreateTableServiceImpl implements CreateTableService {
     }
 
     @Override
-    public List<KeyValueVO> getPartitionType() {
-        List<KeyValueVO> result = new ArrayList<>();
-        result.add(new KeyValueVO("1", "按天分区"));
-        result.add(new KeyValueVO("2", "按周分区"));
-        result.add(new KeyValueVO("3", "按月分区"));
-        result.add(new KeyValueVO("0", "其它"));
+    public List<ValueLabelVO> getPartitionType() {
+        List<ValueLabelVO> result = new ArrayList<>();
+        result.add(new ValueLabelVO("1", "按天分区"));
+        result.add(new ValueLabelVO("2", "按周分区"));
+        result.add(new ValueLabelVO("3", "按月分区"));
+        result.add(new ValueLabelVO("0", "其它"));
         return result;
     }
 

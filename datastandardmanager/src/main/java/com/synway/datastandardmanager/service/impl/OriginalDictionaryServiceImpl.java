@@ -11,7 +11,7 @@ import com.synway.datastandardmanager.entity.dto.StandardDictionaryDTO;
 import com.synway.datastandardmanager.entity.pojo.ObjectEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDFEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizeOriginalDictEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
 import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
@@ -240,7 +240,7 @@ public class OriginalDictionaryServiceImpl implements OriginalDictionaryService 
     }
 
     @Override
-    public List<KeyValueVO> searchDictionaryValueListByCodeId(String codeId) {
+    public List<ValueLabelVO> searchDictionaryValueListByCodeId(String codeId) {
         try {
             return fieldCodeValMapper.queryLabelValueByCodeId(codeId);
         } catch (Exception e) {
@@ -331,14 +331,14 @@ public class OriginalDictionaryServiceImpl implements OriginalDictionaryService 
     }
 
     @Override
-    public List<KeyValueVO> getOriginalDictionaryNameList() {
-        List<KeyValueVO> originalDictionaryNameList = new ArrayList<>();
+    public List<ValueLabelVO> getOriginalDictionaryNameList() {
+        List<ValueLabelVO> originalDictionaryNameList = new ArrayList<>();
         try {
             log.info(">>>>>>开始获取原始字典的名称下拉信息");
             List<StandardizeOriginalDictEntity> originalDFEntities = standardizeOriginalDictMapper.selectList(Wrappers.lambdaQuery());
             for (StandardizeOriginalDictEntity entity : originalDFEntities) {
-                KeyValueVO keyValueVO = new KeyValueVO(entity.getId(), entity.getDictionaryName(), entity.getFacturer());
-                originalDictionaryNameList.add(keyValueVO);
+                ValueLabelVO valueLabelVO = new ValueLabelVO(entity.getId(), entity.getDictionaryName(), entity.getFacturer());
+                originalDictionaryNameList.add(valueLabelVO);
             }
             //根据中文名称排序
             originalDictionaryNameList.stream().sorted((s1, s2) -> Collator.getInstance(Locale.CHINA)

@@ -20,7 +20,7 @@
          order by rr.label_level asc
     </select>
 
-    <select id="searchSecondLabelList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+    <select id="searchSecondLabelList" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO">
         SELECT CASE
                  WHEN o.cnt IS NOT NULL AND o.cnt > 0 THEN
                   labelname || '(' || o.cnt || ')'
@@ -213,7 +213,7 @@
         </if>
     </select>
 
-    <select id="getLabelManageDataByClassId" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getLabelManageDataByClassId" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select labelname as label, labelcode as value
           from (select labelname,
                        labelcode,

@@ -5,7 +5,7 @@ import com.synway.common.exception.SystemException;
 import com.synway.datastandardmanager.entity.dto.DeterminerDTO;
 import com.synway.datastandardmanager.entity.pojo.FieldDeterminerEntity;
 import com.synway.datastandardmanager.entity.vo.FieldDeterminerFilterVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
 import com.synway.datastandardmanager.service.DeterminerService;
 import jakarta.validation.Valid;
@@ -116,7 +116,7 @@ public class DeterminerController {
      * 获取限定词中文名称下拉框
      */
     @RequestMapping(value = "/searchDeterminerNameList")
-    public ServerResponse<List<KeyValueVO>> searchDeterminerNameList(String searchName){
+    public ServerResponse<List<ValueLabelVO>> searchDeterminerNameList(String searchName){
         return ServerResponse.asSucessResponse(determinerService.searchDeterminerNameList(searchName));
     }
 

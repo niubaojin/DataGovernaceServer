@@ -38,7 +38,7 @@ public interface DataSetStandardService {
      * @param mainValue
      * @return
      */
-    List<KeyValueVO> getFirstClassModeByMain(String mainValue);
+    List<ValueLabelVO> getFirstClassModeByMain(String mainValue);
 
     /**
      * 根据大类id和一级分类的名称获取二级级分类信息
@@ -46,7 +46,7 @@ public interface DataSetStandardService {
      * @param mainValue
      * @param firstClassValue
      */
-    List<KeyValueVO> getSecondaryClassModeByFirst(String mainValue, String firstClassValue);
+    List<ValueLabelVO> getSecondaryClassModeByFirst(String mainValue, String firstClassValue);
 
     /**
      * 开始删除指定的来源关系
@@ -108,7 +108,7 @@ public interface DataSetStandardService {
      *
      * @return
      */
-    List<ValueLabelVO> getAllSysList();
+    List<ValueLabelChildrenVO> getAllSysList();
 
     StandardFieldJson getAllStandardFieldJson(String tableId);
 
@@ -121,7 +121,7 @@ public interface DataSetStandardService {
 
     List<String> getSchemaApproved(String dataId);
 
-    List<KeyValueVO> getDetectedTablesNameInfo(String resId, String projectName, String type);
+    List<ValueLabelVO> getDetectedTablesNameInfo(String resId, String projectName, String type);
 
     /**
      * 20200511 判断 fieldId fieldName 是否为正常的字段信息
@@ -132,11 +132,11 @@ public interface DataSetStandardService {
 
     String getDefaultXZQH();
 
-    List<KeyValueVO> getDataCenter();
+    List<ValueLabelVO> getDataCenter();
 
-    List<KeyValueVO> getDataResourceNameByCenterId(String centerId, String type);
+    List<ValueLabelVO> getDataResourceNameByCenterId(String centerId, String type);
 
-    List<KeyValueVO> getDataResourceNameByType(String type);
+    List<ValueLabelVO> getDataResourceNameByType(String type);
 
     Long searchObjectBySourceId(String tableId);
 

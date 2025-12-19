@@ -21,11 +21,11 @@ public class LabelManagePageVO {
     /**
      * 标签类型的筛选
      */
-    private List<KeyValueVO> labelLevelFilter;
+    private List<ValueLabelVO> labelLevelFilter;
 
     /**
      * 常用组织分类的筛选
      */
-    private List<KeyValueVO> classIdsFilter;
+    private List<ValueLabelVO> classIdsFilter;
 
 }

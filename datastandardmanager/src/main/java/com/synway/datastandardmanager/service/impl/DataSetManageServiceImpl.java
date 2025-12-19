@@ -353,34 +353,34 @@ public class DataSetManageServiceImpl implements DataSetManageService {
         for (DataSetTableInfoVO dataSetTableInfoVO : listAll) {
             dataSetTableInfoVO.setObjectStateStr(KeyIntEnum.getValueByKeyAndType(Integer.parseInt(dataSetTableInfoVO.getObjectState()), Common.OBJECT_STATE));
         }
-        List<KeyValueVO> creatorFilter = new ArrayList<>();
+        List<ValueLabelVO> creatorFilter = new ArrayList<>();
         listAll.stream().filter(d -> d.getCreator() != null).map(DataSetTableInfoVO::getCreator).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
-                        creatorFilter.add(new KeyValueVO(d, d));
+                        creatorFilter.add(new ValueLabelVO(d, d));
                     }
                 }
         );
         // 2:获取修改人的筛选值
-        List<KeyValueVO> updaterFilter = new ArrayList<>();
+        List<ValueLabelVO> updaterFilter = new ArrayList<>();
         listAll.stream().filter(d -> d.getUpdater() != null).map(DataSetTableInfoVO::getUpdater).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
-                        updaterFilter.add(new KeyValueVO(d, d));
+                        updaterFilter.add(new ValueLabelVO(d, d));
                     }
                 }
         );
         // 3: 数据状态的筛选
-        List<KeyValueVO> objectStatesFilter = new ArrayList<>();
+        List<ValueLabelVO> objectStatesFilter = new ArrayList<>();
         listAll.stream().filter(d -> d.getObjectStateStr() != null).map(DataSetTableInfoVO::getObjectStateStr).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
-                        objectStatesFilter.add(new KeyValueVO(d, d));
+                        objectStatesFilter.add(new ValueLabelVO(d, d));
                     }
                 }
         );
         // 应用系统的筛选
-        List<KeyValueVO> dataSourceFilter = new ArrayList<>();
+        List<ValueLabelVO> dataSourceFilter = new ArrayList<>();
         listAll.stream().filter(d -> d.getDataSourceCh() != null).map(DataSetTableInfoVO::getDataSourceCh).distinct().forEach(d -> {
                     if (StringUtils.isNotBlank(d)) {
-                        dataSourceFilter.add(new KeyValueVO(d, d));
+                        dataSourceFilter.add(new ValueLabelVO(d, d));
                     }
                 }
         );
@@ -395,8 +395,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<KeyValueVO> getPrimaryClassifyData(String mainClassify) {
-        List<KeyValueVO> oneResultList = new ArrayList<>();
+    public List<ValueLabelVO> getPrimaryClassifyData(String mainClassify) {
+        List<ValueLabelVO> oneResultList = new ArrayList<>();
         try {
             log.info(String.format(">>>>>>开始查询【%s】对应的一级分类信息", mainClassify));
             if (StringUtils.isBlank(mainClassify)) {
@@ -418,8 +418,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<KeyValueVO> getSecondaryClassifyData(String mainClassify, String primaryClassifyCode) {
-        List<KeyValueVO> keyValueVOList = null;
+    public List<ValueLabelVO> getSecondaryClassifyData(String mainClassify, String primaryClassifyCode) {
+        List<ValueLabelVO> valueLabelVOList = null;
         try {
             log.info(String.format(">>>>>>开始查询主类别为【%s】和一级分类为【%s】对应的二级分类信息", mainClassify, primaryClassifyCode));
             //二级码表值
@@ -439,50 +439,50 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             if (Common.DATA_SOURCE_CLASSIFY.equalsIgnoreCase(mainClassify) && !primaryClassifyCode.equalsIgnoreCase("未知")) {
                 secondCodeId = primaryClassifyCode.split("GACODE000404")[1];
             }
-            keyValueVOList = fieldCodeValMapper.getSecondaryClassifyData(mainClassify.toLowerCase(), primaryClassifyCode.toLowerCase(), secondCodeId);
-            if (keyValueVOList != null
-                    && keyValueVOList.size() == 1
-                    && Common.WEI_ZHI.equals(keyValueVOList.get(0).getValue())
+            valueLabelVOList = fieldCodeValMapper.getSecondaryClassifyData(mainClassify.toLowerCase(), primaryClassifyCode.toLowerCase(), secondCodeId);
+            if (valueLabelVOList != null
+                    && valueLabelVOList.size() == 1
+                    && Common.WEI_ZHI.equals(valueLabelVOList.get(0).getValue())
                     && !Common.WEI_ZHI.equals(primaryClassifyCode)) {
-                keyValueVOList = null;
+                valueLabelVOList = null;
             }
         } catch (Exception e) {
             log.error(">>>>>>查询二级分类信息报错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override
-    public List<KeyValueVO> getThreeClassifyData(String primaryClassifyCode, String secondClassifyCode) {
-        List<KeyValueVO> keyValueVOList = null;
+    public List<ValueLabelVO> getThreeClassifyData(String primaryClassifyCode, String secondClassifyCode) {
+        List<ValueLabelVO> valueLabelVOList = null;
         try {
             log.info("开始查询原始库的三级分类:三级分类码值为:" + primaryClassifyCode + "三级分类码值为:" + secondClassifyCode);
-            keyValueVOList = fieldCodeValMapper.getThreeClassifyData(primaryClassifyCode + secondClassifyCode, secondClassifyCode);
-            if (keyValueVOList != null && keyValueVOList.size() == 1
-                    && Common.WEI_ZHI.equals(keyValueVOList.get(0).getValue())
+            valueLabelVOList = fieldCodeValMapper.getThreeClassifyData(primaryClassifyCode + secondClassifyCode, secondClassifyCode);
+            if (valueLabelVOList != null && valueLabelVOList.size() == 1
+                    && Common.WEI_ZHI.equals(valueLabelVOList.get(0).getValue())
                     && !Common.WEI_ZHI.equals(primaryClassifyCode)) {
-                keyValueVOList = null;
+                valueLabelVOList = null;
             }
         } catch (Exception e) {
             log.error(">>>>>>查询三级分类信息报错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override
-    public List<KeyValueVO> getResourceStatus() {
-        List<KeyValueVO> keyValueVOList = new ArrayList<>();
+    public List<ValueLabelVO> getResourceStatus() {
+        List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
         try {
-            keyValueVOList = objectMapper.getResourceStatus();
-            if (CollectionUtils.isEmpty(keyValueVOList)) {
-                keyValueVOList.add(new KeyValueVO("已发布", "已发布(0)"));
-                keyValueVOList.add(new KeyValueVO("未发布", "未发布(0)"));
-                keyValueVOList.add(new KeyValueVO("停用", "停用(0)"));
+            valueLabelVOList = objectMapper.getResourceStatus();
+            if (CollectionUtils.isEmpty(valueLabelVOList)) {
+                valueLabelVOList.add(new ValueLabelVO("已发布", "已发布(0)"));
+                valueLabelVOList.add(new ValueLabelVO("未发布", "未发布(0)"));
+                valueLabelVOList.add(new ValueLabelVO("停用", "停用(0)"));
             }
         } catch (Exception e) {
             log.error(">>>>>>查询资源状况信息报错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override
@@ -844,8 +844,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<ValueLabelVO> getSecondaryClassLayuiService(String mainClassify, String primaryClassifyCh) {
-        List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
+    public List<ValueLabelChildrenVO> getSecondaryClassLayuiService(String mainClassify, String primaryClassifyCh) {
+        List<ValueLabelChildrenVO> valueLabelChildrenVOList = new ArrayList<>();
         try {
             log.info(">>>>>>查询的参数为， mainClassify：" + mainClassify + " primaryClassifyCh：" + primaryClassifyCh);
             mainClassify = "数据组织分类";
@@ -855,14 +855,14 @@ public class DataSetManageServiceImpl implements DataSetManageService {
             Map<String, List<StandardTableRelationVO>> stringListMap = standardTableRelations.stream().filter(d -> StringUtils.isNotEmpty(d.getSecondaryClassifyCh()))
                     .collect(Collectors.groupingBy(StandardTableRelationVO::getSecondaryClassifyCh));
             for (String secondaryifyCh : secondaryChList) {
-                ValueLabelVO layuiClassifyPojo = new ValueLabelVO();
+                ValueLabelChildrenVO layuiClassifyPojo = new ValueLabelChildrenVO();
                 layuiClassifyPojo.setValue(secondaryifyCh);
                 layuiClassifyPojo.setLabel(secondaryifyCh);
                 List<StandardTableRelationVO> childrenList = stringListMap.get(secondaryifyCh);
-                List<ValueLabelVO> ChildrenLayuiClassifyList = new ArrayList<>();
+                List<ValueLabelChildrenVO> ChildrenLayuiClassifyList = new ArrayList<>();
                 for (StandardTableRelationVO standardTableRelation : childrenList) {
                     if (StringUtils.isNotEmpty(standardTableRelation.getThreeClassifyCh())) {
-                        ValueLabelVO layuiClassifyChildrenPojo = new ValueLabelVO();
+                        ValueLabelChildrenVO layuiClassifyChildrenPojo = new ValueLabelChildrenVO();
                         layuiClassifyChildrenPojo.setLabel(standardTableRelation.getThreeClassifyCh());
                         layuiClassifyChildrenPojo.setValue(standardTableRelation.getThreeClassifyCh());
                         layuiClassifyChildrenPojo.setChildren(new ArrayList<>());
@@ -870,13 +870,13 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                     }
                 }
                 layuiClassifyPojo.setChildren(ChildrenLayuiClassifyList);
-                valueLabelVOList.add(layuiClassifyPojo);
+                valueLabelChildrenVOList.add(layuiClassifyPojo);
             }
-            log.info(">>>>>>查询到的结果为：" + JSONObject.toJSONString(valueLabelVOList));
+            log.info(">>>>>>查询到的结果为：" + JSONObject.toJSONString(valueLabelChildrenVOList));
         } catch (Exception e) {
             log.error("");
         }
-        return valueLabelVOList;
+        return valueLabelChildrenVOList;
     }
 
     @Override
@@ -957,7 +957,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                 return objectEntity == null ? 0 : 1;
             } else {
                 Integer objectIdOld = objectEntity.getObjectId();
-                return objectIdOld == null || objectIdOld == Integer.valueOf(objectId) ? 0 : 1;
+                return objectIdOld == null || objectIdOld.equals(Integer.valueOf(objectId)) ? 0 : 1;
             }
         } catch (Exception e) {
             log.error(">>>>>>判断该表名是否已经存在出错：", e);
@@ -977,8 +977,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<ValueLabelVO> getAllClassifyLayuiService(String mainClassifyCh) {
-        List<ValueLabelVO> layuiClassifyPojoList = new ArrayList<>();
+    public List<ValueLabelChildrenVO> getAllClassifyLayuiService(String mainClassifyCh) {
+        List<ValueLabelChildrenVO> layuiClassifyPojoList = new ArrayList<>();
         try {
             log.info(">>>>>>开始查询所有符合layui插件的分级分类信息");
             //  获取所有的分级分类信息
@@ -989,26 +989,26 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                     .collect(Collectors.groupingBy(d -> (d.getPrimaryClassifyId() + "&&" + d.getPrimaryClassifyCh())));
             for (String primaryClassify : primaryChList) {
                 // 一级分类
-                ValueLabelVO primaryLayuiClassifyPojo = new ValueLabelVO();
+                ValueLabelChildrenVO primaryLayuiClassifyPojo = new ValueLabelChildrenVO();
                 primaryLayuiClassifyPojo.setValue(primaryClassify.split("&&")[0]);
                 primaryLayuiClassifyPojo.setLabel(primaryClassify.split("&&")[1]);
                 List<StandardTableRelationVO> secondaryClassifyList = primaryListMap.get(primaryClassify);
-                List<ValueLabelVO> secondaryLayuiClassifyList = new ArrayList<>();
+                List<ValueLabelChildrenVO> secondaryLayuiClassifyList = new ArrayList<>();
                 List<String> secondaryList = secondaryClassifyList.stream().filter(d -> StringUtils.isNotEmpty(d.getSecondaryClassifyCh()))
                         .map(d -> (d.getSecondaryClassifyId() + "&&" + d.getSecondaryClassifyCh())).distinct().collect(toList());
                 Map<String, List<StandardTableRelationVO>> secondaryListMap = secondaryClassifyList.stream().filter(d -> StringUtils.isNotEmpty(d.getSecondaryClassifyCh()))
                         .collect(Collectors.groupingBy(d -> (d.getSecondaryClassifyId() + "&&" + d.getSecondaryClassifyCh())));
                 //  二级分类
                 for (String secondaryCh : secondaryList) {
-                    ValueLabelVO secondaryLayuiClassifyPojo = new ValueLabelVO();
+                    ValueLabelChildrenVO secondaryLayuiClassifyPojo = new ValueLabelChildrenVO();
                     secondaryLayuiClassifyPojo.setValue(secondaryCh.split("&&")[0]);
                     secondaryLayuiClassifyPojo.setLabel(secondaryCh.split("&&")[1]);
                     //三级分类
                     List<StandardTableRelationVO> threeClassifyList = secondaryListMap.get(secondaryCh);
-                    List<ValueLabelVO> threeLayuiClassifyList = new ArrayList<>();
+                    List<ValueLabelChildrenVO> threeLayuiClassifyList = new ArrayList<>();
                     for (StandardTableRelationVO standardTableRelation : threeClassifyList) {
                         if (StringUtils.isNotEmpty(standardTableRelation.getThreeClassifyCh())) {
-                            ValueLabelVO threelayuiClassifyPojo = new ValueLabelVO();
+                            ValueLabelChildrenVO threelayuiClassifyPojo = new ValueLabelChildrenVO();
                             threelayuiClassifyPojo.setLabel(standardTableRelation.getThreeClassifyCh());
                             threelayuiClassifyPojo.setValue(standardTableRelation.getThreeClassifyId());
                             threelayuiClassifyPojo.setChildren(new ArrayList<>());
@@ -1123,8 +1123,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<KeyValueVO> searchSecurityLevel() {
-        List<KeyValueVO> list = new ArrayList<>();
+    public List<ValueLabelVO> searchSecurityLevel() {
+        List<ValueLabelVO> list = new ArrayList<>();
         try {
             log.info(">>>>>>开始获取数据分级信息");
             list = fieldCodeValMapper.queryLabelValueByCodeId("GACODE000412");
@@ -1138,8 +1138,8 @@ public class DataSetManageServiceImpl implements DataSetManageService {
     }
 
     @Override
-    public List<KeyValueVO> searchFieldSecurityLevelList(String codeId) {
-        List<KeyValueVO> list = new ArrayList<>();
+    public List<ValueLabelVO> searchFieldSecurityLevelList(String codeId) {
+        List<ValueLabelVO> list = new ArrayList<>();
         try {
             log.info(">>>>>>开始获取字段定义中的安全分级信息");
             LambdaQueryWrapper<DsmAllCodeDataEntity> wrapper = Wrappers.lambdaQuery();
@@ -1152,7 +1152,7 @@ public class DataSetManageServiceImpl implements DataSetManageService {
                 return list;
             }
             for (DsmAllCodeDataEntity data : allCodeDataEntities) {
-                list.add(new KeyValueVO(data.getCodeValue(), data.getCodeText()));
+                list.add(new ValueLabelVO(data.getCodeValue(), data.getCodeText()));
             }
         } catch (Exception e) {
             log.error(">>>>>>获取字段定义的安全分级的码表报错：", e);

@@ -1,22 +1,29 @@
 package com.synway.datastandardmanager.entity.vo;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.List;
-
+/**
+ * @author wangdongwei
+ * @date 2020/12/15 9:51
+ */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class ValueLabelVO {
-    private String value;
-    private String label;
-    private List<ValueLabelVO> children;
 
-    public  ValueLabelVO(String value, String label){
+    private String value = "";
+    private String label = "";
+    private String memo = "";
+
+    public ValueLabelVO() {}
+
+    public ValueLabelVO(String value, String label) {
         this.value = value;
         this.label = label;
+    }
+
+    public ValueLabelVO(String value, String label, String memo) {
+        this.value = value;
+        this.label = label;
+        this.memo = memo;
     }
 
 }

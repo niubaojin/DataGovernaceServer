@@ -2,7 +2,7 @@ package com.synway.datastandardmanager.service;
 
 import com.synway.datastandardmanager.entity.pojo.StandardizePublicDataEntity;
 import com.synway.datastandardmanager.entity.pojo.StandardizePublicDataFieldEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,7 +23,7 @@ public interface PublicDataService {
     /**
      * 数据项中文名模糊搜索
      */
-    List<KeyValueVO> searchFieldChineseList(String searchText);
+    List<ValueLabelVO> searchFieldChineseList(String searchText);
 
     /**
      * 根据公共数据组名称查询
@@ -33,7 +33,7 @@ public interface PublicDataService {
     /**
      * 查询公共数据项分组名称列表
      */
-    List<KeyValueVO> searchGroupNameList();
+    List<ValueLabelVO> searchGroupNameList();
 
     /**
      * 导出公共数据项

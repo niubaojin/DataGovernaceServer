@@ -8,8 +8,8 @@ import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
 import com.synway.datastandardmanager.entity.pojo.DsmSourceFieldInfoEntity;
 import com.synway.datastandardmanager.entity.vo.DataResourceRawInformationVO;
 import com.synway.datastandardmanager.entity.vo.DataSetManageVO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
 import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO;
 import com.synway.datastandardmanager.service.DataSetManageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,7 @@ public class DataSetManageController {
      */
     @RequestMapping("/getPrimaryClassifyData")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getPrimaryClassifyData(@RequestParam("mainClassify") String mainClassify) {
+    public ServerResponse<List<ValueLabelVO>> getPrimaryClassifyData(@RequestParam("mainClassify") String mainClassify) {
         return ServerResponse.asSucessResponse(service.getPrimaryClassifyData(mainClassify));
     }
 
@@ -65,8 +65,8 @@ public class DataSetManageController {
      */
     @RequestMapping("/getSecondaryClassifyData")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getSecondaryClassifyData(@RequestParam("mainClassify") String mainClassify,
-                                                                     @RequestParam("primaryClassifyCode") String primaryClassifyCode) {
+    public ServerResponse<List<ValueLabelVO>> getSecondaryClassifyData(@RequestParam("mainClassify") String mainClassify,
+                                                                       @RequestParam("primaryClassifyCode") String primaryClassifyCode) {
         // 其实 我也很好奇 为什么只能查询一个，但是既然马佳大佬这么写 那我就只查询一个吧
         return ServerResponse.asSucessResponse(service.getSecondaryClassifyData(mainClassify, primaryClassifyCode));
     }
@@ -81,8 +81,8 @@ public class DataSetManageController {
      */
     @RequestMapping("/getThreeClassifyData")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getThreeClassifyData(@RequestParam("primaryClassifyCode") String primaryClassifyCode,
-                                                                 @RequestParam("secondClassifyCode") String secondClassifyCode) {
+    public ServerResponse<List<ValueLabelVO>> getThreeClassifyData(@RequestParam("primaryClassifyCode") String primaryClassifyCode,
+                                                                   @RequestParam("secondClassifyCode") String secondClassifyCode) {
         return ServerResponse.asSucessResponse(service.getThreeClassifyData(primaryClassifyCode, secondClassifyCode));
     }
 
@@ -92,7 +92,7 @@ public class DataSetManageController {
      */
     @RequestMapping("/getResourceStatus")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getResourceStatus() {
+    public ServerResponse<List<ValueLabelVO>> getResourceStatus() {
         return ServerResponse.asSucessResponse(service.getResourceStatus());
     }
 
@@ -166,8 +166,8 @@ public class DataSetManageController {
      */
     @RequestMapping("/getSecondaryClassLayui")
     @ResponseBody
-    public ServerResponse<List<ValueLabelVO>> getSecondaryClassLayui(@RequestParam("mainClassify") String mainClassify,
-                                                                     @RequestParam("primaryClassifyCh") String primaryClassifyCh) {
+    public ServerResponse<List<ValueLabelChildrenVO>> getSecondaryClassLayui(@RequestParam("mainClassify") String mainClassify,
+                                                                             @RequestParam("primaryClassifyCh") String primaryClassifyCh) {
         return ServerResponse.asSucessResponse(service.getSecondaryClassLayuiService(mainClassify, primaryClassifyCh));
     }
 
@@ -206,7 +206,7 @@ public class DataSetManageController {
      */
     @RequestMapping("/getAllClassifyLayui")
     @ResponseBody
-    public ServerResponse<List<ValueLabelVO>> getAllClassifyLayui(@RequestParam("mainClassifyCh") String mainClassifyCh) {
+    public ServerResponse<List<ValueLabelChildrenVO>> getAllClassifyLayui(@RequestParam("mainClassifyCh") String mainClassifyCh) {
         return ServerResponse.asSucessResponse(service.getAllClassifyLayuiService(mainClassifyCh));
     }
 
@@ -248,7 +248,7 @@ public class DataSetManageController {
      */
     @RequestMapping("/searchSecurityLevel")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> searchSecurityLevel() {
+    public ServerResponse<List<ValueLabelVO>> searchSecurityLevel() {
         return ServerResponse.asSucessResponse(service.searchSecurityLevel());
     }
 
@@ -258,7 +258,7 @@ public class DataSetManageController {
      */
     @RequestMapping("/searchFieldSecurityLevelList")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> searchFieldSecurityLevelList(@RequestParam("codeId") String codeId) {
+    public ServerResponse<List<ValueLabelVO>> searchFieldSecurityLevelList(@RequestParam("codeId") String codeId) {
         return ServerResponse.asSucessResponse(service.searchFieldSecurityLevelList(codeId));
     }
 

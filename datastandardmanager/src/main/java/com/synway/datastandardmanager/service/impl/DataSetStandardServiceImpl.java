@@ -129,9 +129,9 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                     }
                 });
                 String fieldId = objectField.getFieldId().indexOf("_") != -1 ? objectField.getFieldId().split("_")[1] : objectField.getFieldId();
-                List<KeyValueVO> synlteFields = synlteFieldMapper.getGadsjFieldByText(null, null, fieldId);
+                List<ValueLabelVO> synlteFields = synlteFieldMapper.getGadsjFieldByText(null, null, fieldId);
                 if (synlteFields.size() != 0) {
-                    KeyValueVO value = synlteFields.get(0);
+                    ValueLabelVO value = synlteFields.get(0);
                     objectField.setSynlteFieldMemo(value.getMemo());
                     objectField.setLabel(value.getLabel());
                 }
@@ -387,31 +387,31 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
 
     // mainValue '1':组织分类 '2':来源分类   '3'：资源分类
     @Override
-    public List<KeyValueVO> getFirstClassModeByMain(String mainValue) {
-        List<KeyValueVO> keyValueVOList = new ArrayList<>();
+    public List<ValueLabelVO> getFirstClassModeByMain(String mainValue) {
+        List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
         try {
             if (mainValue.equalsIgnoreCase("1") || mainValue.equalsIgnoreCase("2") || mainValue.equalsIgnoreCase("3")) {
-                keyValueVOList = objectMapper.getFirstClassModeByMain(mainValue);
-                log.info(">>>>>>返回的结果为：" + JSONObject.toJSONString(keyValueVOList));
+                valueLabelVOList = objectMapper.getFirstClassModeByMain(mainValue);
+                log.info(">>>>>>返回的结果为：" + JSONObject.toJSONString(valueLabelVOList));
             }
         } catch (Exception e) {
             log.error(">>>>>>根据大类的id号获取一级分类信息出错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override
-    public List<KeyValueVO> getSecondaryClassModeByFirst(String mainValue, String firstClassValue) {
-        List<KeyValueVO> keyValueVOList = new ArrayList<>();
+    public List<ValueLabelVO> getSecondaryClassModeByFirst(String mainValue, String firstClassValue) {
+        List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
         try {
             if (mainValue.equalsIgnoreCase("1") || mainValue.equalsIgnoreCase("2") || mainValue.equalsIgnoreCase("3")) {
-                keyValueVOList = objectMapper.getSecondaryClassModeByFirst(mainValue, firstClassValue);
-                keyValueVOList.add(new KeyValueVO("", "全部分类"));
+                valueLabelVOList = objectMapper.getSecondaryClassModeByFirst(mainValue, firstClassValue);
+                valueLabelVOList.add(new ValueLabelVO("", "全部分类"));
             }
         } catch (Exception e) {
             log.error(">>>>>>获取二级分类信息出错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override
@@ -538,7 +538,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             }
             ObjectEntity objectEntity = SelectUtil.getObjectEntityByTableId(objectMapper, objectManageDTO.getTableId());
             if (StringUtils.isEmpty(objectManageDTO.getObjectId())) {
-                if (objectEntity.getObjectId() != null) {
+                if (objectEntity != null && objectEntity.getObjectId() != null) {
                     // 如果tableid重复，则tableid流水号自增1
                     String newTableId = getNewTableId(objectManageDTO.getTableId());
                     objectManageDTO.setTableId(newTableId);
@@ -564,9 +564,10 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         // 标准表数据信息
         try {
             ObjectEntity objectEntity = objectManageDTO.getObjectPojoTable();
-            ObjectEntity objectEntityOld = SelectUtil.getObjectEntityByTableId(objectMapper, objectEntity.getTableId());
+
             // 如果有objectid，检查这个对应的编辑时间是否大于等于数据库中的时间，不是，说明是旧数据，不能编辑
-            if (objectEntity.getObjectId() != null && objectEntity.getUpdateTime() != null && objectEntityOld.getUpdateTime() != null) {
+            if (objectEntity.getObjectId() != null && objectEntity.getUpdateTime() != null) {
+                ObjectEntity objectEntityOld = SelectUtil.getObjectEntityByTableId(objectMapper, objectEntity.getTableId());
                 if (objectEntityOld.getUpdateTime().compareTo(objectEntity.getUpdateTime()) > 0) {
                     String updateTime = DateUtil.formatDateTime(objectEntityOld.getUpdateTime(), DateUtil.DEFAULT_PATTERN_DATETIME);
                     throw new Exception(String.format("标准协议[%s]已经在%s时被修改，本次修改失败，请刷新数据", objectEntity.getTableId(), updateTime));
@@ -574,6 +575,9 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             }
             // 保存object、standardize_object、standardize_outputobject、object_version相关信息
             if (saveObjectInfo(objectManageDTO) == false) return false;
+
+            // 保存完object表再查询一次
+            ObjectEntity objectEntityOld = SelectUtil.getObjectEntityByTableId(objectMapper, objectEntity.getTableId());
 
             // 保存objectfield相关信息
             saveObjectFieldInfo(objectManageDTO, objectEntity, objectEntityOld.getObjectId());
@@ -964,19 +968,20 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
 
     public void saveObjectFieldInfo(ObjectManageDTO objectManageDTO, ObjectEntity objectEntity, Integer objectID) throws Exception {
         log.info(">>>>>>保存字段定义的内容...");
-        // 获取tableId对应的 objectId值，然后再重新给objectId赋值
-        // 先通过对比，发现哪些表字段信息是被删除了的，然后再删除对比出来的字段信息
-        // 1：先获取数据库中所有字段信息
-        List<ObjectFieldEntity> objectFieldListOld = queryObjectFieldListByTableId(objectEntity.getTableId());
-        // 2：页面上字段信息
+        // 页面上字段信息
         List<ObjectFieldEntity> objectFieldListPage = objectManageDTO.getObjectFieldList();
         if (objectFieldListPage == null || objectFieldListPage.isEmpty()) {
             return;
         }
+
+        // 获取tableId对应的 objectId值，然后再重新给objectId赋值
+        // 先通过对比，发现哪些表字段信息是被删除了的，然后再删除对比出来的字段信息
+        // 1：先获取数据库中所有字段信息
+        List<ObjectFieldEntity> objectFieldListOld = queryObjectFieldListByTableId(objectEntity.getTableId());
         // 字段名称列表
         List<String> columnListPage = objectFieldListPage.stream().filter(e -> StringUtils.isNotEmpty(e.getColumnName())).map(e -> e.getColumnName().toUpperCase()).distinct().collect(Collectors.toList());
         // 3：存储需要删除的字段信息
-        if (objectFieldListOld != null) {
+        if (objectFieldListOld != null && objectID != null) {
             for (ObjectFieldEntity objectField : objectFieldListOld) {
                 if (StringUtils.isNotEmpty(objectField.getColumnName()) && !columnListPage.contains(objectField.getColumnName().toUpperCase())) {
                     // 4:调用方法删除字段信息
@@ -1781,7 +1786,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
     }
 
     @Override
-    public List<ValueLabelVO> getAllSysList() {
+    public List<ValueLabelChildrenVO> getAllSysList() {
         try {
             //查询源应用系统
             List<FieldCodeEntity> fieldCodes = fieldCodeMapper.selectOneSysNames();
@@ -1790,26 +1795,26 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             //根据出源应用系统一级分组总共有多少数据
             Map<String, List<FieldCodeEntity>> primaryListMap = fieldCodes.stream().filter(d -> StringUtils.isNotEmpty(d.getCodeText())).collect(Collectors.groupingBy(d -> (d.getCodeId() + "&&" + d.getCodeText())));
 
-            List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
+            List<ValueLabelChildrenVO> valueLabelChildrenVOList = new ArrayList<>();
             for (String data : primaryChList) {
-                ValueLabelVO valueLabelVO = new ValueLabelVO();
-                valueLabelVO.setValue(data.split("&&")[0]);
-                valueLabelVO.setLabel(data.split("&&")[1]);
+                ValueLabelChildrenVO valueLabelChildrenVO = new ValueLabelChildrenVO();
+                valueLabelChildrenVO.setValue(data.split("&&")[0]);
+                valueLabelChildrenVO.setLabel(data.split("&&")[1]);
                 //获取当前源应用系统下的数据
                 List<FieldCodeEntity> childrenList = primaryListMap.get(data);
-                List<ValueLabelVO> children = new ArrayList<>();
+                List<ValueLabelChildrenVO> children = new ArrayList<>();
                 //源应用系统二级数据
                 List<String> secondaryList = childrenList.stream().filter(d -> StringUtils.isNotEmpty(d.getValText())).map(d -> (d.getValValue() + "&&" + d.getValText())).distinct().collect(toList());
                 for (String childrenData : secondaryList) {
-                    ValueLabelVO valueLabelVO2 = new ValueLabelVO();
-                    valueLabelVO2.setValue(childrenData.split("&&")[0]);
-                    valueLabelVO2.setLabel(childrenData.split("&&")[1]);
-                    children.add(valueLabelVO2);
+                    ValueLabelChildrenVO valueLabelChildrenVO2 = new ValueLabelChildrenVO();
+                    valueLabelChildrenVO2.setValue(childrenData.split("&&")[0]);
+                    valueLabelChildrenVO2.setLabel(childrenData.split("&&")[1]);
+                    children.add(valueLabelChildrenVO2);
                 }
-                valueLabelVO.setChildren(children);
-                valueLabelVOList.add(valueLabelVO);
+                valueLabelChildrenVO.setChildren(children);
+                valueLabelChildrenVOList.add(valueLabelChildrenVO);
             }
-            return valueLabelVOList;
+            return valueLabelChildrenVOList;
         } catch (Exception e) {
             log.error(">>>>>>获取源应用系统名称下拉列表出错：", e);
             return new ArrayList<>();
@@ -1998,8 +2003,8 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
     }
 
     @Override
-    public List<KeyValueVO> getDetectedTablesNameInfo(String resId, String projectName, String type) {
-        List<KeyValueVO> list = new ArrayList<>();
+    public List<ValueLabelVO> getDetectedTablesNameInfo(String resId, String projectName, String type) {
+        List<ValueLabelVO> list = new ArrayList<>();
         try {
             log.info(">>>>>>新增来源关系时，查询的参数为:resId={},projectName={},type={}", resId, projectName, type);
             //调用仓库接口
@@ -2007,7 +2012,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
             for (DetectedTable detectedTable : detectedTableList) {
                 //过滤当前数据源类型的已探查表信息
                 if (detectedTable.getResType().equalsIgnoreCase(type)) {
-                    KeyValueVO oneValue = new KeyValueVO(detectedTable.getProjectName(), detectedTable.getTableNameEN(), detectedTable.getResId());
+                    ValueLabelVO oneValue = new ValueLabelVO(detectedTable.getProjectName(), detectedTable.getTableNameEN(), detectedTable.getResId());
                     list.add(oneValue);
                 }
             }
@@ -2122,11 +2127,11 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
     }
 
     @Override
-    public List<KeyValueVO> getDataCenter() {
-        ArrayList<KeyValueVO> list = new ArrayList<>();
+    public List<ValueLabelVO> getDataCenter() {
+        ArrayList<ValueLabelVO> list = new ArrayList<>();
         try {
             if (env.getProperty("isCreatTableTool").equalsIgnoreCase("true")){
-                list.add(new KeyValueVO("test", "测试"));
+                list.add(new ValueLabelVO("test", "测试"));
                 return list;
             }
             List<DataResource> dataCenters = restTemplateHandle.getDataCenter("0");
@@ -2134,7 +2139,7 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
                 return list;
             }
             for (DataResource data : dataCenters) {
-                list.add(new KeyValueVO(data.getCenterId(), data.getCenterName()));
+                list.add(new ValueLabelVO(data.getCenterId(), data.getCenterName()));
             }
         } catch (Exception e) {
             log.error(">>>>>>查询仓库数据中心出错：", e);
@@ -2143,25 +2148,25 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
     }
 
     @Override
-    public List<KeyValueVO> getDataResourceNameByCenterId(String centerId, String type) {
-        List<KeyValueVO> keyValueVOList = new ArrayList<>();
+    public List<ValueLabelVO> getDataResourceNameByCenterId(String centerId, String type) {
+        List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
         try {
             if (env.getProperty("isCreatTableTool").equalsIgnoreCase("true")){
-                keyValueVOList.add(new KeyValueVO("test", "测试"));
-                return keyValueVOList;
+                valueLabelVOList.add(new ValueLabelVO("test", "测试"));
+                return valueLabelVOList;
             }
             if (StringUtils.isBlank(centerId) || StringUtils.isBlank(type)) {
                 log.error(">>>>>>根据数据中心获取数据源时传递的参数为空");
-                return keyValueVOList;
+                return valueLabelVOList;
             }
             List<DataResource> dataResourcesList = restTemplateHandle.getDataResourceByCenterId(centerId, "0");
             if (dataResourcesList == null) {
-                return keyValueVOList;
+                return valueLabelVOList;
             }
             //过滤出数据源类型为指定值时的数据源信息
             for (DataResource data : dataResourcesList) {
                 if (data.getResType().equalsIgnoreCase(type)) {
-                    keyValueVOList.add(new KeyValueVO(data.getResId(), data.getResName()));
+                    valueLabelVOList.add(new ValueLabelVO(data.getResId(), data.getResName()));
                 }
             }
 //            //debug
@@ -2171,26 +2176,26 @@ public class DataSetStandardServiceImpl implements DataSetStandardService {
         } catch (Exception e) {
             log.error(">>>>>>查询仓库数据中心出错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override
-    public List<KeyValueVO> getDataResourceNameByType(String type) {
-        List<KeyValueVO> keyValueVOList = new ArrayList<>();
+    public List<ValueLabelVO> getDataResourceNameByType(String type) {
+        List<ValueLabelVO> valueLabelVOList = new ArrayList<>();
         try {
             List<DataResource> dataResourcesList = restTemplateHandle.getDataCenterVersion("0", "0");
             if (dataResourcesList == null) {
-                return keyValueVOList;
+                return valueLabelVOList;
             }
             for (DataResource data : dataResourcesList) {
                 if (data.getResType().equalsIgnoreCase(type)) {
-                    keyValueVOList.add(new KeyValueVO(data.getResId(), data.getResName()));
+                    valueLabelVOList.add(new ValueLabelVO(data.getResId(), data.getResName()));
                 }
             }
         } catch (Exception e) {
             log.error(">>>>>>查询仓库数据中心出错：", e);
         }
-        return keyValueVOList;
+        return valueLabelVOList;
     }
 
     @Override

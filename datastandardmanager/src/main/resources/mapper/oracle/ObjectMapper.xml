@@ -170,7 +170,7 @@
             where SJXJBM is not null
     </select>
 
-    <select id="getFirstClassModeByMain" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getFirstClassModeByMain" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select label, value from (
             <if test="mainValue == 1">
                 select distinct PRIMARYORGANIZATIONCH as value,
@@ -196,7 +196,7 @@
         ) t1
     </select>
 
-    <select id="getSecondaryClassModeByFirst" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getSecondaryClassModeByFirst" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select value, label from (
             <if test="mainValue == 1">
                 select distinct SECONDARYORGANIZATIONCH as value,
@@ -316,7 +316,7 @@
          where upper(TABLE_NAME_EN) = #{tableName}
     </update>
 
-    <select id="getDataResourceOrigin" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getDataResourceOrigin" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select v1.CODETEXT || '/' || v2.CODETEXT as label,
                v1.codeid || '/' || v2.codeid as value
           from v_classify_info v1
@@ -385,7 +385,7 @@
            and relate_tablename = 'OBJECTFIELD'
     </select>
 
-    <select id="getResourceStatus" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getResourceStatus" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select objectstateStr as value,
                objectstateStr || '(' || count(0) || ')' as label
           from (select case

@@ -3,7 +3,7 @@ package com.synway.datastandardmanager.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.synway.datastandardmanager.entity.dto.ObjectStoreInfoDTO;
 import com.synway.datastandardmanager.entity.pojo.ObjectStoreInfoEntity;
-import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO;
 import com.synway.datastandardmanager.interceptor.AuthorControl;
 import org.apache.ibatis.annotations.Param;
 
@@ -40,7 +40,7 @@ public interface ObjectStoreInfoMapper extends BaseMapper<ObjectStoreInfoEntity>
     @AuthorControl(tableNames ={"synlte.OBJECT_STORE_INFO"},columnNames = {"tableid"})
     List<ObjectStoreInfoEntity> searchTableInfo(ObjectStoreInfoDTO objectStoreInfoDTO);
 
-    List<ValueLabelVO> getFilterInfo();
+    List<ValueLabelChildrenVO> getFilterInfo();
 
     /**
      * 更新建表信息

@@ -11,7 +11,7 @@ import com.synway.datastandardmanager.constants.Common;
 import com.synway.datastandardmanager.entity.dto.StandardDictionaryDTO;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeEntity;
 import com.synway.datastandardmanager.entity.pojo.FieldCodeValEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
 import com.synway.datastandardmanager.entity.vo.TableInfo;
@@ -456,8 +456,8 @@ public class StandardDictionaryServiceImpl implements StandardDictionaryService 
     }
 
     @Override
-    public List<KeyValueVO> searchDictionaryList(String searchText) {
-        List<KeyValueVO> resultList = new ArrayList<>();
+    public List<ValueLabelVO> searchDictionaryList(String searchText) {
+        List<ValueLabelVO> resultList = new ArrayList<>();
         try {
             log.info(">>>>>>开始查询外部字典的信息");
             resultList = fieldCodeMapper.searchDictionaryList(searchText);

@@ -2,7 +2,7 @@ package com.synway.datastandardmanager.service;
 
 import com.synway.datastandardmanager.entity.dto.DataDefinitionDTO;
 import com.synway.datastandardmanager.entity.pojo.StandardizeObjectfieldRelEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.ObjectRelationManageVO;
 import com.synway.datastandardmanager.entity.vo.PageVO;
 
@@ -36,14 +36,14 @@ public interface DataDefinitionService {
      *
      * @param searchText
      */
-    List<KeyValueVO> searchAllDataStandard(String searchText);
+    List<ValueLabelVO> searchAllDataStandard(String searchText);
 
     /**
      * 获取探查分析推荐标准数据集
      *
      * @param dataSimilarParameter 调用仓库所需参数
      */
-    List<KeyValueVO> getDataSetDetectSimilarResult(DataDefinitionDTO dataSimilarParameter) throws Exception;
+    List<ValueLabelVO> getDataSetDetectSimilarResult(DataDefinitionDTO dataSimilarParameter) throws Exception;
 
     /**
      * 根据数据集id获取数据集对标信息

@@ -90,8 +90,8 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
     }
 
     @Override
-    public List<ValueLabelVO> getLabelTotalList() {
-        ArrayList<ValueLabelVO> listData = new ArrayList<>();
+    public List<ValueLabelChildrenVO> getLabelTotalList() {
+        ArrayList<ValueLabelChildrenVO> listData = new ArrayList<>();
         try {
             log.info(">>>>>>开始查询标签的统计信息");
             List<SelectFieldVO> labelList = labelCodeTableMapper.searchLabelTotalList();
@@ -99,8 +99,8 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
                 return listData;
             }
             for (SelectFieldVO data : labelList) {
-                List<ValueLabelVO> secondLabelList = labelsMapper.searchSecondLabelList(data.getId());
-                ValueLabelVO parentLabel = new ValueLabelVO(data.getId(), data.getName() + "(" + data.getValue() + ")", secondLabelList);
+                List<ValueLabelChildrenVO> secondLabelList = labelsMapper.searchSecondLabelList(data.getId());
+                ValueLabelChildrenVO parentLabel = new ValueLabelChildrenVO(data.getId(), data.getName() + "(" + data.getValue() + ")", secondLabelList);
                 listData.add(parentLabel);
             }
         } catch (Exception e) {
@@ -124,14 +124,14 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
             labelsDTO.setSjzzflCodeId(sjzzflCodeId);
             List<LabelsEntity> list = labelsMapper.getAllLabelManageData(labelsDTO);
             // 表头的筛选值；根据查询条件中的筛选值来筛选数据
-            List<KeyValueVO> labelLevelFilter = new ArrayList<>();
-            List<KeyValueVO> classIdsFilter = new ArrayList<>();
+            List<ValueLabelVO> labelLevelFilter = new ArrayList<>();
+            List<ValueLabelVO> classIdsFilter = new ArrayList<>();
             if (list != null && !list.isEmpty()) {
                 list.stream().sorted(Comparator.comparing(LabelsEntity::getClassId)).map(LabelsEntity::getClassIdStr).distinct().forEach(d -> {
-                    classIdsFilter.add(new KeyValueVO(d, d));
+                    classIdsFilter.add(new ValueLabelVO(d, d));
                 });
                 list.stream().sorted(Comparator.comparingInt(LabelsEntity::getLabelLevel)).map(LabelsEntity::getLabelLevelStr).distinct().forEach(d -> {
-                    labelLevelFilter.add(new KeyValueVO(d, d));
+                    labelLevelFilter.add(new ValueLabelVO(d, d));
                 });
                 list = list.parallelStream().filter(d -> {
                     boolean flag = !StringUtils.isNotBlank(labelsDTO.getTreeId()) ||
@@ -399,7 +399,7 @@ public class ResourceLabelManageServiceImpl implements ResourceLabelManageServic
         if (labelLevel == null) {
             throw new NullPointerException("labelLevel不能为空");
         }
-        List<KeyValueVO> data = labelsMapper.getLabelManageDataByClassId(classId, labelLevel);
+        List<ValueLabelVO> data = labelsMapper.getLabelManageDataByClassId(classId, labelLevel);
         if (data != null) {
             data.sort((s1, s2) -> Collator.getInstance(java.util.Locale.CHINA).compare(s1.getLabel(), s2.getLabel()));
         }

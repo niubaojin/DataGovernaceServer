@@ -94,7 +94,7 @@
          order by r.code_value
     </select>
 
-    <select id="searchSecondElementName" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+    <select id="searchSecondElementName" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO">
         select elemntcode as value,
                case
                  when x.value is null then elemntchname || '(' || 0 || ')'

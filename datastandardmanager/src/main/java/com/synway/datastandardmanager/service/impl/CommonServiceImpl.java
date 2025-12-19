@@ -1,6 +1,6 @@
 package com.synway.datastandardmanager.service.impl;
 
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.enums.ErrorCodeEnum;
 import com.synway.datastandardmanager.mapper.FieldCodeValMapper;
 import com.synway.datastandardmanager.service.CommonService;
@@ -20,8 +20,8 @@ public class CommonServiceImpl implements CommonService {
     private FieldCodeValMapper fieldCodeValMapper;
 
     @Override
-    public List<KeyValueVO> searchValtext() {
-        List<KeyValueVO> valtextList = new ArrayList<>();
+    public List<ValueLabelVO> searchValtext() {
+        List<ValueLabelVO> valtextList = new ArrayList<>();
         try {
             log.info(">>>>>>开始查询厂商信息");
             valtextList = fieldCodeValMapper.queryLabelValueByCodeId("JZCODEZJCSXX");

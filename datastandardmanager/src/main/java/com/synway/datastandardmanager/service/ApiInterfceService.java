@@ -1,7 +1,7 @@
 package com.synway.datastandardmanager.service;
 
 import com.synway.datastandardmanager.entity.dto.GetTreeReqDTO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public interface ApiInterfceService {
      * @param sourceCode
      * @param sourceFirmCode
      */
-    List<KeyValueVO> getStandardOutTableIdBySourceIdService(String sourceId, String sourceCode, String sourceFirmCode);
+    List<ValueLabelVO> getStandardOutTableIdBySourceIdService(String sourceId, String sourceCode, String sourceFirmCode);
 
     /**
      * 质量检测功能需要根据 sourceId 查询对应的 标准表信息

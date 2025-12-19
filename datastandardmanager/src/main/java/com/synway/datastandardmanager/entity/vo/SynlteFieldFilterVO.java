@@ -21,15 +21,15 @@ public class SynlteFieldFilterVO implements Serializable {
     /**
      * 状态的筛选
      */
-    private List<KeyValueVO> statusFilter = Lists.newArrayList();
+    private List<ValueTextVO> statusFilter = Lists.newArrayList();
 
     /**
      * 字段分类的筛选值
      */
-    private List<KeyValueVO> fieldClassFilter = Lists.newArrayList();
+    private List<ValueTextVO> fieldClassFilter = Lists.newArrayList();
 
     /**
      * 安全分级的筛选值
      */
-    private List<KeyValueVO> securityLevelFilter = Lists.newArrayList();
+    private List<ValueTextVO> securityLevelFilter = Lists.newArrayList();
 }

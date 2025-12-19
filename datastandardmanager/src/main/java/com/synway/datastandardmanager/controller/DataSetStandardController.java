@@ -86,7 +86,7 @@ public class DataSetStandardController {
      */
     @RequestMapping("/getFirstClassModeByMain")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getFirstClassModeByMain(String mainValue) {
+    public ServerResponse<List<ValueLabelVO>> getFirstClassModeByMain(String mainValue) {
         return ServerResponse.asSucessResponse(dataSetStandardService.getFirstClassModeByMain(mainValue));
     }
 
@@ -98,7 +98,7 @@ public class DataSetStandardController {
      */
     @RequestMapping("/getSecondaryClassModeByFirst")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getSecondaryClassModeByFirst(String mainValue, String firstClassValue) {
+    public ServerResponse<List<ValueLabelVO>> getSecondaryClassModeByFirst(String mainValue, String firstClassValue) {
         return ServerResponse.asSucessResponse(dataSetStandardService.getSecondaryClassModeByFirst(mainValue, firstClassValue));
     }
 
@@ -183,7 +183,7 @@ public class DataSetStandardController {
      */
     @RequestMapping(value = "/getSysToSelect")
     @ResponseBody
-    public ServerResponse<List<ValueLabelVO>> getSysToSelect() {
+    public ServerResponse<List<ValueLabelChildrenVO>> getSysToSelect() {
         return ServerResponse.asSucessResponse(dataSetStandardService.getAllSysList());
     }
 
@@ -240,7 +240,7 @@ public class DataSetStandardController {
      */
     @RequestMapping(value = "/getDetectedTablesNameInfo")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getDetectedTablesNameInfo(String resId, String projectName, String type) {
+    public ServerResponse<List<ValueLabelVO>> getDetectedTablesNameInfo(String resId, String projectName, String type) {
         return ServerResponse.asSucessResponse(dataSetStandardService.getDetectedTablesNameInfo(resId, projectName, type));
     }
 
@@ -280,7 +280,7 @@ public class DataSetStandardController {
     @RequestMapping(value = "/getDataCenter")
     @ResponseBody
 //    @IgnoreSecurity
-    public ServerResponse<List<KeyValueVO>> getDataCenter() {
+    public ServerResponse<List<ValueLabelVO>> getDataCenter() {
         return ServerResponse.asSucessResponse(dataSetStandardService.getDataCenter());
     }
 
@@ -292,8 +292,8 @@ public class DataSetStandardController {
     @RequestMapping(value = "/getDataResourceNameByCenterId")
     @ResponseBody
 //    @IgnoreSecurity
-    public ServerResponse<List<KeyValueVO>> getDataResourceNameByCenterId(@RequestParam("centerId") String centerId,
-                                                                          @RequestParam("type") String type) {
+    public ServerResponse<List<ValueLabelVO>> getDataResourceNameByCenterId(@RequestParam("centerId") String centerId,
+                                                                            @RequestParam("type") String type) {
         return ServerResponse.asSucessResponse(dataSetStandardService.getDataResourceNameByCenterId(centerId, type));
     }
 
@@ -306,7 +306,7 @@ public class DataSetStandardController {
     @RequestMapping(value = "/getDataResourceNameByType")
     @ResponseBody
 //    @IgnoreSecurity
-    public ServerResponse<List<KeyValueVO>> getDataResourceNameByType(@RequestParam("type") String type) {
+    public ServerResponse<List<ValueLabelVO>> getDataResourceNameByType(@RequestParam("type") String type) {
         return ServerResponse.asSucessResponse(dataSetStandardService.getDataResourceNameByType(type));
     }
 

@@ -111,7 +111,7 @@
         </if>
     </select>
 
-    <select id="getFilterInfo" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
+    <select id="getFilterInfo" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelChildrenVO">
         select value, label
           from (select distinct to_char(store_type) as value, 'storeType' as label
                   from synlte.object_store_info

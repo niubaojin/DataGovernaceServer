@@ -4,8 +4,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.synway.datastandardmanager.entity.dto.DataSynlteFieldDTO;
 import com.synway.datastandardmanager.entity.pojo.ObjectFieldEntity;
 import com.synway.datastandardmanager.entity.pojo.SynlteFieldEntity;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.SelectFieldVO;
+import com.synway.datastandardmanager.entity.vo.ValueTextVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -30,23 +31,23 @@ public interface SynlteFieldMapper extends BaseMapper<SynlteFieldEntity> {
 
     List<SynlteFieldEntity> querySynlteFieldList(@Param("dto") DataSynlteFieldDTO dto);
 
-    List<KeyValueVO> getFilterObjectForSF();
+    List<ValueTextVO> getFilterObjectForSF();
 
     List<String> getSearchNameSuggest(@Param("searchName") String searchName);
 
     int updateSynlteField(SynlteFieldEntity synlteField);
 
-    List<KeyValueVO> getGadsjFieldByText(@Param("searchText")String searchText,
-                                         @Param("fieldType")String fieldType,
-                                         @Param("fieldId")String fieldId);
+    List<ValueLabelVO> getGadsjFieldByText(@Param("searchText")String searchText,
+                                           @Param("fieldType")String fieldType,
+                                           @Param("fieldId")String fieldId);
 
     /**
      * 模糊匹配数据项中文名
      */
-    List<KeyValueVO> searchFieldChineseList(@Param("searchText") String searchText);
+    List<ValueLabelVO> searchFieldChineseList(@Param("searchText") String searchText);
 
     List<ObjectFieldEntity> queryCodeClassList();
 
-    List<KeyValueVO> getGadsjFieldByTexts();
+    List<ValueLabelVO> getGadsjFieldByTexts();
 
 }

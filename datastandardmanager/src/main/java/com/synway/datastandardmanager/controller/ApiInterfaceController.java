@@ -2,7 +2,7 @@ package com.synway.datastandardmanager.controller;
 
 import com.synway.common.bean.ServerResponse;
 import com.synway.datastandardmanager.entity.dto.GetTreeReqDTO;
-import com.synway.datastandardmanager.entity.vo.KeyValueVO;
+import com.synway.datastandardmanager.entity.vo.ValueLabelVO;
 import com.synway.datastandardmanager.entity.vo.TreeNodeValueVO;
 import com.synway.datastandardmanager.service.ApiInterfceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +39,9 @@ public class ApiInterfaceController {
      */
     @RequestMapping(value = "/getStandardOutTableIdBySourceId")
     @ResponseBody
-    public ServerResponse<List<KeyValueVO>> getStandardOutTableIdBySourceId(@RequestParam("sourceId") @NotBlank String sourceId,
-                                                                            @RequestParam("sourceCode") @NotBlank String sourceCode,
-                                                                            @RequestParam("sourceFirmCode") @NotBlank String sourceFirmCode) {
+    public ServerResponse<List<ValueLabelVO>> getStandardOutTableIdBySourceId(@RequestParam("sourceId") @NotBlank String sourceId,
+                                                                              @RequestParam("sourceCode") @NotBlank String sourceCode,
+                                                                              @RequestParam("sourceFirmCode") @NotBlank String sourceFirmCode) {
         return ServerResponse.asSucessResponse(apiInterfceServiceImpl.getStandardOutTableIdBySourceIdService(sourceId, sourceCode, sourceFirmCode));
     }
 

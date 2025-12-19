@@ -4,7 +4,7 @@
 
 <mapper namespace="com.synway.datastandardmanager.mapper.FieldCodeValMapper">
 
-    <select id="queryLabelValueByCodeId" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="queryLabelValueByCodeId" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select valtext as label, valvalue as value, memo as memo
           from synlte.fieldcodeval
          where upper(codeid) = upper(#{codeId})
@@ -26,7 +26,7 @@
             </foreach>
     </insert>
 
-    <select id="getPrimaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getPrimaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select value, label from(
         <if test="mainClassify == 'dataorganizationclassify' ">
             select value ,
@@ -65,7 +65,7 @@
         order by value
     </select>
 
-    <select id="getSecondaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getSecondaryClassifyData" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         <if test="mainClassify == 'dataorganizationclassify' and (primaryClassifyCode =='jzcodegasjzzfl01' or primaryClassifyCode =='jzcodegasjzzfl03' or primaryClassifyCode =='jzcodejzsjzzfl01' or primaryClassifyCode =='jzcodejzsjzzfl03')">
             select value ,
             label||'('||tableCount||')'as label
@@ -150,7 +150,7 @@
         </if>
     </select>
 
-    <select id="getThreeClassifyData" resultType="com.synway.datastandardmanager.entity.vo.KeyValueVO">
+    <select id="getThreeClassifyData" resultType="com.synway.datastandardmanager.entity.vo.ValueLabelVO">
         select value ,
         label||'('||tableCount||')'as label
         from(
