@@ -75,14 +75,14 @@
                 (select PRIMARYORGANIZATIONCH as name ,count(distinct SJXJBM) as tableCount from classify_interface_all_date
                 group by PRIMARYORGANIZATIONCH) r
                 on l.codeText = r.name
-                where l.parcodeid = 'JZCODEGASJZZFL') v
+                where l.parcodeid = #{sjzzflCodeId}) v
       left join (
         select  PRIMARY_ORGANIZATION_CH as primaryClassifyCh,
         sum(table_all_count) as dataCount,
         count(distinct table_name_en) as typeCount from
         (SELECT PRIMARY_ORGANIZATION_CH,table_all_count,table_name_en FROM ( SELECT j.PRIMARY_ORGANIZATION_CH,j.table_all_count,
         j.table_name_en, row_number() over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where j.STATISTICS_TIME >= trunc(sysdate)
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where j.STATISTICS_TIME >= trunc(sysdate)
         ) h
         WHERE h.rnn = 1) group by PRIMARY_ORGANIZATION_CH ) t
       on t.primaryClassifyCh = v.CODETEXT
@@ -100,14 +100,14 @@
 				(SELECT PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH,table_all_count,table_name_en,YESTERDAY_COUNT FROM
 				( SELECT  j.PRIMARY_ORGANIZATION_CH,j.SECONDARY_ORGANIZATION_CH,j.table_all_count,j.table_name_en,j.YESTERDAY_COUNT,
 				row_number() over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-				STATISTICS_TIME DESC ) as rnn from table_organization_assets j where j.STATISTICS_TIME >= trunc(sysdate)) h
+				STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where j.STATISTICS_TIME >= trunc(sysdate)) h
 				WHERE h.rnn = 1) group by PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH ) t
 			on t.secondaryClassifyCh = v.CODETEXT
  			where level = 3
  			<if test="dataId != null and dataId !=''">
 				and parcodeid = #{dataId}
 			</if>
-            start with codeid = 'JZCODEGASJZZFL' connect by prior codeid = parcodeid
+            start with codeid = #{sjzzflCodeId} connect by prior codeid = parcodeid
 	</select>
 
 	<select id="getThirdClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
@@ -119,14 +119,14 @@
 		count(distinct table_name_en) as tableNumberSum from
 		(SELECT PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,table_name_en FROM
 		( SELECT j.PRIMARY_DATASOURCE_CH,j.SECONDARY_DATASOURCE_CH,j.table_name_en, row_number() over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-		STATISTICS_TIME DESC ) as rnn from table_organization_assets j where j.STATISTICS_TIME >= trunc(sysdate)) h
+		STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where j.STATISTICS_TIME >= trunc(sysdate)) h
 		WHERE h.rnn = 1) group by PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH ) t
 		on t.secondaryClassifyCh = v.CODETEXT
 		where level = 4
 		<if test="dataId != null and dataId !=''">
 			and parcodeid = #{dataId}
 		</if>
-		start with codeid = 'JZCODEGASJZZFL' connect by prior codeid = parcodeid
+		start with codeid = #{sjzzflCodeId} connect by prior codeid = parcodeid
 	</select>
 
 	<select id="getInceptDataStatistics" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
@@ -158,7 +158,7 @@
                  else
                   0
                end) end isUpdating
-          from table_organization_assets
+          from DP_TABLE_ORGANIZATION_ASSETS
         where STATISTICS_TIME between #{startTime} and #{endTime}
         group by lower(TABLE_PROJECT), upper(TABLE_NAME_EN), PARTITION_MESSAGE
 	</select>

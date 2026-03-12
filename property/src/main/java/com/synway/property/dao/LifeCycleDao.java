@@ -2,6 +2,7 @@ package com.synway.property.dao;
 
 import com.synway.property.interceptor.AuthorControl;
 import com.synway.property.pojo.DetailedTableByClassify;
+import com.synway.property.pojo.RequestParameter;
 import com.synway.property.pojo.lifecycle.LifeCycleInfo;
 import com.synway.property.pojo.lifecycle.LifeCyclePageParams;
 import com.synway.property.pojo.lifecycle.ValDensity;
@@ -21,10 +22,10 @@ import java.util.Map;
 @Mapper
 @Repository
 public interface LifeCycleDao {
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<LifeCycleInfo> getLifeCycleInfo(@Param("queryParams") LifeCyclePageParams queryParams,@Param("daysAgo") int daysAgo);
 
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<Map<String, String>> getLifeCycleInfoFilter(@Param("queryParams") LifeCyclePageParams queryParams,@Param("daysAgo") int daysAgo);
 
     ValDensity getOldValDensity(@Param("queryParams") ValDensityPageParam queryParams);
@@ -35,10 +36,10 @@ public interface LifeCycleDao {
 
     List<Map> getClassifyNum(@Param("tables") List<DetailedTableByClassify> tables);
 
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<DetailedTableByClassify> getAssets();
 
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     Map<String, String> getOrganizationClassify(@Param("queryParams") ValDensityPageParam queryParams);
 
     void changeValDensityStatus();
@@ -46,6 +47,9 @@ public interface LifeCycleDao {
     int getCount();
 
     void updateLifeCycleShowField(@Param("lifeCycleShowFields") String lifeCycleShowFields, @Param("userName") String userName);
+    void delLifeCycleShowField(@Param("lifeCycleShowFields") String lifeCycleShowFields, @Param("userName") String userName);
 
     String getLifeCycleShowField(@Param("userName") String userName);
+
+    void updateLifeCycleForTOA(@Param("requestParam") RequestParameter requestParam);
 }

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+    "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.DataStoreAndUseHeatDao">
+
+    <sql id="baseColumn">
+        lastDate,TABLETYPE,tableNameEN,tableNameZH,LIFECYCLE,TABLEALLCOUNT,TABLESIZE,SUBCLASS,CLASSNAME,tableusecount,tableUseCountOfDay,tableUseCountOfWeek,tableUseCountOfMonth
+    </sql>
+
+    <sql id="useHeatBaseQuery">
+        select a.tableproject, a.lastDate, a.TABLETYPE, a.tableNameEN, a.tableNameZH, a.LIFECYCLE, a.TABLEALLCOUNT, a.TABLESIZE,
+               a.tableusecount, a.tableUseCountOfDay, a.tableUseCountOfWeek, a.tableUseCountOfMonth
+        from (
+            select s.tableproject, date_format(s.PARTITIONDATE, '%Y%m%d') as lastDate, s.TABLETYPE,
+                   s.tableproject || '.' || s.TABLENAME as tableNameEN, s.TABLECOMMENT as tableNameZH,
+                   s.LIFECYCLE, s.TABLEALLCOUNT, s.TABLESIZE,
+                   u.tableusecount, u.tableUseCountOfDay, u.tableUseCountOfWeek, u.tableUseCountOfMonth
+            from SYNLTE.SYNDMG_TABLE_ALL s
+            left join (
+                select t0.tablename, t0.project, t0.tableUseCount,
+                       t3.tableUseCountOfMonth, t2.tableUseCountOfWeek, t1.tableUseCountOfDay
+                from (
+                    select sum(table_Use_Count) as tableUseCount, tablename, project
+                    from DP_UT_ODPSSQLCOUNT
+                    group by tablename, project
+                ) t0
+                left join (
+                    select sum(table_Use_Count) as tableUseCountOfMonth, tablename, project
+                    from DP_UT_ODPSSQLCOUNT
+                    where dt between date_format(date_sub(now(), interval 31 day), '%Y-%m-%d')
+                                  and date_format(date_sub(now(), interval 1 day), '%Y-%m-%d')
+                    group by tablename, project
+                ) t3 on (t0.tablename = t3.tablename and t0.project = t3.project)
+                left join (
+                    select sum(table_Use_Count) as tableUseCountOfWeek, tablename, project
+                    from DP_UT_ODPSSQLCOUNT
+                    where dt between date_format(date_sub(now(), interval 7 day), '%Y-%m-%d')
+                                  and date_format(date_sub(now(), interval 1 day), '%Y-%m-%d')
+                    group by tablename, project
+                ) t2 on (t0.tablename = t2.tablename and t0.project = t2.project)
+                left join (
+                    select sum(table_Use_Count) as tableUseCountOfDay, tablename, project
+                    from DP_UT_ODPSSQLCOUNT
+                    where dt = date_format(date_sub(now(), interval 1 day), '%Y-%m-%d')
+                    group by tablename, project
+                ) t1 on (t0.tablename = t1.tablename and t0.project = t1.project)
+            ) u on (upper(u.tablename) COLLATE utf8mb4_unicode_ci = upper(s.tablename) COLLATE utf8mb4_unicode_ci and upper(s.tableproject)  COLLATE utf8mb4_unicode_ci = upper(u.project) COLLATE utf8mb4_unicode_ci)
+        ) a
+        where lastDate = date_format(date_sub(now(), interval 1 day), '%Y%m%d')
+    </sql>
+
+    <select id="findUseHeatByTableNameList" parameterType="java.util.HashMap" resultType="java.lang.Long">
+        select sum(table_use_count) from
+        <foreach collection="map.keys" item="key" open="(" close=")" separator=" union all">
+            select sum(table_use_count) as table_use_count from DP_UT_ODPSSQLCOUNT
+            where upper(tablename) = upper(#{key,jdbcType=VARCHAR})
+              and project = #{map[${key}],jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="findAll" resultType="com.synway.property.pojo.DataStoreAndUseHeat">
+        <include refid="useHeatBaseQuery"></include>
+    </select>
+
+    <delete id="deleteAll">
+        delete from DP_STORECYCLEANDUSEHEAT
+    </delete>
+
+    <insert id="insertIntoDP_STORECYCLEANDUSEHEAT" parameterType="java.util.List" useGeneratedKeys="false">
+        insert into DP_STORECYCLEANDUSEHEAT (
+        <include refid="baseColumn"></include>
+        )
+        values
+        <foreach collection="list" item="item" separator=",">
+             (
+                #{item.lastDate,jdbcType=VARCHAR},
+                #{item.tableType,jdbcType=VARCHAR},
+                #{item.tableNameEN,jdbcType=VARCHAR},
+                #{item.tableNameZH,jdbcType=VARCHAR},
+                #{item.lifeCycle,jdbcType=INTEGER},
+                #{item.tableAllCount,jdbcType=NUMERIC},
+                #{item.tableSize,jdbcType=NUMERIC},
+                #{item.subclass,jdbcType=VARCHAR},
+                #{item.className,jdbcType=VARCHAR},
+                #{item.tableUseCount,jdbcType=NUMERIC},
+                #{item.tableUseCountOfDay,jdbcType=NUMERIC},
+                #{item.tableUseCountOfWeek,jdbcType=NUMERIC},
+                #{item.tableUseCountOfMonth,jdbcType=NUMERIC}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findObjectExtend" resultType="com.synway.property.pojo.DataStoreAndUseHeat">
+        select b.partitiondate, a.tablename as tableNameEN, a.tabletype, a.TABLECREATEDTIME, a.TABLELASTMETAMODIFIEDTIME,
+               a.PARTITIONCOUNT, a.TABLELASTDATAMODIFIEDTIME, a.tableProject, a.tableSize
+        from SYNLTE.SYNDMG_TABLE_ALL a
+        right join (
+            select a.tablename, max(a.partitiondate) as partitiondate
+            from SYNLTE.SYNDMG_TABLE_ALL a
+            group by a.tablename
+        ) b on a.tablename = b.tablename and a.partitiondate = b.partitiondate
+    </select>
+
+</mapper>

@@ -5,7 +5,7 @@ package com.synway.property.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.interceptor.AuthorizedUserUtils;
 import com.synway.property.pojo.*;
 import com.synway.property.pojo.datastoragemonitor.DataResourceTable;
@@ -132,13 +132,13 @@ public class TableOrganizationDataController {
         logger.info(String.format(">>>>>>开始查询表组织资产的汇总信息，查询条件为 mainClassify：%s ,primaryClassifyCh: %s ,secondaryClassifyCh: %s"
                 ,mainClassify,primaryClassifyCh,secondaryClassifyCh));
         // 返回的接口信息
-        if(!(mainClassify.equalsIgnoreCase(UrlConstants.DATA_ORGANIZATION_CLASSIFY)
-                || mainClassify.equalsIgnoreCase(UrlConstants.DATA_SOURCE_CLASSIFY)
-                || mainClassify.equalsIgnoreCase(UrlConstants.DATA_RESOURCE_CLASSIFY)
+        if(!(mainClassify.equalsIgnoreCase(Common.DATA_ORGANIZATION_CLASSIFY)
+                || mainClassify.equalsIgnoreCase(Common.DATA_SOURCE_CLASSIFY)
+                || mainClassify.equalsIgnoreCase(Common.DATA_RESOURCE_CLASSIFY)
                 || "null".equalsIgnoreCase(mainClassify))){
-            String ss = UrlConstants.DATA_ORGANIZATION_CLASSIFY+"|"+
-                    UrlConstants.DATA_SOURCE_CLASSIFY+"|"+
-                    UrlConstants.DATA_RESOURCE_CLASSIFY;
+            String ss = Common.DATA_ORGANIZATION_CLASSIFY+"|"+
+                    Common.DATA_SOURCE_CLASSIFY+"|"+
+                    Common.DATA_RESOURCE_CLASSIFY;
             logger.info(">>>>>>表组织资产的汇总信息查询结束");
             return ServerResponse.asErrorResponse(String.format("传参的mainClassify：[%s]，不在规定的数值：[%s]", mainClassify, ss));
         }
@@ -226,7 +226,7 @@ public class TableOrganizationDataController {
         ServerResponse serverResponse = null;
         try{
             serverResponse = restTemplate.getForObject(
-                    UrlConstants.DATAGOVERNANCE_BASEURL+"/datagovernance/navbar/getNavStatusByName?name=审批中心",
+                    Common.DATAGOVERNANCE_BASEURL+"/datagovernance/navbar/getNavStatusByName?name=审批中心",
                     ServerResponse.class);
             return serverResponse;
         }catch (Exception e) {

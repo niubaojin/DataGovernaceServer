@@ -31,7 +31,7 @@
 
     <select id="getOriginalDataList" resultType="com.synway.governace.pojo.largeScreen.StandardLabelData">
         select secondary_organization_ch as name ,count(distinct table_name_en) as tableCount,
-         sum(YESTERDAY_COUNT) as tableDataVolume from table_organization_assets
+         sum(YESTERDAY_COUNT) as tableDataVolume from DP_TABLE_ORGANIZATION_ASSETS
              where primary_organization_ch ='原始库' and  statistics_time >= to_date(#{dateStr},'yyyy-MM-dd')
              group by secondary_organization_ch
     </select>
@@ -101,14 +101,14 @@
         tableCount,
         name
         from (select l.project, l.tablename, sum(l.table_use_count) as tableCount
-        from UT_ODPSSQLCOUNT l INNER JOIN synlte."OBJECT" r on upper(l.TABLENAME) = upper(r.TABLENAME)
+        from DP_UT_ODPSSQLCOUNT l INNER JOIN synlte."OBJECT" r on upper(l.TABLENAME) = upper(r.TABLENAME)
 				group by l.project, l.tablename) s1
         left join (select table_name_en, table_project, name
         from (select row_number() over(partition by table_name_en, table_project order by STATISTICS_TIME desc) rn,
         table_name_en,
         table_project,
         name
-        from table_organization_assets)
+        from DP_TABLE_ORGANIZATION_ASSETS)
         where rn = 1) s2 on upper(s1.project) =
         upper(s2.table_project)
         and upper(s1.tablename) =
@@ -177,7 +177,7 @@
                          when sum(table_size) is null or sum(table_size) = '' then 0
                          else trunc(sum(table_size) / 1073741824, 0)
                          end as totalSize
-              from table_organization_assets
+              from DP_TABLE_ORGANIZATION_ASSETS
               where statistics_time >= trunc(sysdate)
                 and primary_organization_ch = '原始库'
                 and table_type = 'odps'
@@ -268,14 +268,14 @@
                          when sum(table_all_count) is null or sum(table_all_count) = '' then 0
                          else trunc(sum(table_all_count) / 100000000, 0)
                        end as totalNums
-                  from table_organization_assets
+                  from DP_TABLE_ORGANIZATION_ASSETS
                  where statistics_time >= trunc(sysdate)
                    and secondary_organization_ch in ('原始汇集库', '原始标准库')
                    and lower(table_type) = 'odps'
                  group by secondary_organization_ch) c
           left join (select secondary_organization_ch as label, count(*) as tables
                        from (select distinct table_name_en, secondary_organization_ch
-                               from table_organization_assets
+                               from DP_TABLE_ORGANIZATION_ASSETS
                               where statistics_time >= trunc(sysdate)
                                 and secondary_organization_ch in ('原始汇集库', '原始标准库')
                                 and lower(table_type) = 'odps')
@@ -288,14 +288,14 @@
                          when sum(table_all_count) is null or sum(table_all_count) = '' then 0
                          else trunc(sum(table_all_count) / 100000000, 0)
                        end as totalNums
-                  from table_organization_assets
+                  from DP_TABLE_ORGANIZATION_ASSETS
                  where statistics_time >= trunc(sysdate)
                    and primary_organization_ch in ('资源库', '主题库', '知识库', '业务库')
                    and lower(table_type) = 'odps'
                  group by primary_organization_ch) a
           left join (select primary_organization_ch as label, count(*) as tables
                        from (select distinct table_name_en, primary_organization_ch
-                               from table_organization_assets
+                               from DP_TABLE_ORGANIZATION_ASSETS
                               where statistics_time >= trunc(sysdate)
                                 and primary_organization_ch in ('资源库', '主题库', '知识库', '业务库')
                                 and lower(table_type) = 'odps')
@@ -326,7 +326,7 @@
                          else '其他'
                        end as className
                   from (select distinct table_name_en,datasource_last_level
-                          from table_organization_assets
+                          from DP_TABLE_ORGANIZATION_ASSETS
                          where statistics_time >= trunc(sysdate)
                            and secondary_organization_ch in ('原始汇集库')
                            and lower(table_type) = 'odps') toa
@@ -363,7 +363,7 @@
        select l.name,l.standTableCount, case when r.tableCount is null then 0 else r.tableCount end  as tableCount,
             case when  r.tableDataVolume is null then 0 else r.tableDataVolume end as tableDataVolume from (
         select secondaryorganizationch as name ,count(distinct tablename) as standTableCount from classify_interface_all_date
-         where upper(sjyjfl) = 'JZCODEGASJZZFL'||#{type}
+         where upper(sjyjfl) = #{sjzzflCodeId} ||#{type}
          group by secondaryorganizationch
          ) l  left  join (
         select sub_organization_name as name , sum(object_count) as tableCount, sum(records_all) as tableDataVolume
@@ -382,7 +382,7 @@
                 table_project,
                 yesterday_count,
                 SECONDARY_ORGANIZATION_CH
-                from table_organization_assets where to_char(STATISTICS_TIME, 'yyyyMMdd') = #{dateStr} and PRIMARY_ORGANIZATION_CH = '原始库')
+                from DP_TABLE_ORGANIZATION_ASSETS where to_char(STATISTICS_TIME, 'yyyyMMdd') = #{dateStr} and PRIMARY_ORGANIZATION_CH = '原始库')
                 where rn = 1
              group by SECONDARY_ORGANIZATION_CH
     </select>
@@ -415,7 +415,7 @@
                 table_project,
                 table_all_count,
                 SECONDARY_ORGANIZATION_CH
-                from table_organization_assets where STATISTICS_TIME >= sysdate - 1 and PRIMARY_ORGANIZATION_CH = '原始库')
+                from DP_TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME >= sysdate - 1 and PRIMARY_ORGANIZATION_CH = '原始库')
                 where rn = 1
                 group by SECONDARY_ORGANIZATION_CH
                 ) r on l.name = r.name
@@ -427,7 +427,7 @@
             SELECT name, count(distinct TABLENAME) as tableCount, sum(table_all_count)  as tableDataVolume
                 FROM(select r.project_name,l.TABLENAME , case when r1.labelname is null then  l.sjzybq5 else r1.labelname end as name from(
                 select DISTINCT sjxjbm, TABLENAME ,sjzybq5  from synlte.PUBLIC_DATA_INFO where sjzybq5 is not null and zyzt = '1'
-                and sjxjbm is not null and substr(upper(sjxjbm),0,11) ='JZ_RESOURCE' AND  UPPER(SJZZYJFL)='JZCODEGASJZZFL05'
+                and sjxjbm is not null and substr(upper(sjxjbm),0,11) ='JZ_RESOURCE' AND  UPPER(SJZZYJFL)= #{sjzzflCodeId}
                 ) l  inner join (select tablename ,tableid ,objectname from synlte."OBJECT" where deleted = 0 and relate_tablename = 'OBJECTFIELD' ) o
                             on upper(l.sjxjbm) = upper(o.tableid)
                             left join  (select project_name, tablename from synlte.OBJECT_STORE_INFO where project_name IS NOT NULL AND substr(upper(project_name),0,4) = 'YSK_')
@@ -437,7 +437,7 @@
                 ) ll
                 left JOIN ( SELECT table_name_en , table_project, table_all_count  FROM (
                 (select row_number() over(partition by table_name_en, table_project order by STATISTICS_TIME desc) rn,
-                table_name_en,table_all_count,TABLE_PROJECT  from table_organization_assets where STATISTICS_TIME > sysdate - 2 ))
+                table_name_en,table_all_count,TABLE_PROJECT  from DP_TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME > sysdate - 2 ))
                 where rn = 1) rr ON upper(ll.project_name) = upper(rr.TABLE_PROJECT) and upper(ll.TABLENAME) = upper(rr.table_name_en)
                 group by name)
     </select>
@@ -467,7 +467,7 @@
                     to_number(table_all_count) as tableCount,
                     table_size as tableSize
                 from
-                    table_organization_assets
+                    DP_TABLE_ORGANIZATION_ASSETS
                 where
                     statistics_time >= trunc(sysdate)
                     and table_name_en is not null

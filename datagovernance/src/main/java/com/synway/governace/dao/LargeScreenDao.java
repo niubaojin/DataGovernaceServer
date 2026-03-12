@@ -47,7 +47,7 @@ public interface LargeScreenDao {
     List<StatisticsResult> getHandleNodeStatistics();
 
     // 数据组织一级分类统计
-    List<StatisticsResult> getPrimaryClassifyStatistics();
+    List<StatisticsResult> getPrimaryClassifyStatistics(@Param("sjzzflCodeId") String sjzzflCodeId);
 
     // 数据组织二级分类统计
     List<StatisticsResult> getSecondClassifyStatistics(QueryInfo queryInfo);

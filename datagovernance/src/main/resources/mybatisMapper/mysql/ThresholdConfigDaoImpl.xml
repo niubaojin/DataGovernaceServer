@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.ThresholdConfigDao">
+
+    <select id="getThresholdConfigInitInfo" resultType="com.synway.governace.pojo.ThresholdConfig">
+        select ID,PARENT_ID,NAME,LOGICAL_JUDGMENT,THRESHOLD_VALUE,TREE_TYPE,IS_ACTIVE,PAGE_URL
+        from DGN_COMMON_SETTING
+        where PARENT_ID IS NULL and PAGE_URL IS NOT NULL
+    </select>
+
+</mapper>

@@ -5,7 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.property.common.PlatformType;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.config.TransactionUtil;
 import com.synway.property.dao.*;
 import com.synway.property.enums.SysCodeEnum;
@@ -34,6 +34,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -62,6 +63,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     private RestTemplate rest;
 
     @Autowired
+    @Qualifier(value ="restTemplateApi")
     private RestTemplate restTemplateApi;
 
     @Autowired
@@ -85,10 +87,13 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     @Qualifier(value = "dataSourceForStatisHbase")
     private DruidDataSource dataSourceForStatisHbase;
 
+    @Resource
+    private Environment env;
+
     /**
      * 调用ckw下的odps/ads接口
      * 统计需要监控的表每天数据量
-     * 1：先获取DATA_STORAGE_ADD_TABLE表中需要监控的表信息，然后拼接对应的查询sql来调用ckw接口获取这些表今日分区的数据量
+     * 1：先获取DP_DATA_STORAGE_ADD_TABLE表中需要监控的表信息，然后拼接对应的查询sql来调用ckw接口获取这些表今日分区的数据量
      * 查询odps的数据量时使用 odps的接口 odpsClient 中的函数 getRecordCountByTable 直接获取数据量
      * 查询ads的数据量时使用ads的sql代码
      * 2：调用陈亮表 syndmg_table_all，获取该表的数据总量
@@ -116,7 +121,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 item -> {
 //                        String tempJsonString = rest.getForObject(TableOrganizationConstant.DATARESOURCE_BASEURL + "/DataResource/getDsById?dataId=" + item, String.class);
 //                        String tempJsonString = rest.getForObject("http://192.168.71.57:8043/dataresource/api/getResourceById?resId=b1656aba3ffc4e48b79badf49e14e7e0", String.class);
-                    String tempJsonString = rest.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getResourceById?resId=" + item, String.class);
+                    String tempJsonString = rest.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getResourceById?resId=" + item, String.class);
                     if (StringUtils.isNotBlank(tempJsonString)) {
                         JSONObject resultJson = JSONObject.parseObject(JSONObject.parseObject(tempJsonString).getObject("data",String.class));
                         if(resultJson!=null){
@@ -142,7 +147,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                     paramMap.put("tableNames", tableNames);
                     try {
                         for (String tableName:tableNames){
-                            String tablePartitionInfo = rest.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getPartitionInfo?resourceId=" + resourceEntry.getKey() + "&project=" + entry.getKey() + "&tableNameEn=" + tableName, String.class);
+                            String tablePartitionInfo = rest.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getPartitionInfo?resourceId=" + resourceEntry.getKey() + "&project=" + entry.getKey() + "&tableNameEn=" + tableName, String.class);
                             if(StringUtils.isBlank(tablePartitionInfo) || "0".equals(JSONObject.parseObject(tablePartitionInfo).getString("status"))){
                                 continue;
                             }
@@ -183,7 +188,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             List<String> adsSqlList = new ArrayList<>();
             /*某些阿里平台需要加前缀*/
             String prefix = "";
-            if (UrlConstants.SWITCH_ON.equals(environment.getProperty("queryAdsPrefix"))) {
+            if (Common.SWITCH_ON.equals(environment.getProperty("queryAdsPrefix"))) {
                 prefix = "/*+engine=mpp*/";
             }
             /*ads存在分区，查询今日分区的数据量sql*/
@@ -381,7 +386,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                             dataResourceTable.setTableName(detectedTable.getString("tableNameEN"));
                             dataResourceTable.setTableNameCh(detectedTable.getString("tableNameCN"));
                             dataResourceTable.setProjectName(detectedTable.getString("projectName"));
-                            dataResourceTable.setIsPartitionTable(detectedTable.getString("isPartitioned").equals("2") ? "0" : "1");
+                            dataResourceTable.setIsPartitionTable(detectedTable.getString("isPartitioned") != null && detectedTable.getString("isPartitioned").equals("2") ? "0" : "1");
                             dataResourceTable.setBelongSystemCode(detectedTable.getString("manageUnitCode"));
                             dataResourceTable.setUpdateDate(detectedTable.getString("updateCycle"));
                             dataResourceTable.setTableCreatedTime(detectedTable.getString("createTime"));
@@ -412,7 +417,8 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             /*获取数据资产告警配置*/
             OrganizationAlarmSetting setting = getAlarmSetting();
             /*获取标准信息*/
-            List<TableOrganizationData> classifyList = dataMonitorDao.getClassifyInfo();
+            String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+            List<TableOrganizationData> classifyList = dataMonitorDao.getClassifyInfo(sjzzflCodeId);
             Map<String,List<TableOrganizationData>> classifyMap = classifyList.stream().collect(Collectors.groupingBy(TableOrganizationData::getTableNameEn));
 
             /*获取平均量*/
@@ -664,7 +670,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         String[] objectTableNames = dataMonitorDao.getObjectTableNames();
         // 建表信息(注入对标信息)
         List<TableOrganizationData> objectStoreInfos = dataMonitorDao.getObjectStoreInfos();
-        // 要插入的表组织数据table_organization_assets
+        // 要插入的表组织数据DP_TABLE_ORGANIZATION_ASSETS
         List<TableOrganizationData> insertList = new ArrayList<>();
 
         // 资产统计数据从数据库依次查询改为统一获取后内存处理
@@ -887,7 +893,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     @Override
     public void getDataResourceInfo() {
         try {
-            String dataResourceString = rest.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/findResourceForLocalBase", String.class);
+            String dataResourceString = rest.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/findResourceForLocalBase", String.class);
             Map dataResourceMap = JSON.parseObject(dataResourceString);
             logger.info((String) dataResourceMap.get("msg"));
             Integer code = (Integer) dataResourceMap.get("code");
@@ -912,7 +918,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         int daysAgo = dataStorageMonitorDao.getTodayAssetsCount() < 100 ? 1 : 0;
         List<DataBaseState> platTableSumList = dataStorageMonitorDao.getPlatTableSum(daysAgo);
         // 获取从syndmg_table_all表里获取各个平台类型中数据总条数
-        List<Map<String, Object>> allPlatformCountList = dataStorageMonitorDao.getAllDataBaseCount();
+        List<DataResourceTable> allPlatformCountList = dataStorageMonitorDao.getAllDataBaseCount();
 
         collectDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList);
 
@@ -924,12 +930,18 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         }
     }
 
-    private void collectDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList) {
-        // 华为统计主页数据库状况
+    private void collectDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<DataResourceTable> allPlatformCountList) {
+        // 华为统计主页数据库状况(hive)
         List<Object> hiveResIds = getResIdByDatabaseType("hive");
         hiveResIds = removeDuplicatesByName(hiveResIds, "connectInfo");
         if (!hiveResIds.isEmpty()) {
             collectHuaweiDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList, hiveResIds);
+        }
+        // 华为统计主页数据库状况(hbase-huawei)
+        List<Object> hbaseResIds = getResIdByDatabaseType("hbase-huawei");
+        hbaseResIds = removeDuplicatesByName(hbaseResIds, "connectInfo");
+        if (!hbaseResIds.isEmpty()) {
+            collectHbaseDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList, hbaseResIds);
         }
 
         // 阿里数据库概况统计
@@ -946,13 +958,13 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void collectHuaweiDatabaseStates(List<DataBaseState> dataBaseStates,
                                              List<DataBaseState> platTableSumList,
-                                             List<Map<String, Object>> allPlatformCountList,
+                                             List<DataResourceTable> allPlatformCountList,
                                              List<Object> resIds) {
         for (Object object : resIds){
             try {
                 String resId = JSONObject.parseObject(object.toString()).getString("resId");
                 String resName = JSONObject.parseObject(object.toString()).getString("resName");
-                String url = UrlConstants.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
+                String url = Common.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
                 logger.info("hdfs数据库概况统计url：" + url);
                 String resultStr = rest.getForObject(url, String.class);
                 logger.info("hdfs数据库概况统计返回结果为：\n" + resultStr);
@@ -971,19 +983,42 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         }
     }
 
-    private void collectAliDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<Map<String, Object>> allPlatformCountList) {
+    private void collectHbaseDatabaseStates(List<DataBaseState> dataBaseStates,
+                                             List<DataBaseState> platTableSumList,
+                                             List<DataResourceTable> allPlatformCountList,
+                                             List<Object> resIds) {
+        for (Object object : resIds){
+            try {
+                String resId = JSONObject.parseObject(object.toString()).getString("resId");
+                String resName = JSONObject.parseObject(object.toString()).getString("resName");
+                String url = Common.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
+                logger.info("hbase数据库概况统计url：" + url);
+                String resultStr = rest.getForObject(url, String.class);
+                logger.info("hbase数据库概况统计返回结果为：\n" + resultStr);
+                ResourceOverView resourceOverView = JSONObject.parseObject(resultStr).getObject("data", ResourceOverView.class);
+
+                DataBaseState dataBaseState = new DataBaseState();
+                dataBaseState.setName("HBASE_" + resName);
+                dataBaseState = getTableSum(platTableSumList, dataBaseState, "hbase");
+                dataBaseState.setUsedCapacity(NumUtil.handleNumWithUnit(resourceOverView.getUsedSpace() + "MB"));
+                dataBaseState.setBareCapacity(NumUtil.handleNumWithUnit(resourceOverView.getTotalSpace() + "MB"));
+                setTableCountByPlatformName(dataBaseState, allPlatformCountList, "hive");
+                dataBaseStates.add(dataBaseState);
+            } catch (Exception e) {
+                logger.error("hdfs数据库概况统计报错: {}", e);
+            }
+        }
+    }
+
+    private void collectAliDatabaseStates(List<DataBaseState> dataBaseStates, List<DataBaseState> platTableSumList, List<DataResourceTable> allPlatformCountList) {
         try {
             List<Map<String, Object>> allOdpsAdsSizelist = "1".equals(environment.getProperty("wushi"))
                     ? dataStorageMonitorDao.getWushiOdpsAdsUsedCapacity()
                     : dataStorageMonitorDao.getOdpsAdsUsedCapacity();
             List<Map<String, Object>> ossFileCount = dataStorageMonitorDao.getOssFileCount();
             // odps/ads
-            boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
-            for (Map<String, Object> row : allPlatformCountList) {
-                String platformType = String.valueOf(row.get("TABLETYPE")).toUpperCase();
-                if (isHailiang){
-                    platformType = String.valueOf(row.get("tabletype")).toUpperCase();
-                }
+            for (DataResourceTable row : allPlatformCountList) {
+                String platformType = row.getTableType().toUpperCase();
                 if ("ODPS".equals(platformType) || "ADS".equals(platformType)) {
                     addAliDatabaseState(dataBaseStates, platTableSumList, row, allOdpsAdsSizelist);
                 }
@@ -997,7 +1032,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void collectClickhouseDatabaseStates(List<DataBaseState> dataBaseStates,
                                                  List<DataBaseState> platTableSumList,
-                                                 List<Map<String, Object>> allPlatformCountList,
+                                                 List<DataResourceTable> allPlatformCountList,
                                                  List<Object> resIds) {
         for (Object object : resIds){
             try {
@@ -1010,7 +1045,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 JSONArray jsonArray = restTemplateHandle.excuteSql(resId, storageInfo);
                 JSONObject data = jsonArray.getJSONObject(0);
                 if (data != null) {
-                    addClickhouseDatabaseState(dataBaseStates, platTableSumList, allPlatformCountList, data, resName);
+                    addClickhouseDatabaseState(dataBaseStates, platTableSumList, allPlatformCountList, data, resName, resId);
                 }
             } catch (Exception e) {
                 logger.error("ClickHouse数据库概况统计报错: {}", ExceptionUtil.getExceptionTrace(e));
@@ -1020,8 +1055,6 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     public List<Object> getResIdByDatabaseType(String databaseType) {
         try {
             JSONArray dataResourceLocal = restTemplateHandle.getDataResourceByisLocal("2", '0');
-            JSONArray dataResourceNoLocal = restTemplateHandle.getDataResourceByisLocal("1", '0');
-            dataResourceLocal.addAll(dataResourceNoLocal);
             return dataResourceLocal.stream().filter(d -> {
                 return JSONObject.parseObject(d.toString()).getString("resType").contains(databaseType);
             }).collect(Collectors.toList());
@@ -1033,14 +1066,14 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void addAliDatabaseState(List<DataBaseState> dataBaseStates,
                                      List<DataBaseState> platTableSumList,
-                                     Map<String, Object> row,
+                                     DataResourceTable row,
                                      List<Map<String, Object>> allOdpsAdsSizelist) {
         boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
-        String platformType = String.valueOf(isHailiang ? row.get("tabletype") : row.get("TABLETYPE")).toUpperCase();
+        String platformType = row.getTableType().toUpperCase();
         DataBaseState dataBaseState = new DataBaseState();
         dataBaseState.setName(platformType);
         dataBaseState = getTableSum(platTableSumList, dataBaseState, platformType);
-        dataBaseState.setTableCount(String.valueOf(isHailiang ? row.get("database_count") : row.get("DATABASE_COUNT")));
+        dataBaseState.setTableCount(row.getTotalCount());
 
         Map<String, Object> odpsAdsSize = findOdpsAdsSize(allOdpsAdsSizelist, platformType);
         if (odpsAdsSize != null) {
@@ -1088,9 +1121,10 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
 
     private void addClickhouseDatabaseState(List<DataBaseState> dataBaseStates,
                                             List<DataBaseState> platTableSumList,
-                                            List<Map<String, Object>> allPlatformCountList,
+                                            List<DataResourceTable> allPlatformCountList,
                                             JSONObject data,
-                                            String resName) {
+                                            String resName,
+                                            String resId) {
         BigDecimal freeSpace = new BigDecimal(data.getDoubleValue("free_space"));
         BigDecimal totalSpace = new BigDecimal(data.getDoubleValue("total_space"));
         //1024*1024*1024 (GB)
@@ -1104,11 +1138,11 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         dataBaseState.setUsedCapacity(String.valueOf(totalSpace.subtract(freeSpace).divide(denominator, 2, BigDecimal.ROUND_HALF_UP)));
         dataBaseState.setBareCapacity(String.valueOf(totalSpace.divide(denominator, 2, BigDecimal.ROUND_HALF_UP)));
 
-        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
-        for (Map<String, Object> row : allPlatformCountList) {
-            String platformType = String.valueOf(isHailiang ? row.get("tabletype") : row.get("TABLETYPE")).toLowerCase();
-            if (platformType.contains("clickhouse")) {
-                dataBaseState.setTableCount(String.valueOf(isHailiang ? row.get("database_count") : row.get("DATABASE_COUNT")));
+        for (DataResourceTable row : allPlatformCountList) {
+            String platformType = row.getTableType().toLowerCase();
+            String resourceId = row.getResourceId();
+            if (platformType.contains("clickhouse") && resourceId.equalsIgnoreCase(resId)) {
+                dataBaseState.setTableCount(row.getTotalCount());
                 break;
             }
         }
@@ -1123,12 +1157,11 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 .orElse(null);
     }
 
-    private void setTableCountByPlatformName(DataBaseState dataBaseState, List<Map<String, Object>> allPlatformCountList, String platformType) {
-        boolean isHailiang = cacheManager.getValue("dsType").equalsIgnoreCase("hailiang");
-        for (Map<String, Object> row : allPlatformCountList) {
-            String platformName = String.valueOf(isHailiang ? row.get("tabletype") : row.get("TABLETYPE")).toLowerCase();
+    private void setTableCountByPlatformName(DataBaseState dataBaseState, List<DataResourceTable> allPlatformCountList, String platformType) {
+        for (DataResourceTable row : allPlatformCountList) {
+            String platformName = row.getTableType().toLowerCase();
             if (platformName.contains(platformType)) {
-                dataBaseState.setTableCount(String.valueOf(isHailiang ? row.get("database_count") : row.get("DATABASE_COUNT")));
+                dataBaseState.setTableCount(row.getTotalCount());
                 break;
             }
         }
@@ -1394,7 +1427,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 List<SYDMGParam> clickhouseParams = JSON.parseArray(JSON.toJSONString(jsonArrayAll), SYDMGParam.class);
 
                 if (!clickhouseParams.isEmpty()) {
-                    List<SYDMGParam> filteredData = processClickhouseData(clickhouseParams, todayNow, yesterday);
+                    List<SYDMGParam> filteredData = processClickhouseData(clickhouseParams, todayNow, yesterday, resId);
                     saveCkToDatabase(filteredData, todayNow);
                 } else {
                     logger.info("clickhouse【" + todayNow + "】查询到的数据量为0");
@@ -1459,9 +1492,9 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 "    on table_part.TABLENAME = table_total.TABLENAME\n" +
                 "   and table_part.TABLEPROJECT = table_total.TABLEPROJECT";
     }
-    private List<SYDMGParam> processClickhouseData(List<SYDMGParam> clickhouseParams, String todayNow, String yesterday) {
+    private List<SYDMGParam> processClickhouseData(List<SYDMGParam> clickhouseParams, String todayNow, String yesterday, String resId) {
         return clickhouseParams.stream().map(item -> {
-            item.setDATAID("clickhouse");
+            item.setDATAID(resId);
             item.setTABLECOMMENT("");
             item.setLIFECYCL("-1");
             if (item.getTABLENAME().toLowerCase().endsWith("_local")) {

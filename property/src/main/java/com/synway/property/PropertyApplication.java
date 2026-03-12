@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableDiscoveryClient
 @EnableTransactionManagement
 @EnableScheduling
-@MapperScan(basePackages = {"com.synway.property.dao"})
+@MapperScan(basePackages = {"com.synway.property.dao", "com.synway.property.mapper"})
 public class PropertyApplication extends SpringBootServletInitializer {
     public static void main(String[] args) throws Exception{
         SpringApplication.run(PropertyApplication.class,args);

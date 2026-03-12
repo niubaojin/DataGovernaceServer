@@ -1,6 +1,5 @@
 package com.synway.property.service.impl;
 
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -9,12 +8,12 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.synway.common.bean.ServerResponse;
 import com.synway.property.common.PlatformType;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.config.AsyManager;
 import com.synway.property.dao.DataStorageMonitorDao;
+import com.synway.property.dao.LifeCycleDao;
 import com.synway.property.enums.SysCodeEnum;
 import com.synway.property.interceptor.AuthorizedUserUtils;
-import com.synway.property.pojo.DataProcess.DataProcess;
 import com.synway.property.pojo.*;
 import com.synway.property.pojo.approvalinfo.ApprovalInfoParams;
 import com.synway.property.pojo.approvalinfo.DataApproval;
@@ -26,13 +25,13 @@ import com.synway.property.pojo.opeartorLog.OperatorLog;
 import com.synway.property.pojo.register.RegisterInfo;
 import com.synway.property.pojo.register.RegisterState;
 import com.synway.property.pojo.tablemanage.AdsOdpsTableInfo;
-import com.synway.property.service.DataProcessService;
 import com.synway.property.service.DataStorageMonitorIndexService;
 import com.synway.property.service.DataStorageMonitorService;
 import com.synway.property.util.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,12 +51,15 @@ import static java.util.stream.Collectors.toList;
 /**
  * @author 数据接入
  */
+@Slf4j
 @Configuration
 @Service
 public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorIndexService {
     private static Logger logger = LoggerFactory.getLogger(DataStorageMonitorIndexServiceImpl.class);
     @Autowired
     DataStorageMonitorDao dataStorageMonitorDao;
+    @Autowired
+    LifeCycleDao lifeCycleDao;
     @Autowired
     private RestTemplate restTemplate;
     @Autowired
@@ -66,15 +68,13 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     AsyManager asyManager;
     @Autowired
     private DataStorageMonitorService dataStorageMonitorService;
-    @Autowired
-    private DataProcessService dataProcessService;
-    @Resource
-    private Environment environment;
     @Autowired(required = false)
     private OdpsClient odpsClient;
-
     @Autowired
     private RestTemplateHandle restTemplateHandle;
+
+    @Resource
+    private Environment environment;
 
     // 获取页面中 数据库状况的展示数据
     @Override
@@ -93,7 +93,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 //        }
             serverResponse = ServerResponse.asSucessResponse(dataBaseStates);
         } catch (Exception e) {
-            logger.error("查询数据组织监控首页中数据库状况出错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("查询数据组织监控首页中数据库状况出错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse("查询数据组织监控首页中数据库状况出错");
         }
         return serverResponse;
@@ -117,7 +117,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             queryDict.put("startTime", statisticTime + " 00:00:00");
             queryDict.put("endTime", statisticTime + " 23:59:59");
             int total;
-            String url = UrlConstants.RECONCILIATION_BASEURL + "/reconciliation/getAbnormalReconciliationNum";
+            String url = Common.RECONCILIATION_BASEURL + "/reconciliation/getAbnormalReconciliationNum";
             JSONObject returnAccessJson = restTemplate.postForObject(url, queryDict, JSONObject.class);
             int status = returnAccessJson.getInteger("status");
             if (status == 1) {
@@ -130,12 +130,12 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
         } catch (Exception e) {
             abnormalBillsSum = "0";
-            logger.error("查询数据对账的接口报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("查询数据对账的接口报错" + ExceptionUtil.getExceptionTrace(e));
         }
         try {
             // 获取odps的版本号
             String dataWorkVersion = environment.getProperty("odps.version", "3");
-            logger.info("baseApiVersion:" + dataWorkVersion);
+            log.info("baseApiVersion:" + dataWorkVersion);
             String dataPlatFormType = (String) cacheManager.getValue("dataPlatFormType");
             if (!PlatformType.ALI.equalsIgnoreCase(dataPlatFormType)) {
                 dataWorkVersion = "3";
@@ -150,7 +150,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             dataQualitySummary.setAbnormalBillsTime(statisticTime);
             serverResponse = ServerResponse.asSucessResponse(dataQualitySummary);
         } catch (Exception e) {
-            logger.error("查询数据组织资产汇总信息报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("查询数据组织资产汇总信息报错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse("查询数据组织资产汇总信息报错");
         }
         return serverResponse;
@@ -166,7 +166,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         try{
             // 获取数据中心信息（本地仓）
             JSONArray dataResourceLocal = new JSONArray();
-            String getDataResourceForLocal = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0",String.class);
+            String getDataResourceForLocal = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0",String.class);
             if(StringUtils.isNotBlank(getDataResourceForLocal) && "1".equals(JSONObject.parseObject(getDataResourceForLocal).getString("status"))){
                 String localData = JSONObject.parseObject(getDataResourceForLocal).getString("data");
                 dataResourceLocal = JSONArray.parseArray(localData);
@@ -177,7 +177,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     JSONObject dataResource = JSONObject.parseObject(dataResourceLocal.getString(i));
                     if ("odps".equals(dataResource.getString("resType").toLowerCase())){
                         String resourceId = dataResource.getString("resId");
-                        String getProjectListStr = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getProjectList?resId=" + resourceId,String.class);
+                        String getProjectListStr = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getProjectList?resId=" + resourceId,String.class);
                         if(StringUtils.isNotBlank(getProjectListStr) && "1".equals(JSONObject.parseObject(getProjectListStr).getString("status"))){
                             String projectsData = JSONObject.parseObject(getProjectListStr).getString("data");
                             JSONArray projects = JSONArray.parseArray(projectsData);
@@ -198,7 +198,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 //                odpsProjectList = JSONArray.parseArray(jsonObject.getString("odps"), String.class);
 //            }
         } catch (Exception e) {
-            logger.error("仓库过滤项目名接口报错");
+            log.error("仓库过滤项目名接口报错");
             return null;
         }
         return odpsProjectList;
@@ -208,17 +208,18 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse<String> insertOracleAddTable(List<NeedAddRealTimeTable> allNeedAddRealTimeTableList, String type) {
         ServerResponse<String> serverResponse;
         try {
-            logger.info("开始插入需要监控的实时表名");
+            log.info("开始插入需要监控的实时表名");
             allNeedAddRealTimeTableList.parallelStream().forEach(
                     item -> {
                         item.setTableUuid(UUIDUtil.getUUID());
+                        dataStorageMonitorDao.delDataStorageTable(item, type);
                         dataStorageMonitorDao.insertOracleAddTable(item, type);
                     }
             );
             String message = "数据成功插入";
             serverResponse = ServerResponse.asSucessResponse(message);
         } catch (Exception e) {
-            logger.error("将需要添加的表名加入到数据库中报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("将需要添加的表名加入到数据库中报错" + ExceptionUtil.getExceptionTrace(e));
             String message = "数据插入报错";
             serverResponse = ServerResponse.asErrorResponse(message);
         }
@@ -262,7 +263,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             }
             serverResponse = ServerResponse.asSucessResponse(realTimeTableFullMessageList);
         } catch (Exception e) {
-            logger.error("查询实时表数据信息报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("查询实时表数据信息报错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse("查询实时表数据信息报错");
         }
         return serverResponse;
@@ -279,18 +280,19 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             int daysAgo = 0;
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             daysAgo = todayAssetsCount<100?1:0;
-            if (mainClassify.equalsIgnoreCase(UrlConstants.DATA_ORGANIZATION_CLASSIFY)) {
+            String sjzzflCodeId = environment.getProperty("sjzzflCodeId");
+            if (mainClassify.equalsIgnoreCase(Common.DATA_ORGANIZATION_CLASSIFY)) {
                 /* 数据组织分类 */
-                oneResultList = dataStorageMonitorDao.getPrimaryClassifyData(mainClassify,daysAgo);
-            } else if (mainClassify.equalsIgnoreCase(UrlConstants.DATA_SOURCE_CLASSIFY)) {
+                oneResultList = dataStorageMonitorDao.getPrimaryClassifyData(mainClassify,daysAgo, sjzzflCodeId);
+            } else if (mainClassify.equalsIgnoreCase(Common.DATA_SOURCE_CLASSIFY)) {
                 /* 数据来源分类 */
-                oneResultList = dataStorageMonitorDao.getPrimaryClassifyData(mainClassify,daysAgo);
-            } else if (mainClassify.equalsIgnoreCase(UrlConstants.DATA_RESOURCE_CLASSIFY)) {
+                oneResultList = dataStorageMonitorDao.getPrimaryClassifyData(mainClassify,daysAgo, sjzzflCodeId);
+            } else if (mainClassify.equalsIgnoreCase(Common.DATA_RESOURCE_CLASSIFY)) {
                 /* 数据资源分类 */
-                oneResultList = dataStorageMonitorDao.getPrimaryClassifyData(mainClassify,daysAgo);
+                oneResultList = dataStorageMonitorDao.getPrimaryClassifyData(mainClassify,daysAgo, sjzzflCodeId);
             } else {
                 errorMessage = "主分类名【" + mainClassify + "】错误";
-                logger.error("主分类名【" + mainClassify + "】错误");
+                log.error("主分类名【" + mainClassify + "】错误");
                 serverResponse = ServerResponse.asErrorResponse(errorMessage);
                 return serverResponse;
             }
@@ -300,7 +302,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             serverResponse = ServerResponse.asSucessResponse(oneResultList);
         } catch (Exception e) {
             errorMessage = "查询一级分类的信息报错";
-            logger.error("查询一级分类的信息报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("查询一级分类的信息报错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse(errorMessage);
         }
         return serverResponse;
@@ -315,31 +317,31 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         try {
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
-            if (mainClassify.equalsIgnoreCase(UrlConstants.DATA_ORGANIZATION_CLASSIFY)) {
+            if (mainClassify.equalsIgnoreCase(Common.DATA_ORGANIZATION_CLASSIFY)) {
                 /*数据组织分类*/
                 oneResultList = dataStorageMonitorDao.getSecondaryClassifyData(mainClassify, primaryClassifyCode,daysAgo,isThreeLevel);
-                if (oneResultList.size() == 1 && UrlConstants.NULL.equals(oneResultList.get(0).getValue())) {
+                if (oneResultList.size() == 1 && Common.NULL.equals(oneResultList.get(0).getValue())) {
                     oneResultList = null;
                 }
-            } else if (mainClassify.equalsIgnoreCase(UrlConstants.DATA_SOURCE_CLASSIFY)) {
+            } else if (mainClassify.equalsIgnoreCase(Common.DATA_SOURCE_CLASSIFY)) {
                 /*数据来源分类*/
                 oneResultList = dataStorageMonitorDao.getSecondaryClassifyData(mainClassify, primaryClassifyCode,daysAgo,isThreeLevel);
-                if (oneResultList.size() == 1 && UrlConstants.NULL.equals(oneResultList.get(0).getValue())) {
+                if (oneResultList.size() == 1 && Common.NULL.equals(oneResultList.get(0).getValue())) {
                     oneResultList = null;
                 }
-            } else if (mainClassify.equalsIgnoreCase(UrlConstants.DATA_RESOURCE_CLASSIFY)) {
+            } else if (mainClassify.equalsIgnoreCase(Common.DATA_RESOURCE_CLASSIFY)) {
                 /*数据资源分类*/
                 oneResultList = dataStorageMonitorDao.getSecondaryClassifyData(mainClassify, primaryClassifyCode,daysAgo,isThreeLevel);
             } else {
                 errorMessage = "查询条件中主分类名【" + mainClassify + "】错误";
-                logger.error("查询条件中主分类名【" + mainClassify + "】错误");
+                log.error("查询条件中主分类名【" + mainClassify + "】错误");
                 serverResponse = ServerResponse.asErrorResponse(errorMessage);
                 return serverResponse;
             }
             serverResponse = ServerResponse.asSucessResponse(oneResultList);
         } catch (Exception e) {
             errorMessage = "查询二级分类的信息报错" + ExceptionUtil.getExceptionTrace(e);
-            logger.error(errorMessage);
+            log.error(errorMessage);
             serverResponse = ServerResponse.asErrorResponse("查询二级分类的信息报错");
         }
         return serverResponse;
@@ -347,11 +349,11 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
     @Override
     public List<AdsOdpsTableInfo> getAdsOdpsTableInfoByRestFul(String stage, String preName, String tableName) throws Exception {
-        logger.info("开始查询根据项目名以及模糊表名，来获取表的列表信息=================================");
-        AdsOdpsTableInfo[] result = restTemplate.getForObject(UrlConstants.DATAGOVERNANCE_BASEURL + "/datagovernance/dataOperation/tableList?stage={stage}" +
+        log.info("开始查询根据项目名以及模糊表名，来获取表的列表信息=================================");
+        AdsOdpsTableInfo[] result = restTemplate.getForObject(Common.DATAGOVERNANCE_BASEURL + "/datagovernance/dataOperation/tableList?stage={stage}" +
                 "&preName={preName}&tableName={tableName}", AdsOdpsTableInfo[].class, stage, preName, tableName);
         List<AdsOdpsTableInfo> AdsOdpsTableInfoList = Arrays.asList(result);
-        logger.info("查询根据项目名以及模糊表名，来获取表的列表信息结束=================================");
+        log.info("查询根据项目名以及模糊表名，来获取表的列表信息结束=================================");
         return AdsOdpsTableInfoList;
     }
 
@@ -363,22 +365,22 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
      */
     @Override
     public ServerResponse<List<String>> getProjectNameByRestFul(String stage, String monitorType) {
-        logger.info("查询【" + monitorType + "】表名数据库【" + stage + "】所有项目名=================================");
+        log.info("查询【" + monitorType + "】表名数据库【" + stage + "】所有项目名=================================");
         ServerResponse<List<String>> serverResponse;
         List<String> projectNameList = new ArrayList<>();
         try {
-            if (monitorType.equalsIgnoreCase(UrlConstants.MONITOR_NO)) {
+            if (monitorType.equalsIgnoreCase(Common.MONITOR_NO)) {
                 //不知道为什么要这个逻辑，未改
 //                adsTableUtil.
                 String[] projectNameArray;
                 projectNameArray = restTemplate.getForObject(
-                        UrlConstants.DATAGOVERNANCE_BASEURL + "/datagovernance/dataOperation/getProjectName?stage={stage}",
+                        Common.DATAGOVERNANCE_BASEURL + "/datagovernance/dataOperation/getProjectName?stage={stage}",
                         String[].class, stage);
                 if (projectNameArray != null) {
                     projectNameList = Arrays.asList(projectNameArray);
                 }
                 serverResponse = ServerResponse.asSucessResponse(projectNameList);
-            } else if (monitorType.equalsIgnoreCase(UrlConstants.MONITOR_OK)) {
+            } else if (monitorType.equalsIgnoreCase(Common.MONITOR_OK)) {
                 //获取已经插入的项目名称
                 projectNameList = dataStorageMonitorDao.getAdsProjectAdd();
                 if (projectNameList != null && projectNameList.size() > 0) {
@@ -389,13 +391,13 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                 serverResponse = ServerResponse.asErrorResponse("传入的参数monitorType为【" + monitorType + "】不正确");
             }
         } catch (Exception e) {
-            logger.error("根据tablemange接口查询数据库【" + stage + "】所有项目名报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("根据tablemange接口查询数据库【" + stage + "】所有项目名报错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse("根据tablemange接口查询数据库【" + stage + "】所有项目名报错");
         }
         if (projectNameList != null) {
-            logger.info("根据tablemange接口查询数据库【" + stage + "】所有项目名为：\n" + projectNameList.toString());
+            log.info("根据tablemange接口查询数据库【" + stage + "】所有项目名为：\n" + projectNameList.toString());
         }
-        logger.info("根据tablemange接口查询数据库【" + stage + "】所有项目名结束=================================");
+        log.info("根据tablemange接口查询数据库【" + stage + "】所有项目名结束=================================");
         return serverResponse;
     }
 
@@ -420,7 +422,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             pageVO.setRows(allSummaryTableByClassifyList);
             pageVO.setFilterSec(filterSec);
         } catch (Exception e) {
-            logger.error("获取表组织资产的汇总信息报错\n" + ExceptionUtil.getExceptionTrace(e));
+            log.error("获取表组织资产的汇总信息报错\n" + ExceptionUtil.getExceptionTrace(e));
         }
         return pageVO;
     }
@@ -488,7 +490,12 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         }
         if (StringUtils.isNotEmpty(sortName)) {
             if ("tableSize".equals(sortName) || "yesterdayCount".equals(sortName) || "tableAllCount".equals(sortName)) {
-                sortName = "to_number(" + sortName + ")";
+                String dbType = environment.getProperty("database.type");
+                if (dbType.equalsIgnoreCase("mysql")){
+                    sortName = "CAST(" + sortName + " AS UNSIGNED)";
+                }else {
+                    sortName = "to_number(" + sortName + ")";
+                }
             }
             if (StringUtils.isEmpty(sortOrder)){
                 sortOrder = "desc";
@@ -619,7 +626,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             detailedTableResultMap.setTotal(pageInfo.getTotal());
             serverResponse = ServerResponse.asSucessResponse(detailedTableResultMap);
         } catch (Exception e) {
-            logger.error("获取表组织资产的详细信息报错:", e);
+            log.error("获取表组织资产的详细信息报错:", e);
             serverResponse = ServerResponse.asErrorResponse("获取表组织资产的详细信息报错");
         }
         return serverResponse;
@@ -631,7 +638,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             String detectId = dataStorageMonitorDao.getDetectId(detailedTableByClassify);
             serverResponse = ServerResponse.asSucessResponse(detectId);
         }catch (Exception e){
-            logger.error("获取DetectId失败： \n" + ExceptionUtil.getExceptionTrace(e));
+            log.error("获取DetectId失败： \n" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asSucessResponse("获取DetectId失败");
         }
         return serverResponse;
@@ -641,8 +648,8 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse<NumStorageByPrimaryClassify> getRecordsStorageByPrimaryClassify(String cateGoryName) {
         ServerResponse<NumStorageByPrimaryClassify> serverResponse;
         try {
-            if (cateGoryName.equalsIgnoreCase(UrlConstants.DATA_ORGANIZATION_CLASSIFY)
-                    || cateGoryName.equalsIgnoreCase(UrlConstants.DATA_SOURCE_CLASSIFY)
+            if (cateGoryName.equalsIgnoreCase(Common.DATA_ORGANIZATION_CLASSIFY)
+                    || cateGoryName.equalsIgnoreCase(Common.DATA_SOURCE_CLASSIFY)
 //                    || cateGoryName.equalsIgnoreCase(TableOrganizationConstant.DATA_LABELS_CLASSIFY)
             ) {
                 // 数据组织分类
@@ -678,8 +685,8 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     numStorageByPrimaryClassify.setRecordsNumber(recordsNumberList);
                     numStorageByPrimaryClassify.setStorageSize(storageSizeList);
                     numStorageByPrimaryClassify.setTableNum(tableNumList);
-                    numStorageByPrimaryClassify.setRecordsUnit(UrlConstants.RECORDS_UNIT);
-                    numStorageByPrimaryClassify.setStorageUnit(UrlConstants.STORAGE_UNIT);
+                    numStorageByPrimaryClassify.setRecordsUnit(Common.RECORDS_UNIT);
+                    numStorageByPrimaryClassify.setStorageUnit(Common.STORAGE_UNIT);
                     numStorageByPrimaryClassify.setTableNumUnit("张");
                     serverResponse = ServerResponse.asSucessResponse(numStorageByPrimaryClassify);
                 } else {
@@ -690,7 +697,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                 serverResponse = ServerResponse.asErrorResponse("传入的大类名称【" + cateGoryName + "】不对");
             }
         } catch (Exception e) {
-            logger.error("查询柱状图报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("查询柱状图报错" + ExceptionUtil.getExceptionTrace(e));
             serverResponse = ServerResponse.asErrorResponse("查询柱状图报错");
         }
         return serverResponse;
@@ -718,7 +725,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
      */
     @Override
     public List<TreeNode> externalgetTableOrganizationTree(GetTreeReq req, Boolean isQueryTable, Boolean showLabel, Boolean showAll) {
-        logger.info("查询的参数为：" + req.toString() + " 是否精确到表:  " + isQueryTable);
+        log.info("查询的参数为：" + req.toString() + " 是否精确到表:  " + isQueryTable);
         List<TreeNode> treeNodes = new ArrayList<>();
         List<StandardTableRelation> standardRelationList;
         //  数据组织资产那边需要查询所有的分类 标准和非标准都要
@@ -828,7 +835,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             levelOne.setChildren(chlidOne);
             treeNodes.add(levelOne);
         }
-        logger.info("查询到的数据为：" + treeNodes.toString());
+        log.info("查询到的数据为：" + treeNodes.toString());
         Collections.sort(treeNodes, new Comparator<TreeNode>() {
             @Override
             public int compare(TreeNode o1, TreeNode o2) {
@@ -850,10 +857,10 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         //缓存name
         String cacheName = "approval";
         try {
-            json = restTemplate.getForObject(UrlConstants.DATAGOVERNANCE_BASEURL + "/datagovernance/navbar/getNavStatusByName?name={name}", String.class, "审批中心");
+            json = restTemplate.getForObject(Common.DATAGOVERNANCE_BASEURL + "/datagovernance/navbar/getNavStatusByName?name={name}", String.class, "审批中心");
             cacheManager.addOrUpdateCache(cacheName, JSONObject.parseObject(json).get("data"));
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             cacheManager.addOrUpdateCache(cacheName, false);
         }
         return (Boolean) cacheManager.getValue(cacheName);
@@ -862,7 +869,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     @Override
     synchronized
     public ServerResponse registerApproval(String toJsonString, String[] tableIds, JSONObject[] tableList, String userName, String userId, String organId) throws Exception {
-        logger.info("传递的参数为：" + toJsonString);
+        log.info("传递的参数为：" + toJsonString);
         asyManager.addTask(() -> dataStorageMonitorService.getDataResourceInfo());
         if (!getApprovalStatus()) {
             return updateRegisterState(tableIds, tableList, "3",userId);
@@ -911,7 +918,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                 return ServerResponse.asErrorResponse("含有在审批中的项");
             }
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             throw new Exception("查询审批信息失败");
         }
         return null;
@@ -919,116 +926,56 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
     @Override
     public ServerResponse updateLifeCycleApproval(RequestParameter requestParam) throws Exception {
-        String applicationInfo = "【" + requestParam.getUserName() + "】申请将表【" +
-                requestParam.getTableProject().split("->")[1] +
-                "." + requestParam.getTableNameEn() + "】的生命周期天数由【" +
-                requestParam.getOldValue() + "】改为【" + requestParam.getValue() + "】";
-        if (!getApprovalStatus()) {
-            requestParam.setApplicationInfo(applicationInfo);
-            requestParam.setStatus("3");
-            return updateLifeCycleStatus(requestParam);
-        }
         String nowValue = dataStorageMonitorDao.getLifeCycle(requestParam);
-        if (!requestParam.getOldValue().equalsIgnoreCase(nowValue)) {
+        if (nowValue != null && !requestParam.getOldValue().equalsIgnoreCase(nowValue)) {
             throw new Exception(",数据过期");
         }
-        /*拼接传递给 审批流程 的接口*/
-        DataApproval dataApproval = new DataApproval();
-        dataApproval.setTableProject(requestParam.getTableProject());
-        dataApproval.setTableNameEn(requestParam.getTableNameEn());
-        dataApproval.setApprovalType("updateLifeCycle");
-        List<DataApproval> dataApprovals = new ArrayList();
-        dataApprovals.add(dataApproval);
-        ServerResponse serverResponse = validateApprovals(dataApprovals);
-        if (serverResponse != null) {
-            return serverResponse;
-        }
-
-        ApprovalInfoParams approvalInfoParams = buildApprovalInfoParams("资产管理", "updateLifeCycle",
-                "更新生命周期", applicationInfo, JSON.toJSONString(requestParam),
-                "http://" + environment.getProperty("server.address") + ":" +
-                        environment.getProperty("server.port") +
-                        "/dataOrganizationMonitoring/ClassifyInterface/updateLifeCycleStatus");
-        Map paramMap = startApproval(approvalInfoParams, dataApprovals);
-        return ServerResponse.asSucessResponse(paramMap);
+        requestParam.setStatus("3");
+        return updateLifeCycleStatus(requestParam);
     }
 
     @Override
     public ServerResponse updateLifeCycleStatus(RequestParameter requestParam) {
-        ServerResponse serverResponse = null;
-        String platFormType = (String)cacheManager.getValue("dataPlatFormType");
-        if ("3".equals(requestParam.getStatus())) {
-            try {
-                String tableProjectString = requestParam.getTableProject();
-                String tableType = tableProjectString.split("->")[0];
-                String tableProject = tableProjectString.split("->")[1];
-//                if (PlatformType.ALI.equalsIgnoreCase(platFormType)) {
-                if ("ODPS".equalsIgnoreCase(tableType)) {
+        try {
+            String tableProjectString = requestParam.getTableProject();
+            String tableType = tableProjectString.split("->")[0];
+            String tableProject = tableProjectString.split("->")[1];
+            requestParam.setTableType(tableType);
+            requestParam.setTableProject(tableProject);
+            switch (tableType.toUpperCase()) {
+                case "ODPS":
                     odpsClient.updateTableCycle(tableProject, requestParam.getTableNameEn(), requestParam.getValue());
-                }
-//                    else if ("ADS".equalsIgnoreCase(tableType)) {
-//                        /*某些阿里平台需要加前缀*/
-//                        String prefix = "";
-//                        if (TableOrganizationConstant.SWITCH_ON.equals(environment.getProperty("queryAdsPrefix"))) {
-//                            prefix = "/*+engine=mpp*/";
-//                        }
-//                        String adsSql = prefix + "alter table {0} subpartition_available_partition_num = {1}";
-//                        String querySql = MessageFormat.format(adsSql, tableProject + "." + requestParam.getTableNameEn(),
-//                                requestParam.getValue());
-//                        logger.info("ADS的运行sql:" + querySql);
-//                        Connection connection = null;
-//                        Statement st = null;
-//                        try {
-//                            connection = adsDataSource.getConnection();
-//                            st = connection.createStatement();
-//                            st.executeQuery(querySql);
-//                        } finally {
-//                            if (st != null) {
-//                                st.close();
-//                            }
-//                            if (connection != null) {
-//                                connection.close();
-//                            }
-//                        }
-//                    }
-//                } else if (PlatformType.HUAWEI.equalsIgnoreCase(platFormType)) {
-                if ("HBASE".equalsIgnoreCase(tableType)) {
-                    //TODO 等hbase的修改生命周期接口
-                } else if (tableType.contains("hive")) {
-                    String retrunJsonStr = restTemplate.getForObject(environment.getProperty("dfWorkUrl") +
-                                    "/dfworks/interface/updateTableDataLife?dbType=Hive&dbName=" + tableProject +
-                                    "&tbName=" + requestParam.getTableNameEn() + "&lifeCycle=" + requestParam.getValue() + "天",
-                            String.class);
-                    logger.info("修改生命周期返回参数为" + retrunJsonStr);
-                    if (StringUtils.isNotBlank(retrunJsonStr)) {
-                        Map paramMap = JSON.parseObject(retrunJsonStr);
-                        if (paramMap != null && !"0".equalsIgnoreCase((String) paramMap.get("returnCode"))) {
-                            throw new Exception((String) paramMap.get("returnMessage"));
-                        }
-                    } else {
-                        throw new Exception("dfworks修改生命周期返回异常");
-                    }
-                }
-                dataStorageMonitorDao.updateLifeCycleApprovalStatus(requestParam);
-                DataProcess dataProcess = new DataProcess();
-                dataProcess.setUserId(Integer.valueOf(requestParam.getUserId()));
-                dataProcess.setTableNameEn(requestParam.getTableProject().split("->")[1] + requestParam.getTableNameEn());
-                dataProcess.setOperateTime(DateUtil.formatDateTime(new Date()));
-                dataProcess.setIp(environment.getProperty("server.address", StringUtils.EMPTY));
-                dataProcess.setModuleId("ZCGL");
-                dataProcess.setLogType("ZCGL001");
-                dataProcess.setDigest(requestParam.getApplicationInfo() == null ? "修改源表的生命周期" : requestParam.getApplicationInfo());
-                dataProcess.setDataBaseType(requestParam.getTableProject().split("->")[0]);
-                dataProcessService.saveDataProcess(dataProcess);
-                sendOperatorLogLC(3, requestParam);
-                serverResponse = ServerResponse.asSucessResponse("修改成功", requestParam);
-            } catch (Exception e) {
-                dataStorageMonitorDao.updateFailLifeCycleApprovalStatus(requestParam);
-                logger.error(ExceptionUtil.getExceptionTrace(e));
-                serverResponse = ServerResponse.asErrorResponse("修改生命周期失败");
+                case "HIVE-CDH":
+                    dfworksUpdateLifeCycle(requestParam);
+                case "HIVE-HUAWEI":
+                    dfworksUpdateLifeCycle(requestParam);
+                case "HBASE":
+                    break;
+                default:
+                    break;
             }
+            sendOperatorLogLC(3, requestParam);
+            return ServerResponse.asSucessResponse("修改成功", requestParam);
+        } catch (Exception e) {
+            log.error(">>>>>>修改生命周期失败：", e);
+            return ServerResponse.asErrorResponse("修改生命周期失败");
         }
-        return serverResponse;
+    }
+
+    public void dfworksUpdateLifeCycle(RequestParameter requestParam) throws Exception {
+        String dfworkUrl = environment.getRequiredProperty("dfWorkUrl") + "/dfworks/interface/updateLifeCycle";
+        JSONObject param = new JSONObject();
+        param.put("dbType", "Hive");
+        param.put("dbName", requestParam.getTableProject());
+        param.put("tbName", requestParam.getTableNameEn());
+        param.put("lifeCycle", requestParam.getValue() + "天");
+        RestTemplate rest = new RestTemplate();
+        String retrunJsonStr = rest.postForObject(dfworkUrl, param, String.class);
+        log.info(">>>>>>修改hive生命周期返回参数为：" + retrunJsonStr);
+        if (JSONObject.parseObject(retrunJsonStr).getInteger("code") != 200){
+            throw new Exception((String) JSONObject.parseObject(retrunJsonStr).get("msg"));
+        }
+        lifeCycleDao.updateLifeCycleForTOA(requestParam);
     }
 
     public void sendOperatorLogLC(int operateType, RequestParameter requestParameter) {
@@ -1041,9 +988,9 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         String operatorCondition = String.format("在%s>%s的[%s]。", requestParameter.getTableType(), requestParameter.getTableProject(), requestParameter.getTableNameEn());
         operatorLog.setOperateCondition(operatorCondition);
         if (restTemplateHandle.OperatorLogSend(operatorLog)) {
-            logger.info("===============生命周期管理操作日志发送成功");
+            log.info("===============生命周期管理操作日志发送成功");
         } else {
-            logger.error("===============生命周期管理操作日志发送失败");
+            log.error("===============生命周期管理操作日志发送失败");
         }
     }
 
@@ -1063,9 +1010,9 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     private Map startApproval(ApprovalInfoParams approvalInfoParams, List<DataApproval> dataApprovals) throws Exception {
         Map paramMap = new HashMap();
         String approvalId;
-        JSONObject returnObject = restTemplate.postForObject(UrlConstants.DATAGOVERNANCE_BASEURL + "/datagovernance/process/saveOrUpdateApprovalInfo",
+        JSONObject returnObject = restTemplate.postForObject(Common.DATAGOVERNANCE_BASEURL + "/datagovernance/process/saveOrUpdateApprovalInfo",
                 approvalInfoParams, JSONObject.class);
-        logger.info("审批流程返回的数据为：" + JSONObject.toJSONString(JSONObject.toJSONString(returnObject)));
+        log.info("审批流程返回的数据为：" + JSONObject.toJSONString(JSONObject.toJSONString(returnObject)));
         if (returnObject.getInteger("status") == 1) {
             /*表示调用审批流程成功*/
             approvalId = returnObject.getString("result");
@@ -1088,7 +1035,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     item -> dataStorageMonitorDao.updateApprovalStatus(item)
             );
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("更新审批状态失败");
         }
 
@@ -1103,13 +1050,13 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                                                                               String dataBaseType) {
         List<NeedAddRealTimeTable> needAddRealTimeTableList = Collections.synchronizedList(new ArrayList<>());
         ServerResponse serverResponse = null;
-        if (monitorType.equalsIgnoreCase(UrlConstants.MONITOR_NO)) {
+        if (monitorType.equalsIgnoreCase(Common.MONITOR_NO)) {
             List<NeedAddRealTimeTable> allExistTable = dataStorageMonitorDao.getAllRealTimeTable();
             //先判断项目名称是否能模糊匹配到
 //            String[] projectNames = restTemplate.getForObject(TableOrganizationConstant.DATARESOURCE_BASEURL + "/DataResource/getSchemaByResourceId?resourceId={dataSourceId}", String[].class, dataSourceId);
             List<JSONObject> projectNames = null;
             List<String> projectTemp = new ArrayList<>();
-            String result = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getProjectList?resId=" + dataSourceId, String.class);
+            String result = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getProjectList?resId=" + dataSourceId, String.class);
             if(StringUtils.isNotBlank(result) && "1".equals(JSONObject.parseObject(result).getString("status"))) {
                 String dataStr = JSONObject.parseObject(result).getObject("data", String.class);
                 projectNames = JSONArray.parseArray(dataStr, JSONObject.class);
@@ -1142,13 +1089,13 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
                             // 获取项目下的表信息
                             List<DataResourceParam> paramList = null;
-                            String dpsStr = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getTablesIncludeDetectedInfo?resId={dataSourceId}&projectName={projectName}", String.class, dataSourceId, item);
+                            String dpsStr = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getTablesIncludeDetectedInfo?resId={dataSourceId}&projectName={projectName}", String.class, dataSourceId, item);
                             if (StringUtils.isNotBlank(dpsStr) && "1".equals(JSONObject.parseObject(dpsStr).getString("status"))){
                                 String dataStr = JSONObject.parseObject(dpsStr).getString("data");
                                 paramList = JSONArray.parseArray(dataStr,DataResourceParam.class);
                             }
                             // 获取数据源
-                            String getAllResources = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getAllResources", String.class);
+                            String getAllResources = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getAllResources", String.class);
                             List<JSONObject> allDataResrouce = null;
                             if(StringUtils.isNotBlank(getAllResources) && "1".equals(JSONObject.parseObject(getAllResources).getString("status"))){
                                 String str = JSONObject.parseObject(getAllResources).getObject("data",String.class);
@@ -1186,8 +1133,8 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                                         }
                                     }
                                 } catch (Exception e) {
-                                    logger.error(dp.toString());
-                                    logger.error(ExceptionUtil.getExceptionTrace(e));
+                                    log.error(dp.toString());
+                                    log.error(ExceptionUtil.getExceptionTrace(e));
                                 }
                             });
                             try {
@@ -1196,7 +1143,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                                     return;
                                 }
                             } catch (Exception e) {
-                                logger.error(paramList.toString());
+                                log.error(paramList.toString());
                             }
                             paramList.parallelStream().forEach(dp -> {
                                 try {
@@ -1206,12 +1153,12 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                                         resultList.add(dp);
                                     }
                                 } catch (Exception e) {
-                                    logger.error(dp.toString());
-                                    logger.error(ExceptionUtil.getExceptionTrace(e));
+                                    log.error(dp.toString());
+                                    log.error(ExceptionUtil.getExceptionTrace(e));
                                 }
                             });
                         } catch (Exception e) {
-                            logger.error(ExceptionUtil.getExceptionTrace(e));
+                            log.error(ExceptionUtil.getExceptionTrace(e));
                         }
                     });
             List<NeedAddRealTimeTable> finalNeedAddRealTimeTableList = needAddRealTimeTableList;
@@ -1235,12 +1182,12 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     n.setIsAddMonitor("待控");
                     finalNeedAddRealTimeTableList.add(n);
                 } catch (Exception e) {
-                    logger.error(item.toString());
-                    logger.error(ExceptionUtil.getExceptionTrace(e));
+                    log.error(item.toString());
+                    log.error(ExceptionUtil.getExceptionTrace(e));
                 }
             });
             serverResponse = ServerResponse.asSucessResponse(needAddRealTimeTableList);
-        } else if (monitorType.equalsIgnoreCase(UrlConstants.MONITOR_OK)) {
+        } else if (monitorType.equalsIgnoreCase(Common.MONITOR_OK)) {
             needAddRealTimeTableList = dataStorageMonitorDao.getNeedAddRealTimeTableList(
                     dataBaseType, tableName);
             needAddRealTimeTableList.parallelStream().forEach(dp -> {
@@ -1253,7 +1200,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             });
             serverResponse = ServerResponse.asSucessResponse(needAddRealTimeTableList);
         } else {
-            logger.error("monitorType类别不正确为" + monitorType);
+            log.error("monitorType类别不正确为" + monitorType);
             serverResponse = ServerResponse.asErrorResponse("monitorType类别不正确为" + monitorType);
         }
         return serverResponse;
@@ -1275,12 +1222,12 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         if ("3".equals(status)) {
             try {
                 Date todayNow = DateUtil.parseDate(DateUtil.formatDate(new Date(), DateUtil.DEFAULT_PATTERN_DATETIME_SIMPLE), DateUtil.DEFAULT_PATTERN_DATETIME_SIMPLE);
-                logger.info("=======开始向资源服务平台注册数据=========");
+                log.info("=======开始向资源服务平台注册数据=========");
                 if(StringUtils.isBlank(userId)){
                     userId = String.valueOf(AuthorizedUserUtils.getInstance().getAuthor().getUserId());
                 }
-                logger.info("userId==========" + userId);
-                if (UrlConstants.SWITCH_ON.equals(environment.getProperty("dataResourceInfo"))) {
+                log.info("userId==========" + userId);
+                if (Common.SWITCH_ON.equals(environment.getProperty("dataResourceInfo"))) {
                     // 统计资产表今日数据量如果为0，则获取昨天数据
                     int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
                     int daysAgo = todayAssetsCount<100?1:0;
@@ -1291,16 +1238,16 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     paramMap.put("tableIdList", list);
                 } else {
 //                    paramMap.put("tableIdList", tablelist);
-                    logger.error("dataResourceInfo值不为1，注册失败");
+                    log.error("dataResourceInfo值不为1，注册失败");
                     return ServerResponse.asErrorResponse("dataResourceInfo值不为1，注册失败");
                 }
                 String registerInterfaceUrl = environment.getRequiredProperty("nginxIp");
-                logger.info("开始调用注册接口，注册列表为：" + JSONObject.toJSON(paramMap).toString());
+                log.info("开始调用注册接口，注册列表为：" + JSONObject.toJSON(paramMap).toString());
                 String registerInterfaceString = restTemplate.postForObject(registerInterfaceUrl + "/classifyserver/interface/registerResource", paramMap, String.class);
-                logger.info("注册返回信息为："+registerInterfaceString);
+                log.info("注册返回信息为："+registerInterfaceString);
                 registerInterfaceMap = JSON.parseObject(registerInterfaceString);
-                logger.info("=======注册完成=========");
-                logger.info("=======开始更新本地注册状态数据=========");
+                log.info("=======注册完成=========");
+                log.info("=======开始更新本地注册状态数据=========");
                 Boolean flag = (Boolean) registerInterfaceMap.get("isSuccess");
                 List<DetailedTableByClassify> allUpdateList = new ArrayList<>();
                 for (JSONObject dtc : tableList) {
@@ -1327,10 +1274,10 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                         return ServerResponse.asErrorResponse("注册失败");
                     }
                 }
-                logger.info("=======更新本地注册状态完成=========");
+                log.info("=======更新本地注册状态完成=========");
             } catch (Exception e) {
-                logger.error(ExceptionUtil.getExceptionTrace(e));
-                logger.error("注册失败");
+                log.error(ExceptionUtil.getExceptionTrace(e));
+                log.error("注册失败");
                 return ServerResponse.asErrorResponse("注册失败" + e.toString());
             }
         } else if ("4".equals(status)) {
@@ -1350,7 +1297,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     asyManager.addTask(()->dataStorageMonitorDao.updateRegisterInterfaceFailedData(allUpdateList));
                 }
             } catch (Exception e) {
-                logger.error(ExceptionUtil.getExceptionTrace(e));
+                log.error(ExceptionUtil.getExceptionTrace(e));
                 return ServerResponse.asErrorResponse(e.toString());
             }
             return ServerResponse.asSucessResponse("审批取消", tablelist);
@@ -1372,20 +1319,20 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         MultiValueMap<String, Object> paramap = new LinkedMultiValueMap<>();
         paramap.add("tableIds", tableIds.toString());
         try {
-            logger.info("=======开始更新注册状态=========");
+            log.info("=======开始更新注册状态=========");
             String registerInterfaceUrl = environment.getRequiredProperty("nginxIp");
             String registerInterfaceString = restTemplate.getForObject(registerInterfaceUrl + "/classifyserver/interface/validateService?tableIds={tableIds}", String.class, tableIds.toString());
-            logger.info("获取接口返回为:" + registerInterfaceString);
+            log.info("获取接口返回为:" + registerInterfaceString);
             registerInterfaceMap = JSON.parseObject(registerInterfaceString);
-            logger.info("=======获取注册状态完成=========");
-            logger.info("=======开始更新本地注册状态数据=========");
+            log.info("=======获取注册状态完成=========");
+            log.info("=======开始更新本地注册状态数据=========");
             Boolean flag = (Boolean) registerInterfaceMap.get("isSuccess");
             if (flag) {
                 Map<String, Object> map = JSON.parseObject(JSON.toJSONString(registerInterfaceMap.get("data")));
                 tablelist = JSON.parseArray(JSON.toJSONString(map.get("tableList")), RegisterState.class);
-                logger.info("=======更新本地注册状态数据完成=========");
+                log.info("=======更新本地注册状态数据完成=========");
             } else {
-                logger.info("=======更新本地注册状态数据完成=========");
+                log.info("=======更新本地注册状态数据完成=========");
                 return ServerResponse.asErrorResponse("注册状态更新失败");
             }
             tablelist.parallelStream().filter(item -> item.getTYPE() != 1).forEach(item -> {
@@ -1398,7 +1345,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                 asyManager.addTask(()->dataStorageMonitorDao.updateRegisterState(tablelist));
             }
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("注册状态更新失败");
         }
         return ServerResponse.asSucessResponse(tablelist);
@@ -1407,11 +1354,11 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     @Override
     public ServerResponse<List<String>> updateObjectState(List<String> tableIdList, String state) {
         try {
-            logger.info("=======开始更新使用状态=========");
+            log.info("=======开始更新使用状态=========");
             dataStorageMonitorDao.updateObjectState(tableIdList, state);
-            logger.info("=======更新使用状态完成=========");
+            log.info("=======更新使用状态完成=========");
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("使用状态更新失败");
         }
 
@@ -1422,9 +1369,9 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 //    public ServerResponse getLabelsByType(String label) {
 //        List<PageSelectOneValue> labels = new ArrayList();
 //        try {
-//            logger.info("=======开始获取标签=========");
+//            log.info("=======开始获取标签=========");
 //            labels = dataStorageMonitorDao.getLabelsByType(label);
-//            logger.info("=======获取标签完成=========");
+//            log.info("=======获取标签完成=========");
 //            Iterator<PageSelectOneValue> it = labels.iterator();
 //            while (it.hasNext()) {
 //                PageSelectOneValue ps = it.next();
@@ -1433,7 +1380,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 //                }
 //            }
 //        } catch (Exception e) {
-//            logger.error(ExceptionUtil.getExceptionTrace(e));
+//            log.error(ExceptionUtil.getExceptionTrace(e));
 //            return ServerResponse.asErrorResponse("获取项目名失败");
 //        }
 //        return ServerResponse.asSucessResponse(labels);
@@ -1443,12 +1390,12 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse getProjectNameByType(String stroageLocation) {
         List<PageSelectOneValue> projectList;
         try {
-            logger.info("=======开始获取项目名=========");
+            log.info("=======开始获取项目名=========");
             projectList = dataStorageMonitorDao.getProjectNameByType(stroageLocation);
-            logger.info("=======获取项目名完成=========");
+            log.info("=======获取项目名完成=========");
             projectList.removeIf(ps -> ps.getValue() == null || "".equals(ps.getValue().trim()));
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("获取项目名失败");
         }
         return ServerResponse.asSucessResponse(projectList);
@@ -1458,11 +1405,11 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse getStorageNum() {
         List<PageSelectOneValue> countList;
         try {
-            logger.info("=======开始获取存储位置数量=========");
+            log.info("=======开始获取存储位置数量=========");
             countList = dataStorageMonitorDao.getStorageNum();
-            logger.info("=======获取存储位置数量结束=========");
+            log.info("=======获取存储位置数量结束=========");
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("获取存储位置数量失败");
         }
         return ServerResponse.asSucessResponse(countList);
@@ -1472,11 +1419,11 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse getLabelNum() {
         List<PageSelectOneValue> countList = null;
         try {
-            logger.info("=======开始获取存储位置数量=========");
+            log.info("=======开始获取存储位置数量=========");
             countList = dataStorageMonitorDao.getLabelNum();
-            logger.info("=======获取存储位置数量结束=========");
+            log.info("=======获取存储位置数量结束=========");
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("获取存储位置数量失败");
         }
         return ServerResponse.asSucessResponse(countList);
@@ -1486,13 +1433,13 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse getSourceStateNum() {
         List<Map<String, Object>> countList;
         try {
-            logger.info("=======开始获取存储位置数量=========");
+            log.info("=======开始获取存储位置数量=========");
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
             countList = dataStorageMonitorDao.getSourceStateNum(daysAgo);
-            logger.info("=======获取存储位置数量结束=========");
+            log.info("=======获取存储位置数量结束=========");
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
+            log.error(ExceptionUtil.getExceptionTrace(e));
             return ServerResponse.asErrorResponse("获取存储位置数量失败");
         }
         return ServerResponse.asSucessResponse(countList);
@@ -1503,7 +1450,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     public ServerResponse getTableType() {
         List<String> tableTypeList = new ArrayList<>();
         try {
-            logger.info("=======开始获表类型=========");
+            log.info("=======开始获表类型=========");
             int todayAssetsCount = dataStorageMonitorDao.getTodayAssetsCount();
             int daysAgo = todayAssetsCount<100?1:0;
             List<String> tableTypeList1 = dataStorageMonitorDao.getTableType(daysAgo);
@@ -1514,9 +1461,9 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     tableTypeList.add(tableType);
                 }
             }
-            logger.info("=======获取表类型完成=========");
+            log.info("=======获取表类型完成=========");
         } catch (Exception e) {
-            logger.error("获取表类型失败:", e);
+            log.error("获取表类型失败:", e);
             return ServerResponse.asErrorResponse("获取表类型失败");
         }
         return ServerResponse.asSucessResponse(tableTypeList);
@@ -1638,8 +1585,8 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
             }
         } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
-            logger.error("表资产导出失败");
+            log.error(ExceptionUtil.getExceptionTrace(e));
+            log.error("表资产导出失败");
         }
 
     }
@@ -1763,6 +1710,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         if (StringUtils.isBlank(tableOrganizationShowFields)){
             tableOrganizationShowFields = "notNull";
         }
+        dataStorageMonitorDao.delTableOrganizationShowField(tableOrganizationShowFields, authorizedUser.getUserName());
         dataStorageMonitorDao.updateTableOrganizationShowField(tableOrganizationShowFields, authorizedUser.getUserName());
     }
 

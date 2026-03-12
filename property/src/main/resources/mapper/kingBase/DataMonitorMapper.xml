@@ -7,7 +7,7 @@
 
     <select id="getAllNeedRealTimeTable" resultType="com.synway.property.pojo.datastoragemonitor.NeedAddRealTimeTable">
 		select database_type as  dataBaseType ,project_name  as projectName, tablename_en as tableNameEN,
-		tablename_ch as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_ID as dataSourceId from DATA_STORAGE_ADD_TABLE
+		tablename_ch as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_ID as dataSourceId from DP_DATA_STORAGE_ADD_TABLE
 		where ISDELETE = '0' and ISADDMONITOR = '已控'
 	</select>
 
@@ -16,14 +16,14 @@
         select t1.database_type as dataBaseType , t1.tablename_en as tableNameEN,t1.tablename_ch as tableNameCH ,'0' as tableTodaySum
          , case when t2.tableallcount is null then 0 else t2.tableallcount end as tableAllSum ,
          to_char(sysdate,'yyyyMMddHH24miss') as statisticDay , t1.project_name as tableProject ,
-         sys_guid()||trunc(dbms_random.value(0,100000000)) as statisticId from DATA_STORAGE_ADD_TABLE t1
+         sys_guid()||trunc(dbms_random.value(0,100000000)) as statisticId from DP_DATA_STORAGE_ADD_TABLE t1
          left join (select tableproject ,tablename, tableallcount from (select row_number() over(partition by tableproject||tablename  order by INSERTEDDATATIME desc) rn ,
          tableproject ,tablename , ispartition ,INSERTEDDATATIME , tableallcount from SYNLTE.SYNDMG_TABLE_ALL) where rn =1 )t2
          on t1.project_name||t1.tablename_en = t2.tableproject||t2.tablename
     </select>
 
     <delete id="deleteTodayDataStorageTable">
-        delete from DATA_STORAGE_TABLE_full where substr(STATISTIC_DAY ,0,8)= #{dt}
+        delete from DP_DATA_STORAGE_TABLE_FULL where substr(STATISTIC_DAY ,0,8)= #{dt}
     </delete>
 
     <insert id="insertIntoAllRealTimeMessage"
@@ -31,7 +31,7 @@
             useGeneratedKeys="false">
         INSERT ALL
         <foreach collection="list" item="item" index="index">
-            INTO DATA_STORAGE_TABLE_full (TABLE_NAME_EN , TABLE_NAME_CH , TABLE_TODAY_SUM ,
+            INTO DP_DATA_STORAGE_TABLE_FULL (TABLE_NAME_EN , TABLE_NAME_CH , TABLE_TODAY_SUM ,
             TABLE_ALL_SUM,STATISTIC_DAY,TABLE_PROJECT,STATISTIC_ID ,DATABASE_TYPE) VALUES
             (#{item.tableNameEN,jdbcType=VARCHAR},
             #{item.tableNameCH,jdbcType=VARCHAR},#{item.tableTodaySum,jdbcType=VARCHAR},
@@ -247,7 +247,7 @@
             TABLEUSECOUNTOFMONTH || '/' || TABLEUSECOUNT AS frequency,
             TABLEUSECOUNTOFMONTH
             FROM
-            storecycleanduseheat
+            DP_STORECYCLEANDUSEHEAT
         ) t5
         ON upper( t5.TABLENAMEEN ) = upper( t4.tableproject || '.' || t4.tableNameEn )
         AND upper( t5.TABLETYPE ) = upper( t4.tableType )
@@ -256,7 +256,7 @@
 
     <!--删除表组织资产的相关数据-->
     <delete id="deleteAllOrganizationData">
-        delete from table_organization_assets where STATISTICS_TIME > trunc(sysdate)
+        delete from DP_TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME > trunc(sysdate)
     </delete>
 
     <!--删除权限表的相关数据-->
@@ -268,7 +268,7 @@
             parameterType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
         INSERT ALL
         <foreach collection="list" item="item" index="index">
-            INTO TABLE_ORGANIZATION_ASSETS
+            INTO DP_TABLE_ORGANIZATION_ASSETS
             (SJXJBM,NAME,TABLE_NAME_EN,PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,PRIMARY_ORGANIZATION_CH,
             SECONDARY_ORGANIZATION_CH,FACTOR_ONE_NAME,FACTOR_TWO_NAME,FACTOR_DETAILED_NAME,FACTOR_ATTRIBUTES_NAME,TABLE_ALL_COUNT,
             TABLE_SIZE,TABLE_PROJECT,LIFE_CYCLE,TABLE_TYPE,YESTERDAY_COUNT,PARTITION_MESSAGE,AVERAGE_DAILY_VOLUME,VALUE_RATE,NULL_RATE,
@@ -318,7 +318,7 @@
     </insert>
 
     <select id="getRegisterApprovals" resultType="com.synway.property.pojo.datastoragemonitor.TableOrganizationData">
-        select upper(SJXJBM) as sjxjbm,upper(TABLE_NAME_EN) as tableNameEn,APPROVAL_STATUS as registerState from DATA_REGISTER
+        select upper(SJXJBM) as sjxjbm,upper(TABLE_NAME_EN) as tableNameEn,APPROVAL_STATUS as registerState from DP_DATA_REGISTER
         where APPROVAL_STATUS ='2' and APPROVAL_TYPE = 'register'
     </select>
 
@@ -370,7 +370,7 @@
                a.object_state as objectState,
                b.SJZZFLCODEID as organizationIdLastLevel,
                b.SJLYFLCODEID as dataresourceIdLastLevel
-          from TABLE_ORGANIZATION_ASSETS_TEMP a
+          from DP_TABLE_ORGANIZATION_ASSETS_TEMP a
           left join (SELECT DISTINCT SJXJBM,TABLENAME,
                             case when SJYJFLCODENAME is null or SJYJFLCODENAME = '' then 'null' else 'JZCODEGASJZZFL' || SJYJFLCODENAME || SJEJFLCODENAME || SJSJFLCODENAME end as SJZZFLCODEID,
                             case when SJLYYJCODENAME is null or SJLYYJCODENAME = '' then 'null' else 'GACODE000404' || SJLYYJCODENAME || SJLYEJCODENAME end as SJLYFLCODEID
@@ -378,7 +378,7 @@
     </select>
 
     <delete id="deleteOdpsAdsTableInfo">
-        delete from TABLE_ORGANIZATION_ASSETS_TEMP where
+        delete from DP_TABLE_ORGANIZATION_ASSETS_TEMP where
         <foreach collection="list" item="item" index="index" separator="or">
             TABLE_NAME_EN = #{item.tableNameEn}
         </foreach>
@@ -431,7 +431,7 @@
             TABLEALLCOUNT,
             TABLESIZE,
             INSERTEDDATATIME,
-            TABLETYPE)
+            TABLETYPE,DATAID)
             VALUES
             (#{item.TABLECOMMENT, jdbcType = VARCHAR},
             #{item.TABLEPROJECT, jdbcType = VARCHAR},
@@ -444,7 +444,7 @@
             #{item.TABLEALLCOUNT, jdbcType = VARCHAR},
             #{item.TABLESIZE, jdbcType = VARCHAR},
             to_char(sysdate, 'yyyy-MM-dd HH24:mi:ss'),
-            '4')
+            '4',#{item.DATAID, jdbcType = VARCHAR})
         </foreach>
         SELECT 1 FROM DUAL
     </insert>
@@ -544,7 +544,7 @@
         <foreach collection="list" item="item">
             <if test="item.tableName != null and item.organization!=null and item.projectName!=null">
                 <if test="item.updateDate!=null or item.updatePeriod!=null or item.belongSystemCode!=null or item.lastDataModifiedTime!=null">
-                    update TABLE_ORGANIZATION_ASSETS
+                    update DP_TABLE_ORGANIZATION_ASSETS
                     set update_date = #{item.updateDate,jdbcType=VARCHAR},
                     update_period = #{item.updatePeriod,jdbcType=VARCHAR},
                     DATARESOURCE_CODE = #{item.belongSystemCode,jdbcType=VARCHAR},
@@ -570,7 +570,7 @@
         select SJXJBM as tableId,TABLE_NAME_EN as tableNameEn,OBJECT_ID as objectId,APPROVAL_ID as approvalId,
         APPROVAL_STATUS as approvalStatus,APPROVAL_CREATE_TIME as approvalCreateTime,
         APPROVAL_UPDATE_TIME as approvalUpdateTime,APPROVAL_TYPE as approvalType,
-        TABLE_PROJECT as tableProject from DATA_REGISTER
+        TABLE_PROJECT as tableProject from DP_DATA_REGISTER
         where
         APPROVAL_STATUS ='2' and APPROVAL_TYPE = #{approvalType,jdbcType=VARCHAR}
     </select>
@@ -628,7 +628,7 @@
             case
                 when SJYJFLCODENAME is null
                 or SJYJFLCODENAME = '' then 'null'
-                else 'JZCODEGASJZZFL' || SJYJFLCODENAME || SJEJFLCODENAME || SJSJFLCODENAME
+                else #{sjzzflCodeId} || SJYJFLCODENAME || SJEJFLCODENAME || SJSJFLCODENAME
             end as organizationIdLastLevel,
             case
                 when SJLYYJCODENAME is null
@@ -743,12 +743,12 @@
                     TABLEUSECOUNTOFMONTH || '/' || TABLEUSECOUNT AS frequency,
                     TABLEUSECOUNTOFMONTH
                 FROM
-                    storecycleanduseheat
+                    DP_STORECYCLEANDUSEHEAT
             )
     </select>
 
     <delete id="deleteOverTimeAssets" >
-        delete from TABLE_ORGANIZATION_ASSETS where trunc(sysdate - #{item}) > STATISTICS_TIME
+        delete from DP_TABLE_ORGANIZATION_ASSETS where trunc(sysdate - #{item}) > STATISTICS_TIME
     </delete>
 
     <select id="getStandardBillNum" resultType="java.lang.String">

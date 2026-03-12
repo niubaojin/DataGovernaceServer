@@ -30,7 +30,7 @@
     </sql>
 
     <insert id="saveDataProcess" parameterType="com.synway.property.pojo.DataProcess.DataProcess">
-        insert into DATAPROCESS(AREA_ID,DEPT,OPERATOR,POLICENO,APP_ID,MODULE_ID,OPERATE_TIME,
+        insert into DP_DATAPROCESS(AREA_ID,DEPT,OPERATOR,POLICENO,APP_ID,MODULE_ID,OPERATE_TIME,
         IP,LOG_TYPE,DIGEST,DATA_BASE_TYPE,TABLE_NAME_EN,TABLE_ID,id)
         values(#{areaId},#{dept},#{operator},#{policeno},#{appId},#{moduleId},#{operateTime},#{ip},
         #{logType},#{digest},#{dataBaseType},#{tableNameEn},#{tableId},#{id})
@@ -47,7 +47,7 @@
         IP as ip ,LOG_TYPE as logType,DIGEST as digest ,DATA_BASE_TYPE as dataBaseType,
         TABLE_NAME_EN as tableNameEn,TABLE_ID as tableId,t2.code_value as moduleIdStr ,t3.code_value as logTypeStr
         from (
-        select * from DATAPROCESS
+        select * from DP_DATAPROCESS
         <where>
             <include refid="queryWhereConditions"/>
             <if test="searchValue != null and searchValue !='' ">
@@ -72,17 +72,17 @@
     <select id="searchValuePrompt" parameterType="com.synway.property.pojo.DataProcess.DataProcessRequest"
             resultType="com.synway.property.pojo.DataProcess.PromptValue">
         select text_name  as textVlaue , moduleId from (
-        select OPERATOR  as text_name, MODULE_ID as moduleId from DATAPROCESS
+        select OPERATOR  as text_name, MODULE_ID as moduleId from DP_DATAPROCESS
         <where>
             <include refid="queryWhereConditions"/>
         </where>
         UNION ALL
-        select TASK_NAME as text_name , MODULE_ID as moduleId from DATAPROCESS
+        select TASK_NAME as text_name , MODULE_ID as moduleId from DP_DATAPROCESS
         <where>
             <include refid="queryWhereConditions"/>
         </where>
         UNION ALL
-        select DIGEST as text_name , MODULE_ID as moduleId from DATAPROCESS
+        select DIGEST as text_name , MODULE_ID as moduleId from DP_DATAPROCESS
         <where>
             <include refid="queryWhereConditions"/>
         </where>

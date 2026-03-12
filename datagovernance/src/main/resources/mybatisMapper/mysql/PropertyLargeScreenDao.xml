@@ -1,0 +1,828 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.PropertyLargeScreenDao">
+
+	<select id="getYesterdayCount" resultType="com.synway.governace.pojo.largeScreen.TotalDataProperty">
+        SELECT
+            CASE
+                WHEN SUM(partitioncount) IS NULL THEN 0
+                ELSE ROUND(SUM(partitioncount) / 1e8, 2)
+            END AS dailyIncrement,
+            CASE
+                WHEN SUM(tableallcount) IS NULL THEN 0
+                ELSE ROUND(SUM(tableallcount) / 1e8, 2)
+            END AS dataTotalVolume
+        FROM synlte.syndmg_table_all
+        WHERE DATE_FORMAT(STR_TO_DATE(INSERTEDDATATIME, '%Y-%m-%d %H:%i:%s'), '%Y%m%d') = DATE_FORMAT(CURDATE(), '%Y%m%d')
+    </select>
+
+    <delete id="delDataByTypeAndFlag">
+          delete from DGN_PROPERTY_LARGE
+          where type = #{type} and Save_flag=#{saveFlag}
+    </delete>
+
+    <insert id="insertData">
+        insert into DGN_PROPERTY_LARGE(ID,DATA,type,Save_flag)
+        VALUES(#{id,jdbcType=VARCHAR},#{data,jdbcType=CLOB},#{type,jdbcType=NUMERIC},0)
+    </insert>
+
+
+    <select id="getOriginalDataList" resultType="com.synway.governace.pojo.largeScreen.StandardLabelData">
+        SELECT
+            secondary_organization_ch AS name,
+            COUNT(DISTINCT table_name_en) AS tableCount,
+            SUM(YESTERDAY_COUNT) AS tableDataVolume
+        FROM
+            DP_TABLE_ORGANIZATION_ASSETS
+        WHERE
+            primary_organization_ch = '原始库' AND
+            statistics_time >= STR_TO_DATE(#{dateStr}, '%Y-%m-%d')
+        GROUP BY
+            secondary_organization_ch
+    </select>
+
+    <select id="getAllClassifyCh" resultType="java.lang.String">
+        SELECT DISTINCT secondaryClassifyCh
+        FROM (
+            SELECT
+                v1.codeid AS mainClassifyId,
+                v1.codetext AS mainClassifyCh,
+                v2.codeid AS primaryClassifyId,
+                v2.codetext AS primaryClassifyCh,
+                v3.codeid AS secondaryClassifyId,
+                v3.codetext AS secondaryClassifyCh
+            FROM (
+                SELECT CODEID, CODENAME, CODETEXT, PARCODEID
+                FROM v_classify_info
+                WHERE codetext = '数据组织分类'
+            ) AS v1
+            LEFT JOIN v_classify_info AS v2 ON v1.codeid = v2.PARCODEID
+            LEFT JOIN v_classify_info AS v3 ON v2.codeid = v3.PARCODEID
+        ) AS subquery
+        WHERE primaryClassifyCh = '原始库'
+    </select>
+
+    <select id="getFiledClassDataList" resultType="com.synway.governace.pojo.largeScreen.FiledClassData">
+         select c.field_class as fieldClassId,
+                       c.valtext as fieldClassCh,
+                       count(distinct a.objectid) as tableCount
+                  from (SELECT s.field_class, s.fieldid, b.valtext
+                          FROM (select field_class, fieldid
+                                  from synlte.SYNLTEFIELD
+                                 where field_class is not null and deleted = 0) s
+                          left join (select valvalue, valtext
+                                      from synlte.fieldcodeval
+                                     where codeid = 'JZCODEGAZDFL') b on s.field_class =
+                                                                         b.valvalue) c
+                  left join (select fieldid, objectid
+                               from synlte.objectfield
+                              where deleted = 0) a on c.fieldid = a.fieldid
+                 group by valtext, field_class
+    </select>
+
+    <select id="getAllCountFiledClassDataList" resultType="java.lang.Integer">
+        select count(distinct a.objectid) as tableCount
+                  from (SELECT s.field_class, s.fieldid, b.valtext
+                          FROM (select field_class, fieldid
+                                  from synlte.SYNLTEFIELD
+                                 where field_class is not null and deleted = 0) s
+                          left join (select valvalue, valtext
+                                      from synlte.fieldcodeval
+                                     where codeid = 'JZCODEGAZDFL') b on s.field_class =
+                                                                         b.valvalue) c
+                  left join (select fieldid, objectid
+                               from synlte.objectfield
+                              where deleted = 0) a on c.fieldid = a.fieldid
+    </select>
+
+    <select id="getFiledCodeClassDataList" resultType="com.synway.governace.pojo.largeScreen.FiledClassData">
+        select valvalue as fieldClassId, valtext as fieldClassCh,  0 as tableCount
+         from synlte.fieldcodeval where codeid = 'JZCODEGAZDFL'
+    </select>
+
+    <select id="getUseHeatList" resultType="com.synway.governace.pojo.largeScreen.UseHeatProperty">
+        select tableNameEn,
+        tableCount as useHeatCount,
+        case
+        when name is null then
+        tablename
+        else
+        name
+        end showName
+        from (select distinct project || '.' || tablename as tableNameEn,
+        project,
+        tablename,
+        tableCount,
+        name
+        from (select l.project, l.tablename, sum(l.table_use_count) as tableCount
+        from DP_UT_ODPSSQLCOUNT l INNER JOIN synlte.object r on upper(l.TABLENAME) = upper(r.TABLENAME)
+				group by l.project, l.tablename) s1
+        left join (select table_name_en, table_project, name
+        from (select row_number() over(partition by table_name_en, table_project order by STATISTICS_TIME desc) rn,
+        table_name_en,
+        table_project,
+        name
+        from DP_TABLE_ORGANIZATION_ASSETS)
+        where rn = 1) s2 on upper(s1.project) =
+        upper(s2.table_project)
+        and upper(s1.tablename) =
+        upper(s2.table_name_en)
+        order by tableCount desc)
+        where rownum <![CDATA[<=]]> 5
+    </select>
+
+    <select id="getApplicationUseHeat" resultType="com.synway.governace.pojo.largeScreen.UseHeatProperty">
+        select appid as tableNameEn , sysname as showName, useSum as useHeatCount from(
+            select t.areaid, t.organname, t.appid, t.sysname, sum(t.incr) as useSum
+            from v_sysoper_log_incr t
+            where t.sysname is not null
+            group by t.areaid, t.organname, t.appid, t.sysname
+            order by useSum desc )
+        where rownum <![CDATA[<=]]> 5
+    </select>
+
+    <select id="getDataDistributionList" resultType="com.synway.governace.pojo.largeScreen.DataDistributionStatistic">
+        select dz , count(distinct name) as totalTypes, sum(totalcount) as totalcount from DGN_NOSTD_DISTRIBUTE_STATISTIC
+           where STATISTICTIME = #{todayStr}
+           group by dz
+    </select>
+
+    <select id="getStatInfoDisList" resultType="com.synway.governace.pojo.largeScreen.DataDistributionStatistic">
+        SELECT
+            si_citycode AS dz,
+            COUNT(DISTINCT SD_ID) AS totalTypes,
+            SUM(si_count) AS totalcount
+        FROM STANDARDIZE.STATINFODIS
+        WHERE si_updatetime >= STR_TO_DATE(#{todayStr}, '%Y%m%d')
+        GROUP BY si_citycode;
+    </select>
+
+    <select id="getProvinceCity" resultType="java.lang.String">
+        SELECT city_code
+        FROM (
+            SELECT city_code
+            FROM bscdata.city
+            WHERE pro_id = (
+                SELECT pro_id
+                FROM bscdata.province
+                WHERE pro_name = #{provinceName}
+                ORDER BY pro_id ASC
+                LIMIT 1
+            )
+            ORDER BY city_code ASC
+        ) AS subquery
+        LIMIT 1
+    </select>
+
+    <select id="getDIJobCounts" resultType="java.lang.Integer">
+        select count(*) from di_job where jobstatus != 'deleted'
+    </select>
+
+    <select id="getStandardCount" resultType="java.lang.Integer">
+        select count(*) from synlte.object_store_info osi where import_flag = 1
+    </select>
+
+    <select id="getCityAbbList" resultType="com.synway.governace.pojo.largeScreen.CityAbbPojo">
+        select CITY_ABB as cityAbb ,CITY_CODE as  cityCode , CITY_NAME as  cityName  from DGN_CITY_ABB
+    </select>
+
+    <select id="getPropertyLargeScreenDataPage" resultType="com.synway.governace.pojo.largeScreen.PropertyLargeDbData">
+        SELECT DATA, CREATE_TIME AS createTime, TYPE, SAVE_FLAG AS saveFlag
+        FROM (
+            SELECT
+                DATA,
+                CREATE_TIME,
+                TYPE,
+                SAVE_FLAG,
+                @row_num := IF(@prev_type = TYPE, @row_num + 1, 1) AS num,
+                @prev_type := TYPE AS dummy
+            FROM DGN_PROPERTY_LARGE
+            ORDER BY TYPE DESC, SAVE_FLAG DESC
+        ) AS subquery
+        WHERE num = 1
+    </select>
+
+    <select id="getDataInsertAll" resultType="com.synway.governace.pojo.largeScreen.ForXJ.DataInsert">
+        SELECT
+            SUM(totalNums) AS allCount,
+            SUM(totalSize) AS allSize
+        FROM (
+            SELECT
+                secondary_organization_ch AS label,
+                COUNT(*) AS tables,
+                CASE
+                    WHEN SUM(table_all_count) IS NULL OR SUM(table_all_count) = '' THEN 0
+                    ELSE FLOOR(SUM(table_all_count) / 1e8)
+                END AS totalNums,
+                CASE
+                    WHEN SUM(table_size) IS NULL OR SUM(table_size) = '' THEN 0
+                    ELSE FLOOR(SUM(table_size) / 1073741824)
+                END AS totalSize
+            FROM DP_TABLE_ORGANIZATION_ASSETS
+            WHERE statistics_time >= date(NOW())
+              AND primary_organization_ch = '原始库'
+              AND table_type = 'odps'
+            GROUP BY secondary_organization_ch
+        ) AS c
+    </select>
+
+    <select id="getDataInsert" resultType="com.synway.governace.pojo.largeScreen.ForXJ.DataInsert">
+        SELECT
+            CASE
+                WHEN SUM(tableallcount) IS NULL OR SUM(tableallcount) = '' THEN 0
+                ELSE FLOOR(FLOOR(SUM(tableallcount)/1e8)/(#{days} + 1))
+            END AS allCount,
+            CASE
+                WHEN SUM(tablesize) IS NULL OR SUM(tablesize) = '' THEN 0
+                ELSE FLOOR(FLOOR(SUM(tablesize)/1073741824)/(#{days} + 1))
+            END AS allSize,
+            CASE
+                WHEN SUM(partitioncount) IS NULL OR SUM(partitioncount) = '' THEN 0
+                ELSE FLOOR(FLOOR(SUM(partitioncount)/1e8)/(#{days} + 1))
+            END AS partitionAllCount,
+            CASE
+                WHEN SUM(partitionsize) IS NULL OR SUM(partitionsize) = '' THEN 0
+                ELSE FLOOR(FLOOR(SUM(partitionsize)/1073741824)/(#{days} + 1))
+            END AS partitionAllSize
+        FROM (
+            SELECT
+                sta.tabletype,
+                sta.tableallcount,
+                sta.tablesize,
+                sta.partitioncount,
+                sta.partitionsize,
+                sta.inserteddatatime,
+                ciad.primaryorganizationch
+            FROM (
+                SELECT * FROM synlte.syndmg_table_all WHERE DATE_FORMAT(STR_TO_DATE(inserteddatatime, '%Y-%m-%d %H:%i:%s'), '%Y%m%d') >= DATE_FORMAT(CURDATE() - ${days}, '%Y%m%d')
+            ) AS sta
+            LEFT JOIN (
+                SELECT DISTINCT sjxjbm, tablename, primaryorganizationch FROM classify_interface_all_date
+            ) AS ciad ON UPPER(sta.tablename)=UPPER(ciad.tablename)
+        ) AS a
+        WHERE a.primaryorganizationch = '原始库'
+        AND a.tabletype IN (1,5,12);
+    </select>
+
+    <select id="getDataInsertChart" resultType="com.synway.governace.pojo.largeScreen.ForXJ.DataInsert">
+        SELECT
+            partitionAllCount,
+            partitionAllSize,
+            DATE_FORMAT(STR_TO_DATE(insertDate, '%Y%m%d'), '%m/%d') AS insertDate
+        FROM (
+            SELECT
+                CASE
+                    WHEN SUM(partitioncount) IS NULL OR SUM(partitioncount) = '' THEN 0
+                    ELSE FLOOR(SUM(partitioncount)/1e8)
+                END AS partitionAllCount,
+                CASE
+                    WHEN SUM(partitionsize) IS NULL OR SUM(partitionsize) = '' THEN 0
+                    ELSE FLOOR(SUM(partitionsize)/1073741824)
+                END AS partitionAllSize,
+                DATE_FORMAT(STR_TO_DATE(inserteddatatime, '%Y-%m-%d %H:%i:%s'), '%Y%m%d') AS insertDate
+            FROM (
+                SELECT
+                    sta.tabletype,
+                    sta.tableallcount,
+                    sta.tablesize,
+                    sta.partitioncount,
+                    sta.partitionsize,
+                    sta.inserteddatatime,
+                    ciad.primaryorganizationch
+                FROM (
+                    SELECT *
+                    FROM synlte.syndmg_table_all
+                    WHERE DATE_FORMAT(STR_TO_DATE(inserteddatatime, '%Y-%m-%d %H:%i:%s'), '%Y%m%d') >= DATE_FORMAT(CURDATE() - ${days}, '%Y%m%d')
+                ) AS sta
+
+                LEFT JOIN (
+                    SELECT DISTINCT sjxjbm, tablename, primaryorganizationch
+                    FROM classify_interface_all_date
+                ) AS ciad ON UPPER(sta.tablename)=UPPER(ciad.tablename)
+            ) AS a
+            WHERE a.primaryorganizationch = '原始库'
+              AND a.tabletype IN (1,5,12)
+            GROUP BY DATE_FORMAT(STR_TO_DATE(inserteddatatime, '%Y-%m-%d %H:%i:%s'), '%Y%m%d')
+            ORDER BY DATE_FORMAT(STR_TO_DATE(inserteddatatime, '%Y-%m-%d %H:%i:%s'), '%Y%m%d') ASC
+        ) AS x
+    </select>
+
+    <select id="getDataOrganization" resultType="com.synway.governace.pojo.largeScreen.ForXJ.DataOrganization">
+        SELECT
+            c.label AS label,
+            d.tables AS tables,
+            IFNULL(FLOOR(c.totalNums), 0) AS totalNums
+        FROM
+        (
+            SELECT
+                secondary_organization_ch AS label,
+                COUNT(*) AS tables,
+                CASE
+                    WHEN SUM(table_all_count) IS NULL THEN 0
+                    ELSE FLOOR(SUM(table_all_count) / 100000000)
+                END AS totalNums
+            FROM
+                DP_TABLE_ORGANIZATION_ASSETS
+            WHERE
+                statistics_time >= date(NOW())
+                AND secondary_organization_ch IN ('原始汇集库', '原始标准库')
+                AND LOWER(table_type) = 'odps'
+            GROUP BY
+                secondary_organization_ch
+        ) c
+        LEFT JOIN
+        (
+            SELECT
+                secondary_organization_ch AS label,
+                COUNT(*) AS tables
+            FROM
+            (
+                SELECT
+                    DISTINCT table_name_en,
+                    secondary_organization_ch
+                FROM
+                    DP_TABLE_ORGANIZATION_ASSETS
+                WHERE
+                    statistics_time >= date(NOW())
+                    AND secondary_organization_ch IN ('原始汇集库', '原始标准库')
+                    AND LOWER(table_type) = 'odps'
+            ) sub
+            GROUP BY
+                secondary_organization_ch
+        ) d
+        ON c.label = d.label
+        UNION ALL
+        SELECT
+            a.label AS label,
+            b.tables AS tables,
+            IFNULL(FLOOR(a.totalNums), 0) AS totalNums
+        FROM
+        (
+            SELECT
+                primary_organization_ch AS label,
+                COUNT(*) AS tables,
+                CASE
+                    WHEN SUM(table_all_count) IS NULL THEN 0
+                    ELSE FLOOR(SUM(table_all_count) / 100000000)
+                END AS totalNums
+            FROM
+                DP_TABLE_ORGANIZATION_ASSETS
+            WHERE
+                statistics_time >= date(NOW())
+                AND primary_organization_ch IN ('资源库', '主题库', '知识库', '业务库')
+                AND LOWER(table_type) = 'odps'
+            GROUP BY
+                primary_organization_ch
+        ) a
+        LEFT JOIN
+        (
+            SELECT
+                primary_organization_ch AS label,
+                COUNT(*) AS tables
+            FROM
+            (
+                SELECT
+                    DISTINCT table_name_en,
+                    primary_organization_ch
+                FROM
+                    DP_TABLE_ORGANIZATION_ASSETS
+                WHERE
+                    statistics_time >= date(NOW())
+                    AND primary_organization_ch IN ('资源库', '主题库', '知识库', '业务库')
+                    AND LOWER(table_type) = 'odps'
+            ) sub
+            GROUP BY
+                primary_organization_ch
+        ) b
+        ON a.label = b.label;
+    </select>
+
+    <select id="getWarnData" resultType="com.synway.governace.pojo.largeScreen.ForXJ.WarnData">
+        SELECT
+            jobname AS warnName,
+            '执行失败' AS warnContent,
+            DATE_FORMAT(maxTime, '%Y-%m-%d %H:%i:%s') AS warnTime
+        FROM (
+            SELECT
+                jobname,
+                MAX(createtime) AS maxTime
+            FROM di_job_batch_record
+            WHERE status = 'fail'
+              AND createtime >= date(NOW())
+            GROUP BY jobid, jobname
+        ) AS subquery
+        ORDER BY maxTime DESC
+    </select>
+
+    <select id="getGradeAndClass" resultType="com.synway.governace.pojo.largeScreen.ForXJ.GradeAndClass">
+        SELECT
+            label,
+            COUNT(*) AS value,
+            className
+        FROM
+        (
+            SELECT
+                table_name_en,
+                vci.codeText AS label,
+                CASE
+                    WHEN o.secretlevel = '01' THEN '公开'
+                    WHEN o.secretlevel = '02' THEN '一般'
+                    WHEN o.secretlevel = '03' THEN '重要'
+                    WHEN o.secretlevel = '04' THEN '特殊'
+                    ELSE '其他'
+                END AS className
+            FROM
+            (
+                SELECT
+                    DISTINCT table_name_en,
+                    datasource_last_level
+                FROM
+                    DP_TABLE_ORGANIZATION_ASSETS
+                WHERE
+                    statistics_time >= date(NOW())
+                    AND secondary_organization_ch IN ('原始汇集库')
+                    AND LOWER(table_type) = 'odps'
+            ) AS toa
+            LEFT JOIN
+                synlte.object o
+            ON
+                UPPER(toa.table_name_en) COLLATE utf8mb4_unicode_ci = UPPER(o.tablename) COLLATE utf8mb4_unicode_ci
+            LEFT JOIN
+                v_classify_info vci
+            ON
+                toa.datasource_last_level COLLATE utf8mb4_unicode_ci = vci.codeid COLLATE utf8mb4_unicode_ci
+        ) AS x
+        WHERE
+            x.className != '其他'
+            AND x.label IS NOT NULL
+        GROUP BY
+            label, className;
+    </select>
+
+    <select id="getDataSource" resultType="com.synway.governace.pojo.largeScreen.ForXJ.GradeAndClass">
+        select '来源单位' as label, count(*) as value,'个' as unit
+          from (select distinct routine_code as value
+                  from ds_detected_table
+                 where routine_code is not null) a
+        union all
+        select '来源系统' as label, count(*) as value,'个' as unit
+          from (select distinct app_code
+                  from ds_detected_table
+                 where app_code is not null) b
+    </select>
+
+    <select id="getProviderTableStatDao" resultType="com.synway.governace.pojo.largeScreen.ProviderTableStat">
+        SELECT
+            operator_net AS operatorNet,
+            data_type AS dataType,
+            SUM(records_all) AS recordsAll
+        FROM (
+            SELECT
+                operator_net,
+                data_type,
+                records_all
+            FROM
+                DGN_INSPECT_OPERATORS
+            WHERE
+                (operator_net, data_type, netmode, citycode, tablename) IN (
+                    SELECT
+                        max_partition_subquery.operator_net,
+                        max_partition_subquery.data_type,
+                        max_partition_subquery.netmode,
+                        max_partition_subquery.citycode,
+                        max_partition_subquery.tablename
+                    FROM (
+                        SELECT
+                            operator_net,
+                            data_type,
+                            netmode,
+                            citycode,
+                            tablename,
+                            MAX(`partition`) AS max_partition
+                        FROM
+                            DGN_INSPECT_OPERATORS
+                        GROUP BY
+                            operator_net,
+                            data_type,
+                            netmode,
+                            citycode,
+                            tablename
+                    ) AS max_partition_subquery
+                    JOIN
+                        DGN_INSPECT_OPERATORS AS t
+                    ON
+                        t.operator_net = max_partition_subquery.operator_net
+                        AND t.data_type = max_partition_subquery.data_type
+                        AND t.netmode = max_partition_subquery.netmode
+                        AND t.citycode = max_partition_subquery.citycode
+                        AND t.tablename = max_partition_subquery.tablename
+                        AND t.partition = max_partition_subquery.max_partition
+                )
+        ) AS filtered_data
+        GROUP BY
+            operator_net,
+            data_type;
+    </select>
+
+    <select id="getOrgainTableStatDao" resultType="com.synway.governace.pojo.largeScreen.StandardLabelData">
+        SELECT
+            l.name,
+            l.standTableCount,
+            IFNULL(r.tableCount, 0) AS tableCount,
+            IFNULL(r.tableDataVolume, 0) AS tableDataVolume
+        FROM
+        (
+            SELECT
+                secondaryorganizationch AS name,
+                COUNT(DISTINCT tablename) AS standTableCount
+            FROM
+                classify_interface_all_date
+            WHERE
+                UPPER(sjyjfl) = CONCAT(#{sjzzflCodeId}, #{type})
+            GROUP BY
+                secondaryorganizationch
+        ) AS l
+        LEFT JOIN
+        (
+            SELECT
+                sub_organization_name AS name,
+                SUM(object_count) AS tableCount,
+                SUM(records_all) AS tableDataVolume
+            FROM
+            (
+                SELECT
+                    l.organization_type,
+                    l.sub_organization_name,
+                    l.object_count,
+                    l.records_all,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            CONCAT(
+                                l.organization_type,
+                                '_',
+                                l.sub_organization_type,
+                                '_',
+                                l.valvalue
+                            )
+                        ORDER BY
+                            l.partition DESC
+                    ) AS rn
+                FROM
+                    dgn_inspect_organization_stat l
+                WHERE
+                    l.organization_type = #{type}
+            ) AS sub
+            WHERE
+                sub.rn = 1
+                AND sub.sub_organization_name IS NOT NULL
+            GROUP BY
+                sub.sub_organization_name
+        ) AS r
+        ON l.name COLLATE utf8mb4_unicode_ci = r.name COLLATE utf8mb4_unicode_ci
+    </select>
+
+    <select id="getOperatorDataByDate" resultType="com.synway.governace.pojo.largeScreen.StandardLabelData">
+        SELECT
+            SECONDARY_ORGANIZATION_CH AS name,
+            SUM(yesterday_count) AS tableCount
+        FROM (
+            SELECT
+                @row_num := IF(@prev_group = CONCAT(table_name_en, '_', table_project), @row_num + 1, 1) AS rn,
+                @prev_group := CONCAT(table_name_en, '_', table_project) AS dummy,
+                table_name_en,
+                table_project,
+                yesterday_count,
+                SECONDARY_ORGANIZATION_CH
+            FROM
+                DP_TABLE_ORGANIZATION_ASSETS,
+                (SELECT @row_num := 0, @prev_group := '') vars
+            WHERE
+                DATE_FORMAT(STATISTICS_TIME, '%Y%m%d') = #{dateStr}
+              AND PRIMARY_ORGANIZATION_CH = '原始库'
+            ORDER BY
+                table_name_en ASC,
+                table_project ASC,
+                STATISTICS_TIME DESC
+        ) subquery
+        WHERE rn = 1
+        GROUP BY SECONDARY_ORGANIZATION_CH;
+    </select>
+
+    <delete id="deleteOldTable1">
+        DELETE FROM dgn_inspect_organization_stat
+        WHERE STR_TO_DATE(`partition`, '%Y-%m-%d') &lt; date(NOW()) - INTERVAL 15 DAY
+    </delete>
+
+    <delete id="deleteOldTable2">
+        delete from DGN_INSPECT_OPERATORS where STR_TO_DATE(`partition`, '%Y-%m-%d') &lt; date(NOW()) - INTERVAL 15 DAY
+    </delete>
+
+    <delete id="deleteOldTable3">
+        delete from DGN_DISTRIBUTION_STATISTIC where STR_TO_DATE(STATISTICTIME, '%Y-%m-%d') &lt; date(NOW()) - INTERVAL 15 DAY;
+    </delete>
+
+
+    <select id="getAllLabelDataByLevel" resultType="com.synway.governace.pojo.largeScreen.LabelManageData">
+        select distinct labelcode,labelname  from synlte.labels where labellevel = #{level}
+    </select>
+
+    <select id="getAllOriginalDataList" resultType="com.synway.governace.pojo.largeScreen.StandardLabelData">
+        SELECT
+            l.name,
+            l.tableCount,
+            COALESCE(r.tableDataVolume, 0) AS tableDataVolume
+        FROM
+        (
+            SELECT
+                secondaryorganizationch AS name,
+                COUNT(DISTINCT tablename) AS tableCount
+            FROM
+                classify_interface_all_date
+            WHERE
+                primaryorganizationch = '原始库'
+            GROUP BY
+                secondaryorganizationch
+        ) AS l
+        LEFT JOIN
+        (
+            SELECT
+                r2.name,
+                SUM(r2.table_all_count) AS tableDataVolume
+            FROM
+            (
+                SELECT
+                    row_number() OVER (PARTITION BY table_name_en, table_project ORDER BY STATISTICS_TIME DESC) AS rn,
+                    table_name_en,
+                    table_project,
+                    table_all_count,
+                    SECONDARY_ORGANIZATION_CH AS name
+                FROM
+                    DP_TABLE_ORGANIZATION_ASSETS
+                WHERE
+                    STATISTICS_TIME >= SYSDATE() - INTERVAL 1 DAY
+                    AND PRIMARY_ORGANIZATION_CH = '原始库'
+            ) AS r2
+            WHERE
+                r2.rn = 1
+            GROUP BY
+                r2.name
+        ) AS r
+        ON l.name COLLATE utf8mb4_unicode_ci = r.name COLLATE utf8mb4_unicode_ci;
+    </select>
+
+    <select id="getOriginalBusinessData" resultType="com.synway.governace.pojo.largeScreen.StandardLabelData">
+        SELECT
+            NAME,
+            tableCount,
+            IFNULL(tableDataVolume, 0) AS tableDataVolume
+        FROM (
+            SELECT
+                name,
+                COUNT(DISTINCT TABLENAME) AS tableCount,
+                SUM(table_all_count) AS tableDataVolume
+            FROM (
+                SELECT
+                    r.project_name,
+                    l.TABLENAME,
+                    CASE
+                        WHEN r1.labelname IS NULL THEN l.sjzybq5
+                        ELSE r1.labelname
+                    END AS name
+                FROM (
+                    SELECT
+                        DISTINCT sjxjbm,
+                        TABLENAME,
+                        sjzybq5
+                    FROM
+                        synlte.PUBLIC_DATA_INFO
+                    WHERE
+                        sjzybq5 IS NOT NULL
+                        AND zyzt = '1'
+                        AND sjxjbm IS NOT NULL
+                        AND SUBSTR(UPPER(sjxjbm), 1, 11) = 'JZ_RESOURCE'
+                        AND UPPER(SJZZYJFL) = #{sjzzflCodeId}
+                ) l
+                INNER JOIN (
+                    SELECT
+                        tablename,
+                        tableid,
+                        objectname
+                    FROM
+                        synlte.OBJECT
+                    WHERE
+                        deleted = 0
+                        AND relate_tablename = 'OBJECTFIELD'
+                ) o
+                ON UPPER(l.sjxjbm) = UPPER(o.tableid)
+                LEFT JOIN (
+                    SELECT
+                        project_name,
+                        tablename
+                    FROM
+                        synlte.OBJECT_STORE_INFO
+                    WHERE
+                        project_name IS NOT NULL
+                        AND SUBSTR(UPPER(project_name), 1, 4) = 'YSK_'
+                ) r
+                ON UPPER(l.TABLENAME) = UPPER(r.tablename)
+                LEFT JOIN (
+                    SELECT
+                        DISTINCT labelcode,
+                        labelname
+                    FROM
+                        synlte.labels
+                    WHERE
+                        labellevel = 5
+                ) r1
+                ON UPPER(l.sjzybq5) = UPPER(r1.labelcode)
+            ) ll
+            LEFT JOIN (
+                SELECT
+                    table_name_en,
+                    table_project,
+                    table_all_count
+                FROM (
+                    SELECT
+                        ROW_NUMBER() OVER (
+                            PARTITION BY table_name_en, table_project
+                            ORDER BY STATISTICS_TIME DESC
+                        ) AS rn,
+                        table_name_en,
+                        table_project,
+                        table_all_count
+                    FROM
+                        DP_TABLE_ORGANIZATION_ASSETS
+                    WHERE
+                        STATISTICS_TIME > SYSDATE() - INTERVAL 2 DAY
+                ) sub
+                WHERE
+                    sub.rn = 1
+            ) rr
+            ON UPPER(ll.project_name) COLLATE utf8mb4_unicode_ci = UPPER(rr.table_project) COLLATE utf8mb4_unicode_ci
+               AND UPPER(ll.TABLENAME) COLLATE utf8mb4_unicode_ci = UPPER(rr.table_name_en) COLLATE utf8mb4_unicode_ci
+            GROUP BY
+                name
+        ) t;
+    </select>
+
+    <select id="getLargeStorageData" resultType="com.synway.governace.pojo.largeScreen.LargeStorageData">
+        SELECT
+            tableNameEn,
+            tableNameCh,
+            tableCount,
+            tableSize
+        FROM
+        (
+            SELECT
+                LOWER(CONCAT(table_project, '.', table_name_en)) AS tableNameEn,
+                CASE
+                    WHEN l.tableNameCh IS NOT NULL THEN l.tableNameCh
+                    ELSE r.objectname
+                END AS tableNameCh,
+                tableCount,
+                tableSize
+            FROM
+            (
+                SELECT
+                    DISTINCT table_project,
+                    table_name_en,
+                    TRIM(name) AS tableNameCh,
+                    CAST(table_all_count AS UNSIGNED) AS tableCount,
+                    table_size AS tableSize
+                FROM
+                    DP_TABLE_ORGANIZATION_ASSETS
+                WHERE
+                    statistics_time >= date(NOW())
+                    AND table_name_en IS NOT NULL
+                    AND table_all_count IS NOT NULL
+                    AND (
+                        LOWER(table_type) IN ('odps', 'hive', 'hdfs', 'clickhouse')
+                        OR LOWER(table_type) LIKE '%hive%'
+                    )
+            ) l
+            INNER JOIN
+            (
+                SELECT
+                    objectname,
+                    tablename
+                FROM
+                    synlte.object
+                WHERE
+                    objectstate = 1
+                    AND deleted = 0
+                    AND relate_tablename = 'OBJECTFIELD'
+            ) r
+            ON UPPER(l.table_name_en) COLLATE utf8mb4_unicode_ci = UPPER(r.tablename) COLLATE utf8mb4_unicode_ci
+            ORDER BY tableCount DESC
+        ) t
+        LIMIT 8;
+    </select>
+
+    <select id="getPuYuanInformationBus" resultType="com.synway.governace.pojo.largeScreen.PyPublishInfo">
+        select count(distinct PLATFORM) as registerPlatformCount,
+            sum(INTERFACE_NUM) as registerServiceCount,sum(SUMTOTAL) as publishServiceInfoCount from DGN_PUYUANMESSAGEBUS
+    </select>
+</mapper>

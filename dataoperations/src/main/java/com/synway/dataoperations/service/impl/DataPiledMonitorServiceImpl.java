@@ -2,9 +2,13 @@ package com.synway.dataoperations.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.synway.common.exception.ExceptionUtil;
 import com.synway.dataoperations.constant.Common;
-import com.synway.dataoperations.dao.DataPiledMonitorDao;
+import com.synway.dataoperations.dao.DoDataPiledMonitorDao;
+import com.synway.dataoperations.entity.pojo.DoDataPiledMonitorEntity;
 import com.synway.dataoperations.pojo.AlarmMessage;
 import com.synway.dataoperations.pojo.ClassifyInfoTree;
 import com.synway.dataoperations.pojo.dataPiledMonitor.*;
@@ -12,14 +16,13 @@ import com.synway.dataoperations.service.AlarmMessageService;
 import com.synway.dataoperations.service.DataPiledMonitorService;
 import com.synway.dataoperations.util.DateUtil;
 import com.synway.dataoperations.util.KafkaUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +30,18 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
-    private static Logger logger = LoggerFactory.getLogger(DataPiledMonitorServiceImpl.class);
 
     @Autowired
-    DataPiledMonitorDao dataPiledMonitorDao;
+    DoDataPiledMonitorDao doDataPiledMonitorDao;
 
     @Autowired
     RestTemplate restTemplate;
@@ -46,9 +52,11 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
     @Override
     public TreeAndCartPiled getTreeAndCardData(String searchName, String dataType) {
         TreeAndCartPiled treeAndCartPiled = new TreeAndCartPiled();
-        List<DataPiledSetting> dataPiledSettings = dataPiledMonitorDao.getDataPiledMonitors(0);
-        Map<String, List<DataPiledSetting>> listMap = dataPiledSettings.stream().collect(Collectors.groupingBy(DataPiledSetting::getPushHour));
-        List<DataPiledSetting> dataPiledSettingsHour = new ArrayList<>();
+        LambdaQueryWrapper<DoDataPiledMonitorEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.ge(DoDataPiledMonitorEntity::getInsertTime, LocalDate.now());
+        List<DoDataPiledMonitorEntity> dataPiledSettings = doDataPiledMonitorDao.selectList(wrapper);
+        Map<String, List<DoDataPiledMonitorEntity>> listMap = dataPiledSettings.stream().collect(Collectors.groupingBy(DoDataPiledMonitorEntity::getPushHour));
+        List<DoDataPiledMonitorEntity> dataPiledSettingsHour = new ArrayList<>();
         String hourStrNow = DateUtil.formatDate(new Date(),"HH");
         String hourStrLast = DateUtil.formatDate(DateUtil.addHour(new Date(), -1),"HH");
         dataPiledSettingsHour = listMap.get(hourStrNow);
@@ -74,7 +82,7 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
         if (dataPiledSettingsHour == null || dataPiledSettingsHour.size() == 0){
             return treeAndCartPiled;
         }
-        for (DataPiledSetting dataPiledSetting : dataPiledSettingsHour){
+        for (DoDataPiledMonitorEntity dataPiledSetting : dataPiledSettingsHour){
             if (dataPiledSetting.getDataType().equalsIgnoreCase("1")){
                 normalDataClassSum += 1;
             }
@@ -114,19 +122,29 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
     @Override
     public ReturnResultDPM getChartDataDPM(RequestParameterDPM requestParameterDPM) {
         ReturnResultDPM resultDPM = new ReturnResultDPM();
-        List<DataPiledSetting> dataPiledSettings = dataPiledMonitorDao.getDataPiledMonitors(1);
+        LambdaQueryWrapper<DoDataPiledMonitorEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.ge(DoDataPiledMonitorEntity::getInsertTime, LocalDate.now().minusDays(1));
+        List<DoDataPiledMonitorEntity> dataPiledSettings = doDataPiledMonitorDao.selectList(wrapper);
 
-        String todayStr = DateUtil.formatDate(new Date(),"yyyyMMdd");
-        String yesTodayStr = DateUtil.formatDate(DateUtil.addDay(new Date(), -1),"yyyyMMdd");
         String nowHourStr = DateUtil.formatDate(new Date(),"HH");
         String hourStrLast = DateUtil.formatDate(DateUtil.addHour(new Date(), -1),"HH");
 
         // 根据数据名称过滤
         dataPiledSettings = dataPiledSettings.stream().filter(d -> d.getDataName().equalsIgnoreCase(requestParameterDPM.getDataName())).collect(Collectors.toList());
         // 今日数据类型列表
-        List<DataPiledSetting> dataPiledSettingsToday = dataPiledSettings.stream().filter(d -> d.getInsertTime().equalsIgnoreCase(todayStr)).collect(Collectors.toList());
+        List<DoDataPiledMonitorEntity> dataPiledSettingsToday = dataPiledSettings.stream().filter(d -> {
+            // 将 Date 转换为 LocalDate（忽略时间部分）
+            LocalDate insertDate = d.getInsertTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate today = LocalDate.now().minusDays(0);
+            return insertDate.isEqual(today) ? true : false;
+        }).collect(Collectors.toList());
         // 昨日数据类型列表
-        List<DataPiledSetting> dataPiledSettingsYestoday = dataPiledSettings.stream().filter(d -> d.getInsertTime().equalsIgnoreCase(yesTodayStr)).collect(Collectors.toList());
+        List<DoDataPiledMonitorEntity> dataPiledSettingsYestoday = dataPiledSettings.stream().filter(d -> {
+            // 将 Date 转换为 LocalDate（忽略时间部分）
+            LocalDate insertDate = d.getInsertTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate yesterday = LocalDate.now().minusDays(1);
+            return insertDate.isEqual(yesterday) ? true : false;
+        }).collect(Collectors.toList());
 
         // 折线图数据
         DataPiledChart dataPiledChart = new DataPiledChart();           // 折线图
@@ -137,14 +155,14 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
         dataPiledChart.setPiledRate(dataPiledRates);
         dataPiledChart.setPushHours(dataPiledHours);
         if (!dataPiledTime.equalsIgnoreCase("today")){
-            for (DataPiledSetting setting : dataPiledSettingsYestoday){
+            for (DoDataPiledMonitorEntity setting : dataPiledSettingsYestoday){
                 if (Integer.parseInt(setting.getPushHour()) > Integer.parseInt(nowHourStr)){
                     int index = Integer.parseInt(setting.getPushHour()) - Integer.parseInt(nowHourStr) -1;
                     dataPiledChart.getPiledRate().set(index, setting.getPiledRate());
                 }
             }
         }
-        for (DataPiledSetting setting : dataPiledSettingsToday){
+        for (DoDataPiledMonitorEntity setting : dataPiledSettingsToday){
             if (dataPiledTime.equalsIgnoreCase("today")){
                 if (Integer.parseInt(setting.getPushHour()) <= Integer.parseInt(nowHourStr)){
                     int index = Integer.parseInt(setting.getPushHour());
@@ -158,24 +176,24 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
             }
         }
         // 表格数据
-        DataPiledSetting dataPiledSetting = null;
-        for (DataPiledSetting dataPiledSetting1 : dataPiledSettingsToday){
+        DoDataPiledMonitorEntity dataPiledSetting = null;
+        for (DoDataPiledMonitorEntity dataPiledSetting1 : dataPiledSettingsToday){
             if (dataPiledSetting1.getPushHour().equalsIgnoreCase(nowHourStr)){
                 dataPiledSetting = dataPiledSetting1;
             }
         }
         if (dataPiledSetting == null || StringUtils.isBlank(dataPiledSetting.getDataName())){
-            for (DataPiledSetting dataPiledSetting1 : dataPiledSettingsToday){
+            for (DoDataPiledMonitorEntity dataPiledSetting1 : dataPiledSettingsToday){
                 if (dataPiledSetting1.getPushHour().equalsIgnoreCase(hourStrLast)){
                     dataPiledSetting = dataPiledSetting1;
                 }
             }
         }
         // 表格注入阈值数据
-        DataPiledSetting settingData = new DataPiledSetting();
-        List<DataPiledSetting> settings = getSettingForApi();
+        DoDataPiledMonitorEntity settingData = new DoDataPiledMonitorEntity();
+        List<DoDataPiledMonitorEntity> settings = getSettingForApi();
         if (settings.size() > 0){
-            for (DataPiledSetting setting : settings){
+            for (DoDataPiledMonitorEntity setting : settings){
                 if(setting.getDataName().equalsIgnoreCase(requestParameterDPM.getDataName())){
                     settingData = setting;
                     break;
@@ -211,15 +229,15 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void getDataPiledMonitor() {
-        List<DataPiledSetting> dataPiledSettings = getSettingForApi();
+        List<DoDataPiledMonitorEntity> dataPiledSettings = getSettingForApi();
         if (dataPiledSettings.size() == 0){
-            logger.info("从数据堆积设置获取到的数据为0！");
+            log.info("从数据堆积设置获取到的数据为0！");
             return;
         }
         String hourStr = DateUtil.formatDate(new Date(),"HH");
-        for (DataPiledSetting dataPiledSetting : dataPiledSettings) {
+        for (DoDataPiledMonitorEntity dataPiledSetting : dataPiledSettings) {
             if (!dataPiledSetting.getIsEnable().equalsIgnoreCase("true")){
-                logger.info("数据名称：[{}]没有启用，略过...");
+                log.info("数据名称：[{}]没有启用，略过...");
                 continue;
             }
             ConnectInfo connectInfo = JSONObject.parseObject(dataPiledSetting.getConnectInfo(), ConnectInfo.class);
@@ -229,7 +247,7 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
             KafkaConsumer kafkaConsumer = KafkaUtil.connect(connectInfo);
             try {
                 if (kafkaConsumer == null){
-                    logger.info("ip=={},topic=={},group=={},dataName=={},获取kafkaConsumer为空...",connectInfo.getZookeeperIp(),connectInfo.getTopic(),connectInfo.getGroup(),dataPiledSetting.getDataName());
+                    log.info("ip=={},topic=={},group=={},dataName=={},获取kafkaConsumer为空...",connectInfo.getZookeeperIp(),connectInfo.getTopic(),connectInfo.getGroup(),dataPiledSetting.getDataName());
                     dataPiledSetting.setPushHour(hourStr);
                     dataPiledSetting.setOffset(0);
                     dataPiledSetting.setLogSize(0);
@@ -241,7 +259,7 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
                 // 获取主题的分区信息
                 List<PartitionInfo> partitionInfos = getMetaInfo(kafkaConsumer, connectInfo.getTopic());
                 if (partitionInfos.size() == 0){
-                    logger.info("ip=={},topic=={},group=={},dataName=={},获取partitionInfos为空...",connectInfo.getZookeeperIp(),connectInfo.getTopic(),connectInfo.getGroup(),dataPiledSetting.getDataName());
+                    log.info("ip=={},topic=={},group=={},dataName=={},获取partitionInfos为空...",connectInfo.getZookeeperIp(),connectInfo.getTopic(),connectInfo.getGroup(),dataPiledSetting.getDataName());
                     dataPiledSetting.setPushHour(hourStr);
                     dataPiledSetting.setOffset(0);
                     dataPiledSetting.setLogSize(0);
@@ -299,25 +317,42 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
                 dataPiledSetting.setPiledRate(piledRate);
                 dataPiledSetting.setPushHour(hourStr);
             }catch (Exception e){
-                logger.error("处理【{}】时失败：\n{}",dataPiledSetting.getDataName(),ExceptionUtil.getExceptionTrace(e));
+                log.error("处理【{}】时失败：\n{}",dataPiledSetting.getDataName(),ExceptionUtil.getExceptionTrace(e));
             }finally {
                 kafkaConsumer.close();
             }
         }
-        // 数据入库
+        // 堆积监控数据入库
         dataPiledSettings.stream().forEach(dataPiledSetting -> {
-            dataPiledMonitorDao.insertDataPiledMonitor(dataPiledSetting);
+            LambdaUpdateWrapper<DoDataPiledMonitorEntity> wrapper = Wrappers.lambdaUpdate();
+            wrapper.eq(DoDataPiledMonitorEntity::getDataName, dataPiledSetting.getDataName());
+            wrapper.eq(DoDataPiledMonitorEntity::getDataWarehouseName, dataPiledSetting.getDataWarehouseName());
+            wrapper.eq(DoDataPiledMonitorEntity::getConsumTopic, dataPiledSetting.getConsumTopic());
+            wrapper.eq(DoDataPiledMonitorEntity::getConsumGroup, dataPiledSetting.getConsumGroup());
+            wrapper.eq(DoDataPiledMonitorEntity::getPushHour, dataPiledSetting.getPushHour());
+            wrapper.eq(DoDataPiledMonitorEntity::getInsertTime, LocalDateTime.now());
+            if (doDataPiledMonitorDao.selectCount(wrapper) > 0){
+                wrapper.set(DoDataPiledMonitorEntity::getOffset, dataPiledSetting.getOffset());
+                wrapper.set(DoDataPiledMonitorEntity::getLogSize,dataPiledSetting.getLogSize());
+                wrapper.set(DoDataPiledMonitorEntity::getLag, dataPiledSetting.getLag());
+                wrapper.set(DoDataPiledMonitorEntity::getPiledRate, dataPiledSetting.getPiledRate());
+                doDataPiledMonitorDao.update(wrapper);
+            }else {
+                doDataPiledMonitorDao.insert(dataPiledSetting);
+            }
         });
-        logger.info("数据堆积监控入库完成");
+        log.info(">>>>>>数据堆积监控入库完成");
         // 删除历史数据
-        int delSum = dataPiledMonitorDao.delDataPiledMonitors();
-        logger.info("删除数据堆积监控历史数据：{}",delSum);
+        LambdaQueryWrapper<DoDataPiledMonitorEntity> wrapper = Wrappers.lambdaQuery();
+        wrapper.lt(DoDataPiledMonitorEntity::getInsertTime, LocalDateTime.now().minusDays(10));
+        int delSum = doDataPiledMonitorDao.delete(wrapper);
+        log.info(">>>>>>删除数据堆积监控历史数据：{}",delSum);
         // 告警数据推送至告警中心
         sendAlarmMsg(dataPiledSettings);
-        logger.info("本次调度结束......");
+        log.info(">>>>>>本次调度结束......");
     }
 
-    public void sendAlarmMsg(List<DataPiledSetting> dataPiledSettings){
+    public void sendAlarmMsg(List<DoDataPiledMonitorEntity> dataPiledSettings){
         List<AlarmMessage> alarmMessages = new ArrayList<>();   // 告警数据列表
         dataPiledSettings.stream().forEach(d ->{
             if (d.getDataType().equalsIgnoreCase("2")){
@@ -348,20 +383,20 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
         if (alarmMessages.size() > 0){
             String jsonString = JSONArray.toJSONString(alarmMessages);
             alarmMessageService.insertAlarmMessage(jsonString);
-            logger.info("发送告警信息至告警中心成功");
+            log.info("发送告警信息至告警中心成功");
         }
     }
 
-    public List<DataPiledSetting> getSettingForApi(){
+    public List<DoDataPiledMonitorEntity> getSettingForApi(){
         JSONObject param = new JSONObject();
         param.put("parentId","dataPiled");
         String url = Common.DATAGOVERNANCE_BASEURL + "/configManage/generalManagement/getGeneralSetting";
         String jsonObject = restTemplate.postForObject(url, param, String.class);
         JSONObject result = JSONObject.parseObject(jsonObject);
 
-        List<DataPiledSetting> dataPiledSettings = new ArrayList<>();
+        List<DoDataPiledMonitorEntity> dataPiledSettings = new ArrayList<>();
         if (result.getIntValue("status") == 1){
-            dataPiledSettings = result.getJSONArray("data").toJavaList(DataPiledSetting.class);
+            dataPiledSettings = result.getJSONArray("data").toJavaList(DoDataPiledMonitorEntity.class);
             return dataPiledSettings;
         }
         return dataPiledSettings;
@@ -374,14 +409,14 @@ public class DataPiledMonitorServiceImpl implements DataPiledMonitorService {
                 return list;
             }
         } catch (Exception e) {
-            logger.error("获取主题信息报错:\n" + ExceptionUtil.getExceptionTrace(e));
+            log.error("获取主题信息报错:\n" + ExceptionUtil.getExceptionTrace(e));
             return new ArrayList<>();
         }
         return new ArrayList<>();
     }
 
     // 页面左侧树数据
-    public List<ClassifyInfoTree> getLeftTree(List<DataPiledSetting> dataPiledSettings){
+    public List<ClassifyInfoTree> getLeftTree(List<DoDataPiledMonitorEntity> dataPiledSettings){
         List<ClassifyInfoTree> leftTree = new ArrayList<>();
         if (dataPiledSettings == null){
             return leftTree;

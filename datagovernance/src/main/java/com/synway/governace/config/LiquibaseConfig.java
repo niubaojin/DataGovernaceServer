@@ -57,9 +57,9 @@ public class LiquibaseConfig {
          * DBR_SCHEMA_CHANGE_LOG、DBR_SCHEMA_CHANGE_LOG_LOCK为数据血缘自定义私有表，
          * 应用模块根据模块表前缀自行定义
          */
-        liquibase.setDatabaseChangeLogTable("DNG_SCHEMA_CHANGE_LOG");
+        liquibase.setDatabaseChangeLogTable("DGN_SCHEMA_CHANGE_LOG");
         //多用户场景使用
-        liquibase.setDatabaseChangeLogLockTable("DNG_SCHEMA_CHANGE_LOG_LOCK");
+        liquibase.setDatabaseChangeLogLockTable("DGN_SCHEMA_CHANGE_LOG_LOCK");
         return  liquibase;
     }
 

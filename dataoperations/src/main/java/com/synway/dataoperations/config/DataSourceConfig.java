@@ -52,6 +52,9 @@ public class DataSourceConfig {
         if (Common.POSTGRESQL.equalsIgnoreCase(dataType)) {
             druidDataSource.setDriverClassName("org.postgresql.Driver");
         }
+        if(Common.MYSQL.equalsIgnoreCase(dataType)){
+            druidDataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        }
 
         druidDataSource.setUrl(environment.getProperty("database.url"));
         druidDataSource.setUsername(environment.getProperty("database.name"));
@@ -90,6 +93,9 @@ public class DataSourceConfig {
         }
         if (Common.POSTGRESQL.equalsIgnoreCase(dataType)) {
             bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/postgresql/*.xml"));
+        }
+        if(Common.MYSQL.equalsIgnoreCase(dataType)){
+            bean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/mysql/*.xml"));
         }
 
         MybatisConfiguration configuration = new MybatisConfiguration();

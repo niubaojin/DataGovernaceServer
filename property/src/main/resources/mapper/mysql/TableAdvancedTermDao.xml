@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.TableAdvancedTermDao">
+
+    <select id="getSemanticType" resultType="com.synway.property.pojo.PageSelectOneValue">
+        SELECT WORDNAME AS label, WORDNAME AS value
+        FROM SYNLTE.SAMEWORD
+        <if test="query != '' and query != null">
+            WHERE upper(WORDNAME) LIKE upper('%${query}%')
+        </if>
+    </select>
+
+    <select id="getElementSetType" resultType="com.synway.property.pojo.PageSelectOneValue">
+        SELECT distinct FIELDCHINESENAME AS label, FIELDCHINESENAME AS value
+        FROM SYNLTE.SYNLTEFIELD
+        <if test="query != '' and query != null">
+            WHERE upper(FIELDCHINESENAME) LIKE upper('%${query}%')
+        </if>
+    </select>
+
+    <select id="getSynlteFieldBySemantic"
+            resultType="com.synway.property.pojo.tableAdvancedTerm.SynlteField">
+        SELECT
+            a.FIELDID,
+            a.FIELDCHINESENAME,
+            b.WORDNAME as sameName
+        FROM
+            SYNLTE.SYNLTEFIELD a
+            INNER JOIN
+            SYNLTE.SAMEWORD b
+            ON a.SAMEID = b.SAMEID
+        WHERE
+            b.WORDNAME IN
+            <foreach collection="list" open="(" close=")" separator="," item="item">
+                #{item}
+            </foreach>
+    </select>
+
+    <select id="getSynlteFieldByElementChSet"
+            resultType="com.synway.property.pojo.tableAdvancedTerm.SynlteField">
+        SELECT
+            FIELDID,
+            FIELDCHINESENAME
+        FROM
+            SYNLTE.SYNLTEFIELD
+        WHERE
+            FIELDCHINESENAME LIKE '%${elementChSet}%'
+    </select>
+
+    <select id="getAdvancedTable" resultType="com.synway.property.pojo.tableAdvancedTerm.AdvancedTable">
+        SELECT
+            a.OBJECTID,
+            a.FIELDID,
+            b.NAME as tableNameCh,
+            b.TABLENAME as tableNameEn
+        FROM
+            SYNLTE.OBJECTFIELD a
+            INNER JOIN
+            CLASSIFY_INTERFACE_ALL_DATE b
+            ON a.OBJECTID = b.OBJECTID
+        WHERE
+            a.fieldId IN
+            <foreach collection="list" separator="," item="item" open="(" close=")">
+                #{item.fieldId}
+            </foreach>
+    </select>
+
+</mapper>

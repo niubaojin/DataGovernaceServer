@@ -1,14 +1,10 @@
 package com.synway.property.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.synway.common.bean.ServerResponse;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.dao.DataStorageMonitorDao;
 import com.synway.property.dao.LifeCycleDao;
 import com.synway.property.interceptor.AuthorizedUserUtils;
@@ -22,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -85,9 +80,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
         Map<String, Object> map = new HashMap<>();
         map.put("total", pageInfo.getTotal());
         map.put("rows", pageInfo.getList());
-//        logger.info("生命周期查询到的数据为：" + JSONObject.toJSONString(map));
         lifeCyclePageReturn.setPageInfoMap(map);
-//        logger.info("查询到的数据为：" + JSONObject.toJSONString(lifeCyclePageReturn));
         return lifeCyclePageReturn;
     }
 
@@ -210,7 +203,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
             queryParam.put("tableNameEn", queryParams.getTableNameEn());
 
             //获取所有下游表，然后获取组织分类
-            JSONObject targetTablesJson = restTemplate.postForObject(UrlConstants.DATARELATION_BASEURL + "/getTargetTables", queryParam, JSONObject.class);
+            JSONObject targetTablesJson = restTemplate.postForObject(Common.DATARELATION_BASEURL + "/getTargetTables", queryParam, JSONObject.class);
             if (targetTablesJson != null && targetTablesJson.getBoolean("success")) {
                 List<ValDensityPageParam> datas = targetTablesJson.getJSONArray("data").toJavaList(ValDensityPageParam.class);
                 List<DetailedTableByClassify> tableByClassifies = new ArrayList<>();
@@ -242,7 +235,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
                 }
             }
             //获取被调用工作流和应用系统
-            JSONObject impactStatisticJson = restTemplate.postForObject(UrlConstants.DATARELATION_BASEURL + "/getImpactStatistic", queryParam, JSONObject.class);
+            JSONObject impactStatisticJson = restTemplate.postForObject(Common.DATARELATION_BASEURL + "/getImpactStatistic", queryParam, JSONObject.class);
             if (impactStatisticJson != null && impactStatisticJson.getBoolean("success")) {
                 ImpactAnalysisProperty property = impactStatisticJson.getJSONObject("data").toJavaObject(ImpactAnalysisProperty.class);
                 if (property != null) {
@@ -340,6 +333,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
         if (StringUtils.isBlank(lifeCycleShowField)){
             lifeCycleShowField = "notNull";
         }
+        lifeCycleDao.delLifeCycleShowField(lifeCycleShowField, authorizedUser.getUserName());
         lifeCycleDao.updateLifeCycleShowField(lifeCycleShowField, authorizedUser.getUserName());
     }
 

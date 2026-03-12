@@ -19,7 +19,7 @@ public interface DataStoreAndUseHeatDao {
 	
 	int deleteAll();
 
-	int insertIntoStoreCycleAndUseHeat(List<DataStoreAndUseHeat> list);
+	int insertIntoDP_STORECYCLEANDUSEHEAT(List<DataStoreAndUseHeat> list);
 
 	Long findUseHeatByTableNameList(@Param("map") Map<String, String> map);
 

@@ -13,7 +13,7 @@
     </resultMap>
 
     <insert id = "insertOperationLog" parameterType = "com.synway.property.pojo.OperationLog">
-       insert into operate_log values(
+       insert into DP_OPERATE_LOG values(
          #{id,jdbcType=VARCHAR},
          #{logName,jdbcType=VARCHAR},
          #{logTime,jdbcType=TIMESTAMP},
@@ -22,25 +22,25 @@
     </insert>
 
     <select id="getOperateTime" resultType="java.util.Date">
-        select max(logtime) as time from operate_log where logname = #{logname}
+        select max(logtime) as time from DP_OPERATE_LOG where logname = #{logname}
 	</select>
 
     <select id="getOperateLog" resultType="com.synway.property.pojo.OperationLog" parameterType="java.lang.String">
         select l.ID as id,l.LOGNAME as logName,l.LOGTIME as logTime,l.DATACOUNT as dataCount
-        from operate_log  l where l.logtime = (select max(logtime) as time from operate_log where logname = #{logname}) and logname = #{logname}
+        from DP_OPERATE_LOG  l where l.logtime = (select max(logtime) as time from DP_OPERATE_LOG where logname = #{logname}) and logname = #{logname}
 	</select>
 
     <select id="getOperateLogMin" resultType="com.synway.property.pojo.OperationLog" parameterType="java.lang.String">
         select l.ID as id,l.LOGNAME as logName,l.LOGTIME as logTime,l.DATACOUNT as dataCount
-        from operate_log  l where l.logtime = (select min(logtime) as time from operate_log where logname = #{logname}) and logname = #{logname}
+        from DP_OPERATE_LOG  l where l.logtime = (select min(logtime) as time from DP_OPERATE_LOG where logname = #{logname}) and logname = #{logname}
 	</select>
 
     <select id="getOperateLogAll" resultMap="OperationLog"  resultType="List" parameterType="java.lang.String">
-        select l.ID,l.LOGNAME,l.LOGTIME,l.DATACOUNT from operate_log l where  logname = #{logname}
+        select l.ID,l.LOGNAME,l.LOGTIME,l.DATACOUNT from DP_OPERATE_LOG l where  logname = #{logname}
 	</select>
 
     <update id="updateOperateLog" parameterType = "com.synway.property.pojo.OperationLog">
-         update operate_log l set l.logtime=#{logTime},l.datacount = #{dataCount} where l.id = #{id}
+         update DP_OPERATE_LOG l set l.logtime=#{logTime},l.datacount = #{dataCount} where l.id = #{id}
     </update>
 
 

@@ -15,17 +15,17 @@
         left join (
         select t0.tablename,t0.project,t3.tableUseCountOfMonth,t2.tableUseCountOfWeek,t1.tableUseCountOfDay,t0.tableUseCount from
         (
-        select  sum(table_Use_Count) as tableUseCount,tablename,project from UT_ODPSSQLCOUNT t group by tablename,project) t0
+        select  sum(table_Use_Count) as tableUseCount,tablename,project from DP_UT_ODPSSQLCOUNT t group by tablename,project) t0
         left join
-        (select sum(table_Use_Count) as tableUseCountOfMonth,tablename,project from UT_ODPSSQLCOUNT t
+        (select sum(table_Use_Count) as tableUseCountOfMonth,tablename,project from DP_UT_ODPSSQLCOUNT t
         where dt between to_char(trunc(sysdate - interval '31' day),'yyyy-MM-dd') and to_char(trunc(sysdate - interval '1' day),'yyyy-MM-dd') group by tablename,project)
         t3 on (t0.tablename=t3.tablename and t0.project = t3.project)
         left join
-        (select sum(table_Use_Count) as tableUseCountOfWeek,tablename,project from UT_ODPSSQLCOUNT t
+        (select sum(table_Use_Count) as tableUseCountOfWeek,tablename,project from DP_UT_ODPSSQLCOUNT t
         where dt between to_char(trunc(sysdate - interval '7' day),'yyyy-MM-dd') and to_char(trunc(sysdate - interval '1' day),'yyyy-MM-dd') group by tablename,project) t2
         on (t0.tablename=t2.tablename and t0.project = t2.project)
         left join
-        (select sum(table_Use_Count) as tableUseCountOfDay,tablename,project from UT_ODPSSQLCOUNT t
+        (select sum(table_Use_Count) as tableUseCountOfDay,tablename,project from DP_UT_ODPSSQLCOUNT t
         where dt=to_char(trunc(sysdate - interval '1' day),'yyyy-MM-dd') group by tablename,project) t1
         on (t0.tablename=t1.tablename and t0.project = t1.project)
       ) u on (upper(u.tablename)=upper(s.tablename) and upper(s.tableproject)=upper(u.project))
@@ -35,7 +35,7 @@
 	<select id="findUseHeatByTableNameList" parameterType="java.util.HashMap" resultType="java.lang.Long">
 		select sum(table_use_count) from
 		<foreach collection="map.keys" item="key" open="(" close=")" separator=" union ">
-			select sum(table_use_count) as table_use_count from ut_odpssqlcount where tablename = #{key} and project = #{map[${key}]}
+			select sum(table_use_count) as table_use_count from DP_UT_ODPSSQLCOUNT where tablename = #{key} and project = #{map[${key}]}
 		</foreach>
 	</select>
 
@@ -45,11 +45,11 @@
 	</select>
 
 	<delete id="deleteAll" >
-		delete from storecycleanduseheat
+		delete from DP_STORECYCLEANDUSEHEAT
 	</delete>
 
-	<insert id="insertIntoStoreCycleAndUseHeat" parameterType="java.util.List" useGeneratedKeys="false">
-		insert into StoreCycleAndUseHeat (
+	<insert id="insertIntoDP_STORECYCLEANDUSEHEAT" parameterType="java.util.List" useGeneratedKeys="false">
+		insert into DP_STORECYCLEANDUSEHEAT (
 		<include refid="baseColumn"></include>
 		)
 		<foreach collection="list" index="index" item="item" separator="union all">

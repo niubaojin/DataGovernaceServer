@@ -8,7 +8,7 @@
     <insert id="insertDBOperatorRecord" parameterType="java.util.List">
         insert all
         <foreach  collection="list" item="record" index="index">
-            into DBOPERATE_MONITOR
+            into DP_DBOPERATE_MONITOR
             (ID,
             DB_TYPE,
             PROJECT_NAME,
@@ -38,11 +38,11 @@
     </insert>
     
     <delete id="deleteDBOperatorRecord" parameterType="java.lang.String">
-         delete from dboperate_monitor d where d.monitor_time = #{dt}
+         delete from DP_DBOPERATE_MONITOR d where d.monitor_time = #{dt}
     </delete>
     
     <delete id="deleteDBExeData">
-         delete from dboperate_monitor m where m.execute_state not in('0','1','2','3','4','5','6','7','8','9','10','11')
+         delete from DP_DBOPERATE_MONITOR m where m.execute_state not in('0','1','2','3','4','5','6','7','8','9','10','11')
     </delete>
     
     

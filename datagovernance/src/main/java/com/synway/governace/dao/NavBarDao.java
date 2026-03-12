@@ -11,5 +11,4 @@ public interface NavBarDao {
 
     List<NavBars> getAllNewNavBars();
 
-    boolean getNavStatusByName(String name);
 }

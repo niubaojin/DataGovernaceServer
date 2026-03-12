@@ -1,5 +1,6 @@
 package com.synway.property.dao;
 
+import com.synway.property.entity.dto.DataOrganizationDTO;
 import com.synway.property.interceptor.AuthorControl;
 import com.synway.property.pojo.PageSelectOneValue;
 import com.synway.property.pojo.dataOrganization.DataOrganization;
@@ -35,7 +36,8 @@ public interface DataOrganizationDao {
     Set<DataOrganization> getDataOrganizationTable(@Param("primaryClassifyCh") String primaryClassifyCh,
                                                    @Param("secondaryClassifyCh") String secondaryClassifyCh,
                                                    @Param("classifyid") String classifyid,
-                                                   @Param("search") String search);
+                                                   @Param("search") String search,
+                                                   @Param("sjzzflCodeId") String sjzzflCodeId);
 
 //    @AuthorControl(tableNames ={"CLASSIFY_INTERFACE_ALL_DATE"},columnNames = {"sjxjbm"})
     Set<DataOrganization> getDataInfoTable(@Param("manufacturer") String manufacturer,
@@ -54,4 +56,8 @@ public interface DataOrganizationDao {
     Set<DataOrganization> getObjectInfos(@Param("level") int level,
                                          @Param("levelCode") String levelCode,
                                          @Param("search") String search);
+
+    @AuthorControl(tableNames ={"CLASSIFY_INTERFACE_ALL_DATE"},columnNames = {"sjxjbm"})
+    Set<DataOrganization> getDataOrganizationTableInfo(DataOrganizationDTO dto);
+
 }

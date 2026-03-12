@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.synway.common.bean.ServerResponse;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.config.AsyManager;
 import com.synway.property.dao.DataMonitorDao;
 import com.synway.property.dao.DataStorageMonitorDao;
@@ -62,7 +62,7 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
     public List<JSONObject> getTableExampleData(String tableProject, String tableNameEn, String tableType, String resourceId) {
         List<JSONObject> returnList;
 //        String result = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getExampleData?resourceId=414dc6c64fc345689e576ffd29dc0b07&project=SYNDG&tableNameEn=DS_DETECTED_TABLE", String.class);
-        String url = UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getExampleData?resourceId=" + resourceId + "&project=" + tableProject + "&tableNameEn=" + tableNameEn + "&numLimit=500";
+        String url = Common.DATARESOURCE_BASEURL + "/dataresource/api/getExampleData?resourceId=" + resourceId + "&project=" + tableProject + "&tableNameEn=" + tableNameEn + "&numLimit=500";
         String result = restTemplate.getForObject(url, String.class);
         if("1".equals(JSONObject.parseObject(result).getString("status"))){
             returnList = (List<JSONObject>) JSONObject.parseObject(result).get("data");
@@ -120,23 +120,6 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
     }
 
     @Override
-    public ResourceRegisterInfo getRegisterInfo(String tableProject, String tableNameEN, String tableType) {
-        Map paramMap = new HashMap();
-        ResourceRegisterInfo returnObj = null;
-        paramMap.put("tableName", tableNameEN);
-        paramMap.put("projectName", tableProject);
-        paramMap.put("clusterName", tableType.toUpperCase());
-
-        String resultStr = restTemplate.postForObject(UrlConstants.RESOURCEREGISTER_BASEURL + "/resourceregister/tableRegister/queryRegisterTableInfo", paramMap, String.class);
-        String resultData = JSONObject.parseObject(resultStr).getString("data");
-        returnObj = JSON.parseObject(String.valueOf(resultData),ResourceRegisterInfo.class);
-
-        logger.info("=======家产信息已获取=========");
-        logger.info("=======开始注入家产信息数据=========");
-        return returnObj;
-    }
-
-    @Override
     public DataResourceImformation getDataResourceInfo(String tableProject, String tableNameEn, String tableType, String resourceId) {
         // 返回前端数据
         DataResourceImformation dataResourceImformation = new DataResourceImformation();
@@ -148,7 +131,7 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
         if (StringUtils.isBlank(resourceId)){
             return dataResourceImformation;
         }
-        String getTableMetaInfoUrl = String.format(UrlConstants.DATARESOURCE_BASEURL+"/dataresource/api/getTableMetaInfo?resourceId=%s&project=%s&tableNameEn=%s", resourceId, tableProject, tableNameEn);
+        String getTableMetaInfoUrl = String.format(Common.DATARESOURCE_BASEURL+"/dataresource/api/getTableMetaInfo?resourceId=%s&project=%s&tableNameEn=%s", resourceId, tableProject, tableNameEn);
         String getTableMetaInfoStr = restTemplate.getForObject(getTableMetaInfoUrl, String.class);
         // 新接口(2023.08.08)
         if(StringUtils.isNotBlank(getTableMetaInfoStr) && "1".equals(JSONObject.parseObject(getTableMetaInfoStr).getString("status"))){
@@ -166,8 +149,8 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
         }
         // 获取数据中心信息
         JSONArray allDataResource = new JSONArray();
-        String getDataResourceForLocal = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0",String.class);
-        String getDataResourceForNotLocal = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=1&isApproved=0",String.class);
+        String getDataResourceForLocal = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0",String.class);
+        String getDataResourceForNotLocal = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=1&isApproved=0",String.class);
         if(StringUtils.isNotBlank(getDataResourceForLocal) && "1".equals(JSONObject.parseObject(getDataResourceForLocal).getString("status"))){
             String localData = JSONObject.parseObject(getDataResourceForLocal).getString("data");
             JSONArray dataResourceLocal = JSONArray.parseArray(localData);
@@ -282,11 +265,14 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
             String statisticsTime = statistics.getDataTime();
             BigDecimal totalCount = statistics.getTotalCount();
             BigDecimal incrementCount = statistics.getIncrementCount();
-            if (DateUtil.parseDate(statisticsTime).compareTo(DateUtil.parseDate(requestBeginTime))>=0){
+            if (statisticsTime != null && DateUtil.parseDate(statisticsTime).compareTo(DateUtil.parseDate(requestBeginTime))>=0){
                 // 记录前一日数据量（用于计算环比前一日比例）
                 BigDecimal dayBeforeOne = new BigDecimal(0);
                 String dayBeforeOneDT = DateUtil.formatDate(DateUtil.addDay(DateUtil.parseDate(requestParameter.getEndTime()), -3));
                 for (int j=0; j< statisticsAllTemp.size(); j++){
+                    if (statisticsAllTemp.get(j).getDataTime() == null){
+                        continue;
+                    }
                     String daysAgo7 = DateUtil.formatDate(DateUtil.addDay(DateUtil.parseDate(statisticsAllTemp.get(j).getDataTime()), 7));
                     BigDecimal totalCountDaysAgo7 = statisticsAllTemp.get(j).getTotalCount();
                     if (statisticsTime.equalsIgnoreCase(daysAgo7) ){

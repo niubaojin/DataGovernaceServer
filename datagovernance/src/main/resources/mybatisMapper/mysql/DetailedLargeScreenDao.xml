@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.DetailedLargeScreenDao">
+
+    <select id="getDetailedOriginalData" resultType="com.synway.governace.pojo.largeScreen.PropertyLargeDetailed">
+        SELECT
+            LOWER(table_name_en) AS tableName,
+            name AS dataName,
+            SUM(table_all_count) AS dataCount
+        FROM DP_TABLE_ORGANIZATION_ASSETS
+        WHERE primary_organization_ch = '原始库'
+          AND statistics_time >= STR_TO_DATE(#{dateStr}, '%Y-%m-%d')
+          AND secondary_organization_ch = #{name}
+        GROUP BY LOWER(table_name_en), name
+    </select>
+
+    <select id="getDetailedResourceThemeData" resultType="com.synway.governace.pojo.largeScreen.PropertyLargeDetailed">
+        SELECT
+            tablename,
+            tablename_ch AS dataName,
+            SUM(records_all) AS tableDataVolume
+        FROM (
+            SELECT
+                organization_type,
+                sub_organization_name,
+                tablename,
+                tablename_ch,
+                records_all,
+                ROW_NUMBER() OVER (
+                    PARTITION BY
+                        CONCAT(organization_type, '_', sub_organization_type, '_', valvalue)
+                    ORDER BY `partition` DESC
+                ) AS rn
+            FROM dgn_inspect_organization_stat
+            WHERE organization_type = #{type} AND sub_organization_name = #{searchName}
+        ) t
+        WHERE rn = 1 AND sub_organization_name IS NOT NULL
+        GROUP BY tablename, tablename_ch;
+    </select>
+
+
+</mapper>

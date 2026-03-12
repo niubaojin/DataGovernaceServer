@@ -1,0 +1,249 @@
+-- 创建表 DP_TABLE_ORGANIZATION_ASSETS
+CREATE TABLE `DP_TABLE_ORGANIZATION_ASSETS` (
+  `SJXJBM`                      VARCHAR(50) COMMENT '表协议名',
+  `NAME`                        VARCHAR(600) COMMENT '表中文名',
+  `TABLE_NAME_EN`               VARCHAR(600) COMMENT '表英文名',
+  `PRIMARY_DATASOURCE_CH`       VARCHAR(150) COMMENT '数据来源一级分类中文名',
+  `SECONDARY_DATASOURCE_CH`     VARCHAR(150) COMMENT '数据来源二级分类中文名',
+  `PRIMARY_ORGANIZATION_CH`     VARCHAR(150) COMMENT '数据组织一级分类中文名',
+  `SECONDARY_ORGANIZATION_CH`   VARCHAR(150) COMMENT '数据组织二级分类中文名',
+  `FACTOR_ONE_NAME`             VARCHAR(150) COMMENT '数据资源要素一级分类中文名',
+  `FACTOR_TWO_NAME`             VARCHAR(150) COMMENT '数据资源要素二级分类中文名',
+  `FACTOR_DETAILED_NAME`        VARCHAR(150) COMMENT '数据资源要素细目分类代码名称',
+  `FACTOR_ATTRIBUTES_NAME`      VARCHAR(150) COMMENT '数据资源属性分类代码名称',
+  `TABLE_ALL_COUNT`             BIGINT COMMENT '表数据总行数 到昨天分区',
+  `TABLE_SIZE`                  BIGINT COMMENT '表数据总大小 到昨天分区 byte',
+  `TABLE_PROJECT`               VARCHAR(150) COMMENT '表的项目名',
+  `LIFE_CYCLE`                  VARCHAR(150) COMMENT '表的生命周期',
+  `TABLE_TYPE`                  VARCHAR(150) COMMENT '表类型 odps/ads/',
+  `YESTERDAY_COUNT`             BIGINT COMMENT '昨天分区的数据量',
+  `PARTITION_MESSAGE`           VARCHAR(150) COMMENT '是否为分区表  0:分区表  1:不是分区表  -1：不确定是否为分区表',
+  `AVERAGE_DAILY_VOLUME`        BIGINT COMMENT '日均数据量',
+  `VALUE_RATE`                  DECIMAL(10,2) COMMENT '有值率',
+  `NULL_RATE`                   DECIMAL(10,2) COMMENT '空值率',
+  `TABLE_STATE`                 VARCHAR(150) COMMENT '状态  正常/异常',
+  `UPDATE_TYPE`                 VARCHAR(150) COMMENT '全量/增量/',
+  `STATISTICS_TIME`             DATETIME COMMENT '统计时间',
+  `FREQUENCY`                   VARCHAR(650) COMMENT '最近一个月使用次数/总使用次数',
+  `LIVETYPE`                    VARCHAR(650) COMMENT 'NONLIVING：死表 LIVING：活表',
+  `REGISTER_STATE`              VARCHAR(255) DEFAULT '-1' COMMENT '注册状态 -1:未注册 1:已注册',
+  `OBJECT_ID`                   VARCHAR(100) COMMENT 'object表中的objectid',
+  `AVERAGE_DAILY_SIZE`          BIGINT COMMENT '日均数据大小',
+  `OBJECT_STATE`                VARCHAR(50) COMMENT '停用，启用状态，1为启用',
+  `THREE_ORGANIZATION_CH`       VARCHAR(150) COMMENT '数据组织三级分类中文名',
+  `LABELS`                      VARCHAR(500) COMMENT '数据资源标签',
+  `UPDATE_PERIOD`               VARCHAR(100) COMMENT '更新批次',
+  `UPDATE_DATE`                 VARCHAR(100) COMMENT '更新周期',
+  `DATARESOURCE_CODE`           VARCHAR(100) COMMENT '资源服务平台组织机构代码',
+  `EXCEPTION_MESSAGE`           VARCHAR(100) COMMENT '异常信息',
+  `LIFE_CYCLE_STATUS`           VARCHAR(50) COMMENT '生命周期审批状态',
+  `LASTDATAMODIFIEDTIME`        VARCHAR(100) COMMENT '最后修改时间',
+  `TABLECREATEDTIME`            VARCHAR(100) COMMENT '表创建时间',
+  `PARTITION_NUM`               VARCHAR(255) COMMENT '分区数量',
+  `LASTVISITEDTIME`             VARCHAR(255) COMMENT '最后访问时间',
+  `TABLEUSECOUNTOFMONTH`        VARCHAR(255) COMMENT '月使用量',
+  `RESOURCEID`                  VARCHAR(255) COMMENT '数据资源id，用于管理权限表',
+  `THREELEVEL_ORGANIZATION_CH`  VARCHAR(200) COMMENT '数据组织三级分类中文名',
+  `ORGANIZATION_ID_LAST_LEVEL`  VARCHAR(150) COMMENT '数据组织分类id(最后一级)',
+  `DATASOURCE_LAST_LEVEL`       VARCHAR(150) COMMENT '数据来源分类id(最后一级)',
+  `RES_NAME`                    VARCHAR(200) COMMENT '数据源名称',
+  `ISSTANDARD`                  VARCHAR(100) COMMENT '是否对标',
+  `ALARM_LEVEL`                 VARCHAR(100) COMMENT '告警级别',
+  `SJZYBQ5`                     VARCHAR(50) COMMENT '数据资源标签5'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '表组织资产的相关数据';
+CREATE INDEX DATE1_INDEX3 ON `DP_TABLE_ORGANIZATION_ASSETS` (`STATISTICS_TIME`);
+
+-- 创建表 DP_DATA_STORAGE_ADD_TABLE
+CREATE TABLE `DP_DATA_STORAGE_ADD_TABLE` (
+  `DATABASE_TYPE`    VARCHAR(20) COMMENT '数据库类型ADS',
+  `PROJECT_NAME`     VARCHAR(100) COMMENT '项目名称（英文）',
+  `TABLENAME_EN`     VARCHAR(600) COMMENT '表英文名',
+  `TABLENAME_CH`     VARCHAR(600) COMMENT '表中文名',
+  `TABLE_ID`         VARCHAR(600) NOT NULL COMMENT '记录的唯一ID',
+  `PARTITIONED`      VARCHAR(10) COMMENT '是否为分区表 1:true  0:false',
+  `DATA_SOURCE_NAME` VARCHAR(100) COMMENT '数据源名称',
+  `DATA_SOURCE_ID`   VARCHAR(100) COMMENT '数据源id',
+  `DATA_CENTER_NAME` VARCHAR(100) COMMENT '数据中心名称',
+  `DATA_CENTER_ID`   VARCHAR(100) COMMENT '数据中心id',
+  `ISSTANDARD`       VARCHAR(50) COMMENT '是否标准 1:是 0:否',
+  `ISADDMONITOR`     VARCHAR(50) COMMENT '是否监控 （已控，待控）',
+  `ISDELETE`         VARCHAR(50) COMMENT '是否删除 1:已删除 0:未删除',
+  `PARTITION_COLUMN` VARCHAR(50) COMMENT '分区字段'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '需要监控的ADS表信息';
+
+-- 创建表 DP_DATA_STORAGE_TABLE_FULL
+CREATE TABLE `DP_DATA_STORAGE_TABLE_FULL` (
+  `TABLE_NAME_EN`   VARCHAR(600) NOT NULL COMMENT '表英文名',
+  `TABLE_NAME_CH`   VARCHAR(600) COMMENT '表中文名',
+  `TABLE_TODAY_SUM` BIGINT COMMENT '表当日的数据量',
+  `TABLE_ALL_SUM`   BIGINT COMMENT '表当日表数据总量',
+  `STATISTIC_DAY`   VARCHAR(20) COMMENT '表统计日期yyyyMMddHH24miss',
+  `TABLE_PROJECT`   VARCHAR(40) COMMENT '表项目名',
+  `STATISTIC_ID`    VARCHAR(60) NOT NULL COMMENT '唯一性ID',
+  `DATABASE_TYPE`   VARCHAR(60) COMMENT '数据库类型odps/ads'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '监控的ADS表的详细数据信息';
+
+-- 创建表 DP_DATA_REGISTER
+CREATE TABLE `DP_DATA_REGISTER` (
+  `SJXJBM`               VARCHAR(100) COMMENT '协议编号',
+  `TABLE_NAME_EN`        VARCHAR(100) COMMENT '表名',
+  `OBJECT_ID`            VARCHAR(100) COMMENT '标准表id',
+  `APPROVAL_ID`          VARCHAR(100) COMMENT '审批id',
+  `APPROVAL_STATUS`      VARCHAR(10) COMMENT '审批状态(1为审批成功，2为审批中，4为审批失败)',
+  `APPROVAL_CREATE_TIME` VARCHAR(100) COMMENT '审批创建时间',
+  `APPROVAL_UPDATE_TIME` VARCHAR(100) COMMENT '审批更新时间',
+  `APPROVAL_TYPE`        VARCHAR(50) COMMENT '审批类型',
+  `TABLE_PROJECT`        VARCHAR(50) COMMENT '库名'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '注册';
+
+-- 创建表 DP_STORECYCLEANDUSEHEAT
+CREATE TABLE `DP_STORECYCLEANDUSEHEAT` (
+  `ID` VARCHAR(36) COMMENT 'ID',
+  `LASTDATE`             VARCHAR(32) COMMENT 'LASTDATE',
+  `TABLETYPE`            VARCHAR(2) COMMENT 'TABLETYPE',
+  `CLASSNAME`            VARCHAR(32) COMMENT 'CLASSNAME',
+  `SUBCLASS`             VARCHAR(1000) COMMENT 'SUBCLASS',
+  `TABLENAMEEN`          VARCHAR(1000) COMMENT 'TABLENAMEEN',
+  `TABLENAMEZH`          VARCHAR(1000) COMMENT 'TABLENAMEZH',
+  `LIFECYCLE`            INT(8) COMMENT 'LIFECYCLE',
+  `TABLEALLCOUNT`        BIGINT COMMENT 'TABLEALLCOUNT',
+  `TABLESIZE`            BIGINT COMMENT 'TABLESIZE',
+  `TABLEUSECOUNT`        BIGINT COMMENT 'TABLEUSECOUNT',
+  `TABLEUSECOUNTOFDAY`   BIGINT COMMENT 'TABLEUSECOUNTOFDAY',
+  `TABLEUSECOUNTOFWEEK`  BIGINT COMMENT 'TABLEUSECOUNTOFWEEK',
+  `TABLEUSECOUNTOFMONTH` BIGINT COMMENT 'TABLEUSECOUNTOFMONTH'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 创建表 DP_DATAPROCESS
+CREATE TABLE `DP_DATAPROCESS` (
+  `AREA_ID`         VARCHAR(100) COMMENT '地区行政编号（参考标准 附录一）',
+  `DEPT`            VARCHAR(100) COMMENT '部门名称',
+  `OPERATOR`        VARCHAR(100) COMMENT '操作人名称',
+  `POLICENO`        VARCHAR(100) COMMENT '警号',
+  `APP_ID`          VARCHAR(100) COMMENT '系统代码',
+  `MODULE_ID`       VARCHAR(100) COMMENT '模块代码 (大写) 仓库(SJCK) 探查(SJTC) 接入(SJJR) 标准(BZGL) 质检(ZLJC) 对账(SJDZ) 资产(ZCGL) 血缘(SJXY) 家产登记(JCDJ) 运维管理(YWGL)',
+  `OPERATE_TIME`    VARCHAR(100) NOT NULL COMMENT '操作时间   YYYY-MM-DD HH:mm:ss',
+  `IP`              VARCHAR(100) COMMENT 'IP地址/操作设备地址',
+  `LOG_TYPE`        VARCHAR(100) COMMENT '操作类型代码　(大写)探查  业务探查：SJTC001 接入任务  新建：SJJR001 删除：SJJR001 修改：SJJR001 标准  建表：BZGL001 登记：BZGL002 质检任务  新建：ZLJC001 删除：ZLJC001 修改：ZLJC001',
+  `DIGEST`          VARCHAR(1000) COMMENT '日志摘要   操作行为的简要说明　不同模块对应的格式不同',
+  `DATA_BASE_TYPE`  VARCHAR(100) COMMENT '数据库类型 odps/ads/hive/hbase',
+  `TABLE_NAME_EN`   VARCHAR(100) COMMENT '包括  项目名.表名',
+  `TABLE_ID`        VARCHAR(100) COMMENT '表协议ID',
+  `INSERT_TIME`     DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '该条记录的插入时间',
+  `TASK_NAME`       VARCHAR(200) COMMENT '任务名 只有数据接入，质量检测才有这个',
+  `ID`              BIGINT NOT NULL COMMENT '唯一主键'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '存储数据历程的相关信息';
+
+-- 创建表 DP_DB_STATE
+CREATE TABLE `DP_DB_STATE` (
+  `NAME`            VARCHAR(255) COMMENT '名字',
+  `USED_CAPACITY`   VARCHAR(255) COMMENT '已使用物理存储(GB)',
+  `BARE_CAPACITY`   VARCHAR(255) COMMENT '总物理存储(GB)',
+  `TABLE_COUNT`     VARCHAR(255) COMMENT '记录数',
+  `LIVE_TABLE_ROTE` VARCHAR(255) COMMENT '活表率',
+  `MODIFY_TIME`     DATETIME COMMENT '修改时间',
+  `TABLE_SUM`       VARCHAR(10) COMMENT '表数量'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '数据库概况';
+
+-- 创建表 DP_T_ADS_ODPS
+CREATE TABLE `DP_T_ADS_ODPS` (
+  `ID`              VARCHAR(128) NOT NULL COMMENT 'ID',
+  `NAME`            VARCHAR(128) COMMENT '4种名字：1.ADS,2.ODPS,3.OSS,4.TRS',
+  `USED_CAPACITY`   BIGINT COMMENT '已使用容量',
+  `BARE_CAPACITY`   BIGINT COMMENT '裸容量',
+  `DT`              DATETIME COMMENT '入库时间',
+  `UT`              DATETIME COMMENT '更新时间',
+  `RATE`            DECIMAL(2,1) COMMENT '已使用容量的百分比值，例如20%记录值为20',
+  `FILE_COUNT`      VARCHAR(255) COMMENT '文件数，主要针对oss'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 创建表 DP_APPROVAL_INFO
+CREATE TABLE `DP_APPROVAL_INFO` (
+  `APPROVAL_ID`       VARCHAR(32) COMMENT 'UUID唯一标识',
+  `MODULE_NAME`       VARCHAR(200) COMMENT '业务模块',
+  `OPERATION_NAME`    VARCHAR(200) COMMENT '申请操作',
+  `APPLICATION_INFO`  TEXT COMMENT '申请信息',
+  `CALLBACK_DATA`     TEXT COMMENT '回传业务系统数据',
+  `CALLBACK_URL`      VARCHAR(200) COMMENT '回调业务系统地址',
+  `CREATE_TIME`       DATETIME COMMENT '创建时间',
+  `STATUS`            VARCHAR(2) COMMENT '状态(0:初始化;1:审批中;2:退回;结束;4:手动终止)',
+  `MODULE_ID`         VARCHAR(50) COMMENT '业务模块标识(dataDefinition:数据定义;createTable:建表;standardTable:新建标准表;register:注册)',
+  `OPERATOR_ID`       VARCHAR(50) COMMENT '申请人id',
+  `TASK_ID`           VARCHAR(50) COMMENT '事务id',
+  `VIEW_URL`          VARCHAR(200) COMMENT '申请详情查看地址',
+  `PROCESSINSTANCEID` VARCHAR(64) COMMENT '流程实例ID',
+  `EXECUTE_RESULT`    TEXT COMMENT '回调执行情况'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '申请审批表';
+
+-- 创建表 DP_ZC_CONFIG_FIELD_CONTROL
+CREATE TABLE `DP_ZC_CONFIG_FIELD_CONTROL` (
+  `NAME` VARCHAR(255) COMMENT '页面名',
+  `OVERTIMEDAYS` INT COMMENT '数据最大保留天数',
+  `SHOW_FIELD_LIST` TEXT COMMENT '显示字段列表',
+  `USERNAME` VARCHAR(100) COMMENT '所属用户'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '表组织字段全局显示配置';
+
+-- 创建表 DP_UT_ODPSSQLCOUNT
+CREATE TABLE `DP_UT_ODPSSQLCOUNT` (
+  `PROJECT`         VARCHAR(128) COMMENT '项目名',
+  `TABLENAME`       VARCHAR(256) COMMENT '表名',
+  `TABLE_USE_COUNT` INT(10) COMMENT '某一个类型的使用次数',
+  `SQLTYPE`         INT(2) COMMENT '值包含: 1.SELECT 2.INSERT 3.COUNT',
+  `DT`              VARCHAR(36) COMMENT '该条数据的插入时间，时间格式yyyy-MM-dd',
+  `ID`              VARCHAR(36) COMMENT '外键，关联DP_DBOPERATE_MONITOR的主键'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = 'DP_UT_ODPSSQLCOUNT';
+
+-- 创建表 DP_DBOPERATE_MONITOR
+CREATE TABLE `DP_DBOPERATE_MONITOR` (
+  `ID`              VARCHAR(100) COMMENT '主键',
+  `DB_TYPE`         VARCHAR(10) COMMENT '数据库类型',
+  `PROJECT_NAME`    VARCHAR(100) COMMENT '项目名',
+  `SQL_TYPE`        INT(10) COMMENT 'SQL类型（0:未解析出来  1:select查询   2:insert插入   3:count计数   4:delete删出   5:update修改   6:create建表   7:drop删表 ）',
+  `EXECUTE_STATE`   VARCHAR(10) COMMENT '执行状态(4:Failed, 5:Terminated(成功))',
+  `START_TIME`      VARCHAR(20) COMMENT '开始时间（XX时XX分XX秒）',
+  `END_TIME`        VARCHAR(100) COMMENT '结束时间',
+  `EXECUTE_TIME`    VARCHAR(100) COMMENT '执行时长',
+  `INST_OWNER_NAME` VARCHAR(200) COMMENT '账户名',
+  `MONITOR_TIME`    VARCHAR(20) COMMENT '监控日期（年-月-日）',
+  `SQL`             TEXT COMMENT 'SQL内容'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '数据库操作监控（数据取自阿里m_task）';
+
+-- 创建表 DP_FOCUS_CLASS_MONITOR
+CREATE TABLE `DP_FOCUS_CLASS_MONITOR` (
+  `PRIMARY_NAME`            VARCHAR(200) COMMENT '一级名称',
+  `SECONDARY_NAME`          VARCHAR(200) COMMENT '二级名称',
+  `INSERT_TIME`             DATETIME COMMENT '该条记录插入的时间',
+  `DEL_FLAG`                INT DEFAULT 1 COMMENT '是否被删除 0：被删除 1：没有被删除',
+  `MAJOR_CLASS`             VARCHAR(200) COMMENT '大类名称  数据组织/数据资源来源/数据资源分类major',
+  `USER_ID`                 VARCHAR(100) COMMENT '用户id',
+  `USER_AUTHORITY_ID`       VARCHAR(100) COMMENT '权限表用户id',
+  `USER_NAME`               VARCHAR(100) COMMENT '用户名',
+  `IS_ADMIN`                VARCHAR(50) COMMENT '是否管理员',
+  `LAST_LEVEL_CLASSIFYCODE` VARCHAR(100) COMMENT '最后一级分类代码'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '存储需要监控的重点组织信息';
+
+-- 创建表 DP_VAL_DENSITY
+CREATE TABLE `DP_VAL_DENSITY` (
+  `TABLE_NAME_EN`             VARCHAR(255) COMMENT '英文表名',
+  `TABLE_TYPE`                VARCHAR(255) COMMENT '平台类型',
+  `TABLE_PROJECT`             VARCHAR(255) COMMENT '项目名',
+  `UNSTRUCTED_DATA`           INT COMMENT '是否非结构化数据',
+  `TWOHANDLE`                 INT COMMENT '是否二次解析',
+  `TEXTHANDLE`                INT COMMENT '是否可进行文本提取',
+  `WORKFLOW_USED`             INT COMMENT '被调用工作流',
+  `APPLICATION_USED`          INT COMMENT '被调用应用系统',
+  `ZHUTIKU_USED`              INT COMMENT '提取主题库',
+  `ZIYUANKU_USED`             INT COMMENT '提取资源库',
+  `YAOSUKU_USED`              INT COMMENT '提取要素库',
+  `TAG_USED`                  INT COMMENT '提取标签',
+  `VAL_DENSITY`               VARCHAR(255) COMMENT '价值密度',
+  `UPDATE_VAL_DENSITY_STATUS` INT COMMENT '更新价值密度状态'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = '价值密度表';
+
+-- 创建表 DP_OPERATE_LOG
+CREATE TABLE `DP_OPERATE_LOG` (
+  `ID`        VARCHAR(256) COMMENT '主键',
+  `LOGNAME`   VARCHAR(256) COMMENT '操作名称',
+  `LOGTIME`   DATETIME COMMENT '操作时间',
+  `DATACOUNT` INT COMMENT '数据量'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

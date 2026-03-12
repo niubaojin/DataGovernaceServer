@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.OperatorLogDao">
+
+    <resultMap id="OperationLog" type="com.synway.property.pojo.OperationLog">
+        <result property="id" column="ID" jdbcType="VARCHAR"/>
+        <result property="logName" column="LOGNAME" jdbcType="VARCHAR"/>
+        <result property="logTime" column="LOGTIME" jdbcType="TIMESTAMP"/>
+        <result property="dataCount" column="DATACOUNT" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="insertOperationLog" parameterType="com.synway.property.pojo.OperationLog">
+        insert into DP_OPERATE_LOG
+        (ID, LOGNAME, LOGTIME, DATACOUNT)
+        values
+        (#{id,jdbcType=VARCHAR},
+         #{logName,jdbcType=VARCHAR},
+         #{logTime,jdbcType=TIMESTAMP},
+         #{dataCount,jdbcType=VARCHAR})
+    </insert>
+
+    <select id="getOperateTime" resultType="java.util.Date">
+        select max(LOGTIME) as time from DP_OPERATE_LOG where LOGNAME = #{logname}
+    </select>
+
+    <select id="getOperateLog" resultType="com.synway.property.pojo.OperationLog" parameterType="java.lang.String">
+        select l.ID as id, l.LOGNAME as logName, l.LOGTIME as logTime, l.DATACOUNT as dataCount
+        from DP_OPERATE_LOG l
+        where l.LOGNAME = #{logname}
+          and l.LOGTIME = (select max(LOGTIME) from DP_OPERATE_LOG where LOGNAME = #{logname})
+    </select>
+
+    <select id="getOperateLogMin" resultType="com.synway.property.pojo.OperationLog" parameterType="java.lang.String">
+        select l.ID as id, l.LOGNAME as logName, l.LOGTIME as logTime, l.DATACOUNT as dataCount
+        from DP_OPERATE_LOG l
+        where l.LOGNAME = #{logname}
+          and l.LOGTIME = (select min(LOGTIME) from DP_OPERATE_LOG where LOGNAME = #{logname})
+    </select>
+
+    <select id="getOperateLogAll" resultMap="OperationLog" parameterType="java.lang.String">
+        select l.ID, l.LOGNAME, l.LOGTIME, l.DATACOUNT
+        from DP_OPERATE_LOG l
+        where l.LOGNAME = #{logname}
+    </select>
+
+    <update id="updateOperateLog" parameterType="com.synway.property.pojo.OperationLog">
+        update DP_OPERATE_LOG l
+        set l.LOGTIME = #{logTime},
+            l.DATACOUNT = #{dataCount}
+        where l.ID = #{id}
+    </update>
+
+</mapper>

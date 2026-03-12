@@ -25,7 +25,6 @@ public enum SysCodeEnum {
     productStageEight("99", "未分配", "PRODUCTSTAGE"),
     // 平台类型
     tableType1("1", "odps", "TABLETYPE"),
-    tableType2("2", "ads", "TABLETYPE"),
     tableType4("4", "HBase-HUAWEI", "TABLETYPE"),
     tableType5("5", "Hive-HUAWEI", "TABLETYPE"),
     tableType6("6", "ES", "TABLETYPE"),
@@ -39,8 +38,10 @@ public enum SysCodeEnum {
     tableType14("14", "Kafka", "TABLETYPE"),
     tableType15("15", "RocketMq", "TABLETYPE"),
     tableType16("16", "Redis", "TABLETYPE"),
-    tableType18("18", "ADB", "TABLETYPE"),
+    tableType17("17", "GBASE", "TABLETYPE"),
     tableType19("19", "FTP", "TABLETYPE"),
+    tableType21("21", "ADS", "TABLETYPE"),
+    tableType22("22", "ADB", "TABLETYPE"),
     // 告警级别
     alarmLevelZero("0","一般","ALARMLEVEL"),
     alarmLevelOne("1","警告","ALARMLEVEL"),

@@ -50,4 +50,21 @@ public class Common {
             "    create_time desc\n" +
             "limit 1";
 
+    /**
+     * Adb资产统计相关sql
+     */
+    public static final String syndmgTablesByAdbMetaSql = "select\n" +
+            "    table_name as tableName,\n" +
+            "    table_comment as tableComment,\n" +
+            "    partition_count as lifeCycle,\n" +
+            "    update_time as tableLastMetaModifiedTime,\n" +
+            "    create_time as tableCreatedTime,\n" +
+            "    is_sub_partition as isPartitionStr,\n" +
+            "    sub_partition_column as partColumn,\n" +
+            "    table_schema as tableProject,\n" +
+            "    table_rows as tableAllcount,\n" +
+            "    data_length as tableSize\n" +
+            "from\n" +
+            "    information_schema.tables";
+
 }

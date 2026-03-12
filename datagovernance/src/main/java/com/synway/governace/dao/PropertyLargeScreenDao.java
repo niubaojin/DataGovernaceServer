@@ -149,7 +149,7 @@ public interface PropertyLargeScreenDao {
      * @param type   01-原始库、02-资源库、03-主题库、04-知识库、05-业务库、06-业务索引库
      * @return
      */
-    List<StandardLabelData> getOrgainTableStatDao(@Param("type")String type);
+    List<StandardLabelData> getOrgainTableStatDao(@Param("type")String type, @Param("sjzzflCodeId")String sjzzflCodeId);
 
 
     /**
@@ -196,7 +196,7 @@ public interface PropertyLargeScreenDao {
      * 获取 原始业务库资产情况
      * @return
      */
-    List<StandardLabelData> getOriginalBusinessData();
+    List<StandardLabelData> getOriginalBusinessData(@Param("sjzzflCodeId")String sjzzflCodeId);
 
 
     /**

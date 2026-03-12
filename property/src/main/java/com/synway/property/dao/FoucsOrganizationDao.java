@@ -17,13 +17,13 @@ import java.util.Map;
 @Mapper
 @Repository
 public interface FoucsOrganizationDao {
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<FoucsOrganizationFull>  getAllFoucsOrganizationDao();
     List<ClassifyInformation> getClassifyInformationTableDao(@Param("mainClassifyCh") String mainClassifyCh,
                                                              @Param("primaryClassifyCh") String primaryClassifyCh);
-    @AuthorControl(tableNames ={"Focus_Organization_add_monitor"},columnNames = {"resourceid"})
-    List<ClassifyInformation> getAllClassifyInformationTableDao();
-    @AuthorControl(tableNames ={"Focus_Organization_add_monitor"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_FOCUS_CLASS_MONITOR"},columnNames = {"resourceid"})
+    List<ClassifyInformation> getAllClassifyInformationTableDao(@Param("sjzzflCodeId") String sjzzflCodeId);
+    @AuthorControl(tableNames ={"DP_FOCUS_CLASS_MONITOR"},columnNames = {"resourceid"})
     List<String> getAddClassifyNameList();
     // 将需要插入的数据插入到对应的表中
     Integer insertClassifyInformationTableDao(List<ClassifyInformation> insertDataList);
@@ -37,11 +37,11 @@ public interface FoucsOrganizationDao {
     // 删除所有的重点表监控信息
     Integer delUserAuthorityDataListDao(@Param("userId") int userId);
 
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<Map<String,Object>> getDayUseHeatDao(@Param("daysAgo") int daysAgo);
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<Map<String,Object>> getFullDataRankingDao(@Param("daysAgo") int daysAgo);
-    @AuthorControl(tableNames ={"table_organization_assets"},columnNames = {"resourceid"})
+    @AuthorControl(tableNames ={"DP_TABLE_ORGANIZATION_ASSETS"},columnNames = {"resourceid"})
     List<Map<String,Object>> getIncrementalDataRankingDao(@Param("daysAgo") int daysAgo);
 
     //  获取 左侧tree的相关数据

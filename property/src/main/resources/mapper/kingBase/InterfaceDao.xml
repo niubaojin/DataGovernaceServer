@@ -6,13 +6,13 @@
 <mapper namespace="com.synway.property.dao.InterfaceDao">
 
     <update id="updateDataCenterName">
-        update DATA_STORAGE_ADD_TABLE
+        update DP_DATA_STORAGE_ADD_TABLE
          set
             DATA_CENTER_NAME = #{dataCenterName,jdbcType=VARCHAR}
          where DATA_CENTER_ID = #{dataCenterId,jdbcType=VARCHAR}
     </update>
     <update id="updateDataSourceName">
-        update DATA_STORAGE_ADD_TABLE
+        update DP_DATA_STORAGE_ADD_TABLE
          set
             DATA_SOURCE_NAME = #{dataSourceName,jdbcType=VARCHAR}
          where DATA_SOURCE_ID = #{dataSourceId,jdbcType=VARCHAR}
@@ -67,7 +67,7 @@
         *
         FROM
         ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate)
         )a
         where
         <foreach collection="tables" item="item" open="(" close=")" separator="or">

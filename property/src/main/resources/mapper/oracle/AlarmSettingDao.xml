@@ -12,7 +12,7 @@
                t.table_name_en     as tableNameEn,
                t.sjxjbm            as tableId,
                t.alarm_level       as levelName
-             from table_organization_assets t
+             from DP_TABLE_ORGANIZATION_ASSETS t
             where t.statistics_time &gt;= to_char(sysdate - 1)
               and t.statistics_time &lt; to_char(sysdate)
               and t.table_state = '异常'

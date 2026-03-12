@@ -60,7 +60,7 @@ public class ODPSStoreCycleImpl {
                 logger.info("正在清空前一天的数据!");
                 long start = System.currentTimeMillis();
 
-                boolean isdelete = deleteOldTable(connection, "StoreCycleAndUseHeat");
+                boolean isdelete = deleteOldTable(connection, "DP_STORECYCLEANDUSEHEAT");
                 logger.info("已清空前一天的数据！");
 
                 //插数据入到OLAP表中
@@ -115,7 +115,7 @@ public class ODPSStoreCycleImpl {
     public boolean batchInsert(List<DataStoreAndUseHeat> list, Connection connection) throws Exception {
         PreparedStatement pstmt = null;
         try {
-            String SQLString = "insert into StoreCycleAndUseHeat(ID,lastDate,tableType,className,subclass,tableNameEN,tableNameZH," +
+            String SQLString = "insert into DP_STORECYCLEANDUSEHEAT(ID,lastDate,tableType,className,subclass,tableNameEN,tableNameZH," +
                     "lifeCycle,tableAllCount,tableSize,tableUseCount,tableUseCountOfDay,tableUseCountOfWeek,tableUseCountOfMonth)" +
                     " values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             pstmt = connection.prepareStatement(SQLString);

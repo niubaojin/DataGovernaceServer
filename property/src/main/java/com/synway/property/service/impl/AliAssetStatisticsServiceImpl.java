@@ -38,6 +38,10 @@ public class AliAssetStatisticsServiceImpl implements AliAssetStatisticsService 
     private DruidDataSource adsDataSourceMeta;
 
     @Autowired
+    @Qualifier(value = "adbDataSourceMeta")
+    private DruidDataSource adbDataSourceMeta;
+
+    @Autowired
     @Qualifier(value = "adsDataSourceSys")
     private DruidDataSource adsDataSourceSys;
 
@@ -59,16 +63,75 @@ public class AliAssetStatisticsServiceImpl implements AliAssetStatisticsService 
     public void runAliAssetStatistics() {
         try {
             logger.info("====开始统计odps资产信息");
-//            getOdpsStatisticsInfo();
             // 改为多线程执行（线程数为项目数）
             getOdpsStatisticsInfoThread();
             logger.info("====统计odps资产信息结束");
             logger.info("====开始统计ads资产信息");
             getAdsStatisticsInfo();
             logger.info("====统计ads资产信息结束");
+            logger.info("====开始统计adb资产信息");
+            getAdbStatisticsInfo();
+            logger.info("====统计adb资产信息结束");
         } catch (Exception e) {
             logger.error("统计odps资产信息报错:\n" + ExceptionUtil.getExceptionTrace(e));
         }
+    }
+
+    public void getAdbStatisticsInfo() {
+        long startTime = System.currentTimeMillis();
+        AdsOrMysqlClient adsOrMysqlClient = new AdsOrMysqlClient();
+        try {
+            JSONArray jsonArray = adsOrMysqlClient.execBySql(adbDataSourceMeta, Common.syndmgTablesByAdbMetaSql);
+            List<SyndmgTableAll> allList = JSONArray.parseArray(jsonArray.toJSONString(), SyndmgTableAll.class);
+            // ads统计列表
+            List<SyndmgTableAll> syndmgTableAlls = createAdbTabInfo(allList, adsOrMysqlClient);
+
+            // 插入数据
+            if (syndmgTableAlls.size() > 0){
+                logger.info(">>>>>>开始插入adb的统计数据");
+                insertTabTnfo(syndmgTableAlls);
+                // 删除过期的历史数据
+                logger.info(">>>>>>开始删除adb的过期数据");
+                syndmgTableAlls.stream().forEach(syndmgTableAll -> {
+                    delHisData(syndmgTableAll);
+                });
+            }
+            long endTime = System.currentTimeMillis();
+            logger.info("ads全表数据插入成功,用时:" + ((endTime - startTime) / 1000 / 60) + "分");
+        } catch (Exception e) {
+            logger.error("统计ads出错：\n{}", e);
+        }
+    }
+
+    /**
+     * 方法描述:获取ads统计信息
+     *
+     * @param allList
+     */
+    public List<SyndmgTableAll> createAdbTabInfo(List<SyndmgTableAll> allList, AdsOrMysqlClient adsOrMysqlClient) {
+        // 阿里资产统计信息对象
+        List<SyndmgTableAll> syndmgTableAlls = new ArrayList<>();
+        long dBefore = dateBefore(1);                                // 昨天日期
+        for (SyndmgTableAll syndmgTableAll : allList) {
+            // 判断是否分区表
+            String isPartitionStr = syndmgTableAll.getIsPartitionStr(); // 表类型(是否分区表)
+            if ("1".equals(isPartitionStr) || "true".equalsIgnoreCase(isPartitionStr)) {
+                syndmgTableAll.setIsPartition(0);
+            }else {
+                syndmgTableAll.setIsPartition(1);
+            }
+            // 参数注入
+            syndmgTableAll.setTableType(22);                                        // 平台类型：1、odps, 2、hc, 3、hp
+            String partitionDate = String.valueOf(dBefore);                         // 分区日期列
+            syndmgTableAll.setPartitionData(partitionDate);
+            syndmgTableAll.setPartitionCount(0);                                    // 分区数据量
+            syndmgTableAll.setPartitionSize(0);                                     // 分区大小
+            syndmgTableAll.setPartitionNum(0);                                      // 分区数
+            syndmgTableAll.setInsertDataTime(DateUtil.formatDateTime(new Date()));  // 插入时间
+            syndmgTableAll.setDataId("ads");
+            syndmgTableAlls.add(syndmgTableAll);
+        }
+        return syndmgTableAlls;
     }
 
     public void getAdsStatisticsInfo() {
@@ -108,8 +171,6 @@ public class AliAssetStatisticsServiceImpl implements AliAssetStatisticsService 
 
         SimpleDateFormat sdformat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        String adsHc = environment.getProperty("hc_adsproject");
-        String adsHp = environment.getProperty("hp_adsproject");
         long dBefore = dateBefore(1);                                // 昨天日期
 
         for (SyndmgTableAll syndmgTableAll : allList) {
@@ -117,17 +178,8 @@ public class AliAssetStatisticsServiceImpl implements AliAssetStatisticsService 
             String tableProject = syndmgTableAll.getTableProject();     // 项目空间名称
             String isPartitionStr = syndmgTableAll.getIsPartitionStr(); // 表类型(是否分区表)
             String partColumn = syndmgTableAll.getPartColumn();         // 分区列
+            int tableType = 21;                                         // 平台类型
 
-            // 平台类型
-            int tableType = 2;
-            if (adsHc.toLowerCase().contains(tableProject.toLowerCase())) {
-                tableType = 2;
-            } else if (adsHp.toLowerCase().contains(tableProject.toLowerCase())) {
-                tableType = 3;
-            }else {
-                logger.info(String.format("ADS,表名：%s.%s,项目名异常不在统计范围内，略过...", tableProject, tableName));
-                continue;
-            }
             // 判断是否临时表
             if (getIsTemporaryTable(tableName)){
                 logger.info(String.format("ADS,表名：%s.%s，临时表不在统计范围，略过...", tableProject, tableName));

@@ -8,7 +8,7 @@
     <changeSet id="V3.6.0.20250306.01" author="nbj" >
         <preConditions onFail="MARK_RAN">
             <not>
-                <tableExists tableName="TABLE_ORGANIZATION_ASSETS" />
+                <tableExists tableName="DP_TABLE_ORGANIZATION_ASSETS" />
             </not>
         </preConditions>
         <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240920.01_DP_TABLE.sql"/>
@@ -17,10 +17,32 @@
     <!--初始化数据-->
     <changeSet id="V3.6.0.20250306.02" author="nbj" >
         <preConditions onFail="MARK_RAN">
-            <tableIsEmpty tableName="ZC_CONFIG_FIELD_CONTROL" />
+            <tableIsEmpty tableName="DP_ZC_CONFIG_FIELD_CONTROL" />
         </preConditions>
         <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240920.01_DP_INIT.sql" />
     </changeSet>
 
+    <changeSet id="V3.8.0.20251121.02" author="nbj">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="TABLE_ORGANIZATION_ASSETS" />
+        </preConditions>
+        <sql>
+            insert into DP_TABLE_ORGANIZATION_ASSETS select * from TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME  > trunc(sysdate - 30);
+            insert into DP_DATA_STORAGE_ADD_TABLE select * from DATA_STORAGE_ADD_TABLE;
+            insert into DP_DATA_STORAGE_TABLE_FULL select * from DATA_STORAGE_TABLE_FULL;
+            insert into DP_DATA_REGISTER select * from DATA_REGISTER;
+            insert into DP_STORECYCLEANDUSEHEAT select * from STORECYCLEANDUSEHEAT;
+            insert into DP_DATAPROCESS select * from DATAPROCESS;
+            insert into DP_DB_STATE select * from TABLE_ORGANIZATION_DB_STATE;
+            insert into DP_T_ADS_ODPS select * from T_ADS_ODPS;
+            insert into DP_APPROVAL_INFO select * from APPROVAL_INFO;
+            insert into DP_ZC_CONFIG_FIELD_CONTROL select * from ZC_CONFIG_FIELD_CONTROL;
+            insert into DP_UT_ODPSSQLCOUNT select * from UT_ODPSSQLCOUNT;
+            insert into DP_DBOPERATE_MONITOR select * from DBOPERATE_MONITOR;
+            insert into DP_FOCUS_CLASS_MONITOR select * from FOCUS_ORGANIZATION_ADD_MONITOR;
+            insert into DP_VAL_DENSITY select * from TABLE_ORGANIZATION_VAL_DENSITY;
+            insert into DP_OPERATE_LOG select * from OPERATE_LOG;
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

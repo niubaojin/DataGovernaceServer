@@ -110,9 +110,7 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
             sortOrder = "desc";
         }
         if (StringUtils.isNotBlank(sortOrder)) {
-            page.setOrderBy(sortName + "\t" + sortOrder + " nulls last");
-        } else {
-            page.setOrderBy(sortName);
+            page.setOrderBy(sortName + "\t" + sortOrder);
         }
         Date beginTime = null;
         Date endTime = null;

@@ -1,5 +1,7 @@
 package com.synway.property.pojo.dataOrganization;
 
+import lombok.Data;
+
 import java.util.Objects;
 
 /**
@@ -7,6 +9,7 @@ import java.util.Objects;
  * @version 1.0
  * @date 2020/10/16 17:08
  */
+@Data
 public class DataOrganization {
 
     /**
@@ -60,110 +63,12 @@ public class DataOrganization {
             return false;
         }
         DataOrganization that = (DataOrganization) o;
-        return getResourceIdentify().equals(that.getResourceIdentify());
+        return getResourceIdentify().equals(that.getResourceIdentify()) && getStorageLocation().equals(that.getStorageLocation());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getResourceIdentify());
+        return Objects.hash(getResourceIdentify(), getStorageLocation());
     }
 
-    public String getRegisterState() {
-        return registerState;
-    }
-
-    public void setRegisterState(String registerState) {
-        this.registerState = registerState;
-    }
-
-    public String getObjectId() {
-        return objectId;
-    }
-
-    public void setObjectId(String objectId) {
-        this.objectId = objectId;
-    }
-
-    public String getTableNameCh() {
-        return tableNameCh;
-    }
-
-    public void setTableNameCh(String tableNameCh) {
-        this.tableNameCh = tableNameCh;
-    }
-
-    public String getResourceIdentify() {
-        return resourceIdentify;
-    }
-
-    public void setResourceIdentify(String resourceIdentify) {
-        this.resourceIdentify = resourceIdentify;
-    }
-
-    public String getTableNameEn() {
-        return tableNameEn;
-    }
-
-    public void setTableNameEn(String tableNameEn) {
-        this.tableNameEn = tableNameEn;
-    }
-
-    public String getStorageLocation() {
-        return storageLocation;
-    }
-
-    public void setStorageLocation(String storageLocation) {
-        this.storageLocation = storageLocation;
-    }
-
-    public String getDataCenter() {
-        return dataCenter;
-    }
-
-    public void setDataCenter(String dataCenter) {
-        this.dataCenter = dataCenter;
-    }
-
-    public String getDataNum() {
-        return dataNum;
-    }
-
-    public void setDataNum(String dataNum) {
-        this.dataNum = dataNum;
-    }
-
-    public String getManufacturer() {
-        return manufacturer;
-    }
-
-    public void setManufacturer(String manufacturer) {
-        this.manufacturer = manufacturer;
-    }
-
-    public String getAuthority() {
-        return authority;
-    }
-
-    public void setAuthority(String authority) {
-        this.authority = authority;
-    }
-
-    public String getResourceId() { return resourceId; }
-
-    public void setResourceId(String resourceId) { this.resourceId = resourceId; }
-
-    @Override
-    public String toString() {
-        return "DataOrganization{" +
-                "objectId='" + objectId + '\'' +
-                ", tableNameCh='" + tableNameCh + '\'' +
-                ", resourceIdentify='" + resourceIdentify + '\'' +
-                ", tableNameEn='" + tableNameEn + '\'' +
-                ", storageLocation='" + storageLocation + '\'' +
-                ", dataCenter='" + dataCenter + '\'' +
-                ", dataNum='" + dataNum + '\'' +
-                ", manufacturer='" + manufacturer + '\'' +
-                ", authority='" + authority + '\'' +
-                '}';
-    }
 }

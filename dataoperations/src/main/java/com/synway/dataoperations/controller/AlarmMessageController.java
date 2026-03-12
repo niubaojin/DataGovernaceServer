@@ -75,7 +75,7 @@ public class AlarmMessageController {
 
     @PostMapping("/saveOperatorLog")
     @ResponseBody
-    public ServerResponse<String> saveOperatorLog(@Valid @RequestBody List<OperatorLog> operatorLog) {
+    public ServerResponse<String> saveOperatorLog(@RequestBody List<OperatorLog> operatorLog) {
         try {
             logger.info("操作日志为:" + JSONObject.toJSONString(operatorLog));
             //直接入库

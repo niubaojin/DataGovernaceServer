@@ -3,7 +3,7 @@ package com.synway.property.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.dao.DataStorageMonitorDao;
 import com.synway.property.interceptor.IgnoreSecurity;
 import com.synway.property.pojo.DataQualitySummary;
@@ -174,7 +174,7 @@ public class DataStorageMonitoringController {
     public ServerResponse<NumStorageByPrimaryClassify> getRecordsStorageByDataorganization() {
         ServerResponse<NumStorageByPrimaryClassify> serverResponse = null;
         serverResponse = dataStorageMonitorIndexServiceImpl.getRecordsStorageByPrimaryClassify(
-                UrlConstants.DATA_ORGANIZATION_CLASSIFY);
+                Common.DATA_ORGANIZATION_CLASSIFY);
         logger.info("查询到的数据为" + JSONObject.toJSONString(serverResponse));
         return serverResponse;
     }
@@ -187,7 +187,7 @@ public class DataStorageMonitoringController {
     public ServerResponse<NumStorageByPrimaryClassify> getRecordsStorageByDataSource() {
         ServerResponse<NumStorageByPrimaryClassify> serverResponse = null;
         serverResponse = dataStorageMonitorIndexServiceImpl.getRecordsStorageByPrimaryClassify(
-                UrlConstants.DATA_SOURCE_CLASSIFY);
+                Common.DATA_SOURCE_CLASSIFY);
         logger.info("查询到的数据为" + JSONObject.toJSONString(serverResponse));
         return serverResponse;
     }

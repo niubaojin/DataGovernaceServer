@@ -1,6 +1,5 @@
 package com.synway.property.controller;
 
-import com.synway.property.pojo.dataOrganization.ReturnResult;
 import com.synway.property.pojo.formorganizationindex.ClassifyInfoTree;
 import com.synway.property.service.DataOrganizationService;
 import com.synway.property.util.ExceptionUtil;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * 数据组织页面接口
@@ -66,39 +64,39 @@ public class DataOrganizationController {
         return ServerResponse.asSucessResponse(returnList);
     }
 
-    /**
-     * 获取所有来源厂商中文名，用于数据组织原始库页面右上筛选来源厂商
-     * @return 来源厂商中文名集合
-     */
-    @RequestMapping("/getManufacturers")
-    @ResponseBody
-    public ServerResponse getManufacturers() {
-        List returnList;
-        try {
-            returnList = service.getAllManufacturers();
-        } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
-            return ServerResponse.asErrorResponse("查询来源厂商失败");
-        }
-        return ServerResponse.asSucessResponse(returnList);
-    }
-
-    /**
-     * 获取所有事权单位中文名，用于数据组织原始库页面右上筛选事权单位
-     * @return 事权单位中文名集合
-     */
-    @RequestMapping("/getAuthorities")
-    @ResponseBody
-    public ServerResponse getAuthorities() {
-        List returnList;
-        try {
-            returnList = service.getAuthorities();
-        } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
-            return ServerResponse.asErrorResponse("查询事权单位失败");
-        }
-        return ServerResponse.asSucessResponse(returnList);
-    }
+//    /**
+//     * 获取所有来源厂商中文名，用于数据组织原始库页面右上筛选来源厂商
+//     * @return 来源厂商中文名集合
+//     */
+//    @RequestMapping("/getManufacturers")
+//    @ResponseBody
+//    public ServerResponse getManufacturers() {
+//        List returnList;
+//        try {
+//            returnList = service.getAllManufacturers();
+//        } catch (Exception e) {
+//            logger.error(ExceptionUtil.getExceptionTrace(e));
+//            return ServerResponse.asErrorResponse("查询来源厂商失败");
+//        }
+//        return ServerResponse.asSucessResponse(returnList);
+//    }
+//
+//    /**
+//     * 获取所有事权单位中文名，用于数据组织原始库页面右上筛选事权单位
+//     * @return 事权单位中文名集合
+//     */
+//    @RequestMapping("/getAuthorities")
+//    @ResponseBody
+//    public ServerResponse getAuthorities() {
+//        List returnList;
+//        try {
+//            returnList = service.getAuthorities();
+//        } catch (Exception e) {
+//            logger.error(ExceptionUtil.getExceptionTrace(e));
+//            return ServerResponse.asErrorResponse("查询事权单位失败");
+//        }
+//        return ServerResponse.asSucessResponse(returnList);
+//    }
 
     /**
      * 获取所有数据组织，用于数据组织原始库页面卡片内容
@@ -113,14 +111,6 @@ public class DataOrganizationController {
                                               @RequestParam("authority")String authority,
                                               @RequestParam("search")String search,
                                               @RequestParam("dataSet") String dataSet) {
-        Set returnList;
-        ReturnResult returnResult;
-        try {
-            returnResult = service.getDataOrganization(dataOrganizationType,classify,classifyid,manufacturer,authority,search,dataSet);
-        } catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
-            return ServerResponse.asErrorResponse("查询数据组织失败");
-        }
-        return ServerResponse.asSucessResponse(returnResult);
+        return ServerResponse.asSucessResponse(service.getDataOrganization(dataOrganizationType,classify,classifyid,manufacturer,authority,search,dataSet));
     }
 }

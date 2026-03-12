@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.synway.governace.dao.GeneralManagementDao">
+
+    <delete id="delPushSetting">
+        DELETE FROM DGN_COMMON_SETTING
+        WHERE UPPER(PARENT_ID) = UPPER(#{parentId,jdbcType=VARCHAR})
+          AND UPPER(ID) IN
+            <foreach collection="ids" open="(" close=")" separator="," item="item">
+                UPPER(#{item})
+            </foreach>
+    </delete>
+
+    <delete id="deleteReconciliationAlarmSetting" parameterType="java.lang.String">
+        DELETE FROM DGN_COMMON_SETTING WHERE PARENT_ID = #{parentId}
+    </delete>
+
+    <insert id="insertReconciliationAlarmSetting" parameterType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
+        insert into DGN_COMMON_SETTING
+          (ID,
+           PARENT_ID,
+           NAME,
+           LOGICAL_JUDGMENT,
+           THRESHOLD_VALUE,
+           TREE_TYPE,
+           IS_ACTIVE)
+        VALUES
+          (#{id,jdbcType = VARCHAR},
+           #{parentId,jdbcType = VARCHAR},
+           #{name,jdbcType = VARCHAR},
+           #{logicalJudgment,jdbcType = VARCHAR},
+           #{thresholdValue,jdbcType = VARCHAR},
+           #{treeType},
+           #{isActive,jdbcType = VARCHAR})
+    </insert>
+
+    <select id="getReconciliationAlarmSettingByName" resultType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
+        SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
+        FROM DGN_COMMON_SETTING
+        <where>
+            <foreach collection="array" item="name" open="name in(" close=")" separator=",">
+                #{name}
+            </foreach>
+            and parent_id in(select id from DGN_COMMON_SETTING where tree_type='2')
+        </where>
+    </select>
+
+</mapper>

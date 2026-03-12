@@ -85,7 +85,7 @@ public interface DataMonitorDao extends BaseDAO {
     void delHiveHisData(@Param("sydmgParam") SYDMGParam sydmgParam, @Param("minDelDate") long minDelDate);
 
 //    @MapKey("TABLENAME")
-    List<TableOrganizationData> getClassifyInfo();
+    List<TableOrganizationData> getClassifyInfo(@Param("sjzzflCodeId") String sjzzflCodeId);
 
     List<DataResourceTable> getSyndmgTableAverageData(@Param("setting") OrganizationAlarmSetting setting);
 

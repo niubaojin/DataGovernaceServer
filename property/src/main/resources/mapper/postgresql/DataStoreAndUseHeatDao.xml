@@ -50,7 +50,7 @@
 						SUM(table_Use_Count) AS tableUseCount,
 						tablename,
 						project
-					FROM UT_ODPSSQLCOUNT t
+					FROM DP_UT_ODPSSQLCOUNT t
 					GROUP BY tablename, project
 				) t0
 				LEFT JOIN (
@@ -58,7 +58,7 @@
 						SUM(table_Use_Count) AS tableUseCountOfMonth,
 						tablename,
 						project
-					FROM UT_ODPSSQLCOUNT t
+					FROM DP_UT_ODPSSQLCOUNT t
 					WHERE dt BETWEEN to_char(CURRENT_DATE - INTERVAL '31 days', 'yyyy-MM-dd') AND to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyy-MM-dd')
 					GROUP BY tablename, project
 				) t3 ON (t0.tablename = t3.tablename AND t0.project = t3.project)
@@ -67,7 +67,7 @@
 						SUM(table_Use_Count) AS tableUseCountOfWeek,
 						tablename,
 						project
-					FROM UT_ODPSSQLCOUNT t
+					FROM DP_UT_ODPSSQLCOUNT t
 					WHERE dt BETWEEN to_char(CURRENT_DATE - INTERVAL '7 days', 'yyyy-MM-dd') AND to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyy-MM-dd')
 					GROUP BY tablename, project
 				) t2 ON (t0.tablename = t2.tablename AND t0.project = t2.project)
@@ -76,7 +76,7 @@
 						SUM(table_Use_Count) AS tableUseCountOfDay,
 						tablename,
 						project
-					FROM UT_ODPSSQLCOUNT t
+					FROM DP_UT_ODPSSQLCOUNT t
 					WHERE dt = to_char(CURRENT_DATE - INTERVAL '1 day', 'yyyy-MM-dd')
 					GROUP BY tablename, project
 				) t1 ON (t0.tablename = t1.tablename AND t0.project = t1.project)
@@ -88,7 +88,7 @@
 	<select id="findUseHeatByTableNameList" parameterType="java.util.HashMap" resultType="java.lang.Long">
 		select sum(table_use_count) from
 		<foreach collection="map.keys" item="key" open="(" close=")" separator=" union ">
-			select sum(table_use_count) as table_use_count from ut_odpssqlcount where tablename = #{key} and project = #{map[${key}]}
+			select sum(table_use_count) as table_use_count from DP_UT_ODPSSQLCOUNT where tablename = #{key} and project = #{map[${key}]}
 		</foreach>
 	</select>
 
@@ -98,11 +98,11 @@
 	</select>
 
 	<delete id="deleteAll" >
-		delete from storecycleanduseheat
+		delete from DP_STORECYCLEANDUSEHEAT
 	</delete>
 
-	<insert id="insertIntoStoreCycleAndUseHeat" parameterType="java.util.List" useGeneratedKeys="false">
-		insert into StoreCycleAndUseHeat (
+	<insert id="insertIntoDP_STORECYCLEANDUSEHEAT" parameterType="java.util.List" useGeneratedKeys="false">
+		insert into DP_STORECYCLEANDUSEHEAT (
 		<include refid="baseColumn"></include>
 		)
 		SELECT * FROM (

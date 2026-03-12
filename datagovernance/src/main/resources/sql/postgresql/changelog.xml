@@ -22,4 +22,18 @@
         <sqlFile relativeToChangelogFile="true" path="V3.6.0.20240813.01_DNG_INIT_DATA.sql" />
     </changeSet>
 
+    <changeSet id="V3.8.0.20251121.03" author="nbj" >
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">
+                    select count(*) as cnt from dgn_navbar where nav_id = '133'
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <sql>
+            insert into dgn_navbar (nav_id, nav_name, nav_class, nav_link, nav_show, nav_blank, nav_level, nav_parent_name, nav_order, nav_name_en, nav_ip, nav_redirect, nav_hidden)
+            values('133', '数据质量汇总', NULL, 'page/dataQuality/index', '1', '0', '3', 'dataQuality', '050500', 'index', NULL, NULL, 0);
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

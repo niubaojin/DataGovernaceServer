@@ -1,18 +1,29 @@
 package com.synway.governace.service.generalManagement.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.synway.common.bean.ServerResponse;
+import com.synway.governace.dao.DgnCommonSettingDao;
 import com.synway.governace.dao.GeneralManagementDao;
+import com.synway.governace.entity.dto.DgnCommonSettingDTO;
+import com.synway.governace.entity.pojo.DgnCommonSettingEntity;
+import com.synway.governace.entity.vo.DgnCommonSettingVO;
 import com.synway.governace.enums.BillAlarmSettingEnum;
+import com.synway.governace.enums.OperateLogFailReasonEnum;
+import com.synway.governace.enums.OperateLogHandleTypeEnum;
 import com.synway.governace.pojo.generalManagement.*;
 import com.synway.governace.pojo.largeScreen.DataResource;
 import com.synway.governace.service.generalManagement.GeneralManagementService;
+import com.synway.governace.service.operateLog.OperateLogServiceImpl;
 import com.synway.governace.util.ExcelHelper;
 import com.synway.governace.util.RestTemplateHandle;
 import com.synway.governace.util.UUIDUtil;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -23,121 +34,77 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class GeneralManagementServiceImpl implements GeneralManagementService {
-    private static Logger logger = LoggerFactory.getLogger(GeneralManagementServiceImpl.class);
 
     @Autowired
     GeneralManagementDao generalManagementDao;
-
     @Autowired
     private RestTemplateHandle restTemplateHandle;
 
+    @Resource
+    private DgnCommonSettingDao dgnCommonSettingDao;
+    @Resource
+    private OperateLogServiceImpl operateLogServiceImpl;
+
     @Override
-    public void saveOrUpdateGeneralSetting(ThresholdConfigSetting setting) {
-        if(!ObjectUtils.isEmpty(setting)){
-            // 设置主键id
-            setting.setId(UUIDUtil.getUUID());
-            if (setting.getParentId().equalsIgnoreCase("dataProperty")){
-                PropertyAlarmSetting thresholdValue = setting.getThresholdValueProperty();
-                thresholdValue.setFluctuateDays("7");
-                setting.setThresholdValue(JSONObject.toJSONString(thresholdValue));
-                logger.info("保存资产数据的数据为：" + JSONObject.toJSONString(setting));
-                generalManagementDao.saveOrUpdateGeneralSetting(setting);
-            }else if (setting.getParentId().equalsIgnoreCase("dataQuality")){
-                QualityAlarmSetting thresholdValue = setting.getThresholdValueQuality();
-                setting.setThresholdValue(JSONObject.toJSONString(thresholdValue));
-                logger.info("保存质量数据的数据为：" + JSONObject.toJSONString(setting));
-                generalManagementDao.saveOrUpdateGeneralSetting(setting);
-            }else if (setting.getParentId().equalsIgnoreCase("dataVolumeMonitor")){
-                if (StringUtils.isBlank(setting.getName())) return;
-                DataVolumeMonitorSetting thresholdValue = setting.getDataVolumeMonitorSetting();
-                setting.setThresholdValue(JSONObject.toJSONString(thresholdValue));
-                logger.info("保存数据量配置的数据为：" + JSONObject.toJSONString(setting));
-                generalManagementDao.saveOrUpdateGeneralSettingDataVolume(setting);
-            }else if (setting.getParentId().equalsIgnoreCase("alarmPush")){
-                // 校验重复数据
-                List<ThresholdConfigSetting> thresholdConfigSettings = generalManagementDao.getGeneralSetting(setting.getParentId());
-                for (ThresholdConfigSetting thresholdConfigSetting:thresholdConfigSettings){
-                    String thresholdValue = thresholdConfigSetting.getThresholdValue();
-                    String id = thresholdConfigSetting.getId();
-                    AlarmPushSetting alarmPushSetting = new AlarmPushSetting();
-                    if (!thresholdValue.equalsIgnoreCase("null") && !thresholdValue.equalsIgnoreCase("")){
-                        alarmPushSetting = JSONObject.parseObject(thresholdValue, AlarmPushSetting.class);
-                        if (alarmPushSetting.getPushMode().equalsIgnoreCase(setting.getThresholdValueAlarmPush().getPushMode())){
-                            setting.setId(id);
-                        }
-                    }
-                }
-                AlarmPushSetting thresholdValue = setting.getThresholdValueAlarmPush();
-                setting.setThresholdValue(JSONObject.toJSONString(thresholdValue));
-                logger.info("保存告警推送的数据为：" + JSONObject.toJSONString(setting));
-                generalManagementDao.addPushSetting(setting);
-            }else if (setting.getParentId().equalsIgnoreCase("dataPiled")){
-                // 校验重复数据
-                List<ThresholdConfigSetting> thresholdConfigSettings = generalManagementDao.getGeneralSetting(setting.getParentId());
-                thresholdConfigSettings.stream().forEach(item ->{
-                    if (item.getName().equals(setting.getName())){
-                        setting.setId(item.getId());
-                        return;
-                    }
-                });
-                DataPiledSetting thresholdValue = setting.getDataPiledSetting();
-                setting.setThresholdValue(JSONObject.toJSONString(thresholdValue));
-                logger.info("保存数据堆积配置的的数据为：" + JSONObject.toJSONString(setting));
-                generalManagementDao.addPushSetting(setting);
+    public void saveOrUpdateGeneralSetting(DgnCommonSettingDTO dto) {
+        try {
+            if(!ObjectUtils.isEmpty(dto)){
+                DgnCommonSettingEntity dgnCommonSetting = new DgnCommonSettingEntity();
+                dgnCommonSetting.setId(UUIDUtil.getUUID());
+                dgnCommonSetting.setParentId(dto.getParentId());
+                dgnCommonSetting.setName(dto.getName());
+                dgnCommonSetting.setIsActive(dto.getIsActive());
+                dgnCommonSetting.setTreeType(dto.getTreeType());
+                dgnCommonSetting.setThresholdValue(JSONObject.toJSONString(dto.getThresholdValue()));
+                log.info(String.format(">>>>>>开始保存[%s]的配置：%s", dto.getName(), JSONObject.toJSONString(dto)));
+                updateGeneralSetting(dgnCommonSetting);
+                operateLogServiceImpl.updateGeneralSettingSuccessLog(OperateLogHandleTypeEnum.ALTER, "通用配置", dto.getName());
+                log.info(String.format(">>>>>>[%s]配置保存成功：", dto.getName(), JSONObject.toJSONString(dto)));
             }
+        }catch (Exception e){
+            log.error(">>>>>>保存通用配置数据出错:", e);
+            operateLogServiceImpl.updateGeneralSettingFailLog(OperateLogHandleTypeEnum.ALTER, OperateLogFailReasonEnum.YYXTFM, "通用配置", dto.getName());
+        }
+    }
+
+    public void updateGeneralSetting(DgnCommonSettingEntity setting){
+        LambdaQueryWrapper<DgnCommonSettingEntity> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.eq(DgnCommonSettingEntity::getParentId, setting.getParentId());
+        if (dgnCommonSettingDao.selectCount(queryWrapper) > 0){
+            LambdaUpdateWrapper<DgnCommonSettingEntity> updateWrapper = Wrappers.lambdaUpdate();
+            updateWrapper.eq(DgnCommonSettingEntity::getParentId, setting.getParentId());
+            updateWrapper.set(DgnCommonSettingEntity::getThresholdValue, setting.getThresholdValue());
+            dgnCommonSettingDao.update(updateWrapper);
+        }else {
+            dgnCommonSettingDao.insert(setting);
         }
     }
 
     @Override
-    public ServerResponse getGeneralSetting(ThresholdConfigSetting setting) {
-        ServerResponse serverResponse = null;
-        String parentId = setting.getParentId();
-        List<ThresholdConfigSetting> thresholdConfigSettings = generalManagementDao.getGeneralSetting(parentId);
-        if (parentId.equalsIgnoreCase("dataProperty")){
-            String thresholdValue = thresholdConfigSettings.get(0).getThresholdValue();
-            PropertyAlarmSetting propertyAlarmSetting = JSONObject.parseObject(thresholdValue, PropertyAlarmSetting.class);
-            return ServerResponse.asSucessResponse(propertyAlarmSetting);
-        }else if (parentId.equalsIgnoreCase("dataQuality")){
-            String thresholdValue = thresholdConfigSettings.get(0).getThresholdValue();
-            QualityAlarmSetting qualityAlarmSetting = JSONObject.parseObject(thresholdValue, QualityAlarmSetting.class);
-            return ServerResponse.asSucessResponse(qualityAlarmSetting);
-        }else if (parentId.equalsIgnoreCase("alarmPush")){
-            List<AlarmPushSetting> alarmPushSettings = new ArrayList<>();
-            for (ThresholdConfigSetting thresholdConfigSetting:thresholdConfigSettings){
-                String thresholdValue = thresholdConfigSetting.getThresholdValue();
-                String id = thresholdConfigSetting.getId();
-                AlarmPushSetting alarmPushSetting = new AlarmPushSetting();
-                if (!thresholdValue.equalsIgnoreCase("null") && !thresholdValue.equalsIgnoreCase("")){
-                    alarmPushSetting = JSONObject.parseObject(thresholdValue, AlarmPushSetting.class);
-                }
-                alarmPushSetting.setId(id);
-                alarmPushSettings.add(alarmPushSetting);
+    public ServerResponse getGeneralSetting(DgnCommonSettingDTO dto) {
+        try {
+            log.info(">>>>>>获取通用配置参数：{}", JSONObject.toJSONString(dto));
+            LambdaUpdateWrapper<DgnCommonSettingEntity> wrapper = Wrappers.lambdaUpdate();
+            wrapper.eq(DgnCommonSettingEntity::getParentId, dto.getParentId());
+            DgnCommonSettingEntity entity = dgnCommonSettingDao.selectOne(wrapper);
+
+            DgnCommonSettingVO vo = new DgnCommonSettingVO();
+            if (entity == null){
+                return ServerResponse.asSucessResponse(vo);
             }
-            return ServerResponse.asSucessResponse(alarmPushSettings);
-        }else if (parentId.equalsIgnoreCase("dataPiled")){
-            List<DataPiledSetting> dataPiledSettings = new ArrayList<>();
-            thresholdConfigSettings.stream().forEach(item ->{
-                String thresholdValue = item.getThresholdValue();
-                if(StringUtils.isNotBlank(thresholdValue)){
-                    DataPiledSetting dataPiledSetting = JSONObject.parseObject(thresholdValue, DataPiledSetting.class);
-                    dataPiledSetting.setId(item.getId());
-                    dataPiledSettings.add(dataPiledSetting);
-                }
-            });
-            return ServerResponse.asSucessResponse(dataPiledSettings);
-        }else if (parentId.equalsIgnoreCase("dataVolumeMonitor")){
-            List<ThresholdConfigSetting> thresholdConfigSettings1 = generalManagementDao.getGeneralSettingDataVolume(parentId, setting.getName());
-            if (thresholdConfigSettings1 == null || thresholdConfigSettings1.size() == 0){
-                logger.info("获取到的dataVolumeMonitor配置为空");
-                return ServerResponse.asErrorResponse("获取到的dataVolumeMonitor配置为空");
-            }
-            String thresholdValue = thresholdConfigSettings1.get(0).getThresholdValue();
-            DataVolumeMonitorSetting dataVolumeMonitorSetting = JSONObject.parseObject(thresholdValue, DataVolumeMonitorSetting.class);
-            return ServerResponse.asSucessResponse(dataVolumeMonitorSetting);
-        }else {
-            return serverResponse;
+            vo.setName(entity.getName());
+            vo.setParentId(entity.getParentId());
+            vo.setIsActive(entity.getIsActive());
+            vo.setTreeType(entity.getTreeType());
+            vo.setId(entity.getId());
+            vo.setThresholdValue(JSON.parseObject(entity.getThresholdValue()));
+            return ServerResponse.asSucessResponse(vo);
+        }catch (Exception e){
+            log.error(">>>>>>获取通用配置数据出错：", e);
+            return ServerResponse.asErrorResponse("获取通用配置数据出错");
         }
     }
 
@@ -146,11 +113,16 @@ public class GeneralManagementServiceImpl implements GeneralManagementService {
         if (!ObjectUtils.isEmpty(alarmPushSetting)){
             String id = alarmPushSetting.getId();
             if (StringUtils.isNotBlank(id)){
-                ThresholdConfigSetting thresholdConfigSetting = new ThresholdConfigSetting();
+                DgnCommonSettingEntity thresholdConfigSetting = new DgnCommonSettingEntity();
                 String thresholdValue = JSONObject.toJSONString(alarmPushSetting);
                 thresholdConfigSetting.setId(id);
                 thresholdConfigSetting.setThresholdValue(thresholdValue);
-                generalManagementDao.editPushSetting(thresholdConfigSetting);
+
+                LambdaUpdateWrapper<DgnCommonSettingEntity> wrapper = Wrappers.lambdaUpdate();
+                wrapper.eq(DgnCommonSettingEntity::getParentId, "alarmPush");
+                wrapper.eq(DgnCommonSettingEntity::getId, thresholdConfigSetting.getId());
+                wrapper.set(DgnCommonSettingEntity::getThresholdValue, thresholdConfigSetting.getThresholdValue());
+                dgnCommonSettingDao.update(wrapper);
             }else {
                 return ServerResponse.asErrorResponse("ID为空");
             }
@@ -159,7 +131,7 @@ public class GeneralManagementServiceImpl implements GeneralManagementService {
     }
 
     @Override
-    public void delPushSetting(ThresholdConfigSetting setting) {
+    public void delPushSetting(DgnCommonSettingEntity setting) {
         if (!ObjectUtils.isEmpty(setting)){
             String parentId = setting.getParentId();
             String[] ids = setting.getId().split(",");
@@ -168,27 +140,29 @@ public class GeneralManagementServiceImpl implements GeneralManagementService {
     }
 
     @Override
-    public void saveOrUpdateReconciliationAlarmSetting(List<ThresholdConfigSetting> settings) {
+    public void saveOrUpdateReconciliationAlarmSetting(List<DgnCommonSettingEntity> settings) {
         if(!CollectionUtils.isEmpty(settings)){
             // 删除旧配置
             generalManagementDao.deleteReconciliationAlarmSetting(settings.get(0).getParentId());
             // 插入新配置
-            for(ThresholdConfigSetting setting:settings){
+            for(DgnCommonSettingEntity setting:settings){
 //                setting.setId(DateUtil.formatDateTime(new Date(),DateUtil.DEFAULT_PATTERN_DATETIME_SIMPLE_FULL));
                 setting.setId(UUIDUtil.getUUID());
-                logger.info("保存对账数据为数据为：" + JSONObject.toJSONString(setting));
+                log.info("保存对账数据为数据为：" + JSONObject.toJSONString(setting));
                 generalManagementDao.insertReconciliationAlarmSetting(setting);
             }
         }
     }
 
     @Override
-    public BillAlarmSetting getReconciliationAlarmSetting(ThresholdConfigSetting setting) {
+    public BillAlarmSetting getReconciliationAlarmSetting(DgnCommonSettingEntity setting) {
         String parentId = setting.getParentId();
-        List<ThresholdConfigSetting> list = new ArrayList<>();
+        List<DgnCommonSettingEntity> list = new ArrayList<>();
         if (StringUtils.isNotBlank(parentId)) {
             // 获取配置信息
-            list = generalManagementDao.getReconciliationAlarmSettingByParentId(parentId);
+            LambdaQueryWrapper<DgnCommonSettingEntity> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(DgnCommonSettingEntity::getParentId, setting.getParentId());
+            list = dgnCommonSettingDao.selectList(wrapper);
         } else {
             String[] names = {BillAlarmSettingEnum.acceptStr.getName(), BillAlarmSettingEnum.storageStr.getName(),
                     BillAlarmSettingEnum.standardStr.getName(), BillAlarmSettingEnum.errorExpireDay.getName(),
@@ -202,16 +176,16 @@ public class GeneralManagementServiceImpl implements GeneralManagementService {
         return !CollectionUtils.isEmpty(settingList) ? settingList.get(0) : null;
     }
 
-    private List<BillAlarmSetting> handleBillAlarmSetting(List<ThresholdConfigSetting> list) {
+    private List<BillAlarmSetting> handleBillAlarmSetting(List<DgnCommonSettingEntity> list) {
         if (CollectionUtils.isEmpty(list)) {
             return null;
         }
         List<BillAlarmSetting> settingList = new ArrayList<>();
-        Map<String, List<ThresholdConfigSetting>> listMap = list.stream().collect(Collectors.groupingBy(ThresholdConfigSetting::getParentId));
+        Map<String, List<DgnCommonSettingEntity>> listMap = list.stream().collect(Collectors.groupingBy(DgnCommonSettingEntity::getParentId));
         for (String key : listMap.keySet()) {
-            List<ThresholdConfigSetting> thresholdConfigList = listMap.get(key);
+            List<DgnCommonSettingEntity> thresholdConfigList = listMap.get(key);
             BillAlarmSetting setting = new BillAlarmSetting();
-            for (ThresholdConfigSetting config : thresholdConfigList) {
+            for (DgnCommonSettingEntity config : thresholdConfigList) {
                 // 配置信息映射
                 ExcelHelper.setFieldValueByName(BillAlarmSettingEnum.getCodeByName(config.getName()), config.getThresholdValue(), setting);
                 // 开启的设置
@@ -284,7 +258,7 @@ public class GeneralManagementServiceImpl implements GeneralManagementService {
         List<DetectedTable> tableInfos = restTemplateHandle.getTablesIncludeDetectedInfo(resId, projectName);
         DataResource dataResource = restTemplateHandle.getResourceById(resId);
         if(dataResource == null){
-            logger.warn("数据源ID:{}  项目名称:{} 无法找到对应的数据源信息", resId, projectName);
+            log.warn("数据源ID:{}  项目名称:{} 无法找到对应的数据源信息", resId, projectName);
             return fontOptions;
         }
         if(tableInfos == null){

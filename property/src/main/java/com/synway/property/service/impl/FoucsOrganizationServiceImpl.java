@@ -15,6 +15,7 @@ import com.synway.property.util.CacheManager;
 import com.synway.property.util.ExceptionUtil;
 import com.synway.common.bean.ServerResponse;
 import com.synway.property.util.RestTemplateHandle;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,9 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
 
     @Autowired
     private CacheManager cacheManager;
+
+    @Resource
+    private Environment env;
 
     /**
      * 获取所有的重点组织信息
@@ -93,7 +97,8 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
                 if ("数据组织分类".equals(oneFoucsOrganizationFull.getMainClassifyCH()) && oneFoucsOrganizationFull.getPrimarycodeid().contains("GACODE000404")){
                     foucsOrganizationFullListRemove.add(oneFoucsOrganizationFull);
                 }
-                if ("数据来源分类".equals(oneFoucsOrganizationFull.getMainClassifyCH()) && oneFoucsOrganizationFull.getPrimarycodeid().contains("JZCODEGASJZZFL")){
+                String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+                if ("数据来源分类".equals(oneFoucsOrganizationFull.getMainClassifyCH()) && oneFoucsOrganizationFull.getPrimarycodeid().contains(sjzzflCodeId)){
                     foucsOrganizationFullListRemove.add(oneFoucsOrganizationFull);
                 }
             }
@@ -117,6 +122,7 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             List<ClassifyInformation> classifyInformationList = foucsOrganizationDao.getClassifyInformationTableDao(mainClassifyCh, primaryClassifyCh);
             List<ClassifyInformation> classifyInformationListRemove = new ArrayList<>();
             if(classifyInformationList.size()>1){
+                String sjzzflCodeId = env.getProperty("sjzzflCodeId");
                 for(int i=0; i<classifyInformationList.size();i++){
                     ClassifyInformation classifyInformation = classifyInformationList.get(i);
                     if (("数据组织分类".equals(classifyInformation.getMainClassifyCH()) || "原始库".equals(classifyInformation.getMainClassifyCH()))
@@ -125,7 +131,7 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
                             && !primaryClassifyCh.equals("业务要素索引库") && !primaryClassifyCh.equals("其他")))){
                         classifyInformationListRemove.add(classifyInformationList.get(i));
                     }
-                    if (("数据来源分类".equals(classifyInformation.getMainClassifyCH()) && classifyInformation.getPrimaryClassifyCode().contains("JZCODEGASJZZFL"))
+                    if (("数据来源分类".equals(classifyInformation.getMainClassifyCH()) && classifyInformation.getPrimaryClassifyCode().contains(sjzzflCodeId))
                             || ("数据来源分类".equals(classifyInformation.getMainClassifyCH()) && classifyInformation.getPrimaryClassifyCH().equals(classifyInformation.getSecondaryClassifyCH()))){
                         classifyInformationListRemove.add(classifyInformationList.get(i));
                     }
@@ -180,7 +186,8 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
     public ServerResponse<List<ClassifyInformation>> getAllClassifyInformationTableService() {
         ServerResponse<List<ClassifyInformation>> serverResponse = null;
         try {
-            List<ClassifyInformation> classifyInformationList = foucsOrganizationDao.getAllClassifyInformationTableDao();
+            String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+            List<ClassifyInformation> classifyInformationList = foucsOrganizationDao.getAllClassifyInformationTableDao(sjzzflCodeId);
             // 获取所有已经添加的一级分类名称,二级分类名称
             serverResponse = ServerResponse.asSucessResponse(classifyInformationList);
         } catch (Exception e) {
@@ -339,7 +346,8 @@ public class FoucsOrganizationServiceImpl implements FoucsOrganizationService {
             List<ClassifyInfo> classifyInfos = dataMonitorDao.getClassInfo("");
             List<ClassifyInfoTree> classInfoJsonZZ = null,classInfoJsonLY = null,classInfoJsonAll=new ArrayList<>();
             ClassifyInfoTree classifyInfoTreeZZ = new ClassifyInfoTree(),classifyInfoTreeLY = new ClassifyInfoTree();
-            classInfoJsonZZ = convert2Tree(classifyInfos,"JZCODEGASJZZFL",new LinkedList<>());
+            String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+            classInfoJsonZZ = convert2Tree(classifyInfos, sjzzflCodeId, new LinkedList<>());
             classInfoJsonLY = convert2Tree(classifyInfos,"GACODE000404",new LinkedList<>());
             classifyInfoTreeZZ.setLabel("数据组织分类");
             classifyInfoTreeZZ.setChildren(classInfoJsonZZ);

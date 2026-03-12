@@ -39,7 +39,6 @@
                 else to_char(b.TABLE_SIZE / 1073741824, 'fm999999999990.00')
             end as storageSize,
             case
-                when b.PARTITION_MESSAGE = 1 then '永久'
                 when b.LIFE_CYCLE is null then '永久'
                 else b.LIFE_CYCLE
             end as lifeCycle,
@@ -64,10 +63,10 @@
                 resourceId,
                 res_name
             from
-                TABLE_ORGANIZATION_ASSETS
+                DP_TABLE_ORGANIZATION_ASSETS
             where
                 STATISTICS_TIME > trunc(sysdate - #{daysAgo}) ) b
-        left join table_organization_val_density a on
+        left join DP_VAL_DENSITY a on
             upper(a.TABLE_NAME_EN) = upper(b.TABLE_NAME_EN)
             and upper(a.TABLE_TYPE)= upper(b.TABLE_TYPE)
             and upper(a.TABLE_PROJECT) = upper(b.TABLE_PROJECT)
@@ -185,14 +184,14 @@
         select UNSTRUCTED_DATA as unstructedData,TWOHANDLE as twoHandle,TEXTHANDLE as textHandle,
 	    WORKFLOW_USED as workflowUsed,APPLICATION_USED as applicationUsed,ZHUTIKU_USED as zhutikuUsed,
 	    ZIYUANKU_USED as ziyuankuUsed,YAOSUKU_USED as yaosukuUsed,TAG_USED as tagUsed,
-	    VAL_DENSITY as valDensity from table_organization_val_density
+	    VAL_DENSITY as valDensity from DP_VAL_DENSITY
 	    where upper(TABLE_NAME_EN) = upper(#{queryParams.tableNameEn,jdbcType=VARCHAR})
 	    and upper(TABLE_TYPE) = upper(#{queryParams.platformType,jdbcType=VARCHAR})
 	    and upper(TABLE_PROJECT) = upper(#{queryParams.tableProject,jdbcType=VARCHAR})
     </select>
 
     <update id="updateValDensity">
-        update table_organization_val_density
+        update DP_VAL_DENSITY
         set
             UNSTRUCTED_DATA = #{density.unstructedData,jdbcType=VARCHAR},
             TWOHANDLE = #{density.twoHandle,jdbcType=VARCHAR},
@@ -213,7 +212,7 @@
 
 
     <insert id="insertValDensity">
-        insert into table_organization_val_density
+        insert into DP_VAL_DENSITY
         (TABLE_NAME_EN,TABLE_TYPE,TABLE_PROJECT,UNSTRUCTED_DATA,TWOHANDLE,TEXTHANDLE,WORKFLOW_USED,
 	    APPLICATION_USED,ZHUTIKU_USED,ZIYUANKU_USED,YAOSUKU_USED,TAG_USED,VAL_DENSITY,UPDATE_VAL_DENSITY_STATUS)
 	    values
@@ -229,7 +228,7 @@
 
     <select id="getClassifyNum" resultType="java.util.Map">
         select count(1) as num,PRIMARY_ORGANIZATION_CH as classify
-        from TABLE_ORGANIZATION_ASSETS where
+        from DP_TABLE_ORGANIZATION_ASSETS where
         STATISTICS_TIME> trunc(sysdate) and
         PRIMARY_ORGANIZATION_CH in ('主题库','资源库','业务要素索引库')
         <if test="tables.size>0">
@@ -245,11 +244,11 @@
         select TABLE_NAME_EN as tableNameEn,TABLE_TYPE as tableType,
         TABLE_PROJECT as tableProject, PRIMARY_ORGANIZATION_CH as primaryOrganizationCh,
         SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh
-        from TABLE_ORGANIZATION_ASSETS where
+        from DP_TABLE_ORGANIZATION_ASSETS where
         STATISTICS_TIME > trunc(sysdate)
     </select>
     <select id="getOrganizationClassify" resultType="java.util.Map">
-        select PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH from TABLE_ORGANIZATION_ASSETS
+        select PRIMARY_ORGANIZATION_CH,SECONDARY_ORGANIZATION_CH from DP_TABLE_ORGANIZATION_ASSETS
 	    where STATISTICS_TIME > trunc(sysdate)
 	    and upper(TABLE_NAME_EN) = upper(#{queryParams.tableNameEn,jdbcType=VARCHAR})
 	    and upper(TABLE_TYPE) = upper(#{queryParams.platformType,jdbcType=VARCHAR})
@@ -257,27 +256,34 @@
     </select>
 
     <update id="changeValDensityStatus">
-        update table_organization_val_density set UPDATE_VAL_DENSITY_STATUS = '0'
+        update DP_VAL_DENSITY set UPDATE_VAL_DENSITY_STATUS = '0'
     </update>
 
     <select id="getCount" resultType="java.lang.Integer">
-        select count(1) from table_organization_val_density
+        select count(1) from DP_VAL_DENSITY
     </select>
 
+    <delete id="delLifeCycleShowField">
+        delete from DP_ZC_CONFIG_FIELD_CONTROL where name = 'TABLE_LIFECYCLE' and username = #{userName,jdbcType=VARCHAR}
+    </delete>
+
     <update id="updateLifeCycleShowField">
-        merge into ZC_CONFIG_FIELD_CONTROL a
-            using (select 'TABLE_LIFECYCLE' as name1, #{userName,jdbcType=VARCHAR} as USERNAME1 FROM dual) b
-            on (a.name = b.name1 and a.USERNAME = b.USERNAME1)
-            when matched then
-            update
-            set
-            SHOW_FIELD_LIST = #{lifeCycleShowFields,jdbcType=VARCHAR} where "NAME" = 'TABLE_LIFECYCLE' and USERNAME = #{userName,jdbcType=VARCHAR}
-            when not matched then
-            insert values('TABLE_LIFECYCLE',90,#{lifeCycleShowFields,jdbcType=VARCHAR},#{userName,jdbcType=VARCHAR})
+        insert into DP_ZC_CONFIG_FIELD_CONTROL
+            (NAME,USERNAME,SHOW_FIELD_LIST)
+        values
+            ('TABLE_LIFECYCLE',#{userName,jdbcType=VARCHAR},#{lifeCycleShowFields,jdbcType=VARCHAR})
     </update>
 
     <select id="getLifeCycleShowField" resultType="java.lang.String">
-        select SHOW_FIELD_LIST from ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_LIFECYCLE' and USERNAME = #{userName,jdbcType=VARCHAR}
+        select SHOW_FIELD_LIST from DP_ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_LIFECYCLE' and USERNAME = #{userName,jdbcType=VARCHAR}
     </select>
+
+    <update id="updateLifeCycleForTOA" parameterType="com.synway.property.pojo.RequestParameter">
+        update DP_TABLE_ORGANIZATION_ASSETS
+           set life_cycle = #{requestParam.value}
+         where lower(table_type) = lower(#{requestParam.tableType})
+           and lower(table_project) = lower(#{requestParam.tableProject})
+           and lower(table_name_en) = lower(#{requestParam.tableNameEn})
+    </update>
 
 </mapper>

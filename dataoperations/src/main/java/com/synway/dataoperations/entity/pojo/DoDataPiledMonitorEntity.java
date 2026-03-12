@@ -27,6 +27,7 @@ public class DoDataPiledMonitorEntity {
     // 数据仓库ID
     @TableField(exist = false)
     private String dataWarehouseID;
+
     //数据源名称
     @TableField("DATA_WAREHOUSENAME")
     private String dataWarehouseName;
@@ -59,15 +60,15 @@ public class DoDataPiledMonitorEntity {
     private String connectInfo;
 
     //消费偏移量
-    @TableField("OFF_SET")
-    private long offSet;
+    @TableField("OFFSET")
+    private long offset;
 
     //最大偏移量
     @TableField("LOGSIZE")
     private long logSize;
 
     //剩余偏移量
-    @TableField("LAG")
+    @TableField("`LAG`")
     private long lag;
 
     //积压率

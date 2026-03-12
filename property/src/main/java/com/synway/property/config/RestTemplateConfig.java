@@ -37,17 +37,17 @@ public class RestTemplateConfig {
         return restTemplate;
     }
 
-//    //调用外部接口用
-//    @Bean(value = "restTemplateApi")
-//    public RestTemplate restTemplateApi() {
-//        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-//        requestFactory.setConnectTimeout(5*60*1000);
-//        requestFactory.setReadTimeout(5*60*1000);
-//        RestTemplate restTemplate = new RestTemplate(requestFactory);
-//        restTemplate.setInterceptors(Collections.singletonList(new RestTemplateTrackInterceptor()));
-//        setRestTemplateEncode(restTemplate);
-//        return restTemplate;
-//    }
+    //调用外部接口用
+    @Bean(value = "restTemplateApi")
+    public RestTemplate restTemplateApi() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5*60*1000);
+        requestFactory.setReadTimeout(5*60*1000);
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+        restTemplate.setInterceptors(Collections.singletonList(new RestTemplateTrackInterceptor()));
+        setRestTemplateEncode(restTemplate);
+        return restTemplate;
+    }
 
     public static void setRestTemplateEncode(RestTemplate restTemplate) {
         if (null == restTemplate || ObjectUtils.isEmpty(restTemplate.getMessageConverters())) {

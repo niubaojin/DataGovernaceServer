@@ -93,11 +93,11 @@
         </if>
     </delete>
 
-    <select id="getGeneralSetting" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+    <select id="getGeneralSetting" resultType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
          select ID as id, name, THRESHOLD_VALUE as thresholdValue from DGN_COMMON_SETTING where PARENT_ID=#{parentId} and TREE_TYPE = '3'
     </select>
 
-    <select id="getGeneralSettingDataVolume" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+    <select id="getGeneralSettingDataVolume" resultType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
          select ID as id, name, THRESHOLD_VALUE as thresholdValue from DGN_COMMON_SETTING where PARENT_ID=#{parentId} and upper(NAME) = upper(#{name})
     </select>
 
@@ -105,7 +105,7 @@
         DELETE FROM DGN_COMMON_SETTING WHERE PARENT_ID = #{parentId}
     </delete>
 
-    <insert id="insertReconciliationAlarmSetting" parameterType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+    <insert id="insertReconciliationAlarmSetting" parameterType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
         insert into DGN_COMMON_SETTING
           (ID,
            PARENT_ID,
@@ -124,7 +124,7 @@
            #{isActive,jdbcType = VARCHAR})
     </insert>
 
-    <select id="getReconciliationAlarmSettingByParentId" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+    <select id="getReconciliationAlarmSettingByParentId" resultType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
         SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
         FROM DGN_COMMON_SETTING where 1=1
         <if test="parentId !=null and parentId !=''">
@@ -132,7 +132,7 @@
         </if>
     </select>
 
-    <select id="getReconciliationAlarmSettingByName" resultType="com.synway.governace.pojo.generalManagement.ThresholdConfigSetting">
+    <select id="getReconciliationAlarmSettingByName" resultType="com.synway.governace.entity.pojo.DgnCommonSettingEntity">
         SELECT ID id,PARENT_ID parentId,NAME name,LOGICAL_JUDGMENT logicalJudgment,THRESHOLD_VALUE thresholdValue,TREE_TYPE treeType,IS_ACTIVE isActive
         FROM DGN_COMMON_SETTING
         <where>

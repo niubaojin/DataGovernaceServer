@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+		"-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.governace.dao.LargeScreenDao">
+
+	<select id="standardStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.object where DELETED = 0 and upper(relate_tablename) = 'OBJECTFIELD'
+	</select>
+
+	<select id="standardUpdateStatistics" resultType="java.math.BigDecimal">
+		select count(0) from standardize_object o1
+		inner join standardize_outputobject o2 on o1.obj_guid = o2.obj_guid
+		where DATE_FORMAT(o1.insert_date, '%Y-%m-%d') = DATE_FORMAT(CURRENT_DATE, '%Y-%m-%d')
+	</select>
+
+	<select id="metadataStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.SYNLTEFIELD
+	</select>
+
+	<select id="semanticStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.SAMEWORD
+	</select>
+
+	<select id="nationalCodeStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select count(0) dataCount from SYNLTE.FIELDCODE
+	</select>
+
+	<select id="queryLargeScreenData" resultType="com.synway.governace.pojo.largeScreen.LargeScreenData">
+		select data_info as dataInfo from DGN_DATA_LARGE_SCREEN
+		<where>
+			<if test="moduleId != null and moduleId != ''">
+				and module_id = #{moduleId}
+			</if>
+			<if test="createTime != null and createTime != ''">
+				and DATE_FORMAT(create_time, '%Y%m%d') = #{createTime}
+			</if>
+		</where>
+	</select>
+
+	<insert id="saveLargeScreenData" parameterType="com.synway.governace.pojo.largeScreen.LargeScreenData">
+		insert into DGN_DATA_LARGE_SCREEN(module_id, module_name, data_info, create_time)
+		values (#{moduleId,jdbcType=VARCHAR}, #{moduleName,jdbcType=VARCHAR}, #{dataInfo,jdbcType=CLOB}, CURRENT_DATE - INTERVAL 1 DAY)
+	</insert>
+
+	<delete id="deleteLargeScreenData">
+		delete from DGN_DATA_LARGE_SCREEN
+		<where>
+			<if test="moduleId != null and moduleId != ''">
+				and module_id = #{moduleId}
+			</if>
+			<if test="createTime != null and createTime != ''">
+				and DATE_FORMAT(create_time, '%Y%m%d') <![CDATA[<]]> #{createTime}
+			</if>
+		</where>
+	</delete>
+
+	<select id="getQualityGovernStatistics" resultType="com.synway.governace.pojo.largeScreen.DataGovernanceEffect">
+		select ifnull(sum(errorNumber), 0) errorNumber, ifnull(sum(governanceFinish), 0) finishedNumber
+		from DQC_HistoryExceptionTrack where create_time between #{startTime} and #{endTime}
+	</select>
+
+	<select id="getHandleNodeStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		SELECT SERVICE_IP AS dataName,
+			   count(distinct RESOURCE_ID) AS typeCount,
+			   ifnull(round(sum(DATA_COUNT)/100000000, 2), 0) AS dataCount
+		FROM DAC_STANDARD_PROVIDER_BILL
+		WHERE DATE_FORMAT(DATA_SEND_TIME,'%Y%m%d') = DATE_FORMAT(CURRENT_DATE,'%Y%m%d')
+		GROUP BY SERVICE_IP;
+	</select>
+
+	<select id="getPrimaryClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		SELECT
+			v.CODEID AS dataId,
+			v.CODETEXT AS dataName,
+			IFNULL(ROUND(t.dataCount / 100000000, 2), 0) AS dataCount,
+			IFNULL(v.tablecount, 0) AS typeCount
+		FROM
+		(
+			SELECT
+				*
+			FROM
+				v_classify_info l
+			LEFT JOIN
+			(
+				SELECT
+					PRIMARYORGANIZATIONCH AS name,
+					COUNT(DISTINCT SJXJBM) AS tableCount
+				FROM
+					classify_interface_all_date
+				GROUP BY
+					PRIMARYORGANIZATIONCH
+			) r
+			ON l.codeText = r.name
+			WHERE
+				l.parcodeid = #{sjzzflCodeId}
+		) v
+		LEFT JOIN
+		(
+			SELECT
+				PRIMARY_ORGANIZATION_CH AS primaryClassifyCh,
+				SUM(table_all_count) AS dataCount,
+				COUNT(DISTINCT table_name_en) AS typeCount
+			FROM
+			(
+				SELECT
+					j.PRIMARY_ORGANIZATION_CH,
+					j.table_all_count,
+					j.table_name_en,
+					ROW_NUMBER() OVER (
+						PARTITION BY LOWER(TABLE_PROJECT), UPPER(TABLE_NAME_EN)
+						ORDER BY
+							STATISTICS_TIME DESC
+					) AS rnn
+				FROM
+					DP_TABLE_ORGANIZATION_ASSETS j
+				WHERE
+					j.STATISTICS_TIME >= date(NOW())
+			) h
+			WHERE
+				h.rnn = 1
+			GROUP BY
+				h.PRIMARY_ORGANIZATION_CH
+		) t
+		ON t.primaryClassifyCh COLLATE utf8mb4_unicode_ci = v.CODETEXT COLLATE utf8mb4_unicode_ci;
+	</select>
+
+	<select id="getSecondClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		WITH RECURSIVE classify_tree AS (
+			SELECT
+				CODEID,
+				CODETEXT,
+				PARCODEID,
+				1 AS level
+			FROM v_classify_info
+			WHERE CODEID = #{sjzzflCodeId}
+			UNION ALL
+			SELECT
+				c.CODEID,
+				c.CODETEXT,
+				c.PARCODEID,
+				ct.level + 1 AS level
+			FROM classify_tree ct
+			JOIN v_classify_info c ON ct.CODEID = c.PARCODEID AND ct.level <![CDATA[<]]> 3 -- 控制层级深度不超过3层
+		)
+		SELECT
+			v.CODEID AS dataId,
+			v.CODETEXT AS dataName,
+			IFNULL(ROUND(t.tableAllSum / 1e8, 2), 0) AS dataCount,
+			IFNULL(t.tableNumberSum, 0) AS typeCount,
+			IFNULL(ROUND(t.yesterdayAllSum / 1e8, 2), 0) AS todayUpdateCount
+		FROM classify_tree v
+		LEFT JOIN (
+			SELECT
+				PRIMARY_ORGANIZATION_CH AS primaryClassifyCh,
+				SECONDARY_ORGANIZATION_CH AS secondaryClassifyCh,
+				SUM(table_all_count) AS tableAllSum,
+				COUNT(DISTINCT table_name_en) AS tableNumberSum,
+				SUM(YESTERDAY_COUNT) AS yesterdayAllSum
+			FROM (
+				SELECT
+					PRIMARY_ORGANIZATION_CH,
+					SECONDARY_ORGANIZATION_CH,
+					table_all_count,
+					table_name_en,
+					YESTERDAY_COUNT
+				FROM (
+					SELECT
+						j.PRIMARY_ORGANIZATION_CH,
+						j.SECONDARY_ORGANIZATION_CH,
+						j.table_all_count,
+						j.table_name_en,
+						j.YESTERDAY_COUNT,
+						ROW_NUMBER() OVER (PARTITION BY LOWER(TABLE_PROJECT), UPPER(TABLE_NAME_EN)
+										   ORDER BY STATISTICS_TIME DESC) AS rnn
+					FROM DP_TABLE_ORGANIZATION_ASSETS j
+					WHERE STATISTICS_TIME >= date(NOW())
+					  AND rnn = 1 -- 只取最新记录行（与Oracle的h.rnn=1等效）
+				 ) h
+			 ) g
+			 GROUP BY PRIMARY_ORGANIZATION_CH, SECONDARY_ORGANIZATION_CH
+		 ) t ON t.secondaryClassifyCh = v.CODETEXT
+		WHERE v.level = 3
+		<if test="dataId != null and dataId != ''">
+		AND v.PARCODEID = #{dataId}
+		</if>
+	</select>
+
+	<select id="getThirdClassifyStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select
+			v.CODEID dataId,
+			v.CODETEXT dataName,
+			nvl(t.tableNumberSum,0) typeCount
+		from v_classify_info v
+		left join (
+			select
+				PRIMARY_DATASOURCE_CH as primaryClassifyCh,
+				SECONDARY_DATASOURCE_CH as secondaryClassifyCh,
+				count(distinct table_name_en) as tableNumberSum
+			from (
+				SELECT
+					PRIMARY_DATASOURCE_CH,
+					SECONDARY_DATASOURCE_CH,
+					table_name_en
+				FROM (
+					SELECT
+						j.PRIMARY_DATASOURCE_CH,
+						j.SECONDARY_DATASOURCE_CH,
+						j.table_name_en,
+						row_number() over (PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN)
+										   ORDER BY STATISTICS_TIME DESC) as rnn
+					FROM DP_TABLE_ORGANIZATION_ASSETS j
+					WHERE j.STATISTICS_TIME >= trunc(sysdate)
+				) h
+				WHERE h.rnn = 1
+			) group by PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH
+		) t on t.secondaryClassifyCh = v.CODETEXT
+		where level = 4
+		<if test="dataId != null and dataId !=''">
+			and parcodeid = #{dataId}
+		</if>
+		start with codeid = #{sjzzflCodeId} connect by prior codeid = parcodeid
+	</select>
+
+	<select id="getInceptDataStatistics" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		select r.nodeinstanceid nodeInstanceId,
+			   DATE_FORMAT(r.endtime,'%Y-%m-%d') as dataTime,
+			   r.statisticstr statisticStr,
+			   j.extrainfostr extraInfoStr,
+			   s.jobdataxjson jobDataxJson
+		from jobexecuterecord r
+				 left join job j on r.jobid = j.id
+				 left join subjob s on s.jobid=j.id
+		where r.status = 1
+		  and r.endtime between #{startTime} and #{endTime}
+	</select>
+
+	<select id="getDistributeDataStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		select ifnull(sum(totalcount), 0) as dataCount,
+		count(distinct name) as typeCount
+		from DGN_NOSTD_DISTRIBUTE_STATISTIC
+		where totalcount > 0
+		and partitiontime >= #{startTime}
+		and partitiontime <![CDATA[<=]]> #{endTime}
+	</select>
+
+	<select id="getUpdateDataStatistics" resultType='com.synway.governace.pojo.largeScreen.DataAssetsInfo'>
+		select lower(TABLE_PROJECT) tableProject,
+			   upper(TABLE_NAME_EN) tableName,
+			   case when PARTITION_MESSAGE = '1' then (
+				   case when count(distinct table_all_count) > 1 then 1 else 0 end)
+					else(
+						case when sum(table_all_count) > 0 then 1 else 0 end)
+				   end isUpdating
+		from DP_TABLE_ORGANIZATION_ASSETS
+		where STATISTICS_TIME between #{startTime} and #{endTime}
+		group by lower(TABLE_PROJECT), upper(TABLE_NAME_EN), PARTITION_MESSAGE;
+	</select>
+
+	<select id='getStandardDataStatistics' resultType='com.synway.governace.pojo.largeScreen.DataInceptInfo'>
+		select resource_id as sourceId,
+			   data_count as dataCount,
+			   service_ip as nodeInstanceId,
+			   DATE_FORMAT(data_arrive_time,'%Y-%m-%d') as dataTime
+		from DAC_STANDARD_ACCEPTOR_BILL
+		where data_arrive_time between #{startTime} and #{endTime}
+	</select>
+
+	<select id="getHandleDataStatistics" resultType="com.synway.governace.pojo.largeScreen.StatisticsResult">
+		SELECT
+			days.dataTime,
+			ROUND(IFNULL(SUM(m.dataCount), 0) / 100000000, 2) AS dataCount
+		FROM (
+			WITH RECURSIVE date_seq AS (
+				SELECT DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY) AS dataTime
+				UNION ALL
+				SELECT DATE_ADD(dataTime, INTERVAL 1 DAY)
+				FROM date_seq
+				WHERE dataTime <![CDATA[<]]> CURRENT_DATE()
+			)
+			SELECT dataTime FROM date_seq
+		) days
+		LEFT JOIN (
+			SELECT
+				DATE(data_send_time) AS dataTime,
+				IFNULL(data_count, 0) AS dataCount
+			FROM DAC_STANDARD_PROVIDER_BILL
+		) m ON days.dataTime = m.dataTime
+		GROUP BY days.dataTime
+		ORDER BY days.dataTime;
+	</select>
+
+	<select id='getSourceDataStatistics' resultType='java.math.BigDecimal'>
+		SELECT COUNT(DISTINCT resource_id)
+		FROM DAC_STORAGE_ACCEPTOR_BILL
+		WHERE DATA_ARRIVE_TIME between #{startTime} AND #{endTime};
+	</select>
+
+	<select id='getHandleDataStorageStatistics' resultType='com.synway.governace.pojo.largeScreen.StatisticsResult'>
+		SELECT
+			COUNT(DISTINCT RESOURCE_ID) AS typeCount,
+			IFNULL(ROUND(SUM(DATA_COUNT) / 1e8, 2), 0) AS dataCount
+		FROM DAC_STORAGE_ACCEPTOR_BILL
+		WHERE DATA_ARRIVE_TIME BETWEEN #{startTime} AND #{endTime};
+	</select>
+
+	<select id="queryRecentDataCount" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		SELECT
+			days.dataTime,
+			IFNULL(SUM(m.dataCount), 0) AS dataCount
+		FROM (
+			SELECT
+				DATE_SUB(date(NOW()), INTERVAL (7 - seq.seq) DAY) AS dataTime
+			FROM (
+				SELECT 0 AS seq UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL
+				SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+			) AS seq
+		) AS days
+		LEFT JOIN (
+			SELECT
+				DATE_FORMAT(data_arrive_time, '%Y-%m-%d') AS dataTime,
+				COALESCE(data_count, 0) AS dataCount
+			FROM DAC_STANDARD_ACCEPTOR_BILL
+		) AS m ON days.dataTime = m.dataTime
+		GROUP BY days.dataTime
+		ORDER BY days.dataTime;
+	</select>
+
+	<select id="queryStandardResourceId" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		SELECT
+			days.dataTime,
+			m.sourceId
+		FROM (
+			SELECT DATE_SUB(date(NOW()), INTERVAL (2 - seq.seq) DAY) AS dataTime
+			FROM (
+				SELECT 0 AS seq UNION ALL SELECT 1
+			) AS seq
+		) AS days
+		LEFT JOIN (
+			SELECT
+				DATE_FORMAT(data_arrive_time, '%Y-%m-%d') AS dataTime,
+				resource_id AS sourceId
+			FROM DAC_STANDARD_ACCEPTOR_BILL
+		) AS m ON days.dataTime = m.dataTime
+		GROUP BY days.dataTime, m.sourceId
+		ORDER BY days.dataTime;
+	</select>
+
+	<select id="queryStandardNodeInstanceId" resultType="com.synway.governace.pojo.largeScreen.DataInceptInfo">
+		SELECT
+			service_ip AS nodeInstanceId,
+			resource_id AS sourceId,
+			SUM(COALESCE(data_count, 0)) AS dataCount
+		FROM DAC_STANDARD_ACCEPTOR_BILL
+		WHERE data_arrive_time BETWEEN #{startTime} AND #{endTime}
+		GROUP BY service_ip, resource_id;
+	</select>
+
+</mapper>

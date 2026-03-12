@@ -50,17 +50,17 @@ public class SqlExecutorInterceptor implements Interceptor {
                 "    and upper(t1.modulecode) = ''SJCK''" +
                 "  ) " +
                 "  r11 on upper(l11.{2}) = upper(r11.id) " +
-                " ) ";
+                " )) ";
 
         PATTERN_SQL1 = " ( SELECT l11.* FROM {0} l11 inner join " +
                 "  ( select t1.id from USER_AUTHORITY t1 where exists " +
                 "    ( " +
-                "      select auth_value from " + servicefacUserName + "data_factory_authority t2 where auth_type=2 and user_id_by_auth={1} and ( t1.organid= t2.USER_ORGAN_ID_BY_AUTH OR t1.organid= t2.auth_value) " +
+                "      select auth_value from " + servicefacUserName + ".data_factory_authority t2 where auth_type=2 and user_id_by_auth={1} and ( t1.organid= t2.USER_ORGAN_ID_BY_AUTH OR t1.organid= t2.auth_value) " +
                 "    ) " +
                 "    and upper(t1.modulecode) = ''BZGL''" +
                 "  ) " +
                 "  r11 on upper(l11.{2}) = upper(r11.id) " +
-                " ) ";
+                " )) ";
     }
 
     @Override

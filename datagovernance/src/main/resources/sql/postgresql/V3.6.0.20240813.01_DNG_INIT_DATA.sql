@@ -335,6 +335,8 @@ insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,na
 values ('131','处理节点管理',NULL,'page/configerManage/nodeManage/index','1','0','2','configerManage','1203','nodeManage',NULL,NULL,0);
 insert into dgn_navbar (nav_id,nav_name,nav_class,nav_link,nav_show,nav_blank,nav_level,nav_parent_name,nav_order,nav_name_en,nav_ip,nav_redirect,nav_hidden)
 values ('132','新疆数据大屏',NULL,'page/xjLargeScreen/index','0','0','1','dataFactory','07','xjLargeScreen',NULL,NULL,0);
+insert into dgn_navbar (nav_id, nav_name, nav_class, nav_link, nav_show, nav_blank, nav_level, nav_parent_name, nav_order, nav_name_en, nav_ip, nav_redirect, nav_hidden)
+values('133', '数据质量汇总', NULL, 'page/dataQuality/index', '1', '0', '3', 'dataQuality', '050500', 'index', NULL, NULL, 0);
 
 commit;
 

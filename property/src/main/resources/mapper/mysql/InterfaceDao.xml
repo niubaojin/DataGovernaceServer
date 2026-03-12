@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.InterfaceDao">
+
+    <update id="updateDataCenterName">
+        update DP_DATA_STORAGE_ADD_TABLE
+         set
+            DATA_CENTER_NAME = #{dataCenterName,jdbcType=VARCHAR}
+         where DATA_CENTER_ID = #{dataCenterId,jdbcType=VARCHAR}
+    </update>
+    <update id="updateDataSourceName">
+        update DP_DATA_STORAGE_ADD_TABLE
+         set
+            DATA_SOURCE_NAME = #{dataSourceName,jdbcType=VARCHAR}
+         where DATA_SOURCE_ID = #{dataSourceId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateTableOrganization">
+        BEGIN
+        END;
+    </update>
+
+    <select id="getTableOrganization" resultType="com.synway.property.pojo.DetailedTableByClassify">
+        select primaryDataSourceCh,secondaryDataSourceCh ,primaryOrganizationCh,secondaryOrganizationCh, tableType,
+        tableProject ,name , tableNameEn ,tableAllCount , averageDailyVolume , yesterdayCount ,lifeCycle , valueRate ,
+        nullRate ,tableState,statisticsTimeStr,updateType
+        ,frequency,liveType,tableid,registerState,objectId,tableSize,objectState,
+        -- labels,
+        updateDate,updatePeriod,productStage,organizationClassifyCh,dataSourceClassifyCh,exceptionMessage,lifeCycleStatus
+        from(
+        select PRIMARY_DATASOURCE_CH as primaryDataSourceCh , SECONDARY_DATASOURCE_CH as secondaryDataSourceCh ,
+        PRIMARY_ORGANIZATION_CH as primaryOrganizationCh , SECONDARY_ORGANIZATION_CH as secondaryOrganizationCh
+        ,
+        case when SECONDARY_ORGANIZATION_CH is null or SECONDARY_ORGANIZATION_CH = '' then PRIMARY_ORGANIZATION_CH
+        else PRIMARY_ORGANIZATION_CH || '->' || SECONDARY_ORGANIZATION_CH
+        end as organizationClassifyCh,
+        case when SECONDARY_DATASOURCE_CH is null or SECONDARY_DATASOURCE_CH = '' then PRIMARY_DATASOURCE_CH
+        else PRIMARY_DATASOURCE_CH || '->' || SECONDARY_DATASOURCE_CH
+        end as dataSourceClassifyCh,
+        TABLE_TYPE || '->' || TABLE_PROJECT as tableProject , NAME as name , TABLE_NAME_EN as tableNameEn ,
+        case when TABLE_ALL_COUNT = '0' then '0'
+        when round(TABLE_ALL_COUNT / 10000, 2) = '0.00' then '0'
+        else round(TABLE_ALL_COUNT / 10000, 2) END
+        as tableAllCount, AVERAGE_DAILY_VOLUME as averageDailyVolume,
+        case when YESTERDAY_COUNT = '0' then '0'
+        when round(YESTERDAY_COUNT / 10000, 2) = '0.00' then '0'
+        else round(YESTERDAY_COUNT / 10000, 2) end as yesterdayCount ,TABLE_TYPE as tableType, LIFE_CYCLE as
+        lifeCycle , VALUE_RATE as valueRate ,
+        NULL_RATE as nullRate, TABLE_STATE as tableState,OBJECT_STATE as objectState,
+        case when PARTITION_MESSAGE = 0 then '增量' when PARTITION_MESSAGE = 1 then '全量' else '其它' END as updateType
+        ,date_format(STATISTICS_TIME, '%Y-%m-%d %H:%i:%s') as statisticsTimeStr ,
+        FREQUENCY as frequency , LIVETYPE as liveType ,SJXJBM as tableid,REGISTER_STATE as registerState,OBJECT_ID as
+        objectId,case when TABLE_SIZE = '0' then '0'
+        when round(TABLE_SIZE / 1073741824, 2) = '0.00' then '0'
+        else round(TABLE_SIZE / 1073741824, 2) end as tableSize,
+        -- labels,
+        update_date as updateDate,update_period as updatePeriod,'' as productStage,
+        EXCEPTION_MESSAGE as exceptionMessage,LIFE_CYCLE_STATUS as lifeCycleStatus
+        from
+        (
+        SELECT
+        *
+        FROM
+        ( SELECT j.*, row_number() over (PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= date(now()) )a
+        where
+        <foreach collection="tables" item="item" open="(" close=")" separator="or">
+            <if test="item.tableName != null and item.tableName != ''">
+                upper(a.TABLE_NAME_EN) = upper(#{item.tableName,jdbcType=VARCHAR})
+                <if test="item.projectName != null and item.projectName != ''">
+                    and upper(a.TABLE_PROJECT) = upper(#{item.projectName,jdbcType=VARCHAR})
+                </if>
+                <if test="item.tableType != null and item.tableType != ''">
+                    and upper(a.TABLE_TYPE) = upper(#{item.tableType,jdbcType=VARCHAR})
+                </if>
+            </if>
+        </foreach>
+        ) h
+        WHERE
+        h.rnn = 1
+        ) tt
+    </select>
+</mapper>

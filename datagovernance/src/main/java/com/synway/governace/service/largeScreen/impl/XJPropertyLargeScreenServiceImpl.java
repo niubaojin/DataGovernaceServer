@@ -62,6 +62,8 @@ public class XJPropertyLargeScreenServiceImpl implements XJPropertyLargeScreenSe
             getAppUsageTop();
             // 309：数据服务
             getDataServiceInfo();
+            // 310/311：服务单位
+            getServiceUnit();
         }catch (Exception e){
             logger.error("新疆大屏定时任务运行报错：\n" , e);
         }
@@ -162,10 +164,10 @@ public class XJPropertyLargeScreenServiceImpl implements XJPropertyLargeScreenSe
             JSONObject jsonObjectAve = new JSONObject();    // 近7日平均量
             JSONObject jsonObjectYes = new JSONObject();    // 昨日数据量
             jsonObjectAll.put("name", "数据总量");
-            jsonObjectAll.put("num", dataInsertAll.getAllCount());
+            jsonObjectAll.put("num", dataInsertAll != null ? dataInsertAll.getAllCount() : "0");
             jsonObjectAll.put("numUnit", "亿条");
             DataInfo allSize = new DataInfo();
-            unitConversion(allSize, Long.parseLong(dataInsertAll.getAllSize()));
+            unitConversion(allSize, dataInsertAll != null ? Long.parseLong(dataInsertAll.getAllSize()) : 0);
             jsonObjectAll.put("volume", String.valueOf(allSize.getValue()));
             jsonObjectAll.put("volumeUnit", allSize.getLabel());
 
@@ -426,6 +428,39 @@ public class XJPropertyLargeScreenServiceImpl implements XJPropertyLargeScreenSe
             insertDataToDb(JSONObject.toJSONString(dataServiceInfos), 309);
         } catch (Exception e) {
             logger.error("定时任务更新服务数据报错" , e);
+        }
+    }
+
+    /**
+     * 获取数据服务单位并更新数据库：310/311
+     */
+    public void getServiceUnit(){
+        try {
+            // 获取服务单位的使用排行
+            String serviceOrganTopUrl = ApiConstant.SERVICEFACSRV_BASEURL + "/servicefacsrv/interface/getServiceOrganTop";
+            String serviceOrganTopData = restTemplateHandle.getServicefacsrvInterface(serviceOrganTopUrl);
+            if (StringUtils.isNotBlank(serviceOrganTopData)) {
+                JSONArray jsonArray = new JSONArray();
+                JSONArray.parseArray(serviceOrganTopData).stream().forEach(data ->{
+                    JSONObject jsonObject = new JSONObject();
+                    JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(data));
+                    jsonObject.put("label", object.getString("organName"));
+                    jsonObject.put("value", object.getString("count"));
+                    jsonArray.add(jsonObject);
+                });
+                insertDataToDb(JSONObject.toJSONString(jsonArray), 310);
+            }
+            // 获取服务单位数量
+            String serviceOrganCountUrl = ApiConstant.SERVICEFACSRV_BASEURL + "/servicefacsrv/interface/getServiceOrganCount";
+            String serviceOrganCountData = restTemplateHandle.getServicefacsrvInterface(serviceOrganCountUrl);
+            if (StringUtils.isNotBlank(serviceOrganCountData)) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("label", "服务单位");
+                jsonObject.put("value", serviceOrganCountData);
+                insertDataToDb(JSONObject.toJSONString(jsonObject), 311);
+            }
+        } catch (Exception e) {
+            logger.error("调用资源服务平台查询服务统计接口错误" , e);
         }
     }
 

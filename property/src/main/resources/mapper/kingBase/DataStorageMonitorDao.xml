@@ -11,7 +11,7 @@
     </resultMap>
 
     <select id="getTodayAssetsCount" resultType="java.lang.Integer">
-        select count(*) from TABLE_ORGANIZATION_ASSETS t where statistics_time >= trunc(sysdate)
+        select count(*) from DP_TABLE_ORGANIZATION_ASSETS t where statistics_time >= trunc(sysdate)
     </select>
 
     <select id="getDataBaseState" resultType="com.synway.property.pojo.homepage.DataBaseState">
@@ -27,11 +27,11 @@
                 TABLE_COUNT as tableCount,
                 LIVE_TABLE_ROTE as liveTableRote,
                 TABLE_SUM as tableSum
-                from TABLE_ORGANIZATION_DB_STATE
+                from DP_DB_STATE
     </select>
 
     <delete id="deleteDataBaseStates">
-        delete TABLE_ORGANIZATION_DB_STATE where NAME in (
+        delete DP_DB_STATE where NAME in (
         <foreach collection="dataBaseStates" item="item" separator=",">
             #{item.name,jdbcType=VARCHAR}
         </foreach>
@@ -41,7 +41,7 @@
     <insert id="insertDataBaseStates">
         insert all
         <foreach collection="dataBaseStates" item="item"  >
-            into TABLE_ORGANIZATION_DB_STATE(
+            into DP_DB_STATE(
             NAME,
             USED_CAPACITY,
             BARE_CAPACITY,
@@ -62,18 +62,22 @@
 
     <select id="getOdpsLiveRote" resultType="java.lang.String">
          select t1.usedtablecount||'/'||t2.alltablecount  as oneCount  from (
-                select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as usedtablecount from table_organization_assets
+                select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as usedtablecount from DP_TABLE_ORGANIZATION_ASSETS
                 where to_char(STATISTICS_TIME,'yyyyMMdd')  = to_char(sysdate , 'yyyyMMdd') and livetype = 'LIVING' and upper(TABLE_TYPE) ='ODPS') t1
                 left join(
-                select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as alltablecount from table_organization_assets
+                select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as alltablecount from DP_TABLE_ORGANIZATION_ASSETS
                 where to_char(STATISTICS_TIME,'yyyyMMdd')  = to_char(sysdate , 'yyyyMMdd') and upper(TABLE_TYPE) ='ODPS' ) t2 on 1=1
     </select>
-    <select id="getAllDataBaseCount" resultType="java.util.Map">
-        select tabletype, trunc(sum(DATABASE_COUNT) / 100000000, 2) as DATABASE_COUNT
+    <select id="getAllDataBaseCount" resultType="com.synway.property.pojo.datastoragemonitor.DataResourceTable">
+        select tabletype as tableType,
+               dataid as resourceId,
+               trunc(sum(totalCount) / 100000000, 2) as totalCount
           from (select case
                          when tabletype = 1 then 'ODPS'
                          when tabletype = 2 then 'ADS'
                          when tabletype = 3 then 'ADS'
+                         when tabletype = 21 then 'ADS'
+                         when tabletype = 22 then 'ADB'
                          when tabletype = 4 then 'HBASE'
                          when tabletype = 5 then 'HIVE'
                          when tabletype = 6 then 'ES'
@@ -81,19 +85,21 @@
                          when tabletype = 10 then 'ORACLE'
                          when tabletype = 12 then 'CDH-HIVE'
                        end as tabletype,
-                       SUM(tableallcount) AS DATABASE_COUNT
+                       dataid,
+                       sum(tableallcount) AS totalCount
                   from (select tableproject,
                                tablename,
-                               max(tableallcount) as tableallcount,
+                               dataid,
                                tabletype,
+                               max(tableallcount) as tableallcount,
                                max(partitiondate)
                           from synlte.syndmg_table_all
-                         where to_char(to_date(INSERTEDDATATIME, 'yyyy-MM-dd HH24:mi:ss'), 'yyyyMMdd') = to_char (sysdate, 'yyyyMMdd')
-                         group by tableproject, tablename, tabletype) t
-                 group by tabletype)
+                         where to_char(to_date(INSERTEDDATATIME, 'yyyy-MM-dd HH24:mi:ss'), 'yyyyMMdd') = to_char(sysdate, 'yyyyMMdd')
+                         group by tableproject, tablename, tabletype, dataid) t
+                 group by tabletype, dataid)
          where tabletype is not null
-         group by tabletype
-         ORDER BY tabletype desc
+         group by tabletype, dataid
+         order by tabletype desc
     </select>
 
     <select id="getOssFileCount" resultType="java.util.Map">
@@ -107,7 +113,7 @@
             else
             ROUND(file_count / 100000000, 2)
             end as FILECOUNT
-        from t_ads_odps
+        from DP_T_ADS_ODPS
     </select>
 
     <select id="getWushiOdpsAdsUsedCapacity" resultType="java.util.Map">
@@ -142,7 +148,7 @@
                        trunc(ceil(USED_CAPACITY), 2) as USED_CAPACITY,
                        trunc(ceil(BARE_CAPACITY), 2) as BARE_CAPACITY,
                        row_number() over(PARTITION BY upper(name) ORDER BY UT DESC) as rnn
-                  from t_ads_odps
+                  from DP_T_ADS_ODPS
                  where upper(name) in ('ADS', 'ODPS', 'OSS', 'DATAHUB')) t
          where t.rnn = 1
     </select>
@@ -165,10 +171,10 @@
         union ALL
         select 'liveTableRote' as type,case when t2.alltablecount = 0 then 0 else
         round(t1.usedtablecount/t2.alltablecount,4)*100 end as oneCount from (
-        select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as usedtablecount from table_organization_assets where
+        select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as usedtablecount from DP_TABLE_ORGANIZATION_ASSETS where
         to_char(STATISTICS_TIME,'yyyyMMdd') = to_char(sysdate , 'yyyyMMdd') and livetype = 'LIVING') t1
         left join(
-        select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as alltablecount from table_organization_assets where
+        select count(distinct TABLE_PROJECT||TABLE_NAME_EN ) as alltablecount from DP_TABLE_ORGANIZATION_ASSETS where
         to_char(STATISTICS_TIME,'yyyyMMdd') = to_char(sysdate , 'yyyyMMdd')
         and upper(TABLE_TYPE) ='ODPS') t2 on 1=1
         union ALL
@@ -209,36 +215,25 @@
         select 'nationalStandardTablesSum' as type , count(codeid) as oneCount from SYNLTE.FIELDCODE
         where deleted = 0
         union ALL
-        select 'landMarkTablesSum' as type , count(distinct t.dmzd) as oneCount from dd_bddm t
+        select 'landMarkTablesSum' as type , count(distinct t.dmzd) as oneCount from DSM_DD_BDDM t
         )
     </select>
 
+    <delete id="delDataStorageTable">
+        delete from DP_DATA_STORAGE_ADD_TABLE
+        where
+            PROJECT_NAME = #{item.projectName, jdbcType = VARCHAR}
+          and TABLENAME_EN = #{item.tableNameEN, jdbcType = VARCHAR}
+          and DATA_SOURCE_ID = #{item.dataSourceId, jdbcType = VARCHAR}
+    </delete>
 
     <insert id="insertOracleAddTable">
-        declare
-        i number;
-        begin
-        SELECT 1 INTO i FROM DATA_STORAGE_ADD_TABLE WHERE
-        PROJECT_NAME=#{item.projectName,jdbcType=VARCHAR}
-        and TABLENAME_EN = #{item.tableNameEN,jdbcType=VARCHAR}
-        and DATA_SOURCE_ID = #{item.dataSourceId,jdbcType=VARCHAR};
-        update DATA_STORAGE_ADD_TABLE
-        set
-        TABLENAME_CH = #{item.tableNameCH,jdbcType=VARCHAR},
-        ISSTANDARD = #{item.isStandard,jdbcType=VARCHAR},
-        <if test="type!='' and type != null">
-            ISADDMONITOR = #{type,jdbcType=VARCHAR},
-        </if>
-        ISDELETE = #{item.isDelete,jdbcType=VARCHAR}
-        WHERE
-        PROJECT_NAME=#{item.projectName,jdbcType=VARCHAR}
-        and TABLENAME_EN = #{item.tableNameEN,jdbcType=VARCHAR}
-        and DATA_SOURCE_ID = #{item.dataSourceId,jdbcType=VARCHAR};
-        exception when no_data_found then
-        insert into DATA_STORAGE_ADD_TABLE (DATABASE_TYPE,PROJECT_NAME,TABLENAME_EN,TABLENAME_CH,
+        insert into DP_DATA_STORAGE_ADD_TABLE
+        (DATABASE_TYPE,PROJECT_NAME,TABLENAME_EN,TABLENAME_CH,
         TABLE_ID,PARTITIONED,DATA_SOURCE_NAME,DATA_SOURCE_ID,DATA_CENTER_NAME,
         DATA_CENTER_ID,ISSTANDARD,ISADDMONITOR,ISDELETE,PARTITION_COLUMN)
-        values (
+        values
+        (
         #{item.dataBaseType,jdbcType=VARCHAR},#{item.projectName,jdbcType=VARCHAR},
         #{item.tableNameEN,jdbcType=VARCHAR},#{item.tableNameCH,jdbcType=VARCHAR},
         #{item.tableUuid,jdbcType=VARCHAR},#{item.partitioned,jdbcType=VARCHAR},
@@ -252,8 +247,7 @@
             #{item.isAddMonitor,jdbcType=VARCHAR},
         </if>
         #{item.isDelete,jdbcType=VARCHAR},#{item.partitionColumn,jdbcType=VARCHAR}
-        );
-        end;
+        )
     </insert>
 
     <select id="getAllRealTimeTable" resultType="com.synway.property.pojo.datastoragemonitor.NeedAddRealTimeTable">
@@ -261,7 +255,7 @@
         TABLENAME_CH as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_NAME as dataSourceName,
         DATA_SOURCE_ID as dataSourceId,DATA_CENTER_NAME as dataCenterName,DATA_CENTER_ID as dataCenterId,
         ISSTANDARD as isStandard,ISADDMONITOR as isAddMonitor,ISDELETE as isDelete,
-        PARTITION_COLUMN as partitionColumn ,table_id as tableUuid from DATA_STORAGE_ADD_TABLE
+        PARTITION_COLUMN as partitionColumn ,table_id as tableUuid from DP_DATA_STORAGE_ADD_TABLE
             where ISDELETE = '0' and ISADDMONITOR = '已控'
     </select>
 
@@ -270,7 +264,7 @@
         TABLENAME_CH as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_NAME as dataSourceName,
         DATA_SOURCE_ID as dataSourceId,DATA_CENTER_NAME as dataCenterName,DATA_CENTER_ID as dataCenterId,
         ISSTANDARD as isStandard,ISADDMONITOR as isAddMonitor,ISDELETE as isDelete,
-        PARTITION_COLUMN as partitionColumn ,table_id as tableUuid from DATA_STORAGE_ADD_TABLE
+        PARTITION_COLUMN as partitionColumn ,table_id as tableUuid from DP_DATA_STORAGE_ADD_TABLE
         where ISADDMONITOR = '待控' and ISSTANDARD = '0'
     </select>
 
@@ -280,9 +274,9 @@
     select distinct (project_name||'.'||tablename_en) as tableNameEn , tablename_ch as tableNameCh ,
          case when table_today_sum is null then 0 else table_today_sum end as tableTodaySum,
          case when table_all_sum is null then 0 else table_all_sum end as tableAllSum
-         from DATA_STORAGE_ADD_TABLE t1 left join (select
+         from DP_DATA_STORAGE_ADD_TABLE t1 left join (select
          table_project,TABLE_NAME_EN,table_today_sum,table_all_sum
-         from DATA_STORAGE_TABLE_full where substr(statistic_day,0,8) = #{dt}) t2
+         from DP_DATA_STORAGE_TABLE_FULL where substr(statistic_day,0,8) = #{dt}) t2
          on upper(t1.project_name) = upper(t2.table_project) and upper(t1.tablename_en) = upper(t2.TABLE_NAME_EN)
          where t1.ISDELETE = '0' and t1.ISADDMONITOR = '已控'
     </select>
@@ -294,10 +288,10 @@
         as label from (
         select distinct CODEID as value ,CODETEXT as label from V_CLASSIFY_INFO where PARCODEID =
         <if test="mainClassify == 'dataOrganizationClassify' ">
-            'JZCODEGASJZZFL'
+            #{sjzzflCodeId}
         </if>
         <if test="mainClassify == 'dataSourceClassify' ">
-            'JZCODEGASJZZFL01'
+            #{sjzzflCodeId} || '01'
         </if>
         ) a
         full join
@@ -318,7 +312,7 @@
             j.PRIMARY_DATASOURCE_CH
         </if>
         , row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) and j.table_type is not null) h
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) and j.table_type is not null) h
         WHERE
         h.rnn = 1 group by
         <if test="mainClassify == 'dataOrganizationClassify' ">
@@ -368,7 +362,7 @@
                 j.SECONDARY_DATASOURCE_CH,j.PRIMARY_DATASOURCE_CH
             </if>
             , row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
             WHERE
             h.rnn = 1 group by
             <if test="mainClassify == 'dataOrganizationClassify' ">
@@ -386,7 +380,7 @@
                 FROM (SELECT j.PRIMARY_DATASOURCE_CH,
                 j.SECONDARY_DATASOURCE_CH,
                 row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
-                FROM table_organization_assets j
+                FROM DP_TABLE_ORGANIZATION_ASSETS j
                 where STATISTICS_TIME >= trunc(sysdate)) h
                 WHERE h.rnn = 1
                 and PRIMARY_DATASOURCE_CH = '中间表'
@@ -397,7 +391,7 @@
                 FROM (SELECT j.PRIMARY_ORGANIZATION_CH,
                 j.SECONDARY_ORGANIZATION_CH,
                 row_number() over(PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY STATISTICS_TIME DESC) AS rnn
-                FROM table_organization_assets j
+                FROM DP_TABLE_ORGANIZATION_ASSETS j
                 where STATISTICS_TIME >= trunc(sysdate)) h
                 WHERE h.rnn = 1
                 and PRIMARY_ORGANIZATION_CH = '中间表'
@@ -500,7 +494,7 @@
             *
             FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
             and PRIMARY_ORGANIZATION_CH != '中间表' and SECONDARY_ORGANIZATION_CH!= '中间表') h
             <where>
                 <if test="daysAgo == 0 or daysAgo == 1">
@@ -606,7 +600,7 @@
             *
             FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)) h
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate)) h
             WHERE
             h.rnn = 1 and PRIMARY_DATASOURCE_CH != '中间表' and SECONDARY_DATASOURCE_CH!= '中间表'
             )
@@ -673,7 +667,7 @@
             *
             FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
             and PRIMARY_DATASOURCE_CH != '中间表' and SECONDARY_DATASOURCE_CH!= '中间表') h
             <where>
                 <if test="daysAgo == 0 or daysAgo == 1">
@@ -737,7 +731,7 @@
             (sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824 &lt; 0.01 then 0.01
             else TRUNC((sum(case when AVERAGE_DAILY_SIZE is null then 0 else AVERAGE_DAILY_SIZE end) / count(*)) / 1073741824, 2)
             end as averageAllDailySize
-            from table_organization_assets
+            from DP_TABLE_ORGANIZATION_ASSETS
             <where>
                 STATISTICS_TIME >= trunc(sysdate) and
                 (PRIMARY_ORGANIZATION_CH is null or PRIMARY_ORGANIZATION_CH = '中间表' )and (SECONDARY_ORGANIZATION_CH is
@@ -861,7 +855,7 @@
                   from (SELECT *
                           FROM (SELECT j.*,
                                        row_number() over(partition by lower(TABLE_TYPE), lower(TABLE_PROJECT), upper(TABLE_NAME_EN) order by STATISTICS_TIME desc) as rnn
-                                  from table_organization_assets j
+                                  from DP_TABLE_ORGANIZATION_ASSETS j
                                  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) a
         <if test="orderBy != null and orderBy != ''">
             order by #{orderBy}
@@ -1045,7 +1039,7 @@
                                    trunc(sum(table_size) / 1073741824, 4) as tableSize,
                                    to_char(statistics_time, 'yyyyMMdd') as statistics_day,
                                    count(*) as tableNum
-                              from table_organization_assets
+                              from DP_TABLE_ORGANIZATION_ASSETS
                              where statistics_time >= trunc(sysdate - #{daysAgo})
                              group by primary_organization_ch,
                                       to_char(statistics_time, 'yyyyMMdd')) t
@@ -1067,7 +1061,7 @@
                                    TRUNC(sum(table_size) / 1073741824, 4) as tableSize,
                                    to_char(statistics_time, 'yyyyMMdd') as statistics_day,
                                    count(*) as tableNum
-                              from table_organization_assets
+                              from DP_TABLE_ORGANIZATION_ASSETS
                              where statistics_time >= trunc(sysdate - #{daysAgo})
                              group by primary_datasource_ch,
                                       to_char(statistics_time, 'yyyyMMdd')) t
@@ -1080,7 +1074,7 @@
             select row_number() over ( partition by PRIMARY_NAME order by STATISTICS_day desc ) rn ,t.* from(
             select FACTOR_ONE_NAME AS PRIMARY_NAME,TRUNC(sum(TABLE_ALL_COUNT)/100000000,6) as records ,
             TRUNC(sum(table_size)/1073741824,4) as tableSize,to_char(STATISTICS_TIME,'yyyyMMdd') as STATISTICS_day
-            from table_organization_assets where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by FACTOR_ONE_NAME ,
+            from DP_TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by FACTOR_ONE_NAME ,
             to_char(STATISTICS_TIME,'yyyyMMdd') ) t
             where t.PRIMARY_NAME is not null) where rn =1
         </if>
@@ -1095,7 +1089,7 @@
         <!--            LABELS,TABLE_NAME_EN,sum(TABLE_ALL_COUNT) as records,sum(table_size) as tableSize-->
         <!--            FROM-->
         <!--            ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY-->
-        <!--            STATISTICS_TIME DESC ) as rnn from table_organization_assets j) h-->
+        <!--            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j) h-->
         <!--            WHERE-->
         <!--            h.rnn = 1 and h.LABELS like '%A%' group by LABELS,TABLE_NAME_EN) a-->
         <!--            on a.LABELS like '%'||b.LABELCODE||'%'-->
@@ -1105,7 +1099,7 @@
     </select>
 
     <select id="getAdsProjectAdd" resultType="java.lang.String">
-        select distinct lower(project_name) from DATA_STORAGE_ADD_TABLE
+        select distinct lower(project_name) from DP_DATA_STORAGE_ADD_TABLE
     </select>
 
     <select id="getNeedAddRealTimeTableList"
@@ -1114,7 +1108,7 @@
         TABLENAME_CH as tableNameCH,PARTITIONED as partitioned,DATA_SOURCE_NAME as dataSourceName,
         DATA_SOURCE_ID as dataSourceId,DATA_CENTER_NAME as dataCenterName,DATA_CENTER_ID as dataCenterId,
         ISSTANDARD as isStandard,ISADDMONITOR as isAddMonitor,ISDELETE as isDelete,
-        PARTITION_COLUMN as partitionColumn ,TABLE_ID AS  tableUuid from DATA_STORAGE_ADD_TABLE
+        PARTITION_COLUMN as partitionColumn ,TABLE_ID AS  tableUuid from DP_DATA_STORAGE_ADD_TABLE
         <where>
             ISDELETE = '0' and ISADDMONITOR = '已控'
             <if test="dataBaseType!= ''">
@@ -1135,7 +1129,7 @@
     </select>
 
     <update id="delRealTableMonitorDao">
-        update DATA_STORAGE_ADD_TABLE set ISADDMONITOR = '待控' where
+        update DP_DATA_STORAGE_ADD_TABLE set ISADDMONITOR = '待控' where
         <foreach collection="list" item="item" separator="or" index="index">
             (UPPER(DATA_SOURCE_ID) = UPPER(#{item.dataSourceId}) and UPPER(PROJECT_NAME) = UPPER(#{item.projectName})
             and
@@ -1146,13 +1140,13 @@
     <update id="updateRegisterInterfaceSuccessData">
         BEGIN
         <foreach collection="list" item="item" index="index">
-            update TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.registerState}
+            update DP_TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.registerState}
             where UPPER(table_name_en) = UPPER(#{item.tableNameEn,jdbcType=VARCHAR})
             <if test="item.tableid!= null">
                 and UPPER(sjxjbm) = UPPER(#{item.tableid,jdbcType=VARCHAR})
             </if>
             ;
-            update DATA_REGISTER
+            update DP_DATA_REGISTER
             set APPROVAL_STATUS = '1',
             APPROVAL_UPDATE_TIME = to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss')
             where TABLE_NAME_EN = #{item.tableNameEn,jdbcType=VARCHAR};
@@ -1163,13 +1157,13 @@
     <update id="updateRegisterInterfaceFailedData">
         BEGIN
         <foreach collection="list" item="item" index="index">
-            update TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.registerState}
+            update DP_TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.registerState}
             where UPPER(table_name_en) = UPPER(#{item.tableNameEn,jdbcType=VARCHAR})
             <if test="item.tableid!= null">
                 and UPPER(sjxjbm) = UPPER(#{item.tableid,jdbcType=VARCHAR})
             </if>
             ;
-            update DATA_REGISTER
+            update DP_DATA_REGISTER
             set APPROVAL_STATUS = '4',
             APPROVAL_UPDATE_TIME = to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss')
             where TABLE_NAME_EN = #{item.tableNameEn,jdbcType=VARCHAR};
@@ -1180,7 +1174,7 @@
     <update id="updateRegisterState">
         BEGIN
         <foreach collection="list" item="item" index="index">
-            update TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.TYPE,jdbcType=VARCHAR}
+            update DP_TABLE_ORGANIZATION_ASSETS set REGISTER_STATE = #{item.TYPE,jdbcType=VARCHAR}
             where UPPER(SJXJBM) = UPPER(#{item.TABLEID,jdbcType=VARCHAR});
         </foreach>
         END;
@@ -1189,7 +1183,7 @@
     <update id="updateObjectState">
         BEGIN
         <foreach collection="list" item="item" index="index" separator=";" close=";">
-            update TABLE_ORGANIZATION_ASSETS set OBJECT_STATE = #{state,jdbcType=VARCHAR}
+            update DP_TABLE_ORGANIZATION_ASSETS set OBJECT_STATE = #{state,jdbcType=VARCHAR}
             where UPPER(SJXJBM) = UPPER(#{item,jdbcType=VARCHAR})
         </foreach>
         <foreach collection="list" item="item" index="index" separator=";" close=";">
@@ -1207,7 +1201,7 @@
         ( SELECT
         j.TABLE_TYPE,j.TABLE_PROJECT,
         row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j   where STATISTICS_TIME >= trunc(sysdate)) h
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j   where STATISTICS_TIME >= trunc(sysdate)) h
         WHERE
         h.rnn = 1)
         where upper(TABLE_TYPE) = upper(#{stroageLocation})  group by upper(TABLE_TYPE),lower(TABLE_PROJECT)
@@ -1221,7 +1215,7 @@
     <!--				(select labelname as label,labelcode as value from SYNLTE.LABELS  where labelcode like #{label}||'%' group by labelname,labelcode) a-->
     <!--				left join-->
     <!--				(select labels,table_name_en from (SELECT j.labels,j.TABLE_PROJECT,j.TABLE_NAME_EN, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY-->
-    <!--        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate) ) h WHERE-->
+    <!--        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate) ) h WHERE-->
     <!--        h.rnn = 1) b-->
     <!--				on b.labels like '%'||a.value||'%' GROUP BY a.value,a.label ORDER BY value-->
     <!--    </select>-->
@@ -1231,7 +1225,7 @@
         TABLE_TYPE||'('||count(1)||')' as label,TABLE_TYPE as value
         FROM
         ( SELECT j.TABLE_TYPE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate) and j.table_type is not null) h
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j  where STATISTICS_TIME >= trunc(sysdate) and j.table_type is not null) h
         WHERE
         h.rnn = 1 group by TABLE_TYPE
     </select>
@@ -1243,7 +1237,7 @@
             (select labelname as label,substr(labelcode,0,1) as value from SYNLTE.LABELS group by labelname,substr(labelcode,0,1)) a
             left join
             (select labels,TABLE_NAME_EN from (SELECT j.labels,j.TABLE_NAME_EN,  row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate) ) h WHERE
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j  where STATISTICS_TIME >= trunc(sysdate) ) h WHERE
             h.rnn = 1) b
         on b.labels like '%'||a.value||'%' GROUP BY a.value,a.label ORDER BY value
     </select>
@@ -1251,39 +1245,39 @@
     <select id="getSourceStateNum" resultType="java.util.HashMap">
         select '启用' as value, '启用('||count(1)||')' as label FROM
                 ( SELECT j.OBJECT_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-                STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) ) h
+                STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) ) h
                 WHERE
                 h.rnn = 1 and OBJECT_STATE in('0', '1')
         union
         select '停用' as value, '停用('||count(1)||')' as label FROM
                 ( SELECT j.OBJECT_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-                STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) ) h
+                STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) ) h
                 WHERE
                 h.rnn = 1 and (OBJECT_STATE = '-1' or OBJECT_STATE is null )
         union
         select '已注册' as value, '已注册('||count(1)||')' as label FROM
                 ( SELECT j.REGISTER_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-                STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+                STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
                 WHERE
                 h.rnn = 1 and REGISTER_STATE = '1'
         union
         select '未注册' as value, '未注册('||count(1)||')' as label FROM
                 ( SELECT j.REGISTER_STATE, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-                STATISTICS_TIME DESC ) as rnn from table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
+                STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j  where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})) h
                 WHERE
                 h.rnn = 1 and (REGISTER_STATE != '1' or REGISTER_STATE is null )
     </select>
 
 
     <select id="getTableType" resultType="java.lang.String">
-        select upper(TABLE_TYPE) from TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by upper(TABLE_TYPE)
+        select upper(TABLE_TYPE) from DP_TABLE_ORGANIZATION_ASSETS where STATISTICS_TIME >= trunc(sysdate - #{daysAgo}) group by upper(TABLE_TYPE)
     </select>
 
     <update id="updateApprovalStatus" parameterType="com.synway.property.pojo.approvalinfo.DataApproval">
         DECLARE
         i NUMBER;
         BEGIN
-        SELECT 1 INTO i FROM DATA_REGISTER WHERE
+        SELECT 1 INTO i FROM DP_DATA_REGISTER WHERE
         <if test="item.approvalType=='updateLifeCycle'">
             TABLE_NAME_EN = #{item.tableNameEn,jdbcType=VARCHAR} and
             TABLE_PROJECT = #{item.tableProject,jdbcType=VARCHAR}
@@ -1305,7 +1299,7 @@
         </if>
         and APPROVAL_TYPE = #{item.approvalType,jdbcType=VARCHAR};
         exception when no_data_found then
-        INSERT INTO DATA_REGISTER (SJXJBM,TABLE_NAME_EN,OBJECT_ID,APPROVAL_ID,APPROVAL_STATUS,APPROVAL_CREATE_TIME,
+        INSERT INTO DP_DATA_REGISTER (SJXJBM,TABLE_NAME_EN,OBJECT_ID,APPROVAL_ID,APPROVAL_STATUS,APPROVAL_CREATE_TIME,
         APPROVAL_UPDATE_TIME,APPROVAL_TYPE,TABLE_PROJECT)
         values(#{item.tableId,jdbcType=VARCHAR},#{item.tableNameEn,jdbcType=VARCHAR},#{item.objectId,jdbcType=VARCHAR},
         #{item.approvalId,jdbcType=VARCHAR},#{item.approvalStatus,jdbcType=VARCHAR},to_char(sysdate ,
@@ -1313,7 +1307,7 @@
         hh24:mi:ss'),
         to_char(sysdate , 'yyyy-MM-dd hh24:mi:ss'),#{item.approvalType,jdbcType=VARCHAR},
         #{item.tableProject,jdbcType=VARCHAR});
-        update TABLE_ORGANIZATION_ASSETS set
+        update DP_TABLE_ORGANIZATION_ASSETS set
         <if test="item.approvalType=='register'">
             REGISTER_STATE = #{item.approvalStatus,jdbcType=VARCHAR}
             where UPPER(SJXJBM) = UPPER(#{item.tableId,jdbcType=VARCHAR})
@@ -1340,7 +1334,7 @@
         select SJXJBM as tableId,TABLE_NAME_EN as tableNameEn,OBJECT_ID as objectId,APPROVAL_ID as approvalId,
         APPROVAL_STATUS as approvalStatus,APPROVAL_CREATE_TIME as approvalCreateTime,APPROVAL_UPDATE_TIME as
         approvalUpdateTime,TABLE_PROJECT as tableProject,APPROVAL_TYPE as approvalType
-        from DATA_REGISTER where APPROVAL_STATUS = '2'
+        from DP_DATA_REGISTER where APPROVAL_STATUS = '2'
         <foreach collection="dataApprovals" item="item">
             <if test="item.approvalType == 'register'">
                 and SJXJBM = #{item.tableId,jdbcType=VARCHAR}
@@ -1355,7 +1349,7 @@
     <select id="getApprovals" resultType="com.synway.property.pojo.approvalinfo.DataApproval">
         select SJXJBM as tableId,TABLE_NAME_EN as tableNameEn,OBJECT_ID as objectId,APPROVAL_ID as approvalId,
         APPROVAL_STATUS as approvalStatus,APPROVAL_CREATE_TIME as approvalCreateTime,APPROVAL_UPDATE_TIME as approvalUpdateTime
-        from DATA_REGISTER where APPROVAL_STATUS = '2'
+        from DP_DATA_REGISTER where APPROVAL_STATUS = '2'
     </select>
 
     <select id="getApprovalStatus" resultType="com.synway.property.pojo.approvalinfo.DataApproval"
@@ -1398,7 +1392,7 @@
         row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME
         DESC ) AS rnn
         FROM
-        table_organization_assets j
+        DP_TABLE_ORGANIZATION_ASSETS j
         where STATISTICS_TIME >= trunc(sysdate)
         ) h
         WHERE
@@ -1418,7 +1412,7 @@
         from DGN_APPROVAL
         where
         APPROVAL_ID in(
-        select APPROVAL_ID from data_register where SJXJBM = #{tableId,jdbcType=VARCHAR}
+        select APPROVAL_ID from DP_DATA_REGISTER where SJXJBM = #{tableId,jdbcType=VARCHAR}
         )
     </select>
 
@@ -1446,7 +1440,7 @@
             from(
             select * FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
             and PRIMARY_ORGANIZATION_CH!='中间表' and SECONDARY_ORGANIZATION_CH!='中间表'
             ) h
             WHERE
@@ -1474,7 +1468,7 @@
             from(
             select * FROM
             ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-            STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
+            STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate - #{daysAgo})
             and PRIMARY_DATASOURCE_CH!='中间表' and SECONDARY_DATASOURCE_CH!='中间表') h
             WHERE
             h.rnn = 1
@@ -1540,12 +1534,12 @@
 
     <update id="updateLifeCycleApprovalStatus">
         BEGIN
-        update DATA_REGISTER
+        update DP_DATA_REGISTER
         set APPROVAL_STATUS = '1'
         where TABLE_PROJECT = #{requestParam.tableProject,jdbcType=VARCHAR}
         and TABLE_NAME_EN = #{requestParam.tableNameEn,jdbcType=VARCHAR}
         and APPROVAL_TYPE = 'updateLifeCycle';
-        update TABLE_ORGANIZATION_ASSETS
+        update DP_TABLE_ORGANIZATION_ASSETS
         set LIFE_CYCLE_STATUS = '1',
         LIFE_CYCLE = #{requestParam.value,jdbcType=VARCHAR}
         where
@@ -1565,12 +1559,12 @@
 
     <update id="updateFailLifeCycleApprovalStatus">
         BEGIN
-        update DATA_REGISTER
+        update DP_DATA_REGISTER
         set APPROVAL_STATUS = '4'
         where TABLE_PROJECT = #{requestParam.tableProject,jdbcType=VARCHAR}
         and TABLE_NAME_EN = #{requestParam.tableNameEn,jdbcType=VARCHAR}
         and APPROVAL_TYPE = 'updateLifeCycle';
-        update TABLE_ORGANIZATION_ASSETS set LIFE_CYCLE_STATUS = '4'
+        update DP_TABLE_ORGANIZATION_ASSETS set LIFE_CYCLE_STATUS = '4'
         where
         STATISTICS_TIME >= trunc(sysdate) and
         UPPER(TABLE_NAME_EN) = UPPER(#{requestParam.tableNameEn,jdbcType=VARCHAR})
@@ -1589,7 +1583,7 @@
     <select id="getLifeCycle" resultType="java.lang.String">
         select LIFE_CYCLE from
         ( SELECT j.*, row_number ( ) over ( PARTITION BY lower(TABLE_PROJECT), upper(TABLE_NAME_EN) ORDER BY
-        STATISTICS_TIME DESC ) as rnn from table_organization_assets j where STATISTICS_TIME >= trunc(sysdate)) h
+        STATISTICS_TIME DESC ) as rnn from DP_TABLE_ORGANIZATION_ASSETS j where STATISTICS_TIME >= trunc(sysdate)) h
         WHERE
         h.rnn = 1 and
         UPPER(TABLE_NAME_EN) = UPPER(#{requestParam.tableNameEn,jdbcType=VARCHAR})
@@ -1603,20 +1597,19 @@
         </foreach>
     </select>
 
-    <update id="updateTableOrganizationShowField">
-        merge into ZC_CONFIG_FIELD_CONTROL a
-            using (select 'TABLE_ORGANIZATION' as NAME FROM dual) b
-            on (a.name = b.name)
-            when matched then
-            update
-            set
-            SHOW_FIELD_LIST = #{tableOrganizationShowFields,jdbcType=VARCHAR} where NAME = 'TABLE_ORGANIZATION'
-            when not matched then
-            insert values('TABLE_ORGANIZATION',90,#{tableOrganizationShowFields,jdbcType=VARCHAR})
-    </update>
+    <delete id="delTableOrganizationShowField">
+        delete from DP_ZC_CONFIG_FIELD_CONTROL where name = 'TABLE_ORGANIZATION' and username = #{userName,jdbcType=VARCHAR}
+    </delete>
+
+    <insert id="updateTableOrganizationShowField">
+        insert into DP_ZC_CONFIG_FIELD_CONTROL
+            (NAME,USERNAME,SHOW_FIELD_LIST)
+        values
+            ('TABLE_ORGANIZATION',#{userName,jdbcType=VARCHAR},#{tableOrganizationShowFields,jdbcType=VARCHAR})
+    </insert>
 
     <select id="getTableOrganizationShowField" resultType="java.lang.String">
-        select SHOW_FIELD_LIST from ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_ORGANIZATION'
+        select SHOW_FIELD_LIST from DP_ZC_CONFIG_FIELD_CONTROL where NAME='TABLE_ORGANIZATION'
     </select>
 
 </mapper>

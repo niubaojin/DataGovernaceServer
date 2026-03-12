@@ -1,6 +1,8 @@
 package com.synway.governace.controller.generalManagement;
 
 import com.synway.common.bean.ServerResponse;
+import com.synway.governace.entity.dto.DgnCommonSettingDTO;
+import com.synway.governace.entity.pojo.DgnCommonSettingEntity;
 import com.synway.governace.enums.OperateLogFailReasonEnum;
 import com.synway.governace.enums.OperateLogHandleTypeEnum;
 import com.synway.governace.pojo.generalManagement.*;
@@ -37,47 +39,22 @@ public class GeneralManagementController {
     /**
      * @description 保存通用配置信息：数据资产、数据质量、告警推送、数据堆积
      * @param setting
-     * @return
      */
     @RequestMapping(value = "/saveOrUpdateGeneralSetting")
     @ResponseBody
-    public ServerResponse saveOrUpdateGeneralSetting(@RequestBody ThresholdConfigSetting setting){
-        String settingName = setting.getName();
-        if (setting.getParentId().equalsIgnoreCase("dataPiled")){
-            settingName = "数据堆积监测配置";
-        }
-        if (setting.getParentId().equalsIgnoreCase("dataVolumeMonitor")){
-            settingName = "数据量监测配置";
-        }
-        try {
-            logger.info("开始保存数据");
-            generalManagementService.saveOrUpdateGeneralSetting(setting);
-            logger.info("保存数据完成");
-            operateLogServiceImpl.updateGeneralSettingSuccessLog(OperateLogHandleTypeEnum.ALTER, "通用配置", settingName);
-            return ServerResponse.asSucessResponse(String.format("保存%s配置数据成功",setting.getParentId()));
-        }catch (Exception e){
-            logger.error("保存通用配置数据出错:", e);
-            operateLogServiceImpl.updateGeneralSettingFailLog(OperateLogHandleTypeEnum.ALTER, OperateLogFailReasonEnum.YYXTFM, "通用配置", settingName);
-            return ServerResponse.asErrorResponse("保存通用配置数据出错");
-        }
+    public ServerResponse saveOrUpdateGeneralSetting(@RequestBody DgnCommonSettingDTO setting){
+        generalManagementService.saveOrUpdateGeneralSetting(setting);
+        return ServerResponse.asSucessResponse(String.format("保存%s配置数据成功",setting.getParentId()));
     }
 
     /**
      * @description 获取通用配置：数据资产、数据质量、告警推送、数据堆积
-     * @param setting
-     * @return
+     * @param dto
      */
     @RequestMapping(value = "/getGeneralSetting")
     @ResponseBody
-    public ServerResponse getGeneralSetting(@RequestBody ThresholdConfigSetting setting){
-        ServerResponse serverResponse = null;
-        try {
-            serverResponse = generalManagementService.getGeneralSetting(setting);
-            return serverResponse;
-        }catch (Exception e){
-            logger.error("获取通用配置数据出错：", e);
-            return ServerResponse.asErrorResponse("获取通用配置数据出错");
-        }
+    public ServerResponse getGeneralSetting(@RequestBody DgnCommonSettingDTO dto){
+        return generalManagementService.getGeneralSetting(dto);
     }
 
     /**
@@ -106,7 +83,7 @@ public class GeneralManagementController {
      */
     @RequestMapping(value = "/delPushSetting")
     @ResponseBody
-    public ServerResponse delPushSetting(@RequestBody ThresholdConfigSetting setting){
+    public ServerResponse delPushSetting(@RequestBody DgnCommonSettingEntity setting){
         try {
             generalManagementService.delPushSetting(setting);
             operateLogServiceImpl.updateGeneralSettingSuccessLog(OperateLogHandleTypeEnum.ALTER, "通用配置", "告警推送配置");
@@ -121,7 +98,7 @@ public class GeneralManagementController {
     /*保存数据对账告警配置*/
     @RequestMapping(value = "/saveOrUpdateReconciliationAlarmSetting")
     @ResponseBody
-    public ServerResponse saveOrUpdateReconciliationAlarmSetting(@RequestBody List<ThresholdConfigSetting> settings){
+    public ServerResponse saveOrUpdateReconciliationAlarmSetting(@RequestBody List<DgnCommonSettingEntity> settings){
         try {
             logger.info("开始保存对账数据");
             generalManagementService.saveOrUpdateReconciliationAlarmSetting(settings);
@@ -138,7 +115,7 @@ public class GeneralManagementController {
     /*获取数据对账告警配置*/
     @RequestMapping(value = "/getReconciliationAlarmSetting")
     @ResponseBody
-    public ServerResponse getReconciliationAlarmSetting(@RequestBody ThresholdConfigSetting setting){
+    public ServerResponse getReconciliationAlarmSetting(@RequestBody DgnCommonSettingEntity setting){
         try {
             BillAlarmSetting billAlarmSetting = generalManagementService.getReconciliationAlarmSetting(setting);
             return ServerResponse.asSucessResponse(billAlarmSetting);

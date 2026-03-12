@@ -15,15 +15,17 @@ import com.synway.governace.enums.SysCodeEnum;
 import com.synway.governace.pojo.largeScreen.*;
 import com.synway.governace.service.largeScreen.LargeScreenService;
 import com.synway.governace.util.DateUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
  * @author ywj
  * @date 2020/7/22 14:53
  */
+@Slf4j
 @Service
 public class LargeScreenServiceImpl implements LargeScreenService {
 
@@ -44,11 +47,11 @@ public class LargeScreenServiceImpl implements LargeScreenService {
     @Autowired
     private RestTemplate loadBalanced;
 
-
     @NacosInjected
     private NamingService namingServiceImpl;
 
-    private Logger logger = Logger.getLogger(LargeScreenServiceImpl.class);
+    @Resource
+    private Environment env;
 
     @Override
     public List<StatisticsResult> standardDefinedStatistics() {
@@ -220,7 +223,8 @@ public class LargeScreenServiceImpl implements LargeScreenService {
     @Override
     public Map<String, Object> getPrimaryClassifyStatistics() {
         Map<String, Object> map = new HashMap<>();
-        List<StatisticsResult> statisticsList = largeScreenDao.getPrimaryClassifyStatistics();
+        String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+        List<StatisticsResult> statisticsList = largeScreenDao.getPrimaryClassifyStatistics(sjzzflCodeId);
         if (CollectionUtils.isNotEmpty(statisticsList)) {
             for (StatisticsResult statistics : statisticsList) {
                 String code = SysCodeEnum.getCodeByNameAndType(statistics.getDataName(), "ORGANIZATIONTYPE");
@@ -234,11 +238,15 @@ public class LargeScreenServiceImpl implements LargeScreenService {
 
     @Override
     public List<StatisticsResult> getSecondClassifyStatistics(QueryInfo queryInfo) {
+        String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+        queryInfo.setSjzzflCodeId(sjzzflCodeId);
         return largeScreenDao.getSecondClassifyStatistics(queryInfo);
     }
 
     @Override
     public List<StatisticsResult> getThirdClassifyStatistics(QueryInfo queryInfo) {
+        String sjzzflCodeId = env.getProperty("sjzzflCodeId");
+        queryInfo.setSjzzflCodeId(sjzzflCodeId);
         return largeScreenDao.getThirdClassifyStatistics(queryInfo);
     }
 
@@ -252,7 +260,7 @@ public class LargeScreenServiceImpl implements LargeScreenService {
         List<Instance> list = namingServiceImpl.getAllInstances("dataresource");
         DataResource[] dataResources = null;
         if (null == list || list.size() == 0) {
-            logger.info("未找到服务名为【DATARESOURCE】的实例");
+            log.info("未找到服务名为【DATARESOURCE】的实例");
         } else {
 //            ApiConstant.DS_GET_DATA_RESOURCE
 //            dataResources = loadBalanced.getForObject("http://dataresource/DataResource/getAllDataResource", DataResource[].class);
@@ -310,7 +318,7 @@ public class LargeScreenServiceImpl implements LargeScreenService {
 //        Application application = eurekaClient.getApplication("DATARESOURCE");
         DataResource[] dataResources = null;
         if (null == list || list.size() == 0) {
-            logger.info("未找到服务名为【DATARESOURCE】的实例");
+            log.info("未找到服务名为【DATARESOURCE】的实例");
         } else {
 //            dataResources = loadBalanced.getForObject("http://dataresource/DataResource/getAllDataResource", DataResource[].class);
             dataResources = loadBalanced.getForObject(ApiConstant.RESOURCE_GET_DATA_RESOURCE_URL, DataResource[].class);
@@ -353,7 +361,7 @@ public class LargeScreenServiceImpl implements LargeScreenService {
 //        Application application = eurekaClient.getApplication("DATARESOURCE");
         DataResource[] dataResources = null;
         if (null == list || list.size() == 0) {
-            logger.info("未找到服务名为【DATARESOURCE】的实例");
+            log.info("未找到服务名为【DATARESOURCE】的实例");
         } else {
 //            dataResources = loadBalanced.getForObject("http://dataresource/DataResource/getAllDataResource", DataResource[].class);
             dataResources = loadBalanced.getForObject(ApiConstant.RESOURCE_GET_DATA_RESOURCE_URL, DataResource[].class);
@@ -424,14 +432,14 @@ public class LargeScreenServiceImpl implements LargeScreenService {
         // 调用数据资产获取存储信息接口
         List<Instance> list = namingServiceImpl.getAllInstances("property");
         if (null == list || list.size() == 0) {
-            logger.info("未找到服务名为【PROPERTY】的实例");
+            log.info("未找到服务名为【PROPERTY】的实例");
         } else {
 //            ServerResponse response = loadBalanced.getForObject("http://property/dataStorageMonitoring/getDataBaseStatus?platFormType=" + platFormType, ServerResponse.class);
             ServerResponse response = loadBalanced.getForObject(ApiConstant.PROPERTY_GET_DB_STATUS + platFormType, ServerResponse.class);
             if (response.getStatus() == 1) {
                 storeList = (List<DataBaseState>) response.getData();
             } else {
-                logger.error("调用数据资产获取存储信息接口出错");
+                log.error("调用数据资产获取存储信息接口出错");
             }
         }
         map.put("storeInfo", storeList);

@@ -3,7 +3,7 @@ package com.synway.property.controller;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import com.synway.property.pojo.*;
 import com.synway.property.pojo.datastoragemonitor.DataResource;
 import com.synway.property.pojo.formorganizationindex.ClassifyInfoTree;
@@ -69,7 +69,7 @@ public class FoucsOrganizationController {
 //            String result = restTemplate.getForObject(TableOrganizationConstant.DATARESOURCE_BASEURL + "/DataResource/getDataSourceTree?name=&radioinLine=1", String.class);
 
             JSONArray returnList = new JSONArray();
-            String result = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getAllResources", String.class);
+            String result = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getAllResources", String.class);
             if(StringUtils.isNotBlank(result) && "1".equals(JSONObject.parseObject(result).getString("status"))){
                 String dataStr = JSONObject.parseObject(result).getObject("data",String.class);
                 List<DataResource> allDataResource = JSONArray.parseArray(dataStr, DataResource.class);

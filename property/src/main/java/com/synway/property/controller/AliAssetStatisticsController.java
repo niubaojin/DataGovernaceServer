@@ -22,7 +22,6 @@ public class AliAssetStatisticsController {
     @Autowired
     AliAssetStatisticsService aliAssetStatisticsService;
 
-
     @Scheduled(cron = "${runAliAssetStatistics}")
     public void runAliAssetStatistics() {
         try{

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.AlarmSettingDao">
+
+    <select id="getAssetsAlarmMsgs" resultType="com.synway.property.pojo.alarmsetting.AlarmMessage">
+        SELECT
+            t.statistics_time   AS alarmtime,
+            t.exception_message AS alarmcontent,
+            t.name              AS tableNameCh,
+            t.table_name_en     AS tableNameEn,
+            t.sjxjbm            AS tableId,
+            t.alarm_level       AS levelName
+        FROM
+            DP_TABLE_ORGANIZATION_ASSETS t
+        WHERE
+            t.statistics_time >= date(NOW()) - INTERVAL 1 DAY
+            AND t.statistics_time &lt; CURDATE()
+            AND t.table_state = '异常'
+            AND t.name IS NOT NULL
+    </select>
+
+</mapper>

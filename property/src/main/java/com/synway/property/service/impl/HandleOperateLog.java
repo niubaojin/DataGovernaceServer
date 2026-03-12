@@ -53,7 +53,7 @@ public class HandleOperateLog {
                     }
                 }
             } else {
-                logger.info("获取的operate_log中数据库操作监控日志记录的最近时间为空，开始初始化第一条数据。");
+                logger.info("获取的DP_OPERATE_LOG中数据库操作监控日志记录的最近时间为空，开始初始化第一条数据。");
                 String dateStrInit = getDate(0);
                 Map sqlInit = getSql(0);
                 dbOperatorMonitorDao.deleteDBOperatorRecord(dateStrInit);

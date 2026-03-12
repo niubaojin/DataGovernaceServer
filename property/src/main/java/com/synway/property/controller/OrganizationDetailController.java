@@ -121,22 +121,6 @@ public class OrganizationDetailController {
         return ServerResponse.asSucessResponse(returnObj);
     }
 
-    @RequestMapping("/getRegisterInfo")
-    @ResponseBody
-    public ServerResponse getRegisterInfo(@RequestBody RequestParameter requestParameter) {
-        ResourceRegisterInfo returnObj = null;
-        try {
-            returnObj = organizationDetailService.getRegisterInfo(
-                    requestParameter.getTableProject(),
-                    requestParameter.getTableNameEn(),
-                    requestParameter.getTableType());
-        } catch (Exception e) {
-            logger.error("查询家产数据报错：" + ExceptionUtil.getExceptionTrace(e));
-            return ServerResponse.asErrorResponse("家产信息获取失败");
-        }
-        return ServerResponse.asSucessResponse(returnObj);
-    }
-
     @RequestMapping("/getTableOrganizationInfo")
     @ResponseBody
     public ServerResponse getTableOrganizationInfo(@RequestBody RequestParameter requestParameter) {

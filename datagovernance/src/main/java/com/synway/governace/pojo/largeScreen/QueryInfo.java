@@ -1,11 +1,14 @@
 package com.synway.governace.pojo.largeScreen;
 
+import lombok.Data;
+
 /**
  * 查询条件
  *
  * @author ywj
  * @date 2020/7/23 14:26
  */
+@Data
 public class QueryInfo {
     // 数据id
     private String dataId;
@@ -16,35 +19,7 @@ public class QueryInfo {
     // 结束时间
     private String endTime;
 
-    public String getDataId() {
-        return dataId;
-    }
+    //数据组织分类代码，技侦：JZCODEJZSJZZFL，公安：JZCODEGASJZZFL
+    private String sjzzflCodeId = "JZCODEGASJZZFL";
 
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-
-    public String getDataTime() {
-        return dataTime;
-    }
-
-    public void setDataTime(String dataTime) {
-        this.dataTime = dataTime;
-    }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
-    }
 }

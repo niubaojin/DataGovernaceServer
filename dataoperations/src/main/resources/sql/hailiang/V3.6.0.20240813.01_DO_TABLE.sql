@@ -66,7 +66,7 @@ create table DO_DATA_PILED_MONITOR
     DATA_WAREHOUSENAME VARCHAR2(100),
     CONSUM_TOPIC       VARCHAR2(100),
     CONSUM_GROUP       VARCHAR2(100),
-    OFF_SET             NUMBER,
+    OFFSET             NUMBER,
     LOGSIZE            NUMBER,
     LAG                NUMBER,
     PILED_RATE         VARCHAR2(10),
@@ -79,7 +79,7 @@ comment on column DO_DATA_PILED_MONITOR.DATA_NAME is '数据名称';
 comment on column DO_DATA_PILED_MONITOR.DATA_WAREHOUSENAME is '数据源名称';
 comment on column DO_DATA_PILED_MONITOR.CONSUM_TOPIC is '消费主题';
 comment on column DO_DATA_PILED_MONITOR.CONSUM_GROUP is '消费组';
-comment on column DO_DATA_PILED_MONITOR.OFF_SET is '消费偏移量';
+comment on column DO_DATA_PILED_MONITOR.OFFSET is '消费偏移量';
 comment on column DO_DATA_PILED_MONITOR.LOGSIZE is '最大偏移量';
 comment on column DO_DATA_PILED_MONITOR.LAG is '剩余偏移量';
 comment on column DO_DATA_PILED_MONITOR.PILED_RATE is '积压率';

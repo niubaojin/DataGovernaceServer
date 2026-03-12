@@ -107,7 +107,7 @@ public class ODPSUseHeatCount {
         PreparedStatement pstmt = null;
         try {
             connection = dataSource.getConnection();
-            String SQLString = "insert into ut_odpssqlcount(ID,TABLENAME,TABLE_USE_COUNT,PROJECT,SQLType,DT) values(?,?,?,?,?,?)";
+            String SQLString = "insert into DP_UT_ODPSSQLCOUNT(ID,TABLENAME,TABLE_USE_COUNT,PROJECT,SQLType,DT) values(?,?,?,?,?,?)";
             connection.setAutoCommit(false);
             pstmt = connection.prepareStatement(SQLString);
             int count = 0;
@@ -178,15 +178,15 @@ public class ODPSUseHeatCount {
 //		.append(" left join classified_table c on(c.tablename_en=s.tablename) ")
 //		.append(" left join (")
 //		.append(" select t3.tablename,t3.project,t3.tableUseCountOfMonth,t2.tableUseCountOfWeek,t1.tableUseCountOfDay,t0.tableUseCount from(")
-//		.append(" select  sum(table_Use_Count) as tableUseCount,tablename,project from UT_ODPSSQLCOUNT t group by tablename,project) t0")
+//		.append(" select  sum(table_Use_Count) as tableUseCount,tablename,project from DP_UT_ODPSSQLCOUNT t group by tablename,project) t0")
 //		.append(" left join")
-//		.append(" (select sum(table_Use_Count) as tableUseCountOfMonth,tablename,project from UT_ODPSSQLCOUNT t")
+//		.append(" (select sum(table_Use_Count) as tableUseCountOfMonth,tablename,project from DP_UT_ODPSSQLCOUNT t")
 //		.append(" where dt between trunc(sysdate - interval '31' day) and trunc(sysdate - interval '1' day) group by tablename,project) t3 on (t0.tablename=t3.tablename)")
 //		.append(" left join")
-//		.append(" (select sum(table_Use_Count) as tableUseCountOfWeek,tablename,project from UT_ODPSSQLCOUNT t")
+//		.append(" (select sum(table_Use_Count) as tableUseCountOfWeek,tablename,project from DP_UT_ODPSSQLCOUNT t")
 //		.append(" where dt between trunc(sysdate - interval '7' day) and trunc(sysdate - interval '1' day) group by tablename,project) t2 on (t0.tablename=t2.tablename)")
 //		.append(" left join")
-//		.append(" (select sum(table_Use_Count) as tableUseCountOfDay,tablename,project from UT_ODPSSQLCOUNT t")
+//		.append(" (select sum(table_Use_Count) as tableUseCountOfDay,tablename,project from DP_UT_ODPSSQLCOUNT t")
 //		.append(" where dt=trunc(sysdate - interval '1' day) group by tablename,project) t1 on (t0.tablename=t1.tablename)")
 //		.append(" ) u on (u.tablename=s.tablename and s.tableproject=u.project)")
 //		.append(") )");

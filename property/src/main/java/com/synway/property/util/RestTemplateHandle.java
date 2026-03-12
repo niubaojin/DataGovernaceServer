@@ -2,8 +2,7 @@ package com.synway.property.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.synway.property.common.UrlConstants;
-import com.synway.property.constant.Common;
+import com.synway.property.common.Common;
 import com.synway.property.enums.SysCodeEnum;
 import com.synway.property.interceptor.AuthorizedUserUtils;
 import com.synway.property.pojo.DetectedTable;
@@ -48,7 +47,7 @@ public class RestTemplateHandle {
     public DataResource getResourceById(String resId) {
         DataResource dataResource = null;
         try {
-            String requestUrl = UrlConstants.DATARESOURCE_BASEURL_API + "/getResourceById?resId=" + resId;
+            String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getResourceById?resId=" + resId;
             log.info("开始调用仓库getResourceById接口，获取数据源信息");
             JSONObject jsonObject = restTemplate.getForObject(requestUrl, JSONObject.class);
             if (jsonObject == null) {
@@ -82,7 +81,7 @@ public class RestTemplateHandle {
             List<DetectedTable> list = Collections.synchronizedList(new ArrayList<>());
             dataResourceList.stream().forEach(data -> {
                 if (data == null || StringUtils.isBlank(data.getResType())
-                        || !Common.DATA_TYPE_LIST.contains(data.getResType().toUpperCase())) {
+                        || !com.synway.property.constant.Common.DATA_TYPE_LIST.contains(data.getResType().toUpperCase())) {
                     log.error("【" + data.getResName() + "】,数据仓库不需要查询的数据源信息为{}", JSONObject.toJSONString(data));
                 } else {
                     log.info("开始获取数据源为：【" + data.getResName() + "】的表信息");
@@ -118,7 +117,7 @@ public class RestTemplateHandle {
     public JSONArray getDataResourceByisLocal(String isLocal, char isApproved) throws Exception {
         JSONArray resultJsonArray = new JSONArray();
         log.info("开始查询仓库数据源，接口：getDataResourceByisLocal");
-        String requestUrl = UrlConstants.DATARESOURCE_BASEURL_API + "/getDataResourceByisLocal?isLocal=" + isLocal + "&isApproved=" + isApproved;
+        String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getDataResourceByisLocal?isLocal=" + isLocal + "&isApproved=" + isApproved;
         String resultStr = restTemplate.getForObject(requestUrl, String.class);
         if (StringUtils.isBlank(resultStr)) {
             throw new NullPointerException("接口[getDataResourceByisLocal]返回的结果为空");
@@ -145,7 +144,7 @@ public class RestTemplateHandle {
             projectName = "";
         }
         log.info("开始获取仓库表信息，接口：getTablesIncludeDetectedInfo");
-        String requestUrl = UrlConstants.DATARESOURCE_BASEURL_API + "/getTablesIncludeDetectedInfo?resId=" + resId + "&projectName=" + projectName;
+        String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getTablesIncludeDetectedInfo?resId=" + resId + "&projectName=" + projectName;
         JSONObject detectedTable = restTemplate.getForObject(requestUrl, JSONObject.class);
         Integer status = detectedTable.getInteger("status");
         if (status == 1) {
@@ -163,7 +162,7 @@ public class RestTemplateHandle {
      * @return
      */
     public DetectedTable getTableDetectInfo(String resourceId, String project, String tableNameEN) throws Exception {
-        String requestUrl = UrlConstants.DATARESOURCE_BASEURL_API + "/getTableDetectInfo" + "?resourceId=" + resourceId
+        String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getTableDetectInfo" + "?resourceId=" + resourceId
                 + "&project=" + project + "&tableNameEN=" + tableNameEN;
         log.info("开始获取表的所有探查信息");
         DetectedTable data = null;
@@ -181,7 +180,7 @@ public class RestTemplateHandle {
     }
 
     public JSONArray excuteSql(String resId, String sql) throws Exception{
-        String requesUrl = String.format("%s/excuteSql?resId=%s&sql=%s", UrlConstants.DATARESOURCE_BASEURL_API, resId, sql);
+        String requesUrl = String.format("%s/excuteSql?resId=%s&sql=%s", Common.DATARESOURCE_BASEURL_API, resId, sql);
         log.info("调用仓库接口执行sql");
         String resultStr = restTemplate.getForObject(requesUrl, String.class);
         JSONObject object = JSONObject.parseObject(resultStr);
@@ -196,7 +195,7 @@ public class RestTemplateHandle {
     // 发送操作日志
     public boolean saveOperatorLog(List<OperatorLog> operatorLogs){
         try {
-            String url = UrlConstants.DATAOPERATIONS_BASEURL + "/saveOperatorLog";
+            String url = Common.DATAOPERATIONS_BASEURL + "/saveOperatorLog";
             log.info("开始调用接口：" + url);
             String result = restTemplate.postForObject(url, operatorLogs, String.class);
             JSONObject object = JSONObject.parseObject(result, JSONObject.class);
@@ -233,7 +232,7 @@ public class RestTemplateHandle {
      */
     public JSONArray getTableHots(int limits){
         JSONArray jsonArray = new JSONArray();
-        String requestUrl = String.format("%s?limits=%d", UrlConstants.ds_getTableHot, limits);
+        String requestUrl = String.format("%s?limits=%d", Common.ds_getTableHot, limits);
         log.info(">>>>>>开始调用接口：" + requestUrl);
         JSONObject jsonObject = restTemplate.getForObject(requestUrl, JSONObject.class);
         Integer status = jsonObject.getInteger("status");

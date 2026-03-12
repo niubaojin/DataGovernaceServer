@@ -1,20 +1,20 @@
 --------------------------------------------------------------------------------常用sql
 -- 建表
-create table TABLE_ORGANIZATION_ASSETS_BAKP AS SELECT * FROM TABLE_ORGANIZATION_ASSETS where to_char(statistics_time, 'yyyy/MM/dd') > to_char(sysdate - 15, 'yyyy/MM/dd')
+create table DP_TABLE_ORGANIZATION_ASSETS_BAKP AS SELECT * FROM DP_TABLE_ORGANIZATION_ASSETS where to_char(statistics_time, 'yyyy/MM/dd') > to_char(sysdate - 15, 'yyyy/MM/dd')
 
 -- 查询
-select count(*) from TABLE_ORGANIZATION_ASSETS t where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate, 'yyyy/MM/dd')
+select count(*) from DP_TABLE_ORGANIZATION_ASSETS t where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate, 'yyyy/MM/dd')
 
 -- 删除
-delete TABLE_ORGANIZATION_ASSETS t where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate, 'yyyy/MM/dd')
+delete DP_TABLE_ORGANIZATION_ASSETS t where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate, 'yyyy/MM/dd')
 
 -- 更新
-update TABLE_ORGANIZATION_ASSETS_BAKP
+update DP_TABLE_ORGANIZATION_ASSETS_BAKP
    set statistics_time = sysdate
  where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate -1, 'yyyy/MM/dd')
 
 -- 插入
-insert into TABLE_ORGANIZATION_ASSETS select * from TABLE_ORGANIZATION_ASSETS_BAKP where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate, 'yyyy/MM/dd')
+insert into DP_TABLE_ORGANIZATION_ASSETS select * from DP_TABLE_ORGANIZATION_ASSETS_BAKP where to_char(statistics_time, 'yyyy/MM/dd') = to_char(sysdate, 'yyyy/MM/dd')
 
 -- 杀掉占用回话进程
 select b.username,b.sid,b.serial#,logon_time from v$locked_object a,v$session b where a.session_id=b.sid

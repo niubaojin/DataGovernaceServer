@@ -34,10 +34,29 @@
     </select>
 
     <select id="getCIAD" resultType="com.synway.property.pojo.formorganizationindex.PublicDataInfo">
-        SELECT case when PRIMARYORGANIZATIONCH = '业务要素索引库' then '业务要素索引库' when SECONDARYORGANIZATIONCH is null then 'null' else SECONDARYORGANIZATIONCH end as sjzzsjfl,
-               case when PRIMARYORGANIZATIONCH = '业务要素索引库' then '业务要素索引库' when FIRSTORGANIZATIONCH is null then 'null' else FIRSTORGANIZATIONCH end as sjzzejfl,
-               case when PRIMARYORGANIZATIONCH is null then 'null' else PRIMARYORGANIZATIONCH end as sjzzyjfl
-          from CLASSIFY_INTERFACE_ALL_DATE where objectstate = 1
+        select case
+                 when ciad.yj is null then 'null'
+                 else ciad.yj end as sjzzyjfl,
+                case
+                 when ciad.yj = '业务要素索引库' then '业务要素索引库'
+                 when ciad.ej is null then 'null'
+                 else ciad.ej end as sjzzejfl,
+               case
+                 when ciad.yj = '业务要素索引库' then '业务要素索引库'
+                 when ciad.ej is null then 'null'
+                 else ciad.sj end as sjzzsjfl
+          from (select h.*
+                  from (select sjxjbm,
+                               row_number() over(partition by upper(table_type), upper(table_project), upper(table_name_en) order by statistics_time desc) as rnn
+                          from DP_TABLE_ORGANIZATION_ASSETS
+                         where statistics_time >= trunc(sysdate - 0) and sjxjbm is not null) h
+                 where h.rnn = 1) toa
+          left join (select distinct sjxjbm                  as sjxjbm1,
+                                     primaryorganizationch   as yj,
+                                     firstorganizationch     as ej,
+                                     secondaryorganizationch as sj
+                       from classify_interface_all_date) ciad
+            on toa.sjxjbm = ciad.sjxjbm1
     </select>
 
     <select id="getAllManufacturers" resultType="java.lang.String">
@@ -60,10 +79,10 @@
             and SECONDARYORGANIZATIONCH = #{secondaryClassifyCh}
         </if>
         <if test="classifyid!='' and classifyid!=null and (primaryClassifyCh=='原始库' or primaryClassifyCh=='主题库') and classifyid.length == 20">
-            and 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME = #{classifyid}
+            and #{sjzzflCodeId} ||SJYJFLCODENAME||SJEJFLCODENAME = #{classifyid}
         </if>
         <if test="classifyid!='' and classifyid!=null and (primaryClassifyCh=='原始库' or primaryClassifyCh=='主题库') and classifyid.length > 20">
-            and 'JZCODEGASJZZFL'||SJYJFLCODENAME||SJEJFLCODENAME||SJSJFLCODENAME = #{classifyid}
+            and #{sjzzflCodeId} ||SJYJFLCODENAME||SJEJFLCODENAME||SJSJFLCODENAME = #{classifyid}
         </if>
         <if test="search!='' and search!=null">
             and
@@ -141,7 +160,7 @@
             j.SJXJBM,j.TABLE_TYPE,j.TABLE_PROJECT,j.TABLE_ALL_COUNT,j.register_state,resourceId,
             row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME DESC ) AS rnn
         FROM
-            table_organization_assets j
+            DP_TABLE_ORGANIZATION_ASSETS j
         WHERE
             PRIMARY_ORGANIZATION_CH = #{primaryClassifyCh}
         <if test="secondaryClassifyCh!='' and secondaryClassifyCh!=null">
@@ -158,6 +177,61 @@
             ) h
         WHERE
             h.rnn =1
+    </select>
+
+    <select id="getDataOrganizationTableInfo" parameterType="com.synway.property.entity.dto.DataOrganizationDTO"
+                                              resultType="com.synway.property.pojo.dataOrganization.DataOrganization">
+        select objectId, resourceIdentify, tableNameEn, tableNameCh, storageLocation, dataCenter, dataNum, registerState, resourceId
+          from (select ciad.objectId as objectId,
+                       toa.sjxjbm as resourceIdentify,
+                       ciad.tablename as tableNameEn,
+                       ciad.sjxjzwmc as tableNameCh,
+                       upper(toa.table_type) || '.' || upper(toa.table_project) as storageLocation,
+                       toa.res_name as dataCenter,
+                       table_all_count as dataNum,
+                       register_state as registerState,
+                       resourceId,
+                       ciad.yj,
+                       ciad.ej,
+                       ciad.sj
+                  from (select h.*
+                          from (select sjxjbm, table_type, table_project, table_name_en, table_all_count, register_state, resourceId, res_name,
+                                       row_number() over(partition by upper(table_type), upper(table_project), upper(table_name_en) order by statistics_time desc) as rnn
+                                  from DP_TABLE_ORGANIZATION_ASSETS
+                                 where statistics_time >= trunc(sysdate - #{daysAgo}) ) h
+                         where h.rnn = 1) toa
+                  left join (select distinct objectid               as objectId,
+                                            sjxjbm                  as sjxjbm1,
+                                            sjxjzwmc,
+                                            tablename,
+                                            primaryorganizationch   as yj,
+                                            firstorganizationch     as ej,
+                                            secondaryorganizationch as sj
+                              from classify_interface_all_date) ciad
+                    on toa.sjxjbm = ciad.sjxjbm1) t
+          <where>
+              <if test="primaryClassifyCh == '业务要素索引库'">
+                  and (yj = #{primaryClassifyCh} or ej = #{primaryClassifyCh})
+              </if>
+              <if test="primaryClassifyCh != '业务要素索引库' and primaryClassifyCh != null and primaryClassifyCh != ''">
+                  and yj = #{primaryClassifyCh}
+              </if>
+              <if test="secondaryClassifyCh != '' and secondaryClassifyCh != null">
+                  <if test="dataOrgLevel == 1 or dataOrgLevel == 2">
+                      and ej = #{secondaryClassifyCh}
+                  </if>
+                  <if test="dataOrgLevel == 3">
+                      and sj = #{secondaryClassifyCh}
+                  </if>
+              </if>
+              <if test="search != '' and search != null">
+                  and
+                  (upper(tableNameEn) like upper('%' || #{search} || '%') or
+                   upper(tableNameCh) like upper('%' || #{search} || '%') or
+                   upper(resourceIdentify) like upper('%' || #{search} || '%')
+                  )
+              </if>
+          </where>
     </select>
 
 </mapper>

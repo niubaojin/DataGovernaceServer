@@ -12,7 +12,7 @@
         TRUNC(TABLE_ALL_COUNT/ 10000, 2) tableAllCount,
         TRUNC(YESTERDAY_COUNT/10000, 2) yesterdayCount,
         to_char(statistics_time, 'yyyy-MM-dd') statistics_time
-        from table_organization_assets
+        from DP_TABLE_ORGANIZATION_ASSETS
         where upper(TABLE_PROJECT) = upper(#{tableProject}) and upper(TABLE_NAME_EN)=upper(#{tableNameEn})
         and upper(TABLE_TYPE) = upper(#{tableType})
         and statistics_time >= TO_DATE(#{beginTime},'yyyy-MM-dd hh24:mi:ss')
@@ -40,7 +40,7 @@
             row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME
             DESC ) AS rnn
             FROM
-            table_organization_assets j
+            DP_TABLE_ORGANIZATION_ASSETS j
             where STATISTICS_TIME >= trunc(sysdate)
             ) h
         WHERE h.rnn = 1)
@@ -80,7 +80,7 @@
             row_number ( ) over ( PARTITION BY lower( TABLE_PROJECT ), upper( TABLE_NAME_EN ) ORDER BY STATISTICS_TIME
             DESC ) AS rnn
             FROM
-            table_organization_assets j  where STATISTICS_TIME >= trunc(sysdate)
+            DP_TABLE_ORGANIZATION_ASSETS j  where STATISTICS_TIME >= trunc(sysdate)
             ) h
             WHERE
             h.rnn = 1 and upper(TABLE_TYPE) = upper(#{tableType,jdbcType=VARCHAR})

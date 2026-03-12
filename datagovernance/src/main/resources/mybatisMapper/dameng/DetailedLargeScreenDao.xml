@@ -8,7 +8,7 @@
 
     <select id="getDetailedOriginalData" resultType="com.synway.governace.pojo.largeScreen.PropertyLargeDetailed">
         select distinct lower(table_name_en) as tableName, name as dataName,
-             sum(table_all_count)  as dataCount  from table_organization_assets
+             sum(table_all_count)  as dataCount  from DP_TABLE_ORGANIZATION_ASSETS
              where primary_organization_ch ='原始库' and  statistics_time >= to_date(#{dateStr},'yyyy-MM-dd')
              and secondary_organization_ch = #{name}
              group by lower(table_name_en),name

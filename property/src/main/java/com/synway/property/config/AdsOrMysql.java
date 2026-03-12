@@ -72,4 +72,29 @@ public class AdsOrMysql {
         return druidDataSource;
     }
 
+    /**
+     * 新增adb库的连接信息(meta库)
+     */
+    @Bean("adbDataSourceMeta")
+    public DruidDataSource adbDataSourceMeta(){
+        DruidDataSource druidDataSource = new DruidDataSource();
+        // 8版本
+        druidDataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+//        // 5版本
+//        druidDataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        druidDataSource.setUrl(env.getProperty("adbMeta.url"));
+        druidDataSource.setUsername(env.getProperty("adbMeta.username"));
+        druidDataSource.setPassword(env.getProperty("adbMeta.password"));
+        druidDataSource.setValidationQuery("select 1");
+        druidDataSource.setTestWhileIdle(true);
+        druidDataSource.setBreakAfterAcquireFailure(true);
+        druidDataSource.setMaxWait(15000);
+        druidDataSource.setConnectionErrorRetryAttempts(3);
+        druidDataSource.setTimeBetweenEvictionRunsMillis(60000);
+        druidDataSource.setMaxActive(20);
+        druidDataSource.setInitialSize(1);
+
+        return druidDataSource;
+    }
+
 }

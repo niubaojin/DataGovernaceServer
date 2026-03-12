@@ -17,9 +17,6 @@
        nav_order as navOrder,
         nav_name_en as navNameEn from DGN_NAVBAR where nav_show = '1'
     </select>
-    <select id="getNavStatusByName" resultType="java.lang.Boolean">
-        select nav_show from DGN_NAVBAR where nav_name = #{name}
-    </select>
 
     <select id="getAllNewNavBars" resultType="com.synway.governace.pojo.navbar.NavBars">
         select nav_id as navId,

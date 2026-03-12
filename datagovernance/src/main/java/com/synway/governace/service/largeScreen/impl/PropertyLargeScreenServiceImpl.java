@@ -369,7 +369,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
     }
 
     /**
-     * 获取大存储量数据排行榜 从 统计表 table_organization_assets
+     * 获取大存储量数据排行榜 从 统计表 DP_TABLE_ORGANIZATION_ASSETS
      * 统计当天的数据 然后获取表的数据总数
      */
     private void getLargeStorageData(){
@@ -377,7 +377,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
             logger.info("---------------获取大存储量数据排行榜定时任务开始运行----------");
             List<LargeStorageData> list = propertyLargeScreenDao.getLargeStorageData(assetsLargeScreenVersion);
             if(CollectionUtils.isEmpty(list)){
-                throw new NullPointerException("数据库中表table_organization_assets中不存在今日数据");
+                throw new NullPointerException("数据库中表DP_TABLE_ORGANIZATION_ASSETS中不存在今日数据");
             }
             BigDecimal unit = new BigDecimal(1024);
             for(LargeStorageData largeStorageData:list){
@@ -434,7 +434,8 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
             }
             List<String> labelNameList = list.stream().filter(d -> StringUtils.isNotBlank(d.getLabelName()))
                     .map(d -> d.getLabelName().toLowerCase()).collect(Collectors.toList());
-            List<StandardLabelData> listData = propertyLargeScreenDao.getOriginalBusinessData();
+            String sjzzflCodeId = environment.getProperty("sjzzflCodeId") + "05";
+            List<StandardLabelData> listData = propertyLargeScreenDao.getOriginalBusinessData(sjzzflCodeId);
             if(listData != null && !listData.isEmpty()){
                 listData.stream().filter(d -> StringUtils.isNotBlank(d.getName()) &&
                         labelNameList.contains(d.getName().toLowerCase())).sorted(
@@ -523,11 +524,12 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
      *  查询的是 胡平安汇总统计后的表 orgain_table_stat  同步到本地数据库
      */
     public void getPropertyData(){
+        String sjzzflCodeId = environment.getProperty("sjzzflCodeId");
         try{
             logger.info("[资产大屏] [获取资源库]的资产情况-------");
             // 获取资源库的资产情况
             List<StandardLabelData> resultList = new ArrayList<>();
-            List<StandardLabelData> list = propertyLargeScreenDao.getOrgainTableStatDao("02");
+            List<StandardLabelData> list = propertyLargeScreenDao.getOrgainTableStatDao("02", sjzzflCodeId);
             if(list != null && !list.isEmpty()){
                 list.stream().filter(d-> StringUtils.isNotBlank(d.getName())).sorted(
                         Comparator.comparing(StandardLabelData::getTableDataVolume).reversed()).forEach(
@@ -550,7 +552,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
             logger.info("[资产大屏][获取主题库]的资产情况-------");
             // 获取资源库的资产情况
             List<StandardLabelData> resultList = new ArrayList<>();
-            List<StandardLabelData> list = propertyLargeScreenDao.getOrgainTableStatDao("03");
+            List<StandardLabelData> list = propertyLargeScreenDao.getOrgainTableStatDao("03", sjzzflCodeId);
             if(list != null && !list.isEmpty()){
                 list.stream().filter(d-> StringUtils.isNotBlank(d.getName())).sorted(
                         Comparator.comparing(StandardLabelData::getTableDataVolume).reversed()).forEach(
@@ -1058,7 +1060,7 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
         logger.info("[资产大屏] [定时获取原始库资产情况]任务开始运行=================");
         List<StandardLabelData> result = new ArrayList<>();
         try {
-            // 直接从数据库中获取 表为  table_organization_assets
+            // 直接从数据库中获取 表为  DP_TABLE_ORGANIZATION_ASSETS
             // 这个是数据库中表的数据
             List<StandardLabelData> data = propertyLargeScreenDao.getAllOriginalDataList();
 
@@ -1125,10 +1127,11 @@ public class PropertyLargeScreenServiceImpl implements PropertyLargeScreenServic
         logger.info("[资产大屏] [定时获取数据总资产]任务开始运行=================");
         TotalDataProperty totalDataProperty = new TotalDataProperty();
         try {
-            // 1: 获取日增量、数据总量，直接查资产表table_organization_assets
+            // 1: 获取日增量、数据总量，直接查资产表DP_TABLE_ORGANIZATION_ASSETS
             totalDataProperty = propertyLargeScreenDao.getYesterdayCount();
-            totalDataProperty.setDailyIncrement(String.format("%.2f", Long.parseLong(totalDataProperty.getDailyIncrement()) * 1.0 / 100000000));
-            double dataTotalVolume = Double.parseDouble(df.format(totalDataProperty.getDataTotalVolume() / 100000000));
+//            totalDataProperty.setDailyIncrement(String.format("%.2f", Long.parseLong(totalDataProperty.getDailyIncrement()) * 1.0 / 100000000));
+//            double dataTotalVolume = Double.parseDouble(df.format(totalDataProperty.getDataTotalVolume() / 100000000));
+            double dataTotalVolume = totalDataProperty.getDataTotalVolume();
             totalDataProperty.setDataTotalVolume(dataTotalVolume);
             // 数据量的百分比
             totalDataProperty.setRatioOfData(dataTotalVolume == 0d ? "0%" : Double.parseDouble(df.format(

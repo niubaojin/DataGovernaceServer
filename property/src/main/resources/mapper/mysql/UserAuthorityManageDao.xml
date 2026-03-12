@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.synway.property.dao.UserAuthorityManageDao">
+
+    <insert id="updateInsertUserAuthority">
+        insert into USER_AUTHORITY
+        (ID, CMN_MEMO, MODULECODE, MODULENAME, ISCREATER, USERNAME, USERID, CMN_NAME, CREATE_TIME)
+        values
+        (#{userAuthority.id,jdbcType=VARCHAR}, #{userAuthority.cmnMemo,jdbcType=VARCHAR},
+         #{userAuthority.moduleCode,jdbcType=VARCHAR}, #{userAuthority.moduleName,jdbcType=VARCHAR},
+         #{userAuthority.isCreater,jdbcType=VARCHAR}, #{userAuthority.userName,jdbcType=VARCHAR},
+         #{userAuthority.userId,jdbcType=VARCHAR}, #{userAuthority.cmnName,jdbcType=VARCHAR},
+         date_format(now(), '%Y-%m-%d %H:%i:%s'))
+        on duplicate key update
+        CMN_MEMO = #{userAuthority.cmnMemo,jdbcType=VARCHAR},
+        MODULECODE = #{userAuthority.moduleCode,jdbcType=VARCHAR},
+        MODULENAME = #{userAuthority.moduleName,jdbcType=VARCHAR},
+        ISCREATER = #{userAuthority.isCreater,jdbcType=VARCHAR},
+        USERNAME = #{userAuthority.userName,jdbcType=VARCHAR},
+        CMN_NAME = #{userAuthority.cmnName,jdbcType=VARCHAR},
+        CREATE_TIME = date_format(now(), '%Y-%m-%d %H:%i:%s')
+    </insert>
+
+    <delete id="delUserAddRealTimeTable">
+        delete from USER_AUTHORITY
+        where id in
+        <foreach collection="list" item="item" separator=",">
+            #{item.tableUuid,jdbcType=VARCHAR}
+        </foreach>
+        and userid = #{userId,jdbcType=VARCHAR}
+        and modulecode = #{moduleCode,jdbcType=VARCHAR}
+    </delete>
+
+</mapper>

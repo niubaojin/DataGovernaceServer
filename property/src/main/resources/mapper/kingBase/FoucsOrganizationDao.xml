@@ -16,7 +16,7 @@
                 (SELECT DISTINCT SECONDARY_NAME AS secondaryName,PRIMARY_NAME AS primaryName,
                 MAJOR_CLASS AS mainClassifyCH,primarycodeid,secondarycodeid FROM (
                     SELECT a3.PRIMARY_NAME,a3.primarycodeid,a3.DEL_FLAG,a3.MAJOR_CLASS,a3.SECONDARY_NAME,a3.last_level_classifycode as secondarycodeid FROM (
-                        SELECT a1.PRIMARY_NAME,a1.SECONDARY_NAME,a1.DEL_FLAG,a1.MAJOR_CLASS,a2.CODEID AS primarycodeid,a1.last_level_classifycode FROM Focus_Organization_add_monitor a1
+                        SELECT a1.PRIMARY_NAME,a1.SECONDARY_NAME,a1.DEL_FLAG,a1.MAJOR_CLASS,a2.CODEID AS primarycodeid,a1.last_level_classifycode FROM DP_FOCUS_CLASS_MONITOR a1
                         LEFT JOIN V_CLASSIFY_INFO a2
                         ON a1.PRIMARY_NAME=a2.CODETEXT) a3) k
                     WHERE (k.major_class='数据组织分类' or k.major_class='原始库') AND k.del_flag=0) f1
@@ -26,7 +26,7 @@
                     SELECT case when t.PRIMARY_ORGANIZATION_CH='原始库' then t.SECONDARY_ORGANIZATION_CH else t.PRIMARY_ORGANIZATION_CH end as PRIMARY_ORGANIZATION_CH,
                            case when t.SECONDARY_ORGANIZATION_CH like '%汇聚库%' or t.SECONDARY_ORGANIZATION_CH like '%汇集库%' or t.SECONDARY_ORGANIZATION_CH like '%标准库%' then t.THREELEVEL_ORGANIZATION_CH else t.SECONDARY_ORGANIZATION_CH end as SECONDARY_ORGANIZATION_CH,
                            t.TABLE_ALL_COUNT,t.YESTERDAY_COUNT,t.TABLE_NAME_EN,t.TABLE_PROJECT,row_number () over (PARTITION BY lower(TABLE_TYPE), TABLE_PROJECT,TABLE_NAME_EN ORDER BY STATISTICS_TIME DESC) rn
-                    FROM table_organization_assets t  where STATISTICS_TIME >= trunc(sysdate)) WHERE rn=1) t1
+                    FROM DP_TABLE_ORGANIZATION_ASSETS t  where STATISTICS_TIME >= trunc(sysdate)) WHERE rn=1) t1
                 ON t1.PRIMARY_ORGANIZATION_CH=f1.primaryName AND
                 (t1.SECONDARY_ORGANIZATION_CH=f1.secondaryname or (t1.SECONDARY_ORGANIZATION_CH is null and f1.secondaryname is null)))
             GROUP BY mainClassifyCH,primaryName,secondaryName,primarycodeid,secondarycodeid
@@ -42,7 +42,7 @@
                 (SELECT DISTINCT SECONDARY_NAME AS secondaryName,PRIMARY_NAME AS primaryName,
                 MAJOR_CLASS AS mainClassifyCH,primarycodeid,secondarycodeid FROM (
                     SELECT b3.PRIMARY_NAME,b3.primarycodeid,b3.DEL_FLAG,b3.MAJOR_CLASS,b3.SECONDARY_NAME,b3.last_level_classifycode as secondarycodeid FROM (
-                        SELECT b1.PRIMARY_NAME,b1.SECONDARY_NAME,b1.DEL_FLAG,b1.MAJOR_CLASS,b2.CODEID AS primarycodeid,b1.last_level_classifycode FROM Focus_Organization_add_monitor b1
+                        SELECT b1.PRIMARY_NAME,b1.SECONDARY_NAME,b1.DEL_FLAG,b1.MAJOR_CLASS,b2.CODEID AS primarycodeid,b1.last_level_classifycode FROM DP_FOCUS_CLASS_MONITOR b1
                         LEFT JOIN V_CLASSIFY_INFO b2
                         ON b1.PRIMARY_NAME=b2.CODETEXT) b3) j
                 WHERE major_class='数据来源分类' AND del_flag=0) f2
@@ -50,7 +50,7 @@
             PRIMARY_DATASOURCE_CH,SECONDARY_DATASOURCE_CH,TABLE_ALL_COUNT,YESTERDAY_COUNT,TABLE_NAME_EN,TABLE_PROJECT
             FROM (
                 SELECT t.PRIMARY_DATASOURCE_CH,t.SECONDARY_DATASOURCE_CH,t.TABLE_ALL_COUNT,t.YESTERDAY_COUNT,t.TABLE_NAME_EN,t.TABLE_PROJECT,row_number () over (PARTITION BY lower(TABLE_TYPE), TABLE_PROJECT,TABLE_NAME_EN ORDER BY STATISTICS_TIME DESC) rn
-                FROM table_organization_assets t  where STATISTICS_TIME >= trunc(sysdate)) WHERE rn=1) t2
+                FROM DP_TABLE_ORGANIZATION_ASSETS t  where STATISTICS_TIME >= trunc(sysdate)) WHERE rn=1) t2
             ON t2.PRIMARY_DATASOURCE_CH=f2.primaryName AND
                 (t2.SECONDARY_DATASOURCE_CH=f2.secondaryname or (t2.SECONDARY_DATASOURCE_CH is null and f2.secondaryname is null)))
         GROUP BY mainClassifyCH,primaryName,secondaryName,primarycodeid,secondarycodeid
@@ -116,13 +116,13 @@
 
     <select id="getAddClassifyNameList" resultType="java.lang.String">
         select  primary_name||'_'||SECONDARY_NAME  as secondaryClassifyCH
-        from Focus_Organization_add_monitor
+        from DP_FOCUS_CLASS_MONITOR
     </select>
 
     <insert id="insertClassifyInformationTableDao" parameterType="com.synway.property.pojo.ClassifyInformation" useGeneratedKeys="false">
         INSERT ALL
         <foreach collection="list" item="item" index="index">
-            INTO Focus_Organization_add_monitor (PRIMARY_NAME , SECONDARY_NAME , INSERT_TIME , DEL_FLAG,MAJOR_CLASS ,USER_ID,USER_AUTHORITY_ID,USER_NAME,IS_ADMIN)
+            INTO DP_FOCUS_CLASS_MONITOR (PRIMARY_NAME , SECONDARY_NAME , INSERT_TIME , DEL_FLAG,MAJOR_CLASS ,USER_ID,USER_AUTHORITY_ID,USER_NAME,IS_ADMIN)
             VALUES
             (#{item.primaryClassifyCH,jdbcType=VARCHAR}, #{item.secondaryClassifyCH,jdbcType=VARCHAR},
             to_date(to_char(sysdate,'yyyy-MM-dd HH24:mi:ss'),'yyyy-MM-dd HH24:mi:ss'),0,#{item.mainClassifyCH,jdbcType=VARCHAR},
@@ -153,7 +153,7 @@
     </insert>
 
     <delete id="delAllClassifyInformationTableDao">
-        DELETE from Focus_Organization_add_monitor where user_id=#{userId}
+        DELETE from DP_FOCUS_CLASS_MONITOR where user_id=#{userId}
     </delete>
 
     <delete id="delUserAuthorityDataListDao">
@@ -176,12 +176,12 @@
                                        substr(b.tablenameen, 0, instr(b.tablenameen, '.') - 1) as tableproject,
                                        substr(b.tablenameen, instr(b.tablenameen, '.') + 1) as tableen
                                   from (select scuh.*
-                                          from StoreCycleAndUseHeat scuh
+                                          from DP_STORECYCLEANDUSEHEAT scuh
                                          inner join synlte.object o
                                             on upper(substr(scuh.tablenameen, instr(scuh.tablenameen, '.') + 1)) = upper(o.tablename)
                                          where o.objectstate = 1
                                            and o.relate_tablename = 'OBJECTFIELD') b) a
-                         inner join table_organization_assets toa
+                         inner join DP_TABLE_ORGANIZATION_ASSETS toa
                             on upper(a.tableen) = upper(toa.table_name_en)
                            and upper(a.tableproject) = upper(toa.table_project)
                          where toa.statistics_time >= trunc(sysdate - #{daysAgo}) and toa.name is not null )
@@ -197,7 +197,7 @@
             TRUNC(TABLE_ALL_COUNT / 100000000, 4) as total,
             tableType
             from (select DISTINCT TABLE_PROJECT || '.' || TABLE_NAME_EN AS TABLENAME,NAME,TABLE_ALL_COUNT,TABLE_TYPE as tableType
-                from table_organization_assets a
+                from DP_TABLE_ORGANIZATION_ASSETS a
                 left join synlte.object b on a.sjxjbm = b.tableid
                   where STATISTICS_TIME &gt;= trunc(sysdate - #{daysAgo}) and STATISTICS_TIME &lt; trunc(sysdate + 1 - #{daysAgo})
                 --根据姚秀梅要求改为统计全部数据量排行
@@ -209,7 +209,7 @@
     </select>
     <!--    <select id="getFullDataRankingDao" resultType="map">-->
     <!--        select case when NAME is null then TABLENAME else NAME end  as TABLENAMEZH , TRUNC(TABLE_ALL_COUNT/100000000,4) as total,tableType from(-->
-    <!--        select DISTINCT   TABLE_PROJECT||'.'||TABLE_NAME_EN AS TABLENAME ,NAME, TABLE_ALL_COUNT,TABLE_TYPE as tableType from table_organization_assets-->
+    <!--        select DISTINCT   TABLE_PROJECT||'.'||TABLE_NAME_EN AS TABLENAME ,NAME, TABLE_ALL_COUNT,TABLE_TYPE as tableType from DP_TABLE_ORGANIZATION_ASSETS-->
     <!--        where to_char(STATISTICS_TIME,'yyyy-MM-dd') = to_char(sysdate - #{daysAgo},'yyyy-MM-dd')-->
     <!--        &#45;&#45;根据姚秀梅要求改为统计全部数据量排行-->
     <!--        &#45;&#45;and PARTITION_MESSAGE = 1-->
@@ -227,7 +227,7 @@
                 NAME,
                 YESTERDAY_COUNT,
                 TABLE_TYPE as tableType
-                from table_organization_assets a
+                from DP_TABLE_ORGANIZATION_ASSETS a
                 left join synlte.object b on a.sjxjbm = b.tableid
                 where to_char(a.STATISTICS_TIME, 'yyyy-MM-dd') = to_char(sysdate - ${daysAgo},'yyyy-MM-dd')
                 and a.PARTITION_MESSAGE = 0
@@ -239,7 +239,7 @@
     </select>
     <!--    <select id="getIncrementalDataRankingDao" resultType="map">-->
     <!--        select case when NAME is null then TABLENAME else NAME end  as TABLENAMEZH , TRUNC(YESTERDAY_COUNT/100000000,4) as total,tableType from(-->
-    <!--        select DISTINCT   TABLE_PROJECT||'.'||TABLE_NAME_EN AS TABLENAME ,NAME, YESTERDAY_COUNT,TABLE_TYPE as tableType from table_organization_assets where to_char(STATISTICS_TIME,'yyyy-MM-dd') = to_char(sysdate - #{daysAgo},'yyyy-MM-dd') and PARTITION_MESSAGE = 0-->
+    <!--        select DISTINCT   TABLE_PROJECT||'.'||TABLE_NAME_EN AS TABLENAME ,NAME, YESTERDAY_COUNT,TABLE_TYPE as tableType from DP_TABLE_ORGANIZATION_ASSETS where to_char(STATISTICS_TIME,'yyyy-MM-dd') = to_char(sysdate - #{daysAgo},'yyyy-MM-dd') and PARTITION_MESSAGE = 0-->
     <!--        and table_type = 'ODPS' and SJXJBM is not null-->
     <!--        ORDER BY YESTERDAY_COUNT desc ) where rownum &lt;6-->
     <!--    </select>-->
