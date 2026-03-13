@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -15,7 +16,10 @@ import java.util.Date;
  */
 @Data
 @TableName("DP_TABLE_ORGANIZATION_ASSETS")
-public class TableOrganizationAssetsEntity {
+public class DpTableOrganizationAssetsEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     //表协议名
     @TableField("SJXJBM")
     private String sjxjbm;
@@ -156,7 +160,7 @@ public class TableOrganizationAssetsEntity {
     
     //资源服务平台组织机构代码
     @TableField("DATARESOURCE_CODE")
-    private String dataresourceCode;
+    private String dataResourceCode;
     
     //异常信息
     @TableField("EXCEPTION_MESSAGE")
