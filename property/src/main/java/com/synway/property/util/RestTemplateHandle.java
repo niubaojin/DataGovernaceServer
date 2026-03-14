@@ -29,11 +29,12 @@ import java.util.*;
 @Slf4j
 @Component
 public class RestTemplateHandle {
-    @Autowired()
+    
+    @Autowired
     @Qualifier("restTemplate")
     private RestTemplate restTemplate;
 
-    @Autowired()
+    @Autowired
     private Environment env;
 
 
@@ -42,12 +43,12 @@ public class RestTemplateHandle {
      * 20211230 根据数据源ID获取数据源信息
      *
      * @param resId 数据源ID
-     * @return
+     * @return DataResource
      */
     public DataResource getResourceById(String resId) {
         DataResource dataResource = null;
         try {
-            String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getResourceById?resId=" + resId;
+            String requestUrl = String.format("%s/getResourceById?resId=%s", Common.dr_getResourceById, resId);
             log.info("开始调用仓库getResourceById接口，获取数据源信息");
             JSONObject jsonObject = restTemplate.getForObject(requestUrl, JSONObject.class);
             if (jsonObject == null) {
@@ -57,10 +58,10 @@ public class RestTemplateHandle {
             if (status == 1) {
                 dataResource = jsonObject.getObject("data", DataResource.class);
             } else {
-                throw new Exception("从数据仓库调用接口获取表的探查信息报错:" + jsonObject.getString("message"));
+                throw new Exception(String.format("从数据仓库调用接口获取表的探查信息报错:%s", jsonObject.getString("message")));
             }
         } catch (Exception e) {
-            log.error("获取数据源出错：\n", e);
+            log.error("获取数据源出错：", e);
         }
         return dataResource;
     }
@@ -70,7 +71,7 @@ public class RestTemplateHandle {
      * 获取所有已建表信息，然后这边代码再匹配出指定表信息
      * 20211011 获取数据源、项目空间下所有的表目录，不包括表探查信息  （已完成）
      *
-     * @return
+     * @return List<DetectedTable>
      */
     public List<DetectedTable> getTableImformationList() {
         try {
@@ -97,10 +98,10 @@ public class RestTemplateHandle {
                     }
                 }
             });
-            log.info("从数据仓库获取到的数据量为：" + list.size());
+            log.info("从数据仓库获取到的数据量为：{}", list.size());
             return list;
         } catch (Exception e) {
-            log.error("从数据仓库中获取所有的表名报错" + ExceptionUtil.getExceptionTrace(e));
+            log.error("从数据仓库中获取所有的表名报错:", e);
             return null;
         }
     }
@@ -117,7 +118,7 @@ public class RestTemplateHandle {
     public JSONArray getDataResourceByisLocal(String isLocal, char isApproved) throws Exception {
         JSONArray resultJsonArray = new JSONArray();
         log.info("开始查询仓库数据源，接口：getDataResourceByisLocal");
-        String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getDataResourceByisLocal?isLocal=" + isLocal + "&isApproved=" + isApproved;
+        String requestUrl = String.format("%s?isLocal=%s&isApproved=%s", Common.dr_getDataResourceByisLocal, isLocal, isApproved);
         String resultStr = restTemplate.getForObject(requestUrl, String.class);
         if (StringUtils.isBlank(resultStr)) {
             throw new NullPointerException("接口[getDataResourceByisLocal]返回的结果为空");
@@ -144,7 +145,7 @@ public class RestTemplateHandle {
             projectName = "";
         }
         log.info("开始获取仓库表信息，接口：getTablesIncludeDetectedInfo");
-        String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getTablesIncludeDetectedInfo?resId=" + resId + "&projectName=" + projectName;
+        String requestUrl = String.format("%s?resId=%s&projectName=%s", Common.dr_getTablesIncludeDetectedInfo, resId, projectName);
         JSONObject detectedTable = restTemplate.getForObject(requestUrl, JSONObject.class);
         Integer status = detectedTable.getInteger("status");
         if (status == 1) {
@@ -162,8 +163,7 @@ public class RestTemplateHandle {
      * @return
      */
     public DetectedTable getTableDetectInfo(String resourceId, String project, String tableNameEN) throws Exception {
-        String requestUrl = Common.DATARESOURCE_BASEURL_API + "/getTableDetectInfo" + "?resourceId=" + resourceId
-                + "&project=" + project + "&tableNameEN=" + tableNameEN;
+        String requestUrl = String.format("%s?resourceId=%s&project=%s&tableNameEN=%s", Common.dr_getTableDetectInfo, resourceId, project, tableNameEN);
         log.info("开始获取表的所有探查信息");
         DetectedTable data = null;
         JSONObject jsonObject = restTemplate.getForObject(requestUrl, JSONObject.class);
@@ -180,7 +180,7 @@ public class RestTemplateHandle {
     }
 
     public JSONArray excuteSql(String resId, String sql) throws Exception{
-        String requesUrl = String.format("%s/excuteSql?resId=%s&sql=%s", Common.DATARESOURCE_BASEURL_API, resId, sql);
+        String requesUrl = String.format("%s?resId=%s&sql=%s", Common.dr_excuteSql, resId, sql);
         log.info("调用仓库接口执行sql");
         String resultStr = restTemplate.getForObject(requesUrl, String.class);
         JSONObject object = JSONObject.parseObject(resultStr);
@@ -195,9 +195,7 @@ public class RestTemplateHandle {
     // 发送操作日志
     public boolean saveOperatorLog(List<OperatorLog> operatorLogs){
         try {
-            String url = Common.DATAOPERATIONS_BASEURL + "/saveOperatorLog";
-            log.info("开始调用接口：" + url);
-            String result = restTemplate.postForObject(url, operatorLogs, String.class);
+            String result = restTemplate.postForObject(Common.do_saveOperatorLog, operatorLogs, String.class);
             JSONObject object = JSONObject.parseObject(result, JSONObject.class);
             if(object == null){
                 return false;

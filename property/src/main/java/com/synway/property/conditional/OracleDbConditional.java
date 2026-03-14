@@ -1,6 +1,6 @@
 package com.synway.property.conditional;
 
-import com.synway.property.common.UrlConstants;
+import com.synway.property.common.Common;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.env.Environment;
@@ -15,7 +15,7 @@ public class OracleDbConditional implements Condition {
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         Environment environment = context.getEnvironment();
         String msgMethod = environment.getProperty("database.type");
-        if(UrlConstants.ORACLE.equalsIgnoreCase(msgMethod)){
+        if(Common.ORACLE.equalsIgnoreCase(msgMethod)){
             return true;
         }else{
             return false;

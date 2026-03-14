@@ -62,7 +62,7 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
     public List<JSONObject> getTableExampleData(String tableProject, String tableNameEn, String tableType, String resourceId) {
         List<JSONObject> returnList;
 //        String result = restTemplate.getForObject(UrlConstants.DATARESOURCE_BASEURL + "/dataresource/api/getExampleData?resourceId=414dc6c64fc345689e576ffd29dc0b07&project=SYNDG&tableNameEn=DS_DETECTED_TABLE", String.class);
-        String url = Common.DATARESOURCE_BASEURL + "/dataresource/api/getExampleData?resourceId=" + resourceId + "&project=" + tableProject + "&tableNameEn=" + tableNameEn + "&numLimit=500";
+        String url = String.format("%s?resourceId=%s&project=%s&tableNameEn=%s&numLimit=500", Common.dr_getExampleData, resourceId, tableProject, tableNameEn);
         String result = restTemplate.getForObject(url, String.class);
         if("1".equals(JSONObject.parseObject(result).getString("status"))){
             returnList = (List<JSONObject>) JSONObject.parseObject(result).get("data");
@@ -75,7 +75,7 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
     @Override
     public List getTableStructure(String tableProject, String tableNameEn, String tableType, String resourceId) {
         List<FieldInfo> returnList = null;
-        String getTableStructureURL = "http://dataresource/dataresource/api/getTableStructure?resourceId=" + resourceId + "&project=" + tableProject + "&tableNameEn=" + tableNameEn;
+        String getTableStructureURL = String.format("%s?resourceId=%&project=%s&tableNameEn=%s", Common.dr_getTableStructure, resourceId, tableProject, tableNameEn);
         logger.info("请求仓库地址：{}", getTableStructureURL);
         try {
             String responseStr = restTemplate.getForObject(getTableStructureURL, String.class);
@@ -131,7 +131,7 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
         if (StringUtils.isBlank(resourceId)){
             return dataResourceImformation;
         }
-        String getTableMetaInfoUrl = String.format(Common.DATARESOURCE_BASEURL+"/dataresource/api/getTableMetaInfo?resourceId=%s&project=%s&tableNameEn=%s", resourceId, tableProject, tableNameEn);
+        String getTableMetaInfoUrl = String.format("%s?resourceId=%s&project=%s&tableNameEn=%s",Common.dr_getTableMetaInfo, resourceId, tableProject, tableNameEn);
         String getTableMetaInfoStr = restTemplate.getForObject(getTableMetaInfoUrl, String.class);
         // 新接口(2023.08.08)
         if(StringUtils.isNotBlank(getTableMetaInfoStr) && "1".equals(JSONObject.parseObject(getTableMetaInfoStr).getString("status"))){
@@ -149,8 +149,8 @@ public class OrganizationDetailServiceImpl implements OrganizationDetailService 
         }
         // 获取数据中心信息
         JSONArray allDataResource = new JSONArray();
-        String getDataResourceForLocal = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0",String.class);
-        String getDataResourceForNotLocal = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=1&isApproved=0",String.class);
+        String getDataResourceForLocal = restTemplate.getForObject(String.format("%s?isLocal=2&isApproved=0", Common.dr_getDataResourceByisLocal),String.class);
+        String getDataResourceForNotLocal = restTemplate.getForObject(String.format("%s?isLocal=1&isApproved=0", Common.dr_getDataResourceByisLocal),String.class);
         if(StringUtils.isNotBlank(getDataResourceForLocal) && "1".equals(JSONObject.parseObject(getDataResourceForLocal).getString("status"))){
             String localData = JSONObject.parseObject(getDataResourceForLocal).getString("data");
             JSONArray dataResourceLocal = JSONArray.parseArray(localData);

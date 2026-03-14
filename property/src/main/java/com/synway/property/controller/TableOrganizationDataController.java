@@ -223,16 +223,7 @@ public class TableOrganizationDataController {
     @RequestMapping("/getApprovalStatus")
     @ResponseBody
     public ServerResponse getApprovalStatus() {
-        ServerResponse serverResponse = null;
-        try{
-            serverResponse = restTemplate.getForObject(
-                    Common.DATAGOVERNANCE_BASEURL+"/datagovernance/navbar/getNavStatusByName?name=审批中心",
-                    ServerResponse.class);
-            return serverResponse;
-        }catch (Exception e) {
-            logger.error(ExceptionUtil.getExceptionTrace(e));
-            return ServerResponse.asErrorResponse( "获取审批状态失败");
-        }
+        return restTemplate.getForObject(String.format("%s?name=审批中心", Common.dgn_getNavStatusByName), ServerResponse.class);
     }
 
     @RequestMapping("/updateLifeCycleStatus")

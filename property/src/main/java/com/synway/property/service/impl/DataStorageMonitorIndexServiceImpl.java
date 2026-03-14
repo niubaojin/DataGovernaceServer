@@ -7,7 +7,6 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.synway.common.bean.ServerResponse;
-import com.synway.property.common.PlatformType;
 import com.synway.property.common.Common;
 import com.synway.property.config.AsyManager;
 import com.synway.property.dao.DataStorageMonitorDao;
@@ -117,8 +116,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             queryDict.put("startTime", statisticTime + " 00:00:00");
             queryDict.put("endTime", statisticTime + " 23:59:59");
             int total;
-            String url = Common.RECONCILIATION_BASEURL + "/reconciliation/getAbnormalReconciliationNum";
-            JSONObject returnAccessJson = restTemplate.postForObject(url, queryDict, JSONObject.class);
+            JSONObject returnAccessJson = restTemplate.postForObject(Common.re_getAbnormalReconciliationNum, queryDict, JSONObject.class);
             int status = returnAccessJson.getInteger("status");
             if (status == 1) {
                 total = returnAccessJson.getJSONObject("data").getInteger("total");
@@ -137,7 +135,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
             String dataWorkVersion = environment.getProperty("odps.version", "3");
             log.info("baseApiVersion:" + dataWorkVersion);
             String dataPlatFormType = (String) cacheManager.getValue("dataPlatFormType");
-            if (!PlatformType.ALI.equalsIgnoreCase(dataPlatFormType)) {
+            if (!Common.ALI.equalsIgnoreCase(dataPlatFormType)) {
                 dataWorkVersion = "3";
             }
             // 统计资产表今日数据量如果为0，则获取昨天数据
@@ -166,7 +164,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         try{
             // 获取数据中心信息（本地仓）
             JSONArray dataResourceLocal = new JSONArray();
-            String getDataResourceForLocal = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0",String.class);
+            String getDataResourceForLocal = restTemplate.getForObject(Common.dr_getDataResourceByisLocal + "?isLocal=2&isApproved=0",String.class);
             if(StringUtils.isNotBlank(getDataResourceForLocal) && "1".equals(JSONObject.parseObject(getDataResourceForLocal).getString("status"))){
                 String localData = JSONObject.parseObject(getDataResourceForLocal).getString("data");
                 dataResourceLocal = JSONArray.parseArray(localData);
@@ -177,7 +175,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                     JSONObject dataResource = JSONObject.parseObject(dataResourceLocal.getString(i));
                     if ("odps".equals(dataResource.getString("resType").toLowerCase())){
                         String resourceId = dataResource.getString("resId");
-                        String getProjectListStr = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getProjectList?resId=" + resourceId,String.class);
+                        String getProjectListStr = restTemplate.getForObject(String.format("%s?resId=%s", Common.dr_getProjectList, resourceId), String.class);
                         if(StringUtils.isNotBlank(getProjectListStr) && "1".equals(JSONObject.parseObject(getProjectListStr).getString("status"))){
                             String projectsData = JSONObject.parseObject(getProjectListStr).getString("data");
                             JSONArray projects = JSONArray.parseArray(projectsData);
@@ -350,8 +348,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     @Override
     public List<AdsOdpsTableInfo> getAdsOdpsTableInfoByRestFul(String stage, String preName, String tableName) throws Exception {
         log.info("开始查询根据项目名以及模糊表名，来获取表的列表信息=================================");
-        AdsOdpsTableInfo[] result = restTemplate.getForObject(Common.DATAGOVERNANCE_BASEURL + "/datagovernance/dataOperation/tableList?stage={stage}" +
-                "&preName={preName}&tableName={tableName}", AdsOdpsTableInfo[].class, stage, preName, tableName);
+        AdsOdpsTableInfo[] result = restTemplate.getForObject(String.format("%s?stage=%s&preName=%s&tableName=%s", Common.dgn_tableList, stage, preName, tableName), AdsOdpsTableInfo[].class);
         List<AdsOdpsTableInfo> AdsOdpsTableInfoList = Arrays.asList(result);
         log.info("查询根据项目名以及模糊表名，来获取表的列表信息结束=================================");
         return AdsOdpsTableInfoList;
@@ -373,9 +370,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                 //不知道为什么要这个逻辑，未改
 //                adsTableUtil.
                 String[] projectNameArray;
-                projectNameArray = restTemplate.getForObject(
-                        Common.DATAGOVERNANCE_BASEURL + "/datagovernance/dataOperation/getProjectName?stage={stage}",
-                        String[].class, stage);
+                projectNameArray = restTemplate.getForObject(String.format("%s?stage=%s", Common.dgn_getProjectName, stage), String[].class);
                 if (projectNameArray != null) {
                     projectNameList = Arrays.asList(projectNameArray);
                 }
@@ -853,11 +848,10 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     }
 
     private Boolean getApprovalStatus() {
-        String json;
         //缓存name
         String cacheName = "approval";
         try {
-            json = restTemplate.getForObject(Common.DATAGOVERNANCE_BASEURL + "/datagovernance/navbar/getNavStatusByName?name={name}", String.class, "审批中心");
+            String json = restTemplate.getForObject(String.format("%s?name=%s", Common.dgn_getNavStatusByName, "审批中心"), String.class);
             cacheManager.addOrUpdateCache(cacheName, JSONObject.parseObject(json).get("data"));
         } catch (Exception e) {
             log.error(ExceptionUtil.getExceptionTrace(e));
@@ -1010,8 +1004,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
     private Map startApproval(ApprovalInfoParams approvalInfoParams, List<DataApproval> dataApprovals) throws Exception {
         Map paramMap = new HashMap();
         String approvalId;
-        JSONObject returnObject = restTemplate.postForObject(Common.DATAGOVERNANCE_BASEURL + "/datagovernance/process/saveOrUpdateApprovalInfo",
-                approvalInfoParams, JSONObject.class);
+        JSONObject returnObject = restTemplate.postForObject(Common.dgn_saveOrUpdateApprovalInfo, approvalInfoParams, JSONObject.class);
         log.info("审批流程返回的数据为：" + JSONObject.toJSONString(JSONObject.toJSONString(returnObject)));
         if (returnObject.getInteger("status") == 1) {
             /*表示调用审批流程成功*/
@@ -1056,7 +1049,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 //            String[] projectNames = restTemplate.getForObject(TableOrganizationConstant.DATARESOURCE_BASEURL + "/DataResource/getSchemaByResourceId?resourceId={dataSourceId}", String[].class, dataSourceId);
             List<JSONObject> projectNames = null;
             List<String> projectTemp = new ArrayList<>();
-            String result = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getProjectList?resId=" + dataSourceId, String.class);
+            String result = restTemplate.getForObject(String.format("%s?resId=%s", Common.dr_getProjectList, dataSourceId), String.class);
             if(StringUtils.isNotBlank(result) && "1".equals(JSONObject.parseObject(result).getString("status"))) {
                 String dataStr = JSONObject.parseObject(result).getObject("data", String.class);
                 projectNames = JSONArray.parseArray(dataStr, JSONObject.class);
@@ -1089,13 +1082,13 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
 
                             // 获取项目下的表信息
                             List<DataResourceParam> paramList = null;
-                            String dpsStr = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getTablesIncludeDetectedInfo?resId={dataSourceId}&projectName={projectName}", String.class, dataSourceId, item);
+                            String dpsStr = restTemplate.getForObject(String.format("%s?resId=%s&projectName=%s", Common.dr_getTablesIncludeDetectedInfo, dataSourceId, item), String.class);
                             if (StringUtils.isNotBlank(dpsStr) && "1".equals(JSONObject.parseObject(dpsStr).getString("status"))){
                                 String dataStr = JSONObject.parseObject(dpsStr).getString("data");
                                 paramList = JSONArray.parseArray(dataStr,DataResourceParam.class);
                             }
                             // 获取数据源
-                            String getAllResources = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getAllResources", String.class);
+                            String getAllResources = restTemplate.getForObject(Common.dr_getAllResources, String.class);
                             List<JSONObject> allDataResrouce = null;
                             if(StringUtils.isNotBlank(getAllResources) && "1".equals(JSONObject.parseObject(getAllResources).getString("status"))){
                                 String str = JSONObject.parseObject(getAllResources).getObject("data",String.class);
@@ -1600,7 +1593,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
         String[] titles = null;
         //列对应字段
         String[] fieldName = null;
-        if (PlatformType.ALI.equalsIgnoreCase(platformType)) {
+        if (Common.ALI.equalsIgnoreCase(platformType)) {
             titles = new String[]{"一级分类", "二级分类", "表数量", "ADS数据量(万条)", "ADS存储空间(GB)", "ODPS数据量(万条)", "ODPS存储空间(GB)", "日增数据量(万条)", "日增存储空间(GB)", "统计日期"};
             fieldName = new String[]{"primaryClassifyCh", "secondaryClassifyCh", "tableNumberSum", "adsSumW", "adsSize", "odpsSumW", "odpsSize", "yesterdayAllSumW", "averageAllDailySize", "statisticsDay"};
             if (incrementDays.equalsIgnoreCase("7")){
@@ -1609,7 +1602,7 @@ public class DataStorageMonitorIndexServiceImpl implements DataStorageMonitorInd
                 fieldName = new String[]{"primaryClassifyCh", "secondaryClassifyCh", "tableNumberSum", "adsSumW", "adsSize", "odpsSumW", "odpsSize",
                         "yesterdayAllSumW_6", "yesterdayAllSumW_5", "yesterdayAllSumW_4", "yesterdayAllSumW_3", "yesterdayAllSumW_2", "yesterdayAllSumW_1", "yesterdayAllSumW", "averageAllDailySize", "statisticsDay"};
             }
-        } else if (PlatformType.HUAWEI.equalsIgnoreCase(platformType)) {
+        } else if (Common.HUAWEI.equalsIgnoreCase(platformType)) {
             titles = new String[]{"一级分类", "二级分类", "表数量", "HBASE数据量(万条)", "HBASE存储空间(GB)", "HIVE数据量(万条)", "HIVE存储空间(GB)", "日增数据量(万条)", "日增存储空间(GB)", "统计日期"};
             fieldName = new String[]{"primaryClassifyCh", "secondaryClassifyCh", "tableNumberSum", "hbaseSumW", "hbaseSize", "hiveSumW", "hiveSize", "yesterdayAllSumW", "averageAllDailySize", "statisticsDay"};
             if (incrementDays.equalsIgnoreCase("7")){

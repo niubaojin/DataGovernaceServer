@@ -77,7 +77,7 @@ public class InitData implements ApplicationRunner {
             }
         });
         // 获取数据中心信息（本地仓）
-        String result = restTemplate.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getDataResourceByisLocal?isLocal=2&isApproved=0", String.class);
+        String result = restTemplate.getForObject(Common.dr_getDataResourceByisLocal + "?isLocal=2&isApproved=0", String.class);
         if(StringUtils.isNotBlank(result) && result.toLowerCase().contains("odps")){
             cacheManager.addOrUpdateCache("dataPlatFormType", "aliyun");
         } else {

@@ -56,7 +56,7 @@ public class AlarmSettingServiceImpl implements AlarmSettingService {
             });
             if (alarmMessages.size()>0){
                 String jsonString = JSONArray.toJSONString(alarmMessages);
-                JSONObject jsonObject = restTemplate.postForObject(Common.DATAOPERATIONS_BASEURL + "/pushAlarmInfo",jsonString,JSONObject.class);
+                JSONObject jsonObject = restTemplate.postForObject(Common.do_pushAlarmInfo,jsonString,JSONObject.class);
                 if (jsonObject.getInteger("status").equals(1)){
                     logger.info("发送告警信息至数据运维成功");
                 }

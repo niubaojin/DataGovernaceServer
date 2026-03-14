@@ -4,7 +4,6 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.synway.property.common.PlatformType;
 import com.synway.property.common.Common;
 import com.synway.property.config.TransactionUtil;
 import com.synway.property.dao.*;
@@ -121,7 +120,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                 item -> {
 //                        String tempJsonString = rest.getForObject(TableOrganizationConstant.DATARESOURCE_BASEURL + "/DataResource/getDsById?dataId=" + item, String.class);
 //                        String tempJsonString = rest.getForObject("http://192.168.71.57:8043/dataresource/api/getResourceById?resId=b1656aba3ffc4e48b79badf49e14e7e0", String.class);
-                    String tempJsonString = rest.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getResourceById?resId=" + item, String.class);
+                    String tempJsonString = rest.getForObject(String.format("%s/getResourceById?resId=%s", Common.dr_getResourceById, item), String.class);
                     if (StringUtils.isNotBlank(tempJsonString)) {
                         JSONObject resultJson = JSONObject.parseObject(JSONObject.parseObject(tempJsonString).getObject("data",String.class));
                         if(resultJson!=null){
@@ -147,7 +146,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
                     paramMap.put("tableNames", tableNames);
                     try {
                         for (String tableName:tableNames){
-                            String tablePartitionInfo = rest.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/api/getPartitionInfo?resourceId=" + resourceEntry.getKey() + "&project=" + entry.getKey() + "&tableNameEn=" + tableName, String.class);
+                            String tablePartitionInfo = rest.getForObject(String.format("%s?resourceId=%s&project=%s&tableNameEn=%s", Common.dr_getPartitionInfo, resourceEntry.getKey(), entry.getKey(), tableName), String.class);
                             if(StringUtils.isBlank(tablePartitionInfo) || "0".equals(JSONObject.parseObject(tablePartitionInfo).getString("status"))){
                                 continue;
                             }
@@ -893,7 +892,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
     @Override
     public void getDataResourceInfo() {
         try {
-            String dataResourceString = rest.getForObject(Common.DATARESOURCE_BASEURL + "/dataresource/findResourceForLocalBase", String.class);
+            String dataResourceString = rest.getForObject(Common.dr_findResourceForLocalBase, String.class);
             Map dataResourceMap = JSON.parseObject(dataResourceString);
             logger.info((String) dataResourceMap.get("msg"));
             Integer code = (Integer) dataResourceMap.get("code");
@@ -945,7 +944,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
         }
 
         // 阿里数据库概况统计
-        if (PlatformType.ALI.equals(cacheManager.getValue("dataPlatFormType"))) {
+        if (Common.ALI.equals(cacheManager.getValue("dataPlatFormType"))) {
             collectAliDatabaseStates(dataBaseStates, platTableSumList, allPlatformCountList);
         }
 
@@ -964,7 +963,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             try {
                 String resId = JSONObject.parseObject(object.toString()).getString("resId");
                 String resName = JSONObject.parseObject(object.toString()).getString("resName");
-                String url = Common.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
+                String url = String.format("%s?resourceId=%s", Common.dr_getResourceOverview, resId);
                 logger.info("hdfs数据库概况统计url：" + url);
                 String resultStr = rest.getForObject(url, String.class);
                 logger.info("hdfs数据库概况统计返回结果为：\n" + resultStr);
@@ -991,7 +990,7 @@ public class DataStorageMonitorServiceImpl implements DataStorageMonitorService 
             try {
                 String resId = JSONObject.parseObject(object.toString()).getString("resId");
                 String resName = JSONObject.parseObject(object.toString()).getString("resName");
-                String url = Common.DATARESOURCE_BASEURL_API + "/getResourceOverview?resourceId=" + resId;
+                String url = String.format("%s?resourceId=%s", Common.dr_getResourceOverview, resId);
                 logger.info("hbase数据库概况统计url：" + url);
                 String resultStr = rest.getForObject(url, String.class);
                 logger.info("hbase数据库概况统计返回结果为：\n" + resultStr);

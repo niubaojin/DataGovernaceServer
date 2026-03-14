@@ -203,7 +203,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
             queryParam.put("tableNameEn", queryParams.getTableNameEn());
 
             //获取所有下游表，然后获取组织分类
-            JSONObject targetTablesJson = restTemplate.postForObject(Common.DATARELATION_BASEURL + "/getTargetTables", queryParam, JSONObject.class);
+            JSONObject targetTablesJson = restTemplate.postForObject(Common.ds_getTargetTables, queryParam, JSONObject.class);
             if (targetTablesJson != null && targetTablesJson.getBoolean("success")) {
                 List<ValDensityPageParam> datas = targetTablesJson.getJSONArray("data").toJavaList(ValDensityPageParam.class);
                 List<DetailedTableByClassify> tableByClassifies = new ArrayList<>();
@@ -235,7 +235,7 @@ public class LifeCycleServiceImpl implements LifeCycleService {
                 }
             }
             //获取被调用工作流和应用系统
-            JSONObject impactStatisticJson = restTemplate.postForObject(Common.DATARELATION_BASEURL + "/getImpactStatistic", queryParam, JSONObject.class);
+            JSONObject impactStatisticJson = restTemplate.postForObject(Common.ds_getImpactStatistic, queryParam, JSONObject.class);
             if (impactStatisticJson != null && impactStatisticJson.getBoolean("success")) {
                 ImpactAnalysisProperty property = impactStatisticJson.getJSONObject("data").toJavaObject(ImpactAnalysisProperty.class);
                 if (property != null) {
