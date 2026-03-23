@@ -12,6 +12,7 @@ logs/
 */.springBeans
 */target/
 */WebRoot/
+*.log
 
 
 ### STS ###
